@@ -1,0 +1,5 @@
+LIBRARY	"d3d9"
+EXPORTS
+  MyDirect3DCreate9 @1
+  InstallHook @2
+  RemoveHook @3

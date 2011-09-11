@@ -1,0 +1,64 @@
+ifdef NO_INJECTION
+prcompiler_flag = /D "NO_INJECTION"
+def_file = /DEF:"OTM_DX9_dll_NO_INJECTION.def"
+else
+prcompiler_flag = 
+def_file = /DEF:"OTM_DX9_dll.def"
+endif
+
+
+CXX = cl
+CLINK = link.exe
+
+CFLAGS = /I "C:\Program Files (x86)\Microsoft DirectX SDK (June 2010)\Include" /nologo /W3 /WX- /O2 /D "WIN32" /D "_DEBUG" /D "_WINDOWS" /D "_USRDLL" /D "PROXYDLL_EXPORTS" /D "_WINDLL" /D "_MBCS" /D "_AFXDLL" ${prcompiler_flag} /Gm- /EHsc /MT /GS /fp:precise /Zc:wchar_t
+LFLAGS = /INCREMENTAL:NO /NOLOGO /LIBPATH:"C:\Program Files (x86)\Microsoft DirectX SDK (June 2010)\Lib\x86" /DLL "Winmm.lib" "d3dx9.lib" "user32.lib" "Kernel32.lib" ${def_file} /SUBSYSTEM:WINDOWS /OPT:REF /OPT:ICF  /TLBID:1 /DYNAMICBASE /NXCOMPAT  /MACHINE:X86
+
+obj = obj
+bin = bin
+obj_suff = obj
+
+objects = ${obj}\OTM_DX9_dll.${obj_suff} \
+	${obj}\OTM_IDirect3D9.${obj_suff} \
+  ${obj}\OTM_IDirect3DDevice9.${obj_suff} \
+  ${obj}\OTM_IDirect3DTexture9.${obj_suff} \
+  ${obj}\OTM_ArrayHandler.${obj_suff} \
+  ${obj}\OTM_TextureClient.${obj_suff} \
+  ${obj}\OTM_TextureServer.${obj_suff}
+
+headers = OTM_Main.h \
+ OTM_Defines.h \
+ OTM_DX9_dll.h \
+ OTM_IDirect3D9.h \
+ OTM_IDirect3DDevice9.h \
+ OTM_IDirect3DTexture9.h \
+ OTM_ArrayHandler.h \
+ OTM_TextureClient.h \
+ OTM_TextureServer.h
+
+${bin}\d3d9.dll: ${objects}
+	${CLINK} ${LFLAGS} ${objects} /OUT:${bin}\d3d9.dll
+	copy ${bin}\d3d9.dll ..\OTM_GUI\bin\OTM_d3d9.dll
+
+${obj}\OTM_DX9_dll.${obj_suff}: OTM_DX9_dll.cpp  ${headers}
+	${CXX} ${CFLAGS} /c $< /Fo$@
+	
+${obj}\OTM_IDirect3D9.${obj_suff}: OTM_IDirect3D9.cpp ${headers}
+	${CXX} ${CFLAGS} /c $< /Fo$@
+	
+${obj}\OTM_IDirect3DDevice9.${obj_suff}: OTM_IDirect3DDevice9.cpp  ${headers}
+	${CXX} ${CFLAGS} /c $< /Fo$@
+	
+${obj}\OTM_IDirect3DTexture9.${obj_suff}: OTM_IDirect3DTexture9.cpp  ${headers}
+	${CXX} ${CFLAGS} /c $< /Fo$@
+	
+${obj}\OTM_ArrayHandler.${obj_suff}: OTM_ArrayHandler.cpp  ${headers}
+	${CXX} ${CFLAGS} /c $< /Fo$@
+	
+${obj}\OTM_TextureClient.${obj_suff}: OTM_TextureClient.cpp  ${headers}
+	${CXX} ${CFLAGS} /c $< /Fo$@
+	
+${obj}\OTM_TextureServer.${obj_suff}: OTM_TextureServer.cpp  ${headers}
+	${CXX} ${CFLAGS} /c $< /Fo$@
+
+clean:
+	del ${objects} ${bin}\d3d9.dll
