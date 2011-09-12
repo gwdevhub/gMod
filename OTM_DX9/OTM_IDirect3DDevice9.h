@@ -156,6 +156,7 @@ public:
 	OTM_TextureClient* GetOTM_Client(void) {return (OTM_Client);}
 	OTM_IDirect3DTexture9* GetLastCreatedTexture(void) {return (LastCreatedTexture);}
   int SetLastCreatedTexture(OTM_IDirect3DTexture9* pTexture) {LastCreatedTexture=pTexture; return (RETURN_OK);}
+  OTM_IDirect3DTexture9* GetSingleTexture(void) {return (SingleTexture);}
 
   int SaveSingleTexture(bool val);
   int SetKeyBack( int key) {if (key>0) KeyBack=key; return (0);}

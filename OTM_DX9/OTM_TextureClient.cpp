@@ -192,20 +192,33 @@ int OTM_TextureClient::RemoveTexture( OTM_IDirect3DTexture9* pTexture) // is cal
       if (gl_ErrorState & OTM_ERROR_FATAL) return (RETURN_FATAL_ERROR);
       if (pTexture->FAKE)
       {
-        for (int i=0; i<NumberToMod; i++) if (FileToMod[i].pTexture==pTexture) {FileToMod[i].pTexture = NULL; break;}
-        return (FakeTextures.Remove( pTexture));
+        int ref = pTexture->Reference;
+        if (ref>=0 && ref<NumberToMod && FileToMod[ref].pTexture==pTexture) FileToMod[ref].pTexture = NULL;
       }
-      else return (OriginalTextures.Remove( pTexture));
+      else
+      {
+        /* this is already done in the Release function of the original texture
+        if (pTexture->CrossRef_D3Dtex!=NULL)
+        {
+          OTM_IDirect3DTexture9* fake_texture = pTexture->CrossRef_D3Dtex;
+          UnswitchTextures(fake_texture);
+          fake_texture ->Release(); //this will call this->RemoveTexture again and the fake_texture will also be deleted from the FileToMod.
+        }
+        */
+        return (OriginalTextures.Remove( pTexture));
+      }
     }
   }
   return (RETURN_OK);
 }
 
+/*
 int OTM_TextureClient::ReleaseAllFakeTexture(void)
 {
   Message("ReleaseAllFakeTexture(): %lu\n", this);
   return (FakeTextures.RemoveAll());
 }
+*/
 
 int OTM_TextureClient::SaveAllTextures(bool val)
 {
@@ -299,8 +312,9 @@ int OTM_TextureClient::MergeUpdate(void)
             }
             else
             {
-              FakeTextures.Add(fake_Texture);
+              //FakeTextures.Add(fake_Texture);
               Update[u].pTexture = fake_Texture;
+              fake_Texture->Reference = u;
             }
           }
         }
@@ -309,7 +323,8 @@ int OTM_TextureClient::MergeUpdate(void)
     }
     if (!found)
     {
-      FakeTextures.Remove(FileToMod[i].pTexture);
+      //FakeTextures.Remove(FileToMod[i].pTexture);
+      FileToMod[i].pTexture->Release();
     }
   }
 
@@ -333,7 +348,8 @@ int OTM_TextureClient::MergeUpdate(void)
         else
         {
           Update[u].pTexture = fake_Texture;
-          FakeTextures.Add(fake_Texture);
+          fake_Texture->Reference = u;
+          //FakeTextures.Add(fake_Texture);
         }
       }
     }
@@ -385,8 +401,9 @@ int OTM_TextureClient::LookUpToMod( OTM_IDirect3DTexture9* pTexture) // should o
       }
       else
       {
-        FakeTextures.Add(fake_Texture);
+        //FakeTextures.Add(fake_Texture);
         FileToMod[i].pTexture = fake_Texture;
+        fake_Texture->Reference = i;
       }
     }
   }

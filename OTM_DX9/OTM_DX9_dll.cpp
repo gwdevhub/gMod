@@ -70,7 +70,7 @@ BOOL APIENTRY DllMain( HINSTANCE hModule, DWORD  ul_reason_for_call, LPVOID lpRe
 IDirect3D9* WINAPI  Direct3DCreate9(UINT SDKVersion)
 {
   Message("WINAPI  Direct3DCreate9\n");
-	//MessageBox( NULL, TEXT( "Create 3D" ), TEXT( "Timer" ), MB_OK );
+
 	if (!gl_hOriginalDll) LoadOriginalDll(); // looking for the "right d3d9.dll"
 	
 	// Hooking IDirect3D Object from Original Library
@@ -79,27 +79,37 @@ IDirect3D9* WINAPI  Direct3DCreate9(UINT SDKVersion)
     
     // Debug
 	if (!D3DCreate9_fn) 
-    {
-        OutputDebugString("PROXYDLL: Pointer to original D3DCreate9 function not received ERROR ****\r\n");
-        ::ExitProcess(0); // exit the hard way
-    }
+  {
+	  Message("Direct3DCreate9: original function not found in dll\n");
+    ExitProcess(0); // exit the hard way
+  }
 	
 
   if (gl_pIDirect3D9!=NULL) gl_ErrorState |= OTM_ERROR_MULTIPLE_IDirect3D9;
+
 	// Request pointer from Original Dll. 
 	IDirect3D9 *pIDirect3D9_orig = D3DCreate9_fn(SDKVersion);
 	gl_pIDirect3D9 = new OTM_IDirect3D9( pIDirect3D9_orig, gl_TextureServer);
 
-	//MessageBeep( MB_ICONINFORMATION );
-
-	
-	//MessageBox( NULL, TEXT( "Create 3D" ), TEXT( "Timer" ), MB_OK );
-	// Create my IDirect3D8 object and store pointer to original object there.
-	// note: the object will delete itself once Ref count is zero (similar to COM objects)
-
 	// Return pointer to hooking Object instead of "real one"
 	return (gl_pIDirect3D9);
 }
+
+bool HookThisProgramm( wchar_t *ret)
+{
+  wchar_t Executable[MAX_PATH];
+  GetModuleFileNameW( GetModuleHandle( NULL ), Executable, MAX_PATH );
+  PathStripPathW( Executable );
+  int len = 0;
+  while (Executable[len]) {ret[len] = Executable[len]; len++;}
+  Executable[len] = 0;
+  return (true);
+}
+
+
+
+
+
 #else
 
 
@@ -114,7 +124,7 @@ IDirect3D9 *APIENTRY MyDirect3DCreate9(UINT SDKVersion)
   Message("Direct3DCreate9_fn %lu, my %lu\n", Direct3DCreate9_fn ,MyDirect3DCreate9);
 
   // in the Internet are many tutorials for detouring functions and all of them will work without the following 3 marked lines
-  // but somehow, for me it only works, if I detour the function and calling afterward the original function
+  // but somehow, for me it only works, if I retour the function and calling afterward the original function
 
   // BEGIN
   LoadOriginalDll();
@@ -136,7 +146,6 @@ IDirect3D9 *APIENTRY MyDirect3DCreate9(UINT SDKVersion)
   }
   return (gl_pIDirect3D9);
 }
-#endif
 
 bool HookThisProgramm( wchar_t *ret)
 {
@@ -162,6 +171,7 @@ bool HookThisProgramm( wchar_t *ret)
       if ( _wcsicmp( Executable, Game ) == 0 )
       {
         for (int i=0; i<len; i++) ret[i] = Game[i];
+        fclose(file);
         return (true);
       }
     }
@@ -169,6 +179,8 @@ bool HookThisProgramm( wchar_t *ret)
   fclose(file);
   return (false);
 }
+#endif
+
 
 DWORD WINAPI ServerThread( LPVOID lpParam )
 {
@@ -215,11 +227,13 @@ void InitInstance(HINSTANCE hModule)
 	  }
 	  LoadOriginalDll();
 
+#ifndef NO_INJECTION
 	  // we detour the original Direct3DCreate9 to our MyDirect3DCreate9
 	  Direct3DCreate9_fn = (Direct3DCreate9_type)DetourFunc(
 	          (BYTE*)GetProcAddress(gl_hOriginalDll, "Direct3DCreate9"),
 	          (BYTE*)MyDirect3DCreate9,
 	          5);
+#endif
   }
 }
 
@@ -297,12 +311,6 @@ bool RetourFunc(BYTE *src, BYTE *restore, const int len)
   if(!VirtualProtect(src, len, dwback, &dwback))      { return (false); }
   return (true);
 }
-
-
-
-
-
-
 
 
 

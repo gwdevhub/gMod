@@ -39,7 +39,7 @@ public:
   int AddTexture( OTM_IDirect3DTexture9* tex); //called from OTM_IDirect3DDevice9::CreateTexture(...)
   int RemoveTexture( OTM_IDirect3DTexture9* tex); //called from  OTM_IDirect3DTexture9::Release()
 
-  int ReleaseAllFakeTexture(void); // called when the Game is closed
+  //int ReleaseAllFakeTexture(void); // called when the Game is closed
 
   int SaveAllTextures(bool val); //called from the Server
   int SaveSingleTexture(bool val); //called from the Server
@@ -57,7 +57,7 @@ public:
   int MergeUpdate(void);
 
 
-  OTM_TextureHandler FakeTextures;
+  //OTM_TextureHandler FakeTextures;
   OTM_TextureHandler OriginalTextures;
 
 private:

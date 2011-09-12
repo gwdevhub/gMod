@@ -95,9 +95,10 @@ int OTM_FileHandler::Remove(TextureFileStruct* file)
   int ref = file->Reference;
   if (ref<0) return (RETURN_OK); // returning if no Reference is set
   file->Reference = -1;
-  if (ref<--Number)
+  if (ref<(--Number))
   {
     Files[ref/FieldLength][ref%FieldLength] = Files[Number/FieldLength][Number%FieldLength];
+    Files[ref/FieldLength][ref%FieldLength]->Reference = ref;
   }
   return (RETURN_OK);
 }
@@ -158,7 +159,7 @@ int OTM_TextureHandler::Add(OTM_IDirect3DTexture9* pTexture)
   Message("OTM_TextureHandler::Add( %lu): %lu\n", pTexture, this);
   if (gl_ErrorState & OTM_ERROR_FATAL) return (RETURN_FATAL_ERROR);
 
-  if (pTexture->TextureHandlerRef>=0) return (RETURN_TEXTURE_ALLREADY_ADDED);
+  if (pTexture->Reference>=0) return (RETURN_TEXTURE_ALLREADY_ADDED);
 
   if (Number/FieldLength==FieldCounter)
   {
@@ -192,7 +193,7 @@ int OTM_TextureHandler::Add(OTM_IDirect3DTexture9* pTexture)
   }
 
   Textures[Number/FieldLength][Number%FieldLength] = pTexture;
-  pTexture->TextureHandlerRef = Number++;
+  pTexture->Reference = Number++;
 
   return (RETURN_OK);
 }
@@ -203,14 +204,13 @@ int OTM_TextureHandler::Remove(OTM_IDirect3DTexture9* pTexture) //will be called
   Message("OTM_TextureHandler::Remove( %lu): %lu\n", pTexture, this);
   if (gl_ErrorState & OTM_ERROR_FATAL) return (RETURN_FATAL_ERROR);
 
-  int ref = pTexture->TextureHandlerRef;
+  int ref = pTexture->Reference;
   if (ref<0) return (RETURN_OK); // returning if no TextureHandlerRef is set
-
-  UnswitchTextures( pTexture);
 
   if (ref<(--Number))
   {
     Textures[ref/FieldLength][ref%FieldLength] = Textures[Number/FieldLength][Number%FieldLength];
+    Textures[ref/FieldLength][ref%FieldLength]->Reference = ref;
   }
   return (RETURN_OK);
 }

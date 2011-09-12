@@ -118,7 +118,8 @@ ULONG OTM_IDirect3DDevice9::Release(void)
 	  // now, the Original Object has deleted itself, so do we here
 	  if (OTM_Client!=NULL)
 	  {
-	    OTM_Client->ReleaseAllFakeTexture();
+	    //OTM_Client->ReleaseAllFakeTexture();
+	    if (SingleTexture!=NULL) SingleTexture->Release();
 	    delete OTM_Client;
 	    OTM_Client = NULL;
 	  }

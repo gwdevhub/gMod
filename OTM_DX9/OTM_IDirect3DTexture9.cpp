@@ -28,20 +28,44 @@ HRESULT APIENTRY OTM_IDirect3DTexture9::QueryInterface(REFIID riid, void** ppvOb
 
 ULONG APIENTRY OTM_IDirect3DTexture9::AddRef()
 {
-	return (m_D3Dtex->AddRef());
+  if (FAKE) return (1); //this case should never happen
+  if (CrossRef_D3Dtex!=NULL)
+  {
+    return (CrossRef_D3Dtex->m_D3Dtex->AddRef());
+  }
+  else return (m_D3Dtex->AddRef());
 }
 
 ULONG APIENTRY OTM_IDirect3DTexture9::Release()
 {
-  ULONG count = m_D3Dtex->Release();
-  if (count==0)
+  ULONG count;
+  if (FAKE)
   {
-    if (((OTM_IDirect3DDevice9*)m_D3Ddev)->GetLastCreatedTexture()==this) ((OTM_IDirect3DDevice9*)m_D3Ddev)->SetLastCreatedTexture( NULL); // this texture is deleted before it was added to the client!!
-    // we must set LastCreatedTexture to NULL, otherwise we would load later a non existing texture an try to compute their hash
+    UnswitchTextures( this);
+    count = m_D3Dtex->Release(); //count must be zero, cause we don't call AddRef of fake_textures
+  }
+  else
+  {
+    if (CrossRef_D3Dtex!=NULL)
+    {
+      OTM_IDirect3DTexture9 *fake_texture = CrossRef_D3Dtex;
+      count = fake_texture->m_D3Dtex->Release();
+      if (count==0)
+      {
+        UnswitchTextures(this);
+        if (((OTM_IDirect3DDevice9*)m_D3Ddev)->GetSingleTexture()!=fake_texture) fake_texture->Release();
+      }
+    }
     else
     {
-      ((OTM_IDirect3DDevice9*) m_D3Ddev)-> GetOTM_Client()->RemoveTexture(this);
+      count = m_D3Dtex->Release();
     }
+  }
+
+  if (count==0)
+  {
+    ((OTM_IDirect3DDevice9*) m_D3Ddev)-> GetOTM_Client()->RemoveTexture(this); //this is also valid for textures, which are released before we have add them
+    if (((OTM_IDirect3DDevice9*)m_D3Ddev)->GetLastCreatedTexture()==this) ((OTM_IDirect3DDevice9*)m_D3Ddev)->SetLastCreatedTexture( NULL);
     delete(this);
   }
 	return (count);

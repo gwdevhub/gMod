@@ -41,7 +41,7 @@ interface OTM_IDirect3DTexture9 : public IDirect3DTexture9
 		CrossRef_D3Dtex = NULL; //cross reference
 		// fake texture: store the pointer to the original OTM_IDirect3DTexture9 object, needed if a fake texture is deselected
 		// original texture: stores the pointer to the fake texture object, is needed if original texture is deleted (that fake texture can be replaced, if original texture is loaded again)
-    TextureHandlerRef = -1; //need for fast deleting
+		Reference = -1; //need for fast deleting
     Hash = 0u;
     FAKE = false;
 	}
@@ -50,7 +50,7 @@ interface OTM_IDirect3DTexture9 : public IDirect3DTexture9
 	IDirect3DTexture9 *m_D3Dtex;
 	OTM_IDirect3DTexture9 *CrossRef_D3Dtex;
 	IDirect3DDevice9 *m_D3Ddev;
-	int TextureHandlerRef;
+	int Reference;
 	MyTypeHash Hash;
   bool FAKE;
 

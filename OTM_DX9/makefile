@@ -1,9 +1,13 @@
 ifdef NO_INJECTION
 prcompiler_flag = /D "NO_INJECTION"
 def_file = /DEF:"OTM_DX9_dll_NO_INJECTION.def"
+obj_suff = NO_INJECTION.obj
+dll = d3d9.dll
 else
 prcompiler_flag = 
 def_file = /DEF:"OTM_DX9_dll.def"
+obj_suff = obj
+dll = OTM_d3d9.dll
 endif
 
 
@@ -15,7 +19,6 @@ LFLAGS = /INCREMENTAL:NO /NOLOGO /LIBPATH:"C:\Program Files (x86)\Microsoft Dire
 
 obj = obj
 bin = bin
-obj_suff = obj
 
 objects = ${obj}\OTM_DX9_dll.${obj_suff} \
 	${obj}\OTM_IDirect3D9.${obj_suff} \
@@ -36,8 +39,8 @@ headers = OTM_Main.h \
  OTM_TextureServer.h
 
 ${bin}\d3d9.dll: ${objects}
-	${CLINK} ${LFLAGS} ${objects} /OUT:${bin}\d3d9.dll
-	copy ${bin}\d3d9.dll ..\OTM_GUI\bin\OTM_d3d9.dll
+	${CLINK} ${LFLAGS} ${objects} /OUT:${bin}\${dll}
+	copy ${bin}\${dll} ..\OTM_GUI\bin\${dll}
 
 ${obj}\OTM_DX9_dll.${obj_suff}: OTM_DX9_dll.cpp  ${headers}
 	${CXX} ${CFLAGS} /c $< /Fo$@
