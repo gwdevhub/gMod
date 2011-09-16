@@ -20,7 +20,7 @@ along with FooOpenTexMod.  If not, see <http://www.gnu.org/licenses/>.
 
 #include "OTM_Main.h"
 
-OTM_TextureServer::OTM_TextureServer(void)
+OTM_TextureServer::OTM_TextureServer(wchar_t *game)
 {
   Message("OTM_TextureServer(void): %lu\n", this);
   Message("sizeof(unsigned long)=%lu\n", sizeof(unsigned long));
@@ -32,6 +32,10 @@ OTM_TextureServer::OTM_TextureServer(void)
   LenghtOfClients = 0;
   BoolSaveAllTextures = false;
   SavePath[0] = 0;
+  int i=0;
+  for (i=0; i<MAX_PATH && (game[i]) && (game[i]!='.'); i++) GameName[i] = game[i];
+  if (i<MAX_PATH) GameName[i] = 0;
+  else GameName[0] = 0;
 
   KeyBack = 0;
   KeySave = 0;
@@ -67,7 +71,7 @@ int OTM_TextureServer::AddClient(OTM_TextureClient *client, TextureFileStruct** 
     gl_ErrorState |= OTM_ERROR_SERVER;
     return (ret);
   }
-
+  client->SetGameName(GameName);
   /*
   DO NOT UNCOMMENT THIS
   some games create special devices before the rendering device is created. those device should not receive SaveSingleTexture(...)
@@ -327,7 +331,7 @@ int OTM_TextureServer::SaveSingleTexture(bool val) // called from the server
 
 int OTM_TextureServer::SetSaveDirectory(wchar_t *dir) // called from the server
 {
-  Message("SetSaveDirectory( %ls): %lu\n", dir, this);
+  Message("OTM_TextureServer::SetSaveDirectory( %ls): %lu\n", dir, this);
   int i = 0;
   for (i = 0; i < MAX_PATH && (dir[i]); i++) SavePath[i] = dir[i];
   if (i == MAX_PATH)
@@ -598,7 +602,7 @@ int OTM_TextureServer::MainLoop(void) // run as a separated thread !!
   return (RETURN_OK);
 }
 
-int OTM_TextureServer::OpenPipe(wchar_t *game) // called from InitInstance()
+int OTM_TextureServer::OpenPipe(void) // called from InitInstance()
 {
   Message("OpenPipe: Out\n")
   // open first outgoing pipe !!
@@ -614,11 +618,11 @@ int OTM_TextureServer::OpenPipe(wchar_t *game) // called from InitInstance()
   if (Pipe.Out == INVALID_HANDLE_VALUE) return (RETURN_PIPE_NOT_OPENED);
 
   unsigned int len = 0u;
-  while (game[len]) len++;
+  while (GameName[len]) len++;
   len++; //to send also the zero
   unsigned long num;
   //send name of this game to OTM_GUI
-  WriteFile(Pipe.Out, (const void*) game, len * sizeof(wchar_t), &num, NULL);
+  WriteFile(Pipe.Out, (const void*) GameName, len * sizeof(wchar_t), &num, NULL);
 
   Message("OpenPipe: In\n");
   Pipe.In = CreateFileW(PIPE_OTM2Game, // pipe name

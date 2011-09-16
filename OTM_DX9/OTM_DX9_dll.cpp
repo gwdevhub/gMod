@@ -201,10 +201,10 @@ void InitInstance(HINSTANCE hModule)
     OpenMessage();
     Message("InitInstance: %lu\n", hModule);
 
-	  gl_TextureServer = new OTM_TextureServer();
+	  gl_TextureServer = new OTM_TextureServer(game);
 	  if (gl_TextureServer!=NULL)
 	  {
-	    if (gl_TextureServer->OpenPipe( game))
+	    if (gl_TextureServer->OpenPipe())
 	    {
 	      Message("InitInstance: Pipe not opened\n");
 	      return;

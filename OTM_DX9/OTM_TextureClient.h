@@ -45,6 +45,7 @@ public:
   int SaveSingleTexture(bool val); //called from the Server
 
   int SetSaveDirectory( wchar_t *dir); //called from the Server
+  int SetGameName( wchar_t *dir); //called from the Server
 
   int SaveTexture(OTM_IDirect3DTexture9* pTexture);
 
@@ -65,6 +66,7 @@ private:
   IDirect3DDevice9* D3D9Device;
   bool BoolSaveAllTextures;
   wchar_t SavePath[MAX_PATH];
+  wchar_t GameName[MAX_PATH];
 
   TextureFileStruct* Update;
   int NumberOfUpdate;

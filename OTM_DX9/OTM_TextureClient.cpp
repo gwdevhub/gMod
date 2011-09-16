@@ -32,6 +32,7 @@ OTM_TextureClient::OTM_TextureClient(OTM_TextureServer* server, IDirect3DDevice9
   D3D9Device = device;
   BoolSaveAllTextures = false;
   SavePath[0]=0;
+  GameName[0]=0;
   if (Server!=NULL)
   {
     if (Server->AddClient( this, &FileToMod, &NumberToMod))
@@ -165,77 +166,11 @@ int OTM_TextureClient::AddTexture( OTM_IDirect3DTexture9* pTexture)
   }
   //MyTypeHash hash = GetHash( (unsigned char*) d3dlr.pBits, size);
   MyTypeHash hash = GetCRC32( (char*) d3dlr.pBits, size);
-/*
-  if (hash==0X1FD33669ul)
-  {
-    for (int i=0; i<size; i++)
-    {
-      DWORD hash2 = QuickChecksum( (DWORD*) d3dlr.pBits, i);
-      Message("Hash: %#lX  %#lX\n", hash, hash2);
-    }
-  }
-*/
-/*
-  DWORD hash2 = QuickChecksum( (char*) d3dlr.pBits, size);
-
-
-  switch(desc.Format)
-  {
-  case D3DFMT_A8R8G8B8:
-  {
-  size =  4*desc.Width*desc.Height;
-  break;
-  }
-  case D3DFMT_FORCE_DWORD:
-  {
-    size =  1*desc.Width*desc.Height;
-  break;
-  }
-  default:
-  {
-    size =  (desc.Width*desc.Height)/2;
-  break;
-  }
-  }
-
-  DWORD hash3 = QuickChecksum( (char*) d3dlr.pBits, size);
-  DWORD hash4 = QuickChecksum( (char*) d3dlr.pBits, (desc.Width*desc.Height)/2);
-  DWORD hash5 = QuickChecksum( (char*) d3dlr.pBits, (desc.Width*desc.Height)/4);
-  DWORD hash6 = 0u;
-
 
   if (pTexture->UnlockRect(0)!=D3D_OK)
   {
     return (RETURN_UnlockRect_FAILED);
   }
-
-  LPD3DXBUFFER buffer;
-  if (D3D_OK==D3DXSaveTextureToFileInMemory( &buffer, D3DXIFF_DDS, pTexture->m_D3Dtex, NULL))
-  {
-    DWORD* data = (DWORD*) buffer->GetBufferPointer();
-    unsigned long int size = buffer->GetBufferSize();
-    hash6 = QuickChecksum( (char*) data, size);
-    buffer->Release();
-  }
-
-  Message("Hash: %#lX  %#lX  %#lX  %#lX  %#lX  %#lX\n", hash, hash2, hash3, hash4, hash5, hash6);
-
-  DWORD XOR=0u;
-  switch (hash)
-  {
-  case 0X1FD33669ul: XOR = 0xDC00FEB1ul;  break;
-  case 0X3B560BBFul: XOR = 0x2D1E4DBDul;  break;
-  case 0X5D76CA77ul: XOR = 0xC1E8589Dul;  break;
-  case 0X72E92068ul: XOR = 0x1A92B5F2ul;  break;
-  case 0X9066971Eul: XOR = 0x3549742Dul;  break;
-  case 0XB10C55B0ul: XOR = 0xF037EB98ul;  break;
-  }
-  if (XOR)
-  {
-    Message("XOR: %#lX  %#lX  %#lX  %#lX  %#lX  %#lX\n", hash, hash2^XOR, hash3^XOR, hash4^XOR, hash5^XOR, hash6^XOR);
-  }
-
-*/
 
   pTexture->Hash = hash; // note: this will only be done for original textures
   if (BoolSaveAllTextures) SaveTexture(pTexture);
@@ -306,7 +241,7 @@ int OTM_TextureClient::SaveSingleTexture(bool val)
 
 int OTM_TextureClient::SetSaveDirectory( wchar_t *dir)
 {
-  Message("SetSaveDirectory( %ls): %lu\n", dir, this);
+  Message("OTM_TextureClient::SetSaveDirectory( %ls): %lu\n", dir, this);
   int i = 0;
   for (i=0; i<MAX_PATH && (dir[i]); i++) SavePath[i] = dir[i];
   if (i==MAX_PATH)
@@ -318,14 +253,34 @@ int OTM_TextureClient::SetSaveDirectory( wchar_t *dir)
   return (RETURN_OK);
 }
 
+int OTM_TextureClient::SetGameName( wchar_t *name)
+{
+  Message("OTM_TextureClient::SetGameName( %ls): %lu\n", name, this);
+  int i = 0;
+  for (i=0; i<MAX_PATH && (name[i]); i++) GameName[i] = name[i];
+  if (i==MAX_PATH)
+  {
+    GameName[0]=0;
+    return (RETURN_BAD_ARGUMENT);
+  }
+  GameName[i]=0;
+  return (RETURN_OK);
+}
+
 int OTM_TextureClient::SaveTexture(OTM_IDirect3DTexture9* pTexture)
 {
-  Message("SaveTexture( %lu): %lu\n", pTexture, this);
   if (pTexture==NULL) return (RETURN_BAD_ARGUMENT);
+  if (SavePath[0]==0) {Message("OTM_TextureClient::SaveTexture( %#lX, %lu): %lu,   SavePath not set\n", pTexture->Hash, pTexture->m_D3Dtex, this); return (RETURN_TEXTURE_NOT_SAVED);}
+  Message("OTM_TextureClient::SaveTexture( %#lX, %lu): %lu\n", pTexture->Hash, pTexture->m_D3Dtex, this);
+
   wchar_t file[MAX_PATH];
-  swprintf_s( file, MAX_PATH, L"%ls\\%#lX.dds", SavePath, pTexture->Hash);
+  if (GameName[0]) swprintf_s( file, MAX_PATH, L"%ls\\%ls_%#lX.dds", SavePath, GameName, pTexture->Hash);
+  else swprintf_s( file, MAX_PATH, L"%ls\\%#lX.dds", SavePath, pTexture->Hash);
+  Message("OTM_TextureClient::SaveTexture( %ls ) \n", file);
 
   if (D3D_OK!=D3DXSaveTextureToFileW( file, D3DXIFF_DDS, pTexture->m_D3Dtex, NULL)) return (RETURN_TEXTURE_NOT_SAVED);
+  Message("OTM_TextureClient::SaveTexture( ) Done!\n", file);
+
   return (RETURN_OK);
 }
 

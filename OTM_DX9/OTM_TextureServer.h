@@ -32,13 +32,13 @@ class OTM_TextureClient;
 class OTM_TextureServer
 {
 public:
-  OTM_TextureServer(void);
+  OTM_TextureServer(wchar_t *name);
   ~OTM_TextureServer(void);
 
   int AddClient(OTM_TextureClient *client, TextureFileStruct** update, int* number);
   int RemoveClient(OTM_TextureClient *client);
 
-  int OpenPipe( wchar_t *game);
+  int OpenPipe(void);
   int ClosePipe(void);
   int MainLoop(void);
 
@@ -63,6 +63,7 @@ private:
   bool BoolSaveAllTextures;
   bool BoolSaveSingleTexture;
   wchar_t SavePath[MAX_PATH];
+  wchar_t GameName[MAX_PATH];
 
   int PropagateUpdate(OTM_TextureClient* client=NULL);
   int PrepareUpdate(TextureFileStruct** update, int* number);
