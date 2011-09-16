@@ -66,6 +66,7 @@ OTM_TextureClient::~OTM_TextureClient(void)
   //Message("end ~OTM_TextureClient(void): %lu\n", this);
 }
 
+
 int OTM_TextureClient::AddTexture( OTM_IDirect3DTexture9* pTexture)
 {
   if (pTexture->FAKE) return  (RETURN_OK); // this is a fake texture
@@ -162,12 +163,80 @@ int OTM_TextureClient::AddTexture( OTM_IDirect3DTexture9* pTexture)
     break;
   }
   }
-  MyTypeHash hash = GetHash( (unsigned char*) d3dlr.pBits, size);
+  //MyTypeHash hash = GetHash( (unsigned char*) d3dlr.pBits, size);
+  MyTypeHash hash = GetCRC32( (char*) d3dlr.pBits, size);
+/*
+  if (hash==0X1FD33669ul)
+  {
+    for (int i=0; i<size; i++)
+    {
+      DWORD hash2 = QuickChecksum( (DWORD*) d3dlr.pBits, i);
+      Message("Hash: %#lX  %#lX\n", hash, hash2);
+    }
+  }
+*/
+/*
+  DWORD hash2 = QuickChecksum( (char*) d3dlr.pBits, size);
+
+
+  switch(desc.Format)
+  {
+  case D3DFMT_A8R8G8B8:
+  {
+  size =  4*desc.Width*desc.Height;
+  break;
+  }
+  case D3DFMT_FORCE_DWORD:
+  {
+    size =  1*desc.Width*desc.Height;
+  break;
+  }
+  default:
+  {
+    size =  (desc.Width*desc.Height)/2;
+  break;
+  }
+  }
+
+  DWORD hash3 = QuickChecksum( (char*) d3dlr.pBits, size);
+  DWORD hash4 = QuickChecksum( (char*) d3dlr.pBits, (desc.Width*desc.Height)/2);
+  DWORD hash5 = QuickChecksum( (char*) d3dlr.pBits, (desc.Width*desc.Height)/4);
+  DWORD hash6 = 0u;
+
 
   if (pTexture->UnlockRect(0)!=D3D_OK)
   {
     return (RETURN_UnlockRect_FAILED);
   }
+
+  LPD3DXBUFFER buffer;
+  if (D3D_OK==D3DXSaveTextureToFileInMemory( &buffer, D3DXIFF_DDS, pTexture->m_D3Dtex, NULL))
+  {
+    DWORD* data = (DWORD*) buffer->GetBufferPointer();
+    unsigned long int size = buffer->GetBufferSize();
+    hash6 = QuickChecksum( (char*) data, size);
+    buffer->Release();
+  }
+
+  Message("Hash: %#lX  %#lX  %#lX  %#lX  %#lX  %#lX\n", hash, hash2, hash3, hash4, hash5, hash6);
+
+  DWORD XOR=0u;
+  switch (hash)
+  {
+  case 0X1FD33669ul: XOR = 0xDC00FEB1ul;  break;
+  case 0X3B560BBFul: XOR = 0x2D1E4DBDul;  break;
+  case 0X5D76CA77ul: XOR = 0xC1E8589Dul;  break;
+  case 0X72E92068ul: XOR = 0x1A92B5F2ul;  break;
+  case 0X9066971Eul: XOR = 0x3549742Dul;  break;
+  case 0XB10C55B0ul: XOR = 0xF037EB98ul;  break;
+  }
+  if (XOR)
+  {
+    Message("XOR: %#lX  %#lX  %#lX  %#lX  %#lX  %#lX\n", hash, hash2^XOR, hash3^XOR, hash4^XOR, hash5^XOR, hash6^XOR);
+  }
+
+*/
+
   pTexture->Hash = hash; // note: this will only be done for original textures
   if (BoolSaveAllTextures) SaveTexture(pTexture);
 
@@ -431,5 +500,38 @@ MyTypeHash OTM_TextureClient::GetHash(unsigned char *str, int len) // estimate t
   MyTypeHash hash = 0;
   for (int i=0; i<len; i++) hash = str[i] + (hash << 6) + (hash << 16) - hash;
   return (hash);
+}
+
+
+
+
+
+/*
+ *
+ * BIG THANKS TO RS !!
+ *
+ * who gave me his hashing algorithm (well or crc32 algorithm^^)
+ *
+The hash function is CRC32 using polynomial 0xEDB88320.
+However, the hashed data is calculated incorrectly in TexMod: it's simply BytesPerPixel * Width * Height, from the beginning of the data (that is mapped using LockRect).
+The problem is that it doesn't take the pitch into account and BytesPerPixel may be wrong for some rare formats (not sure about that).
+*/
+
+
+#define CRC32POLY 0xEDB88320u /* CRC-32 Polynom */
+#define ulCrc_in 0xffffffff
+
+unsigned int OTM_TextureClient::GetCRC32( char *pcDatabuf, unsigned int ulDatalen)
+{
+  unsigned int crc = ulCrc_in;
+  for (unsigned int idx = 0u; idx<ulDatalen; idx++)
+  {
+    unsigned int data = *pcDatabuf++;
+    for (unsigned int bit = 0u; bit<8u; bit++, data >>=1)
+    {
+      crc = (crc >> 1) ^ (((crc ^ data) & 1) ? CRC32POLY : 0);
+    }
+  }
+  return (crc);
 }
 

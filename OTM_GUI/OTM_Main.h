@@ -37,11 +37,13 @@ along with FooOpenTexMod.  If not, see <http://www.gnu.org/licenses/>.
 #define wxUSE_FILEDLG 1
 #define wxUSE_DIRDLG 1
 #define wxUSE_CHOICE 1
+#define wxUSE_FILE 1
 #endif
 
 
 #include "wx\wx.h"
 #include "wx\notebook.h"
+#include <wx/file.h>
 //#include <wx/thread.h>
 //#include "wx/checkbox.h"
 //#include <wx/msgdlg.h>

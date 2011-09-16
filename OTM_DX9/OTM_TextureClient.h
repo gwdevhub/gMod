@@ -80,7 +80,7 @@ private:
   int LookUpToMod( OTM_IDirect3DTexture9* pTexture);
   int LoadTexture( TextureFileStruct* file_in_memory, OTM_IDirect3DTexture9 **ppTexture);
   MyTypeHash GetHash(unsigned char *str, int len);
-
+  unsigned int GetCRC32(char *pcDatabuf, unsigned int ulDatalen);
 
 };
 

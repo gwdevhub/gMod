@@ -33,7 +33,6 @@ OTM_GUI/OTM_Event.cpp -text
 OTM_GUI/OTM_Event.h -text
 OTM_GUI/OTM_GUI.cpp -text
 OTM_GUI/OTM_GUI.h -text
-OTM_GUI/OTM_GUI.ico -text
 OTM_GUI/OTM_GameInfo.cpp -text
 OTM_GUI/OTM_GameInfo.h -text
 OTM_GUI/OTM_GamePage.cpp -text
@@ -47,4 +46,8 @@ OTM_GUI/OTM_Server.cpp -text
 OTM_GUI/OTM_Server.h -text
 OTM_GUI/config.gcc -text
 OTM_GUI/makefile -text
+OTM_GUI/unzip.cpp -text
+OTM_GUI/unzip.h -text
+OTM_GUI/zip.cpp -text
+OTM_GUI/zip.h -text
 /OTM_GlobalDefines.h -text

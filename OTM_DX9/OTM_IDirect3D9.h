@@ -16,6 +16,12 @@ You should have received a copy of the GNU General Public License
 along with FooOpenTexMod.  If not, see <http://www.gnu.org/licenses/>.
 */
 
+/*
+ *
+ * BIG THANKS TO Michael Koch
+ * (proxydll_9.zip)
+ *
+ */
 
 
 #ifndef OTM_IDirect3D9_H_

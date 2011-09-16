@@ -91,16 +91,16 @@ OTM_Frame::OTM_Frame(const wxString& title, const wxPoint& pos, const wxSize& si
   MainSizer = new wxBoxSizer(wxVERTICAL);
 
   Notebook = new wxNotebook( this, wxID_ANY);
-  MainSizer->Add( Notebook, 1, wxEXPAND , 0 );
+  MainSizer->Add( (wxWindow*) Notebook, 1, wxEXPAND , 0 );
 
   ButtonSizer = new wxBoxSizer(wxHORIZONTAL);
 
   OpenButton = new wxButton( this, ID_Button_Open, Language.ButtonOpen, wxDefaultPosition, wxSize(100,24));
   DirectoryButton = new wxButton( this, ID_Button_Path, Language.ButtonDirectory, wxDefaultPosition, wxSize(100,24));
   UpdateButton = new wxButton( this, ID_Button_Update, Language.ButtonUpdate, wxDefaultPosition, wxSize(100,24));
-  ButtonSizer->Add( OpenButton, 1, wxEXPAND, 0);
-  ButtonSizer->Add( DirectoryButton, 1, wxEXPAND, 0);
-  ButtonSizer->Add( UpdateButton, 1, wxEXPAND, 0);
+  ButtonSizer->Add( (wxWindow*) OpenButton, 1, wxEXPAND, 0);
+  ButtonSizer->Add( (wxWindow*) DirectoryButton, 1, wxEXPAND, 0);
+  ButtonSizer->Add( (wxWindow*) UpdateButton, 1, wxEXPAND, 0);
   MainSizer->Add( ButtonSizer, 0, wxEXPAND , 0 );
 
 
@@ -223,7 +223,7 @@ void OTM_Frame::OnButtonOpen(wxCommandEvent& WXUNUSED(event))
   OTM_GamePage *page = (OTM_GamePage*) Notebook->GetCurrentPage();
   if (page==NULL) return;
 
-  wxString file_name = wxFileSelector( Language.ChooseFile,  TexturePath, "", "dds",  "textures (*.dds)|*.dds", wxFD_OPEN | wxFD_FILE_MUST_EXIST, this);
+  wxString file_name = wxFileSelector( Language.ChooseFile,  TexturePath, "", "*.*",  "textures (*.dds)|*.dds|zip (*.zip)|*.zip|tpf (*.tpf)|*.tpf", wxFD_OPEN | wxFD_FILE_MUST_EXIST, this);
   if ( !file_name.empty() )
   {
     TexturePath =  file_name.BeforeLast( '/');

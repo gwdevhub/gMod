@@ -31,6 +31,7 @@ MINIMAL_CXXFLAGS = $(__DEBUGINFO) $(__OPTIMIZEFLAG_2) $(__THREADSFLAG) \
 	$(__EXCEPTIONSFLAG_6) -Wno-ctor-dtor-privacy $(CPPFLAGS) $(CXXFLAGS)
 MINIMAL_OBJECTS =  \
 	$(OBJS)\OTM_rc.o \
+	$(OBJS)\unzip.o \
 	$(OBJS)\OTM_GUI.o \
 	$(OBJS)\OTM_GameInfo.o \
 	$(OBJS)\OTM_GamePage.o \
@@ -232,11 +233,11 @@ clean:
 $(OBJS_exe)\OTM_GUI.exe: $(MINIMAL_OBJECTS) $(OBJS)\OTM_rc.o
 	$(CXX) -o $@ $(MINIMAL_OBJECTS) $(LDFLAGS) $(__DEBUGINFO) $(__THREADSFLAG) -L$(LIBDIRNAME) -Wl,--subsystem,windows -mwindows  $(__WXLIB_CORE_p)  $(__WXLIB_BASE_p)  $(__WXLIB_MONO_p) $(__LIB_TIFF_p) $(__LIB_JPEG_p) $(__LIB_PNG_p)  -lwxzlib$(WXDEBUGFLAG)  -lwxregex$(WXUNICODEFLAG)$(WXDEBUGFLAG) -lwxexpat$(WXDEBUGFLAG) $(EXTRALIBS_FOR_BASE) $(__UNICOWS_LIB_p) $(__GDIPLUS_LIB_p) -lkernel32 -luser32 -lgdi32 -lcomdlg32 -lwinspool -lwinmm -lshell32 -lcomctl32 -lole32 -loleaut32 -luuid -lrpcrt4 -ladvapi32 -lwsock32 -lodbc32
 
-#$(OBJS)\SR_rc.o: SR.rc
-#	windres --use-temp-file -i$< -o$@   --define __WXMSW__ $(__WXUNIV_DEFINE_p_1) $(__DEBUG_DEFINE_p_1) $(__EXCEPTIONS_DEFINE_p_1) $(__RTTI_DEFINE_p_1) $(__THREAD_DEFINE_p_1) $(__UNICODE_DEFINE_p_1) $(__MSLU_DEFINE_p_1) $(__GFXCTX_DEFINE_p_1) --include-dir $(SETUPHDIR) --include-dir $(WX_DIR)/include --include-dir . $(__DLLFLAG_p_1) 
-
 $(OBJS)\OTM_rc.o: OTM.rc OTM.ico
 	windres --use-temp-file -i $< -o $@
+
+$(OBJS)\unzip.o: ./unzip.cpp
+	$(CXX) -c -o $@ $(MINIMAL_CXXFLAGS)  $(CPPDEPS) $<
 
 $(OBJS)\OTM_GUI.o: ./OTM_GUI.cpp
 	$(CXX) -c -o $@ $(MINIMAL_CXXFLAGS)  $(CPPDEPS) $<

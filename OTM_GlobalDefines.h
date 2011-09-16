@@ -4,8 +4,8 @@
 //#define MyTypeHash DWORD64
 #define MyTypeHash DWORD32
 
-//define the buffer to 131072 byte, note that the array is in the stack, don't over do this
-#define BUFSIZE 1<<17
+#define BIG_BUFSIZE 1<<24
+#define SMALL_BUFSIZE 1<<10
 
 typedef struct
 {
@@ -26,6 +26,8 @@ typedef struct
 #define CONTROL_ADD_TEXTURE 1
 #define CONTROL_FORCE_RELOAD_TEXTURE 2
 #define CONTROL_REMOVE_TEXTURE 3
+#define CONTROL_FORCE_RELOAD_TEXTURE_DATA 4
+#define CONTROL_ADD_TEXTURE_DATA 5
 
 
 #define CONTROL_SAVE_ALL 10

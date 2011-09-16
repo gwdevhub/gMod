@@ -44,6 +44,7 @@ public:
 
 
   //following functions are public for testing purpose !!
+  int AddFile( char* buffer, unsigned int size,  MyTypeHash hash, bool force);
   int AddFile( wchar_t* file_name, MyTypeHash hash, bool force);
   int RemoveFile( MyTypeHash hash);
 

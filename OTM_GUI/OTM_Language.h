@@ -53,6 +53,9 @@ public:
   wxString KeyNext;
   wxArrayString Keys;
 
+
+  wxString FileNotSupported;
+
 private:
   int LoadKeys(int lang);
 };

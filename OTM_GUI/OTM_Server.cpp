@@ -38,7 +38,7 @@ void* OTM_Server::Entry(void)
   bool  fConnected = false;
   HANDLE pipe_in;
   HANDLE pipe_out;
-  char buffer[BUFSIZE];
+  char buffer[SMALL_BUFSIZE];
   wxString abort = ABORT_SERVER;
 
   while(1)
@@ -53,8 +53,8 @@ void* OTM_Server::Entry(void)
        PIPE_TYPE_BYTE |       // byte type pipe
        PIPE_WAIT,                // blocking mode
        PIPE_UNLIMITED_INSTANCES, // max. instances
-       BUFSIZE,                  // output buffer size
-       BUFSIZE,                  // input buffer size
+       SMALL_BUFSIZE,                  // output buffer size
+       SMALL_BUFSIZE,                  // input buffer size
        0,                        // client time-out
        NULL);                    // default security attribute
     if (pipe_in == INVALID_HANDLE_VALUE) return NULL;
@@ -65,8 +65,8 @@ void* OTM_Server::Entry(void)
        PIPE_TYPE_BYTE |       // byte type pipe
        PIPE_WAIT,                // blocking mode
        PIPE_UNLIMITED_INSTANCES, // max. instances
-       BUFSIZE,                  // output buffer size
-       BUFSIZE,                  // input buffer size
+       BIG_BUFSIZE,                  // output buffer size
+       BIG_BUFSIZE,                  // input buffer size
        0,                        // client time-out
        NULL);                    // default security attribute
     if (pipe_out == INVALID_HANDLE_VALUE) return NULL;
@@ -87,7 +87,7 @@ void* OTM_Server::Entry(void)
       bool fSuccess = ReadFile(
                  pipe_in,        // handle to pipe
                  buffer,    // buffer to receive data
-                 BUFSIZE, // size of buffer
+                 SMALL_BUFSIZE, // size of buffer
                  &num, // number of bytes read
                  NULL);        // not overlapped I/O
 

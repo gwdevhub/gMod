@@ -17,6 +17,13 @@ along with FooOpenTexMod.  If not, see <http://www.gnu.org/licenses/>.
 */
 
 
+/*
+ *
+ * BIG THANKS TO Matthew L (Azorbix)
+ * (Direct3D StarterKit v3.0)
+ *
+ */
+
 
 #ifndef OTM_IDirect3DTexture9_H
 #define OTM_IDirect3DTexture9_H
@@ -27,9 +34,6 @@ along with FooOpenTexMod.  If not, see <http://www.gnu.org/licenses/>.
 #include "OTM_Defines.h"
 
 
-
-
-//DWORD QuickChecksum(DWORD *pData, int size);
 
 interface OTM_IDirect3DTexture9 : public IDirect3DTexture9
 {

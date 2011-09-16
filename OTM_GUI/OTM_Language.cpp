@@ -47,6 +47,8 @@ int OTM_Language::LoadLanguage(int lang)
 
     CheckBoxSaveSingleTexture = L"Save single texture";
     CheckBoxSaveAllTextures = L"Save all textures";
+
+    FileNotSupported = L"This file type is not supported:\n";
   }
 
   LoadKeys(lang);

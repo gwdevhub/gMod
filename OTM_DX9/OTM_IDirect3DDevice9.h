@@ -17,6 +17,13 @@ along with FooOpenTexMod.  If not, see <http://www.gnu.org/licenses/>.
 */
 
 
+/*
+ *
+ * BIG THANKS TO Michael Koch
+ * (proxydll_9.zip)
+ *
+ */
+
 
 #ifndef OTM_IDirect3DDevice9_H_
 #define OTM_IDirect3DDevice9_H_

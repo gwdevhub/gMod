@@ -45,14 +45,14 @@ OTM_Client::~OTM_Client(void)
 
 void* OTM_Client::Entry(void)
 {
-  char buffer[BUFSIZE];
+  char buffer[SMALL_BUFSIZE];
   while (1)
   {
     unsigned long size;
     bool ret = ReadFile(
              Pipe.In,        // handle to pipe
              buffer,    // buffer to receive data
-             BUFSIZE, // size of buffer
+             SMALL_BUFSIZE, // size of buffer
              &size, // number of bytes read
              NULL);        // not overlapped I/O
 

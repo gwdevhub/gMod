@@ -125,9 +125,75 @@ int OTM_TextureServer::RemoveClient(OTM_TextureClient *client) // called from a 
   return (UnlockMutex());
 }
 
+int OTM_TextureServer::AddFile( char* buffer, unsigned int size,  MyTypeHash hash, bool force) // called from the server
+{
+  Message("OTM_TextureServer::AddFile( %lu %lu, %#lX, %d): %lu\n", buffer, size, hash, force, this);
+
+  TextureFileStruct* temp = NULL;
+
+  int num = CurrentMod.GetNumber();
+  for (int i = 0; i < num; i++) if (CurrentMod[i]->Hash == hash)
+  {
+    if (force) {temp = CurrentMod[i]; break;}
+    else return (RETURN_OK);
+  }
+  if (temp==NULL)
+  {
+    num = OldMod.GetNumber();
+    for (int i = 0; i < num; i++) if (OldMod[i]->Hash == hash)
+    {
+      temp = OldMod[i];
+      OldMod.Remove(temp);
+      CurrentMod.Add(temp);
+      if (force) break;
+      else return (RETURN_OK);
+    }
+  }
+
+  bool new_file = true;
+  if (temp!=NULL)
+  {
+    new_file = false;
+    if (temp->pData!=NULL) delete [] temp->pData;
+    temp->pData = NULL;
+  }
+  else
+  {
+    new_file = true;
+    temp = new TextureFileStruct;
+    temp->Reference = -1;
+  }
+
+  try
+  {
+    temp->pData = new char[size];
+  }
+  catch (...)
+  {
+    if (!new_file) CurrentMod.Remove( temp);
+    delete temp;
+    gl_ErrorState |= OTM_ERROR_MEMORY | OTM_ERROR_SERVER;
+    return (RETURN_NO_MEMORY);
+  }
+
+  for (unsigned int i=0; i<size; i++) temp->pData[i] = buffer[i];
+
+  temp->Checked = false;
+  temp->Size = size;
+  temp->pTexture = NULL;
+  temp->Hash = hash;
+
+  if (new_file) temp->ForceReload = false;
+  else temp->ForceReload = force;
+
+  Message("End AddFile( %lu)\n", hash);
+  if (new_file) return (CurrentMod.Add(temp));
+  else return (RETURN_OK);
+}
+
 int OTM_TextureServer::AddFile(wchar_t* file_name, MyTypeHash hash, bool force) // called from the server
 {
-  Message("AddFile( %ls, %#lX, %d): %lu\n", file_name, hash, force, this);
+  Message("OTM_TextureServer::AddFile( %ls, %#lX, %d): %lu\n", file_name, hash, force, this);
 
   TextureFileStruct* temp = NULL;
 
@@ -409,8 +475,11 @@ int OTM_TextureServer::MainLoop(void) // run as a separated thread !!
 {
   Message("MainLoop: begin\n");
   if (Pipe.In == INVALID_HANDLE_VALUE) return (RETURN_PIPE_NOT_OPENED);
-  char buffer[BUFSIZE];
-  unsigned long size;
+  char *buffer;
+  try {buffer = new char[BIG_BUFSIZE];}
+  catch (...) {return (RETURN_NO_MEMORY);}
+
+  unsigned long num;
 
   Message("MainLoop: started\n");
   while (1)
@@ -418,22 +487,22 @@ int OTM_TextureServer::MainLoop(void) // run as a separated thread !!
     Message("MainLoop: run\n");
     bool ret = ReadFile(Pipe.In, // pipe handle
         buffer, // buffer to receive reply
-        BUFSIZE, // size of buffer
-        &size, // number of bytes read
+        BIG_BUFSIZE, // size of buffer
+        &num, // number of bytes read
         NULL); // not overlapped
 
-    Message("MainLoop: read something (%lu)\n", size);
+    Message("MainLoop: read something (%lu)\n", num);
     //for (int i=0; i<size; i++) {Message("%d\n",buffer[i]);}
     if (ret || GetLastError() == ERROR_MORE_DATA)
     {
       unsigned int pos = 0;
       MsgStruct *commands;
-      wchar_t *file;
+      //wchar_t *file;
       bool update_textures = false;
-      while (pos <= size - sizeof(MsgStruct))
+      while (pos <= num - sizeof(MsgStruct))
       {
         commands = (MsgStruct*) &buffer[pos];
-        unsigned int add_length = 0u;
+        unsigned int size = 0u;
         bool force = false;
 
         switch (commands->Control)
@@ -441,26 +510,24 @@ int OTM_TextureServer::MainLoop(void) // run as a separated thread !!
         case CONTROL_FORCE_RELOAD_TEXTURE: force=true;
         case CONTROL_ADD_TEXTURE:
         {
-          int temp_pos = pos + sizeof(MsgStruct);
-          file = (wchar_t*) &buffer[temp_pos];
-          while (temp_pos < BUFSIZE && file[add_length])
-          {
-            add_length++;
-            temp_pos += sizeof(wchar_t);
-          }
-          add_length++;
-          temp_pos += sizeof(wchar_t); //to add the zero
-          Message("MainLoop: CONTROL_ADD_TEXTURE (%#lX  %u,  %u %u): %lu\n", commands->Hash, add_length, sizeof(MsgStruct), sizeof(char), this);
-
-          if (temp_pos < BUFSIZE)
-          {
-            AddFile(file, commands->Hash, force);
-            update_textures = true;
-          }
-          else add_length = 0;
+          size = commands->Value;
+          Message("MainLoop: CONTROL_ADD_TEXTURE (%#lX  %u,  %u %u): %lu\n", commands->Hash, size, sizeof(MsgStruct), sizeof(char), this);
+          if (pos + sizeof(MsgStruct) + size <= num) AddFile( (wchar_t*) &buffer[pos + sizeof(MsgStruct)], commands->Hash, force);
+          update_textures = true;
           force = false;
           break;
         }
+        case CONTROL_FORCE_RELOAD_TEXTURE_DATA: force=true;
+        case CONTROL_ADD_TEXTURE_DATA:
+        {
+          size = commands->Value;
+          Message("MainLoop: CONTROL_ADD_TEXTURE (%#lX  %u,  %u %u): %lu\n", commands->Hash, size, sizeof(MsgStruct), sizeof(char), this);
+          if (pos + sizeof(MsgStruct) + size <= num) AddFile( &buffer[pos + sizeof(MsgStruct)], size, commands->Hash, force);
+          update_textures = true;
+          force = false;
+          break;
+        }
+
         case CONTROL_REMOVE_TEXTURE:
         {
           Message("MainLoop: CONTROL_REMOVE_TEXTURE (%#lX): %lu\n", commands->Hash, this);
@@ -485,19 +552,8 @@ int OTM_TextureServer::MainLoop(void) // run as a separated thread !!
         }
         case CONTROL_SET_DIR:
         {
-          int temp_pos = pos + sizeof(MsgStruct);
-          file = (wchar_t*) &buffer[temp_pos];
-          while (temp_pos < BUFSIZE && file[add_length])
-          {
-            add_length++;
-            temp_pos += sizeof(wchar_t);
-          }
-          add_length++;
-          temp_pos += sizeof(wchar_t); //to add the zero
-          Message("MainLoop: CONTROL_SET_DIR (%u): %lu\n", add_length, this);
-
-          if (temp_pos < BUFSIZE) SetSaveDirectory(file);
-          else add_length = 0;
+          size = commands->Value;
+          if (pos + sizeof(MsgStruct) +size <= num) SetSaveDirectory( (wchar_t*) &buffer[pos + sizeof(MsgStruct)]);
           break;
         }
 
@@ -525,17 +581,20 @@ int OTM_TextureServer::MainLoop(void) // run as a separated thread !!
           break;
         }
         }
-        pos += sizeof(MsgStruct) + add_length * sizeof(wchar_t);
+        pos += sizeof(MsgStruct) + size;
       }
       if (update_textures) PropagateUpdate();
     }
     else
     {
       Message("MainLoop: error in ReadFile()\n");
+      delete [] buffer;
       ClosePipe();
       return (RETURN_OK);
     }
   }
+
+  delete [] buffer;
   return (RETURN_OK);
 }
 
