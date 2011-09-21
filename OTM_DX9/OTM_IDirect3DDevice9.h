@@ -164,19 +164,15 @@ public:
 	OTM_IDirect3DTexture9* GetLastCreatedTexture(void) {return (LastCreatedTexture);}
   int SetLastCreatedTexture(OTM_IDirect3DTexture9* pTexture) {LastCreatedTexture=pTexture; return (RETURN_OK);}
   OTM_IDirect3DTexture9* GetSingleTexture(void) {return (SingleTexture);}
-
-  int SaveSingleTexture(bool val);
+/*
   int SetKeyBack( int key) {if (key>0) KeyBack=key; return (0);}
   int SetKeySave( int key) {if (key>0) KeySave=key; return (0);}
   int SetKeyNext( int key) {if (key>0) KeyNext=key; return (0);}
-
+*/
  private:
-	
-  bool BoolSaveSingleTexture;
+  int CreateSingleTexture(void);
+
   int CounterSaveSingleTexture;
-  int KeyBack;
-  int KeySave;
-  int KeyNext;
   OTM_IDirect3DTexture9* SingleTexture;
 
 	IDirect3DDevice9* m_pIDirect3DDevice9;

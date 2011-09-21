@@ -30,29 +30,45 @@ int OTM_Language::LoadLanguage(int lang)
 {
   if (lang==0) //English
   {
-    MenuPref = L"Preferences";
-    MenuQuit = L"Quit";
+    //MenuPref = L"Preferences";
+    //MenuQuit = L"Quit";
     MenuHelp  = L"Help";
     MenuAbout  = L"About";
+    MenuAddGame = L"Add game";
+    MenuDeleteGame = L"Delete Game";
 
-    MainMenuStart = L"Start";
+    //MainMenuStart = L"Start";
+    MainMenuGame = L"Game";
     MainMenuHelp = L"Help";
 
     ButtonOpen = L"Open texture";
     ButtonDirectory = L"Set save directory";
     ButtonUpdate = L"Update";
+    ButtonSave = L"Save as default";
 
     ChooseFile = L"Choose a texture file";
     ChooseDir = L"Choose a directory";
 
     CheckBoxSaveSingleTexture = L"Save single texture";
     CheckBoxSaveAllTextures = L"Save all textures";
+    TextCtrlSavePath = L"Save path: ";
 
+    DeleteGame = L"Select the games to be deleted.";
+
+    GameAlreadyAdded = L"Game has been already added.";
     FileNotSupported = L"This file type is not supported:\n";
+    ExitGameAnyway = L"Closing OpenTexMod while a game is running might lead to a crash of the game.\nExit anyway?";
   }
 
   LoadKeys(lang);
   return 0;
+}
+#define QUOTES(x) #x
+
+#define AddKey( name, key ) \
+{ \
+  KeyStrings.Add( name ); \
+  KeyValues.Add( key ); \
 }
 
 int OTM_Language::LoadKeys(int lang)
@@ -64,9 +80,8 @@ int OTM_Language::LoadKeys(int lang)
     KeyNext = L"Next";
   }
 
-  Keys.Empty();
-  Keys.Add(L"Default");
-  return 0;
+  KeyStrings.Empty();
+  KeyValues.Empty();
 /*
 
 #define VK_LBUTTON        0x01
@@ -82,7 +97,21 @@ int OTM_Language::LoadKeys(int lang)
 
 // * 0x07 : unassigned
 
-
+ */
+  AddKey( "VK_BACK", VK_BACK );
+  AddKey( "VK_TAB", VK_TAB );
+  AddKey( "VK_CLEAR", VK_CLEAR );
+  AddKey( "VK_RETURN", VK_RETURN );
+  AddKey( "VK_SHIFT", VK_SHIFT );
+  AddKey( "VK_CONTROL", VK_CONTROL );
+  AddKey( "VK_MENU", VK_MENU );
+  AddKey( "VK_PAUSE", VK_PAUSE );
+  AddKey( "VK_CAPITAL", VK_CAPITAL );
+  //AddKey(  );
+  //AddKey(  );
+  //AddKey(  );
+  //AddKey(  );
+  /*
 #define VK_BACK           0x08
 #define VK_TAB            0x09
 
@@ -107,13 +136,35 @@ int OTM_Language::LoadKeys(int lang)
 #define VK_HANJA          0x19
 #define VK_KANJI          0x19
 
+*/
+
+  AddKey( "VK_ESCAPE", VK_ESCAPE );
+/*
 #define VK_ESCAPE         0x1B
 
 #define VK_CONVERT        0x1C
 #define VK_NONCONVERT     0x1D
 #define VK_ACCEPT         0x1E
 #define VK_MODECHANGE     0x1F
+*/
 
+  AddKey( "VK_SPACE", VK_SPACE );
+  AddKey( "VK_PRIOR", VK_PRIOR );
+  AddKey( "VK_NEXT", VK_NEXT );
+  AddKey( "VK_END", VK_END );
+  AddKey( "VK_HOME", VK_HOME );
+  AddKey( "VK_LEFT", VK_LEFT );
+  AddKey( "VK_UP", VK_UP );
+  AddKey( "VK_RIGHT", VK_RIGHT );
+  AddKey( "VK_DOWN", VK_DOWN );
+  AddKey( "VK_SELECT", VK_SELECT );
+  AddKey( "VK_PRINT", VK_PRINT );
+  AddKey( "VK_EXECUTE", VK_EXECUTE );
+  AddKey( "VK_SNAPSHOT", VK_SNAPSHOT );
+  AddKey( "VK_INSERT", VK_INSERT );
+  AddKey( "VK_DELETE", VK_DELETE );
+  AddKey( "VK_HELP", VK_HELP );
+/*
 #define VK_SPACE          0x20
 #define VK_PRIOR          0x21
 #define VK_NEXT           0x22
@@ -135,7 +186,48 @@ int OTM_Language::LoadKeys(int lang)
 // * VK_0 - VK_9 are the same as ASCII '0' - '9' (0x30 - 0x39)
 // * 0x40 : unassigned
 // * VK_A - VK_Z are the same as ASCII 'A' - 'Z' (0x41 - 0x5A)
+*/
+  int count  = 0x30;
+  AddKey( "0", count++);
+  AddKey( "1", count++);
+  AddKey( "2", count++);
+  AddKey( "3", count++);
+  AddKey( "4", count++);
+  AddKey( "5", count++);
+  AddKey( "6", count++);
+  AddKey( "7", count++);
+  AddKey( "8", count++);
+  AddKey( "9", count++);
 
+  count = 0x41;
+  AddKey( "a", count++);
+  AddKey( "b", count++);
+  AddKey( "c", count++);
+  AddKey( "d", count++);
+  AddKey( "e", count++);
+  AddKey( "f", count++);
+  AddKey( "g", count++);
+  AddKey( "h", count++);
+  AddKey( "i", count++);
+  AddKey( "j", count++);
+  AddKey( "k", count++);
+  AddKey( "l", count++);
+  AddKey( "m", count++);
+  AddKey( "n", count++);
+  AddKey( "o", count++);
+  AddKey( "p", count++);
+  AddKey( "q", count++);
+  AddKey( "r", count++);
+  AddKey( "s", count++);
+  AddKey( "t", count++);
+  AddKey( "u", count++);
+  AddKey( "v", count++);
+  AddKey( "w", count++);
+  AddKey( "x", count++);
+  AddKey( "y", count++);
+  AddKey( "z", count++);
+
+/*
 
 #define VK_LWIN           0x5B
 #define VK_RWIN           0x5C
@@ -143,7 +235,40 @@ int OTM_Language::LoadKeys(int lang)
 
 
 // 0x5E : reserved
+*/
 
+
+  AddKey( "VK_SLEEP", VK_SLEEP );
+  AddKey( "VK_NUMPAD0", VK_NUMPAD0 );
+  AddKey( "VK_NUMPAD1", VK_NUMPAD1 );
+  AddKey( "VK_NUMPAD2", VK_NUMPAD2 );
+  AddKey( "VK_NUMPAD3", VK_NUMPAD3 );
+  AddKey( "VK_NUMPAD4", VK_NUMPAD4 );
+  AddKey( "VK_NUMPAD5", VK_NUMPAD5 );
+  AddKey( "VK_NUMPAD6", VK_NUMPAD6 );
+  AddKey( "VK_NUMPAD7", VK_NUMPAD7 );
+  AddKey( "VK_NUMPAD8", VK_NUMPAD8 );
+  AddKey( "VK_NUMPAD9", VK_NUMPAD9 );
+  AddKey( "VK_MULTIPLY", VK_MULTIPLY );
+  AddKey( "VK_ADD", VK_ADD );
+  AddKey( "VK_SEPARATOR", VK_SEPARATOR );
+  AddKey( "VK_SUBTRACT", VK_SUBTRACT );
+  AddKey( "VK_DECIMAL", VK_DECIMAL );
+  AddKey( "VK_DIVIDE", VK_DIVIDE );
+  AddKey( "VK_F1", VK_F1 );
+  AddKey( "VK_F2", VK_F2 );
+  AddKey( "VK_F3", VK_F3 );
+  AddKey( "VK_F4", VK_F4 );
+  AddKey( "VK_F5", VK_F5 );
+  AddKey( "VK_F6", VK_F6 );
+  AddKey( "VK_F7", VK_F7 );
+  AddKey( "VK_F8", VK_F8 );
+  AddKey( "VK_F9", VK_F9 );
+  AddKey( "VK_F10", VK_F10 );
+  AddKey( "VK_F12", VK_F12 );
+  AddKey( "VK_F12", VK_F12 );
+
+  /*
 
 #define VK_SLEEP          0x5F
 
@@ -190,7 +315,11 @@ int OTM_Language::LoadKeys(int lang)
 
 
 // 0x88 - 0x8F : unassigned
+*/
 
+  AddKey( "VK_NUMLOCK", VK_NUMLOCK );
+  AddKey( "VK_SCROLL", VK_SCROLL );
+/*
 
 #define VK_NUMLOCK        0x90
 #define VK_SCROLL         0x91
@@ -328,5 +457,6 @@ int OTM_Language::LoadKeys(int lang)
 
 
  */
+  return 0;
 }
 

@@ -21,12 +21,14 @@ along with FooOpenTexMod.  If not, see <http://www.gnu.org/licenses/>.
 #include "OTM_Main.h"
 
 
-int OTM_IDirect3DDevice9::SaveSingleTexture(bool val)
+
+int OTM_IDirect3DDevice9::CreateSingleTexture(void)
 {
-  if (val==BoolSaveSingleTexture) return (RETURN_OK);
-  if (val && SingleTexture==NULL) //Create green texture
+  if (SingleTexture==NULL) //Create green texture
   {
     if( D3D_OK != CreateTexture(8, 8, 1, 0, D3DFMT_A4R4G4B4, D3DPOOL_MANAGED, (IDirect3DTexture9**) &SingleTexture, NULL)) return (RETURN_TEXTURE_NOT_LOADED);
+    LastCreatedTexture = NULL;
+    SingleTexture->FAKE = true;
 
     DWORD colour32 = D3DCOLOR_ARGB(255,0,255,0); //green
     WORD colour16 = ((WORD)((colour32>>28)&0xF)<<12)
@@ -48,12 +50,7 @@ int OTM_IDirect3DDevice9::SaveSingleTexture(bool val)
     for (int xy=0; xy < 8*8; xy++) *(pDst16++) = colour16;
     pD3Dtex->UnlockRect(0);
   }
-  else if (!val && SingleTexture!=NULL)
-  {
-    UnswitchTextures(SingleTexture);
-  }
 
-  BoolSaveSingleTexture = val;
   return (RETURN_OK);
 }
 
@@ -65,10 +62,6 @@ OTM_IDirect3DDevice9::OTM_IDirect3DDevice9(IDirect3DDevice9* pOriginal, OTM_Text
   LastCreatedTexture = NULL;
 	m_pIDirect3DDevice9 = pOriginal; // store the pointer to original object
 
-  KeyBack = 0;
-  KeySave = 0;
-  KeyNext = 0;
-  BoolSaveSingleTexture = false;
   CounterSaveSingleTexture = 0;
   SingleTexture = NULL;
   //Message("end OTM_IDirect3DDevice9( %lu, %lu): %lu\n", pOriginal, server, this);
@@ -111,9 +104,9 @@ ULONG OTM_IDirect3DDevice9::Release(void)
 	
 	// Calling original function now
 	ULONG count = m_pIDirect3DDevice9->Release();
-  Message("%d = Release(): %lu\n", count, this);
+  Message("%lu = IDirect3DDevice9::Release(): %lu\n", count, this);
 		
-	if (count==0)
+	if (count==0u)
 	{
 	  // now, the Original Object has deleted itself, so do we here
 	  if (OTM_Client!=NULL)
@@ -356,47 +349,39 @@ HRESULT OTM_IDirect3DDevice9::BeginScene(void)
       OTM_Client->AddTexture( LastCreatedTexture);
       LastCreatedTexture = NULL;
     }
-  }
-  if (BoolSaveSingleTexture && KeyBack && KeySave && KeyNext)
-  {
-    if (GetAsyncKeyState( KeyBack ) &1 )
+    if (OTM_Client->BoolSaveSingleTexture)
     {
-      UnswitchTextures( SingleTexture);
-      if (--CounterSaveSingleTexture<0) CounterSaveSingleTexture = OTM_Client->OriginalTextures.GetNumber() - 1;
-      if (CounterSaveSingleTexture >= 0) SwitchTextures( SingleTexture,  OTM_Client->OriginalTextures[CounterSaveSingleTexture]);
-    }
-    if (GetAsyncKeyState( KeySave ) &1 )
-    {
-      SingleTexture->Hash = SingleTexture->CrossRef_D3Dtex->Hash;
-      OTM_Client->SaveTexture( SingleTexture);
-      SingleTexture->Hash = 0u;
-    }
-    if (GetAsyncKeyState( KeyNext ) &1 )
-    {
-      UnswitchTextures( SingleTexture);
-      if (++CounterSaveSingleTexture>=OTM_Client->OriginalTextures.GetNumber()) CounterSaveSingleTexture = 0;
-      if (CounterSaveSingleTexture < OTM_Client->OriginalTextures.GetNumber()) SwitchTextures( SingleTexture,  OTM_Client->OriginalTextures[CounterSaveSingleTexture]);
-    }
-  }
+      if (SingleTexture==NULL) CreateSingleTexture();
 
-  /*
-  if (( gl_ErrorState & (OTM_ERROR_FATAL | OTM_ERROR_MUTEX) )) return(m_pIDirect3DDevice9->BeginScene()); //senseless to wait
-  if (LastCreatedTexture!=NULL)
-  {
-    gl_pTextureHandler->AddOriginalTexture( LastCreatedTexture);
-    LastCreatedTexture = NULL;
+      if (SingleTexture!=NULL)
+      {
+        if (OTM_Client->KeyBack>0 && (GetAsyncKeyState( OTM_Client->KeyBack ) &1) )
+        {
+          UnswitchTextures( SingleTexture);
+          if (--CounterSaveSingleTexture<0) CounterSaveSingleTexture = OTM_Client->OriginalTextures.GetNumber() - 1;
+          if (CounterSaveSingleTexture >= 0) SwitchTextures( SingleTexture,  OTM_Client->OriginalTextures[CounterSaveSingleTexture]);
+        }
+        if (OTM_Client->KeySave>0 && (GetAsyncKeyState( OTM_Client->KeySave ) &1) )
+        {
+          SingleTexture->Hash = SingleTexture->CrossRef_D3Dtex->Hash;
+          OTM_Client->SaveTexture( SingleTexture);
+          SingleTexture->Hash = 0u;
+        }
+        if (OTM_Client->KeyNext>0 && (GetAsyncKeyState( OTM_Client->KeyNext ) &1) )
+        {
+          UnswitchTextures( SingleTexture);
+          if (++CounterSaveSingleTexture>=OTM_Client->OriginalTextures.GetNumber()) CounterSaveSingleTexture = 0;
+          if (CounterSaveSingleTexture < OTM_Client->OriginalTextures.GetNumber()) SwitchTextures( SingleTexture,  OTM_Client->OriginalTextures[CounterSaveSingleTexture]);
+        }
+      }
+    }
   }
-  if (WAIT_OBJECT_0!=WaitForSingleObject( gl_MutexTexture, 100)) gl_ErrorState |= OTM_ERROR_FATAL; //waiting 100ms, to wait infinite pass INFINITE
-  */
   return(m_pIDirect3DDevice9->BeginScene());
 }
 
 HRESULT OTM_IDirect3DDevice9::EndScene(void)
 {
   //Message("EndScene(): %lu\n", this);
-  /*
-  ReleaseMutex(gl_MutexTexture);
-  */
   return(m_pIDirect3DDevice9->EndScene());
 }
 

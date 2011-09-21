@@ -33,28 +33,37 @@ public:
   wxString MenuQuit;
   wxString MenuHelp;
   wxString MenuAbout;
+  wxString MenuAddGame;
+  wxString MenuDeleteGame;
 
   wxString MainMenuStart;
+  wxString MainMenuGame;
   wxString MainMenuHelp;
 
   wxString ButtonOpen;
   wxString ButtonDirectory;
   wxString ButtonUpdate;
+  wxString ButtonSave;
 
   wxString ChooseFile;
   wxString ChooseDir;
 
   wxString CheckBoxSaveSingleTexture;
   wxString CheckBoxSaveAllTextures;
+  wxString TextCtrlSavePath;
+
+  wxString DeleteGame;
+
+  wxString GameAlreadyAdded;
+  wxString FileNotSupported;
+  wxString ExitGameAnyway;
 
 
   wxString KeyBack;
   wxString KeySave;
   wxString KeyNext;
-  wxArrayString Keys;
-
-
-  wxString FileNotSupported;
+  wxArrayString KeyStrings;
+  wxArrayInt KeyValues;
 
 private:
   int LoadKeys(int lang);

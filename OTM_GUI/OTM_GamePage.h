@@ -22,43 +22,68 @@ along with FooOpenTexMod.  If not, see <http://www.gnu.org/licenses/>.
 #define OTM_GAMEPAGE_H_
 #include "OTM_Main.h"
 
-#include "unzip.h"
 
 // this page is opened if a game is started.
 class OTM_GamePage : public wxPanel
 {
 public:
-  OTM_GamePage( wxNotebook *parent, OTM_GameInfo *game, PipeStruct &pipe, OTM_Language &lang);
+  OTM_GamePage( wxNotebook *parent, const wxString &name, PipeStruct &pipe, OTM_Language &lang);
   virtual ~OTM_GamePage(void);
 
   void AddTexture( const wxString &file_name);
 
-  void SetPath( const wxString &file_name);
   int UpdateGame(void);
+
+  int SaveToFile() {return SaveToFile(Game.Name);}
+  int SaveToFile( const wxString &file_name);
+  //int LoadFromFile( const wxString &file_name) {return Game->LoadFromFile( file_name);}
+
+
+  int SetOpenPath(const wxString &path) {return Game.SetOpenPath(path);}
+  wxString GetOpenPath(void) {return Game.GetOpenPath();}
+
+  int SetSavePath(const wxString &path);
+  wxString GetSavePath(void) {return Game.GetSavePath();}
+
+
+  void OnButtonUp(wxCommandEvent& WXUNUSED(event));
+  void OnButtonDown(wxCommandEvent& WXUNUSED(event));
+  void OnButtonDelete(wxCommandEvent& WXUNUSED(event));
 
 private:
 
-
-  int AddFile( AddTextureClass *tex, wxString file, bool add, bool force);
-  int AddZip( AddTextureClass *tex, wxString file, bool add, bool force, bool tpf);
-  int AddContent( char* buffer, unsigned int len, const char* pw, AddTextureClass *tex, bool add, bool force);
-  int RemoveContent( char* buffer, unsigned int len, const char* pw, AddTextureClass *tex, bool add, bool force);
-
-
-
+  wxBoxSizer *SizerKeys[2];
+  wxTextCtrl *TextKeyBack;
+  wxTextCtrl *TextKeySave;
+  wxTextCtrl *TextKeyNext;
   wxChoice *ChoiceKeyBack;
   wxChoice *ChoiceKeySave;
   wxChoice *ChoiceKeyNext;
 
   wxBoxSizer *MainSizer;
+  wxCheckBox *SaveAllTextures;
+  wxCheckBox *SaveSingleTexture;
+  wxTextCtrl *SavePath;
+
+  wxBoxSizer **CheckBoxHSizers;
+  wxBoxSizer *CheckBoxVSizer;
+  wxButton **CheckButtonUp;
+  wxButton **CheckButtonDown;
+  wxButton **CheckButtonDelete;
+
   wxCheckBox **CheckBoxes;
   int NumberOfEntry;
   int MaxNumberOfEntry;
+
   OTM_Language &Language;
 
-  OTM_GameInfo *Game;
+  OTM_GameInfo Game;
+  OTM_GameInfo GameOld;
 
   OTM_Sender Sender;
+
+
+  //DECLARE_EVENT_TABLE();
 };
 
 #endif /* OTM_GAMEPAGE_H_ */

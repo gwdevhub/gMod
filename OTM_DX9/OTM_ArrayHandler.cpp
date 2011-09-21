@@ -215,6 +215,7 @@ int OTM_TextureHandler::Remove(OTM_IDirect3DTexture9* pTexture) //will be called
   return (RETURN_OK);
 }
 
+/*
 int OTM_TextureHandler::RemoveAll(void) //only for deleting all fake textures
 {
   Message("OTM_TextureHandler::RemoveAll() %d: %lu\n", Number, this);
@@ -222,3 +223,4 @@ int OTM_TextureHandler::RemoveAll(void) //only for deleting all fake textures
   Number=0;
   return (RETURN_OK);
 }
+*/

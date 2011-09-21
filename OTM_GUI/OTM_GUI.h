@@ -40,15 +40,20 @@ public:
   void OnButtonOpen(wxCommandEvent& WXUNUSED(event));
   void OnButtonPath(wxCommandEvent& WXUNUSED(event));
   void OnButtonUpdate(wxCommandEvent& WXUNUSED(event));
+  void OnButtonSave(wxCommandEvent& WXUNUSED(event));
 
 
-  void OnMenuPref(wxCommandEvent& WXUNUSED(event));
-  void OnMenuQuit(wxCommandEvent& WXUNUSED(event));
+  //void OnMenuPref(wxCommandEvent& WXUNUSED(event));
+  //void OnMenuQuit(wxCommandEvent& WXUNUSED(event));
   void OnMenuHelp(wxCommandEvent& WXUNUSED(event));
   void OnMenuAbout(wxCommandEvent& WXUNUSED(event));
+  void OnMenuAddGame(wxCommandEvent& WXUNUSED(event));
+  void OnMenuDeleteGame(wxCommandEvent& WXUNUSED(event));
 
 private:
   int KillServer(void);
+  int GetHookedGames( wxArrayString &array);
+  int SetHookedGames( const wxArrayString &array);
 
   OTM_Server *Server;
 
@@ -59,21 +64,20 @@ private:
   wxButton *OpenButton;
   wxButton *DirectoryButton;
   wxButton *UpdateButton;
+  wxButton *SaveButton;
 
 
   wxMenuBar *MenuBar;
-  wxMenu *MenuMain;
+  //wxMenu *MenuMain;
+  wxMenu *MenuGame;
   wxMenu *MenuHelp;
 
   wxBoxSizer *MainSizer;
   wxBoxSizer *ButtonSizer;
 
-  wxString TexturePath;
-
 
   int NumberOfGames;
   int MaxNumberOfGames;
-  OTM_GameInfo **Games;
   OTM_Client **Clients;
 
   DECLARE_EVENT_TABLE();

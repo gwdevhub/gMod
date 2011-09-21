@@ -44,17 +44,17 @@ public:
 class OTM_Sender
 {
 public:
-  OTM_Sender(PipeStruct &pipe);
+  OTM_Sender(PipeStruct &pipe, OTM_Language &lang);
   ~OTM_Sender(void);
+
+  int Send( const OTM_GameInfo &game, const OTM_GameInfo &game_old);
 
   int SendSaveAllTextures(bool val);
   int SendSaveSingleTexture(bool val);
 
   int SendTextures(unsigned int num, AddTextureClass *tex);
 
-  int SendKeyBack(int key);
-  int SendKeySave(int key);
-  int SendKeyNext(int key);
+  int SendKey(int key, int ctr);
 
   int SendPath( const wxString &path);
 
@@ -62,7 +62,13 @@ private:
 
   char *Buffer;
   int SendToGame( void* msg, unsigned long len);
+
+  int AddFile( AddTextureClass *tex, wxString file, bool add, bool force);
+  int AddZip( AddTextureClass *tex, wxString file, bool add, bool force, bool tpf);
+  int AddContent( char* buffer, unsigned int len, const char* pw, AddTextureClass *tex, bool add, bool force);
+
   PipeStruct &Pipe;
+  OTM_Language &Language;
 };
 
 

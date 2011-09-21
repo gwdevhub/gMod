@@ -20,6 +20,10 @@ typedef struct
   HANDLE Out;
 } PipeStruct;
 
+
+#define OTM_APP_DX9 L"OTM_DX9.txt"
+#define OTM_APP_DIR L"OpenTexMod"
+
 #define PIPE_OTM2Game L"\\\\.\\pipe\\OTM2Game"
 #define PIPE_Game2OTM L"\\\\.\\pipe\\Game2OTM"
 

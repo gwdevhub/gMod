@@ -151,7 +151,10 @@ bool HookThisProgramm( wchar_t *ret)
 {
   //This method should be changed. Maybe the directory should be the user application directory.
   FILE* file;
-  if (_wfopen_s( &file, L"D:\\OTM.txt", L"rt")) return (false);
+  wchar_t *app_path = _wgetenv( L"APPDATA");
+  wchar_t file_name[MAX_PATH];
+  swprintf_s( file_name, MAX_PATH, L"%ls\\%ls\\%ls", app_path, OTM_APP_DIR, OTM_APP_DX9);
+  if (_wfopen_s( &file, file_name, L"rt")) return (false);
 
   wchar_t Executable[MAX_PATH];
   wchar_t Game[MAX_PATH];

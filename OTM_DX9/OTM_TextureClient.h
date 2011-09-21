@@ -50,9 +50,9 @@ public:
   int SaveTexture(OTM_IDirect3DTexture9* pTexture);
 
 
-  int SetKeyBack( int key) {if (D3D9Device!=NULL) return (((OTM_IDirect3DDevice9*)D3D9Device)->SetKeyBack(key)); else return (RETURN_NO_IDirect3DDevice9);}
-  int SetKeySave( int key) {if (D3D9Device!=NULL) return (((OTM_IDirect3DDevice9*)D3D9Device)->SetKeySave(key)); else return (RETURN_NO_IDirect3DDevice9);}
-  int SetKeyNext( int key) {if (D3D9Device!=NULL) return (((OTM_IDirect3DDevice9*)D3D9Device)->SetKeyNext(key)); else return (RETURN_NO_IDirect3DDevice9);}
+  int SetKeyBack( int key) {if (key>0) KeyBack = key; return (RETURN_OK);}
+  int SetKeySave( int key) {if (key>0) KeySave = key; return (RETURN_OK);}
+  int SetKeyNext( int key) {if (key>0) KeyNext = key; return (RETURN_OK);}
 
   int AddUpdate(TextureFileStruct* update, int number);  //client must delete the temp array
   int MergeUpdate(void);
@@ -60,11 +60,15 @@ public:
 
   //OTM_TextureHandler FakeTextures;
   OTM_TextureHandler OriginalTextures;
+  bool BoolSaveAllTextures;
+  bool BoolSaveSingleTexture;
+  int KeyBack;
+  int KeySave;
+  int KeyNext;
 
 private:
   OTM_TextureServer* Server;
   IDirect3DDevice9* D3D9Device;
-  bool BoolSaveAllTextures;
   wchar_t SavePath[MAX_PATH];
   wchar_t GameName[MAX_PATH];
 

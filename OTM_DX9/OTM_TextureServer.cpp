@@ -71,20 +71,18 @@ int OTM_TextureServer::AddClient(OTM_TextureClient *client, TextureFileStruct** 
     gl_ErrorState |= OTM_ERROR_SERVER;
     return (ret);
   }
+
+  // the following functions must not change the original OTM_IDirect3DDevice9 object
+  // somehow on game start some OTM_IDirect3DDevice9 object are created, which must rest unchanged!!
+  // these objects are released and are not uses for rendering
   client->SetGameName(GameName);
-  /*
-  DO NOT UNCOMMENT THIS
-  some games create special devices before the rendering device is created. those device should not receive SaveSingleTexture(...)
   client->SaveAllTextures(BoolSaveAllTextures);
   client->SaveSingleTexture(BoolSaveSingleTexture);
   client->SetSaveDirectory(SavePath);
-  if (KeyBack > 0)
-    client->SetKeySave(KeyBack);
-  if (KeySave > 0)
-    client->SetKeySave(KeySave);
-  if (KeyNext > 0)
-    client->SetKeySave(KeyNext);
-*/
+  if (KeyBack > 0) client->SetKeyBack(KeyBack);
+  if (KeySave > 0) client->SetKeySave(KeySave);
+  if (KeyNext > 0) client->SetKeyNext(KeyNext);
+
 
   if (int ret = PrepareUpdate( update, number)) return (ret);
 
@@ -105,8 +103,6 @@ int OTM_TextureServer::AddClient(OTM_TextureClient *client, TextureFileStruct** 
     LenghtOfClients += 10;
   }
   Clients[NumberOfClients++] = client;
-
-  //PropagateUpdate(client);
 
   return (UnlockMutex());
 }
@@ -190,7 +186,7 @@ int OTM_TextureServer::AddFile( char* buffer, unsigned int size,  MyTypeHash has
   if (new_file) temp->ForceReload = false;
   else temp->ForceReload = force;
 
-  Message("End AddFile( %lu)\n", hash);
+  Message("End AddFile(%#lX)\n", hash);
   if (new_file) return (CurrentMod.Add(temp));
   else return (RETURN_OK);
 }
@@ -276,7 +272,7 @@ int OTM_TextureServer::AddFile(wchar_t* file_name, MyTypeHash hash, bool force) 
   if (new_file) temp->ForceReload = false;
   else temp->ForceReload = force;
 
-  Message("End AddFile( %lu)\n", hash);
+  Message("End AddFile(%#lX)\n", hash);
   if (new_file) return (CurrentMod.Add(temp));
   else return (RETURN_OK);
 }
@@ -525,7 +521,7 @@ int OTM_TextureServer::MainLoop(void) // run as a separated thread !!
         case CONTROL_ADD_TEXTURE_DATA:
         {
           size = commands->Value;
-          Message("MainLoop: CONTROL_ADD_TEXTURE (%#lX  %u,  %u %u): %lu\n", commands->Hash, size, sizeof(MsgStruct), sizeof(char), this);
+          Message("MainLoop: CONTROL_ADD_TEXTURE_DATA (%#lX  %u,  %u %u): %lu\n", commands->Hash, size, sizeof(MsgStruct), sizeof(char), this);
           if (pos + sizeof(MsgStruct) + size <= num) AddFile( &buffer[pos + sizeof(MsgStruct)], size, commands->Hash, force);
           update_textures = true;
           force = false;

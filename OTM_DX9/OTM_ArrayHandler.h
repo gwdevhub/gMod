@@ -65,7 +65,7 @@ public:
 
   int Add( OTM_IDirect3DTexture9* texture);
   int Remove( OTM_IDirect3DTexture9* texture);
-  int RemoveAll(void); //only for deleting all fake textures
+  //int RemoveAll(void); //only for deleting all fake textures
 
   int GetNumber(void) {return (Number);}
   OTM_IDirect3DTexture9 *operator [] (int i) {if (i<0||i>=Number) return (NULL); else return (Textures[i/FieldLength][i%FieldLength]);}

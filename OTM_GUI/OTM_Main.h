@@ -38,12 +38,16 @@ along with FooOpenTexMod.  If not, see <http://www.gnu.org/licenses/>.
 #define wxUSE_DIRDLG 1
 #define wxUSE_CHOICE 1
 #define wxUSE_FILE 1
+#define wxUSE_TEXTCTRL 1
+#define wxUSE_CHOICEDLG 1
 #endif
 
 
 #include "wx\wx.h"
 #include "wx\notebook.h"
 #include <wx/file.h>
+#include <wx/dir.h>
+#include <wx/tokenzr.h>
 //#include <wx/thread.h>
 //#include "wx/checkbox.h"
 //#include <wx/msgdlg.h>
@@ -51,6 +55,8 @@ along with FooOpenTexMod.  If not, see <http://www.gnu.org/licenses/>.
 //#include <wx/button.h>
 //#include  <wx/filedlg.h>
 //#include <wx/choice.h>
+//#include <wx/textctrl.h>
+//#include <wx/choicdlg.h>
 
 #include <windows.h>
 
@@ -60,17 +66,22 @@ along with FooOpenTexMod.  If not, see <http://www.gnu.org/licenses/>.
 
 class OTM_Frame;
 
+#define MAX_TEXTURES 1024
 enum
 {
   ID_Button_Open = wxID_HIGHEST,
   ID_Button_Path,
   ID_Button_Update,
+  ID_Button_Save,
   ID_Menu_Pref,
   ID_Menu_Quit,
   ID_Menu_Help,
   ID_Menu_About,
+  ID_Menu_AddGame,
+  ID_Menu_DeleteGame,
   ID_Add_Game,
-  ID_Delete_Game
+  ID_Delete_Game,
+  ID_Button_Texture, //this entry must be the last!!
 };
 
 #define ABORT_SERVER L"OTM_Abort_Server"
@@ -78,9 +89,9 @@ enum
 
 #include "OTM_Language.h"
 #include "OTM_Event.h"
-#include "OTM_Sender.h"
 #include "OTM_Client.h"
 #include "OTM_GameInfo.h"
+#include "OTM_Sender.h"
 #include "OTM_Server.h"
 #include "OTM_GamePage.h"
 #include "OTM_GUI.h"

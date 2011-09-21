@@ -31,6 +31,10 @@ OTM_TextureClient::OTM_TextureClient(OTM_TextureServer* server, IDirect3DDevice9
   Server = server;
   D3D9Device = device;
   BoolSaveAllTextures = false;
+  BoolSaveSingleTexture = false;
+  KeyBack = 0;
+  KeySave = 0;
+  KeyNext = 0;
   SavePath[0]=0;
   GameName[0]=0;
   if (Server!=NULL)
@@ -46,7 +50,6 @@ OTM_TextureClient::OTM_TextureClient(OTM_TextureServer* server, IDirect3DDevice9
 
   Update = NULL;
   NumberOfUpdate = -1;
-
   //Message("end OTM_TextureClient(void): %lu\n", this);
 }
 
@@ -70,8 +73,9 @@ OTM_TextureClient::~OTM_TextureClient(void)
 
 int OTM_TextureClient::AddTexture( OTM_IDirect3DTexture9* pTexture)
 {
+  ((OTM_IDirect3DDevice9*)D3D9Device)->SetLastCreatedTexture(NULL); //a loop would arise if a texture would be switched
   if (pTexture->FAKE) return  (RETURN_OK); // this is a fake texture
-  Message("AddTexture( %lu): %lu (%lu)\n", pTexture, this, GetCurrentThread());
+  Message("AddTexture( %lu): %lu (thread: %lu)\n", pTexture, this, GetCurrentThread());
 
   D3DLOCKED_RECT d3dlr;
   if (pTexture->LockRect( 0, &d3dlr, NULL, 0)!=D3D_OK)
@@ -226,16 +230,24 @@ int OTM_TextureClient::ReleaseAllFakeTexture(void)
 
 int OTM_TextureClient::SaveAllTextures(bool val)
 {
-  Message("SaveAllTextures( %d): %lu\n", val, this);
+  Message("OTM_TextureClient::SaveAllTextures( %d): %lu\n", val, this);
   BoolSaveAllTextures=val;
   return (RETURN_OK);
 }
 
 int OTM_TextureClient::SaveSingleTexture(bool val)
 {
-  Message("SaveSingleTexture( %d): %lu\n", val, this);
-  if (D3D9Device!=NULL) return (((OTM_IDirect3DDevice9*)D3D9Device)->SaveSingleTexture(val));
-  else return (RETURN_NO_IDirect3DDevice9);
+  Message("OTM_TextureClient::SaveSingleTexture( %d): %lu\n", val, this);
+  if (BoolSaveSingleTexture && !val)
+  {
+    if (D3D9Device!=NULL)
+    {
+      OTM_IDirect3DTexture9* pTexture = ((OTM_IDirect3DDevice9*)D3D9Device)->GetSingleTexture();
+      if (pTexture!=NULL) UnswitchTextures(pTexture);
+    }
+  }
+  BoolSaveSingleTexture = val;
+  return (RETURN_OK);
 }
 
 
@@ -347,8 +359,7 @@ int OTM_TextureClient::MergeUpdate(void)
     }
     if (!found)
     {
-      //FakeTextures.Remove(FileToMod[i].pTexture);
-      FileToMod[i].pTexture->Release();
+      if (FileToMod[i].pTexture!=NULL) FileToMod[i].pTexture->Release();
     }
   }
 
@@ -409,7 +420,7 @@ int OTM_TextureClient::UnlockMutex(void)
 
 int OTM_TextureClient::LookUpToMod( OTM_IDirect3DTexture9* pTexture) // should only be called for original textures
 {
-  Message("LookUpToMod( %lu): hash: %lu,  %lu\n", pTexture, pTexture->Hash, this);
+  Message("OTM_TextureClient::LookUpToMod( %lu): hash: %#lX,  %lu\n", pTexture, pTexture->Hash, this);
   if (pTexture->CrossRef_D3Dtex!=NULL) return (RETURN_OK); // to avoid broken links
   MyTypeHash hash = pTexture->Hash;
   for (int i=0; i<NumberToMod; i++)
@@ -420,7 +431,7 @@ int OTM_TextureClient::LookUpToMod( OTM_IDirect3DTexture9* pTexture) // should o
       if (int ret = LoadTexture( & (FileToMod[i]), &fake_Texture)) return (ret);
       if (SwitchTextures( fake_Texture, pTexture))
       {
-        Message("MergeUpdate(): textures not switched %#lX\n", hash);
+        Message("OTM_TextureClient::LookUpToMod(): textures not switched %#lX\n", hash);
         fake_Texture->Release();
       }
       else
