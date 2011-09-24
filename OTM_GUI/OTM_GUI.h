@@ -79,6 +79,7 @@ private:
   int NumberOfGames;
   int MaxNumberOfGames;
   OTM_Client **Clients;
+  HMODULE H_DX9_DLL;
 
   DECLARE_EVENT_TABLE();
 };

@@ -41,6 +41,12 @@ along with FooOpenTexMod.  If not, see <http://www.gnu.org/licenses/>.
 #define wxUSE_TEXTCTRL 1
 #define wxUSE_CHOICEDLG 1
 #endif
+#define wxUSE_DYNLIB_CLASS 1
+
+#define WINVER _WIN32_WINNT_WINXP
+#define _WIN32_WINNT _WIN32_WINNT_WINXP
+#define NTDDI_VERSION NTDDI_WINXP
+#define WIN32_LEAN_AND_MEAN
 
 
 #include "wx\wx.h"
@@ -48,6 +54,7 @@ along with FooOpenTexMod.  If not, see <http://www.gnu.org/licenses/>.
 #include <wx/file.h>
 #include <wx/dir.h>
 #include <wx/tokenzr.h>
+#include <wx/dynlib.h>
 //#include <wx/thread.h>
 //#include "wx/checkbox.h"
 //#include <wx/msgdlg.h>
@@ -58,7 +65,7 @@ along with FooOpenTexMod.  If not, see <http://www.gnu.org/licenses/>.
 //#include <wx/textctrl.h>
 //#include <wx/choicdlg.h>
 
-#include <windows.h>
+//#include <windows.h>
 
 #include "../OTM_GlobalDefines.h"
 #include "../OTM_Error.h"

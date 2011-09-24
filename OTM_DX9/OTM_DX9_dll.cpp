@@ -40,11 +40,15 @@ OTM_TextureServer*    gl_TextureServer = NULL;
 FILE*                 gl_File =NULL;
 HANDLE                gl_ServerThread = NULL;
 
-BOOL APIENTRY DllMain( HINSTANCE hModule, DWORD  ul_reason_for_call, LPVOID lpReserved)
+BOOL WINAPI DllMain( HINSTANCE hModule, DWORD  ul_reason_for_call, LPVOID lpReserved)
 {
   UNREFERENCED_PARAMETER(lpReserved);
-    
-
+  /*
+  Beep(300, 50);
+  Beep(600, 50);
+  Beep(900, 50);
+  Beep(1200, 50);
+*/
   switch (ul_reason_for_call)
 	{
 	case DLL_PROCESS_ATTACH:

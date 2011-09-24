@@ -45,6 +45,8 @@ void OTM_GameInfo::Init(void)
   KeyBack = -1;
   KeySave = -1;
   KeyNext = -1;
+  FontColour[0]=255;FontColour[1]=0;FontColour[2]=0;
+  TextureColour[0]=0;TextureColour[1]=255;TextureColour[2]=0;
   NumberOfChecked = 0;
   SavePath.Empty();
   OpenPath.Empty();
@@ -74,7 +76,7 @@ int OTM_GameInfo::SaveToFile( const wxString &file_name)
     file.Write( content.char_str(), content.Len());
   }
 
-  content.Printf( L"SaveAllTextures:%d\nSaveSingeTexture:%d\n", SaveAllTextures, SaveSingleTexture);
+  content.Printf( L"SaveAllTextures:%d\nSaveSingleTexture:%d\n", SaveAllTextures, SaveSingleTexture);
   file.Write( content.char_str(), content.Len());
 
   if (KeyBack>=0)
@@ -92,6 +94,11 @@ int OTM_GameInfo::SaveToFile( const wxString &file_name)
     content.Printf( L"KeyNext:%d\n", KeyNext);
     file.Write( content.char_str(), content.Len());
   }
+
+  content.Printf( L"FontColour:%d,%d,%d\n", FontColour[0], FontColour[1], FontColour[2]);
+  file.Write( content.char_str(), content.Len());
+  content.Printf( L"TextureColour:%d,%d,%d\n", TextureColour[0], TextureColour[1], TextureColour[2]);
+  file.Write( content.char_str(), content.Len());
 
   int num = Textures.GetCount();
 
@@ -206,6 +213,40 @@ int OTM_GameInfo::LoadFromFile( const wxString &file_name)
       if (temp.ToLong( &key)) KeyNext = key;
       else KeyNext = -1;
     }
+    else if  (command == L"FontColour")
+    {
+      temp = line.AfterFirst(':');
+      temp = temp.BeforeFirst(',');
+      long colour;
+      if (temp.ToLong( &colour)) FontColour[0] = colour;
+      else FontColour[0] = 255;
+      temp = line.AfterFirst(':');
+      temp = temp.AfterFirst(',');
+      temp = temp.BeforeFirst(',');
+      if (temp.ToLong( &colour)) FontColour[1] = colour;
+      else FontColour[1] = 0;
+      temp = line.AfterFirst(':');
+      temp = temp.AfterLast(',');
+      if (temp.ToLong( &colour)) FontColour[2] = colour;
+      else FontColour[2] = 0;
+    }
+    else if  (command == L"TextureColour")
+    {
+      temp = line.AfterFirst(':');
+      temp = temp.BeforeFirst(',');
+      long colour;
+      if (temp.ToLong( &colour)) TextureColour[0] = colour;
+      else TextureColour[0] = 0;
+      temp = line.AfterFirst(':');
+      temp = temp.AfterFirst(',');
+      temp = temp.BeforeFirst(',');
+      if (temp.ToLong( &colour)) TextureColour[1] = colour;
+      else TextureColour[1] = 255;
+      temp = line.AfterFirst(':');
+      temp = temp.AfterLast(',');
+      if (temp.ToLong( &colour)) TextureColour[2] = colour;
+      else TextureColour[2] = 0;
+    }
 
 
     if (NumberOfChecked>=LengthOfChecked)
@@ -290,6 +331,9 @@ OTM_GameInfo& OTM_GameInfo::operator = (const  OTM_GameInfo &rhs)
   SavePath = rhs.SavePath;
   OpenPath = rhs.OpenPath;
   Textures = rhs.Textures;
+
+  for (int i=0; i<3; i++) FontColour[i]=rhs.FontColour[i];
+  for (int i=0; i<3; i++) TextureColour[i]=rhs.TextureColour[i];
 
   return *this;
 }

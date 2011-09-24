@@ -83,6 +83,7 @@ OTM_Sender::~OTM_Sender(void)
 
 int OTM_Sender::Send( const OTM_GameInfo &game, const OTM_GameInfo &game_old)
 {
+  LastError.Empty();
   int key = game.GetKeyBack();
   if (key>=0 && key!=game_old.GetKeyBack())
   {
@@ -102,6 +103,24 @@ int OTM_Sender::Send( const OTM_GameInfo &game, const OTM_GameInfo &game_old)
     SendKey( key, CONTROL_KEY_NEXT);
   }
 
+  int colour[3], colour_old[3];
+  game.GetFontColour( colour);
+  game_old.GetFontColour( colour_old);
+  for (int i=0; i<3; i++) if (colour[i]!=colour_old[i])
+  {
+    SendColour( colour, CONTROL_FONT_COLOUR);
+    break;
+  }
+
+  game.GetTextureColour( colour);
+  game_old.GetTextureColour( colour_old);
+  for (int i=0; i<3; i++) if (colour[i]!=colour_old[i])
+  {
+    SendColour( colour, CONTROL_TEXTURE_COLOUR);
+    break;
+  }
+
+
   if ( game.GetSaveSingleTexture() != game_old.GetSaveSingleTexture() ) SendSaveSingleTexture( game.GetSaveSingleTexture());
   if ( game.GetSaveAllTextures() != game_old.GetSaveAllTextures() ) SendSaveAllTextures(game.GetSaveAllTextures());
 
@@ -111,7 +130,11 @@ int OTM_Sender::Send( const OTM_GameInfo &game, const OTM_GameInfo &game_old)
 
 
   // the rest of this function is not optimized !!
-  if (game.GetNumberOfTextures()<=0) return 0;
+  if (game.GetNumberOfTextures()<=0)
+  {
+    if (LastError.Len()>0) return 1;
+    else return 0;
+  }
 
   wxArrayString textures;
 
@@ -149,7 +172,10 @@ int OTM_Sender::Send( const OTM_GameInfo &game, const OTM_GameInfo &game_old)
       wxMessageBox(msg, "ERROR", wxOK);
     }
   }
-  return SendTextures( num, tex);
+  SendTextures( num, tex);
+
+  if (LastError.Len()>0) return 1;
+  else return 0;
 }
 
 
@@ -223,7 +249,8 @@ int OTM_Sender::SendTextures(unsigned int num, AddTextureClass *tex)
   delete [] hash;
   if (pos) if (int ret = SendToGame( Buffer, pos)) return ret;
 
-  return 0;
+  if (LastError.Len()>0) return 1;
+  else return 0;
 }
 
 
@@ -237,7 +264,18 @@ int OTM_Sender::SendKey(int key, int ctr)
   return SendToGame( (void*)  &msg, sizeof(MsgStruct));
 }
 
+#define D3DCOLOR_ARGB(a,r,g,b) ((DWORD)((((a)&0xff)<<24)|(((r)&0xff)<<16)|(((g)&0xff)<<8)|((b)&0xff)))
 
+int OTM_Sender::SendColour( int* colour, int ctr)
+{
+  MsgStruct msg;
+  msg.Control = ctr;
+  msg.Value = D3DCOLOR_ARGB( 255, colour[0], colour[1], colour[2]);
+  msg.Hash = 0u;
+
+  return SendToGame( (void*)  &msg, sizeof(MsgStruct));
+}
+#undef D3DCOLOR_ARGB
 
 
 int OTM_Sender::SendPath( const wxString &path)
@@ -263,10 +301,10 @@ int OTM_Sender::SendToGame( void *msg, unsigned long len)
 {
   if (len==0) return (RETURN_BAD_ARGUMENT);
   unsigned long num;
-  if (Pipe.Out==INVALID_HANDLE_VALUE) return -1;
+  if (Pipe.Out==INVALID_HANDLE_VALUE) {LastError << Language.Error_NoPipe; return -1;}
   bool ret = WriteFile( Pipe.Out, (const void*) msg, len, &num, NULL);
-  if (!ret || len!=num) return -1;
-  if (!FlushFileBuffers(Pipe.Out)) return -1;
+  if (!ret || len!=num) {LastError << Language.Error_WritePipe; return -1;}
+  if (!FlushFileBuffers(Pipe.Out)) {LastError << Language.Error_FlushPipe; return -1;}
   return 0;
 }
 
@@ -278,24 +316,24 @@ int OTM_Sender::AddFile( AddTextureClass *tex, wxString file, bool add, bool for
 
   wxString name = file.AfterLast( '_');
   name = name.BeforeLast( '.');
-  if (!name.ToULong( &temp_hash, 16)) return -1; // return if hash could not be extracted
+  if (!name.ToULong( &temp_hash, 16)) {LastError << Language.Error_Hash <<"\n" << file; return -1;} // return if hash could not be extracted
 
   tex->Add[0] = add;
   if (add)
   {
     wxFile dat;
-    if (!dat.Access(name, wxFile::read)) return -1;
+    if (!dat.Access(name, wxFile::read)) {LastError << Language.Error_FileOpen <<"\n" << file; return -1;}
     dat.Open(file, wxFile::read);
-    if (!dat.IsOpened())  {return -1;}
+    if (!dat.IsOpened()) {LastError << Language.Error_FileOpen <<"\n" << file; return -1;}
     unsigned len = file.Length();
 
     try {tex->Textures[0] = new char [len];}
-    catch (...) {tex->Textures[0] = NULL; return -1;}
+    catch (...) {tex->Textures[0] = NULL; LastError << Language.Error_Memory; return -1;}
 
     unsigned int result = dat.Read( (void*) tex->Textures[0], len);
     dat.Close();
 
-    if (result != len) return -1;
+    if (result != len) {LastError << Language.Error_FileRead <<"\n" << file; return -1;}
     tex->Size[0] = len;
   }
   else {tex->Size[0] = 0; tex->Textures[0] = NULL;}
@@ -309,19 +347,19 @@ int OTM_Sender::AddFile( AddTextureClass *tex, wxString file, bool add, bool for
 int OTM_Sender::AddZip( AddTextureClass *tex, wxString file, bool add, bool force, bool tpf)
 {
   wxFile dat;
-  if (!dat.Access(file, wxFile::read)) return -1;
+  if (!dat.Access(file, wxFile::read)) {LastError << Language.Error_FileOpen <<"\n" << file; return -1;}
   dat.Open(file, wxFile::read);
-  if (!dat.IsOpened())  {return -1;}
+  if (!dat.IsOpened()) {LastError << Language.Error_FileOpen <<"\n" << file; return -1;}
   unsigned len = dat.Length();
 
   unsigned char* buffer;
   try {buffer = new unsigned char [len];}
-  catch (...) {return -1;}
+  catch (...) {LastError << Language.Error_Memory; return -1;}
 
   unsigned int result = dat.Read( buffer, len);
   dat.Close();
 
-  if (result != len) return -1;
+  if (result != len) {LastError << Language.Error_FileRead<<"\n" << file; return -1;}
 
   if (tpf)
   {
@@ -379,7 +417,7 @@ int OTM_Sender::AddContent( char* buffer, unsigned int len, const char* pw, AddT
     char* def;
     int len = ze.unc_size;
     try {def=new char[len+1];}
-    catch(...) {CloseZip(hz); return -1;}
+    catch(...) {CloseZip(hz); LastError << Language.Error_Memory; return -1;}
     ZRESULT zr = UnzipItem( hz,index, def, len);
 
     if (zr!=ZR_OK && zr!=ZR_MORE) {delete [] def; CloseZip(hz); return -1;}
@@ -396,32 +434,34 @@ int OTM_Sender::AddContent( char* buffer, unsigned int len, const char* pw, AddT
     int pos = 0;
     int count = 0;
     wxString entry;
-    wxString conv;
+    wxString file;
 
     for (int i=0; i<num; i++)
     {
       entry = token.GetNextToken();
-      conv = entry.BeforeFirst( '|');
-      if (!conv.ToULong( &temp_hash, 16)) continue;
+      file = entry.BeforeFirst( '|');
+      if (!file.ToULong( &temp_hash, 16)) {LastError << Language.Error_Hash <<"\nTPF:" << file; continue;}
 
-      conv = entry.AfterFirst( '|');
-      conv.Replace( "\r", "");
+      file = entry.AfterFirst( '|');
+      file.Replace( "\r", "");
 
       if (add)
       {
-        FindZipItem( hz, conv.wc_str(), false, &index, &ze); // look for texture
+        FindZipItem( hz, file.wc_str(), false, &index, &ze); // look for texture
         if (index>=0)
         {
           try {tex->Textures[count] = new char[ze.unc_size];}
           catch(...)
           {
             tex->Textures[count] = NULL;
+            LastError << Language.Error_Memory;
             continue;
           }
 
           if (ZR_OK!=UnzipItem( hz, index, tex->Textures[count], ze.unc_size))
           {
             delete [] tex->Textures[count];
+            LastError << Language.Error_Unzip <<"\nTPF:" << file;
             tex->Textures[count] = NULL;
           }
           else
@@ -461,11 +501,11 @@ int OTM_Sender::AddContent( char* buffer, unsigned int len, const char* pw, AddT
       file = ze.name;
 
       name = file.AfterLast( '.');
-      if (name!="dds") continue; //if this is not texture file, continue
+      if (name!="dds") {LastError << Language.Error_FileformatNotSupported <<"\nZIP: " << file; continue;} //if this is not texture file, continue
 
       name = file.AfterLast( '_');
       name = name.BeforeLast( '.');
-      if (!name.ToULong( &temp_hash, 16)) continue; //if hash couldt not be extracted
+      if (!name.ToULong( &temp_hash, 16)) {LastError << Language.Error_Hash <<"\nZIP:" << file; continue;} //if hash couldt not be extracted
 
       if (add)
       {
@@ -473,6 +513,7 @@ int OTM_Sender::AddContent( char* buffer, unsigned int len, const char* pw, AddT
         catch(...)
         {
           tex->Textures[count] = NULL;
+          LastError << Language.Error_Memory;
           continue;
         }
 
@@ -480,6 +521,7 @@ int OTM_Sender::AddContent( char* buffer, unsigned int len, const char* pw, AddT
         if (ZR_OK!=rz)
         {
           delete [] tex->Textures[count];
+          LastError << Language.Error_Unzip <<"\nZIP:" << file;
           tex->Textures[count] = NULL;
         }
         else

@@ -58,12 +58,30 @@ public:
   wxString FileNotSupported;
   wxString ExitGameAnyway;
 
+  wxString Error_FktNotFound;
+  wxString Error_DLLNotFound;
+  wxString Error_Send;
+  wxString Error_SaveFile;
+  wxString Error_NoPipe;
+  wxString Error_WritePipe;
+  wxString Error_FlushPipe;
+  wxString Error_Hash;
+  wxString Error_FileOpen;
+  wxString Error_FileRead;
+  wxString Error_Memory;
+  wxString Error_FileformatNotSupported;
+  wxString Error_Unzip;
+  wxString Error_ZipEntry;
 
   wxString KeyBack;
   wxString KeySave;
   wxString KeyNext;
   wxArrayString KeyStrings;
   wxArrayInt KeyValues;
+
+
+  wxString FontColour;
+  wxString TextureColour;
 
 private:
   int LoadKeys(int lang);

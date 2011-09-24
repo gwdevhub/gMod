@@ -49,6 +49,9 @@ public:
 
   int Send( const OTM_GameInfo &game, const OTM_GameInfo &game_old);
 
+  wxString LastError;
+
+private:
   int SendSaveAllTextures(bool val);
   int SendSaveSingleTexture(bool val);
 
@@ -58,7 +61,7 @@ public:
 
   int SendPath( const wxString &path);
 
-private:
+  int SendColour( int* colour, int ctr);
 
   char *Buffer;
   int SendToGame( void* msg, unsigned long len);

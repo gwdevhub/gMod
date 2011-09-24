@@ -21,9 +21,14 @@ along with FooOpenTexMod.  If not, see <http://www.gnu.org/licenses/>.
 #ifndef OTM_MAIN_H_
 #define OTM_MAIN_H_
 
+#define WINVER _WIN32_WINNT_WINXP
+#define _WIN32_WINNT _WIN32_WINNT_WINXP
+#define _WIN32_WINDOWS _WIN32_WINNT_WINXP
+#define NTDDI_VERSION NTDDI_WINXP
+//#define NTDDI_LONGHORN NTDDI_WINXP
+#define WIN32_LEAN_AND_MEAN
 
 
-#define WIN32_LEAN_AND_MEAN		
 #include <windows.h>
 
 #include <cstdlib>

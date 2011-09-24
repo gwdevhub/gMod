@@ -64,6 +64,12 @@ public:
   int GetKeyNext() const {return KeyNext;}
   int SetKeyNext(int key) {KeyNext=key; return 0;}
 
+  int SetFontColour(const int *colour) {FontColour[0]=colour[0];FontColour[1]=colour[1];FontColour[2]=colour[2];return 0;}
+  int GetFontColour(int *colour) const {colour[0]=FontColour[0];colour[1]=FontColour[1];colour[2]=FontColour[2];return 0;}
+
+  int SetTextureColour(const int *colour) {TextureColour[0]=colour[0];TextureColour[1]=colour[1];TextureColour[2]=colour[2];return 0;}
+  int GetTextureColour(int *colour) const {colour[0]=TextureColour[0];colour[1]=TextureColour[1];colour[2]=TextureColour[2];return 0;}
+
   int SetOpenPath(const wxString &path) {OpenPath=path; return 0;}
   wxString GetOpenPath(void) const {return OpenPath;}
 
@@ -85,6 +91,9 @@ private:
   int KeyBack;
   int KeySave;
   int KeyNext;
+
+  int FontColour[3];
+  int TextureColour[3];
 
   wxString OpenPath;
   wxString SavePath;

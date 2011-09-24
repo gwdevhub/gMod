@@ -50,6 +50,8 @@ OTM_TextureClient::OTM_TextureClient(OTM_TextureServer* server, IDirect3DDevice9
 
   Update = NULL;
   NumberOfUpdate = -1;
+  FontColour = D3DCOLOR_ARGB(255,255,0,0);
+  TextureColour = D3DCOLOR_ARGB(255,0,255,0);
   //Message("end OTM_TextureClient(void): %lu\n", this);
 }
 
@@ -75,7 +77,7 @@ int OTM_TextureClient::AddTexture( OTM_IDirect3DTexture9* pTexture)
 {
   ((OTM_IDirect3DDevice9*)D3D9Device)->SetLastCreatedTexture(NULL); //a loop would arise if a texture would be switched
   if (pTexture->FAKE) return  (RETURN_OK); // this is a fake texture
-  Message("AddTexture( %lu): %lu (thread: %lu)\n", pTexture, this, GetCurrentThread());
+  Message("OTM_TextureClient::AddTexture( %lu): %lu (thread: %lu)\n", pTexture, this, GetCurrentThread());
 
   D3DLOCKED_RECT d3dlr;
   if (pTexture->LockRect( 0, &d3dlr, NULL, 0)!=D3D_OK)

@@ -55,6 +55,25 @@ OTM_GamePage::OTM_GamePage( wxNotebook *parent, const wxString &name, PipeStruct
   MainSizer->Add( SizerKeys[0], 0, wxEXPAND, 0);
   MainSizer->Add( SizerKeys[1], 0, wxEXPAND, 0);
 
+
+  FontColourSizer = new wxBoxSizer(wxHORIZONTAL);
+  FontColour[0] = new wxTextCtrl(this, wxID_ANY, Language.FontColour, wxDefaultPosition, wxDefaultSize, wxTE_READONLY);
+  FontColour[1] = new wxTextCtrl(this, wxID_ANY, "255", wxDefaultPosition, wxDefaultSize);
+  FontColour[2] = new wxTextCtrl(this, wxID_ANY, "0", wxDefaultPosition, wxDefaultSize);
+  FontColour[3] = new wxTextCtrl(this, wxID_ANY, "0", wxDefaultPosition, wxDefaultSize);
+  for (int i=0; i<4; i++) FontColourSizer->Add( (wxWindow*) FontColour[i], 1, wxEXPAND, 0);
+
+  TextureColourSizer = new wxBoxSizer(wxHORIZONTAL);
+  TextureColour[0] = new wxTextCtrl(this, wxID_ANY, Language.TextureColour, wxDefaultPosition, wxDefaultSize, wxTE_READONLY);
+  TextureColour[1] = new wxTextCtrl(this, wxID_ANY, "0", wxDefaultPosition, wxDefaultSize);
+  TextureColour[2] = new wxTextCtrl(this, wxID_ANY, "255", wxDefaultPosition, wxDefaultSize);
+  TextureColour[3] = new wxTextCtrl(this, wxID_ANY, "0", wxDefaultPosition, wxDefaultSize);
+  for (int i=0; i<4; i++) TextureColourSizer->Add( (wxWindow*) TextureColour[i], 1, wxEXPAND, 0);
+
+
+  MainSizer->Add( FontColourSizer, 0, wxEXPAND, 0);
+  MainSizer->Add( TextureColourSizer, 0, wxEXPAND, 0);
+
   SaveSingleTexture = new wxCheckBox( this, -1, Language.CheckBoxSaveSingleTexture);
   MainSizer->Add( (wxWindow*) SaveSingleTexture, 0, wxEXPAND, 0);
 
@@ -91,6 +110,12 @@ OTM_GamePage::OTM_GamePage( wxNotebook *parent, const wxString &name, PipeStruct
     if (key>=0) ChoiceKeySave->SetSelection( key);
     key = Game.GetKeyNext();
     if (key>=0) ChoiceKeyNext->SetSelection( key);
+
+    int colour[3];
+    Game.GetFontColour( colour);
+    SetColour( &FontColour[1], colour);
+    Game.GetTextureColour( colour);
+    SetColour( &TextureColour[1], colour);
 
     SaveSingleTexture->SetValue( Game.GetSaveSingleTexture());
     SaveAllTextures->SetValue( Game.GetSaveAllTextures());
@@ -213,16 +238,59 @@ int OTM_GamePage::UpdateGame(void)
   key = ChoiceKeyNext->GetSelection();
   if (key!=wxNOT_FOUND) Game.SetKeyNext(key);
 
+  int colour[3];
+  colour[0] = GetColour( FontColour[1], 255);
+  colour[1] = GetColour( FontColour[2], 0);
+  colour[2] = GetColour( FontColour[3], 0);
+  SetColour( &FontColour[1], colour);
+  Game.SetFontColour(colour);
+
+  colour[0] = GetColour( TextureColour[1], 0);
+  colour[1] = GetColour( TextureColour[2], 255);
+  colour[2] = GetColour( TextureColour[3], 0);
+  SetColour( &TextureColour[1], colour);
+  Game.SetTextureColour(colour);
+
   bool *checked = new bool[NumberOfEntry];
   for (int i=0; i<NumberOfEntry; i++) checked[i] = CheckBoxes[i]->GetValue();
   Game.SetChecked( checked, NumberOfEntry);
   delete [] checked;
 
-  if (int ret = Sender.Send( Game, GameOld)) return ret;
+  if (int ret = Sender.Send( Game, GameOld))
+  {
+    LastError = Language.Error_Send;
+    LastError << "\n" << Sender.LastError;
+    Sender.LastError.Empty();
+    return ret;
+  }
+
   GameOld = Game;
   return 0;
 }
 
+int OTM_GamePage::SetColour( wxTextCtrl** txt, int *colour)
+{
+  wxString temp;
+  for (int i=0; i<3; i++)
+  {
+    temp.Empty();
+    temp << colour[i];
+    txt[i]->SetValue( temp);
+  }
+  return 0;
+}
+int OTM_GamePage::GetColour( wxTextCtrl* txt, int def)
+{
+  wxString temp = txt->GetValue();
+  long colour;
+  if (temp.ToLong(&colour))
+  {
+    if (colour<0) colour=0;
+    else if (colour>255) colour=255;
+  }
+  else colour = def;
+  return colour;
+}
 
 int OTM_GamePage::SaveToFile( const wxString &file_name)
 {
@@ -238,12 +306,31 @@ int OTM_GamePage::SaveToFile( const wxString &file_name)
   key = ChoiceKeyNext->GetSelection();
   if (key!=wxNOT_FOUND) Game.SetKeyNext(key);
 
+  int colour[3];
+  colour[0] = GetColour( FontColour[1], 255);
+  colour[1] = GetColour( FontColour[2], 0);
+  colour[2] = GetColour( FontColour[3], 0);
+  SetColour( &FontColour[1], colour);
+  Game.SetFontColour(colour);
+
+  colour[0] = GetColour( TextureColour[1], 0);
+  colour[1] = GetColour( TextureColour[2], 255);
+  colour[2] = GetColour( TextureColour[3], 0);
+  SetColour( &TextureColour[1], colour);
+  Game.SetTextureColour(colour);
+
   bool *checked = new bool[NumberOfEntry];
   for (int i=0; i<NumberOfEntry; i++) checked[i] = CheckBoxes[i]->GetValue();
   Game.SetChecked( checked, NumberOfEntry);
   delete [] checked;
 
-  return Game.SaveToFile( file_name);
+  if (int ret = Game.SaveToFile( file_name))
+  {
+    LastError = Language.Error_SaveFile;
+    LastError <<"\n" << file_name;
+    return ret;
+  }
+  return 0;
 }
 
 

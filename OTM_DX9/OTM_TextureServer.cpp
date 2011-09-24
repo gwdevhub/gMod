@@ -31,6 +31,7 @@ OTM_TextureServer::OTM_TextureServer(wchar_t *game)
   NumberOfClients = 0;
   LenghtOfClients = 0;
   BoolSaveAllTextures = false;
+  BoolSaveSingleTexture = false;
   SavePath[0] = 0;
   int i=0;
   for (i=0; i<MAX_PATH && (game[i]) && (game[i]!='.'); i++) GameName[i] = game[i];
@@ -40,6 +41,9 @@ OTM_TextureServer::OTM_TextureServer(wchar_t *game)
   KeyBack = 0;
   KeySave = 0;
   KeyNext = 0;
+
+  FontColour = 0u;
+  TextureColour = 0u;
 
   Pipe.In = INVALID_HANDLE_VALUE;
   Pipe.Out = INVALID_HANDLE_VALUE;
@@ -82,6 +86,21 @@ int OTM_TextureServer::AddClient(OTM_TextureClient *client, TextureFileStruct** 
   if (KeyBack > 0) client->SetKeyBack(KeyBack);
   if (KeySave > 0) client->SetKeySave(KeySave);
   if (KeyNext > 0) client->SetKeyNext(KeyNext);
+
+  if (FontColour>0u)
+  {
+    DWORD r = (FontColour>>16)&0xFF;
+    DWORD g = (FontColour>>8)&0xFF;
+    DWORD b = (FontColour)&0xFF;
+    client->SetFontColour( r, g, b);
+  }
+  if (TextureColour>0u)
+  {
+    DWORD r = (TextureColour>>16)&0xFF;
+    DWORD g = (TextureColour>>8)&0xFF;
+    DWORD b = (TextureColour)&0xFF;
+    client->SetTextureColour( r, g, b);
+  }
 
 
   if (int ret = PrepareUpdate( update, number)) return (ret);
@@ -397,6 +416,46 @@ int OTM_TextureServer::SetKeyNext(int key) // called from the server
   return (UnlockMutex());
 }
 
+int OTM_TextureServer::SetFontColour(DWORD colour) // called from the server
+{
+  if (colour==0u) return (RETURN_OK);
+  if (int ret = LockMutex())
+  {
+    gl_ErrorState |= OTM_ERROR_SERVER;
+    return (ret);
+  }
+  FontColour = colour;
+  DWORD r = (FontColour>>16)&0xFF;
+  DWORD g = (FontColour>>8)&0xFF;
+  DWORD b = (FontColour)&0xFF;
+  Message("OTM_TextureServer::SetFontColour( %u %u %u): %lu\n", r ,g ,b, this);
+  for (int i = 0; i < NumberOfClients; i++)
+  {
+    Clients[i]->SetFontColour( r, g, b);
+  }
+  return (UnlockMutex());
+}
+
+int OTM_TextureServer::SetTextureColour(DWORD colour) // called from the server
+{
+  if (colour==0u) return (RETURN_OK);
+  if (int ret = LockMutex())
+  {
+    gl_ErrorState |= OTM_ERROR_SERVER;
+    return (ret);
+  }
+  TextureColour = colour;
+  DWORD r = (TextureColour>>16)&0xFF;
+  DWORD g = (TextureColour>>8)&0xFF;
+  DWORD b = (TextureColour)&0xFF;
+  Message("OTM_TextureServer::SetTextureColour( %u %u %u): %lu\n", r ,g ,b, this);
+  for (int i = 0; i < NumberOfClients; i++)
+  {
+    Clients[i]->SetTextureColour( r, g, b);
+  }
+  return (UnlockMutex());
+}
+
 int OTM_TextureServer::PropagateUpdate(OTM_TextureClient* client) // called from the server, send the update to all clients
 {
   Message("PropagateUpdate(%lu): %lu\n", client, this);
@@ -573,6 +632,18 @@ int OTM_TextureServer::MainLoop(void) // run as a separated thread !!
         {
           Message("MainLoop: CONTROL_KEY_NEXT (%#X): %lu\n", commands->Value, this);
           SetKeyNext(commands->Value);
+          break;
+        }
+        case CONTROL_FONT_COLOUR:
+        {
+          Message("MainLoop: CONTROL_FONT_COLOUR (%#X): %lu\n", commands->Value, this);
+          SetFontColour(commands->Value);
+          break;
+        }
+        case CONTROL_TEXTURE_COLOUR:
+        {
+          Message("MainLoop: CONTROL_TEXTURE_COLOUR (%#X): %lu\n", commands->Value, this);
+          SetTextureColour(commands->Value);
           break;
         }
         default:

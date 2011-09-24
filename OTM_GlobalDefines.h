@@ -42,6 +42,8 @@ typedef struct
 #define CONTROL_KEY_SAVE 21
 #define CONTROL_KEY_NEXT 22
 
+#define CONTROL_FONT_COLOUR 30
+#define CONTROL_TEXTURE_COLOUR 31
 
 
 

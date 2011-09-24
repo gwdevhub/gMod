@@ -49,7 +49,7 @@ ULONG APIENTRY OTM_IDirect3DTexture9::Release()
     if (CrossRef_D3Dtex!=NULL)
     {
       OTM_IDirect3DTexture9 *fake_texture = CrossRef_D3Dtex;
-      count = fake_texture->m_D3Dtex->Release();
+      count = fake_texture->m_D3Dtex->Release(); //release the original texture
       if (count==0)
       {
         UnswitchTextures(this);

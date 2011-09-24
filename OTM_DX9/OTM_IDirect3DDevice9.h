@@ -171,10 +171,14 @@ public:
 */
  private:
   int CreateSingleTexture(void);
-
   int CounterSaveSingleTexture;
   OTM_IDirect3DTexture9* SingleTexture;
+  D3DCOLOR TextureColour;
+  ID3DXFont *OSD_Font;
+  D3DCOLOR FontColour;
 
+
+  HRESULT Return_BeginScene;
 	IDirect3DDevice9* m_pIDirect3DDevice9;
 	OTM_IDirect3DTexture9* LastCreatedTexture;
 	OTM_TextureServer* OTM_Server;

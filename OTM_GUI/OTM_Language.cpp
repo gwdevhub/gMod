@@ -58,6 +58,25 @@ int OTM_Language::LoadLanguage(int lang)
     GameAlreadyAdded = L"Game has been already added.";
     FileNotSupported = L"This file type is not supported:\n";
     ExitGameAnyway = L"Closing OpenTexMod while a game is running might lead to a crash of the game.\nExit anyway?";
+
+    Error_DLLNotFound = L"Could not load the dll.\nThe dll injection won't work.\nThis might happen if D3DX9_43.dll is not installed on your system.\nPlease install the newest DirectX End-User Runtime Web Installer.";
+    Error_FktNotFound = L"Could not load function out of dll.\nThe dll injection won't work.";
+
+    Error_Send = L"Could not send to game.";
+    Error_SaveFile = L"Could not save to file.";
+    Error_NoPipe = L"Pipe is not opened.";
+    Error_WritePipe = L"Could not write in pipe.";
+    Error_FlushPipe = L"Could not flush pipe buffer.";
+    Error_Hash = L"Could not find hash, maybe file is not named as *_HASH.dds";
+    Error_FileOpen = L"Could not open file.";
+    Error_FileRead = L"Could not read file.";
+    Error_Memory = L"Could not allocate enough memory";
+    Error_FileformatNotSupported = L"This file format is not supported.";
+    Error_Unzip = L"Could not unzip.";
+    Error_ZipEntry = L"Could not find zip entry.";
+
+    FontColour = L"Font colour (RGB):";
+    TextureColour = L"Texture colour (RGB):";
   }
 
   LoadKeys(lang);

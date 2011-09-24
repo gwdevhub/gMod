@@ -123,11 +123,47 @@ OTM_Frame::OTM_Frame(const wxString& title, const wxPoint& pos, const wxSize& si
 
   Show( true );
 
+  /*
+  wxString dx_dll;
+  wchar_t buffer[MAX_PATH];
+  if (NULL!=_wgetcwd( buffer, MAX_PATH))
+  {
+    dx_dll = buffer;
+    dx_dll << "\\";
+  }
+  dx_dll << OTM_d3d9_dll;
+  //dx_dll = "kernel32.dll";
+  */
 
-  HMODULE hMod = LoadLibraryW(OTM_d3d9_dll);
-  typedef void (*fkt_typ)(void);
-  fkt_typ InstallHook = (fkt_typ) GetProcAddress( hMod, "InstallHook");
-  InstallHook();
+  H_DX9_DLL = LoadLibraryW(OTM_d3d9_dll);
+  if (H_DX9_DLL!=NULL)
+  {
+    typedef void (*fkt_typ)(void);
+    fkt_typ InstallHook = (fkt_typ) GetProcAddress( H_DX9_DLL, "InstallHook");
+    if (InstallHook!=NULL) InstallHook();
+    else
+    {
+      DWORD error = GetLastError();
+      wchar_t *error_msg;
+      FormatMessage( FORMAT_MESSAGE_ALLOCATE_BUFFER | FORMAT_MESSAGE_FROM_SYSTEM | FORMAT_MESSAGE_IGNORE_INSERTS,
+              NULL, error, MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT), (LPTSTR) &error_msg, 0, NULL );
+      wxString temp = Language.Error_DLLNotFound;
+      temp << "\n" << OTM_d3d9_dll;
+      temp << "\n" << error_msg << "Code: " << error;
+      wxMessageBox( temp, "ERROR", wxOK);
+    }
+  }
+  else
+  {
+    DWORD error = GetLastError();
+    wchar_t *error_msg;
+    FormatMessage( FORMAT_MESSAGE_ALLOCATE_BUFFER | FORMAT_MESSAGE_FROM_SYSTEM | FORMAT_MESSAGE_IGNORE_INSERTS,
+            NULL, error, MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT), (LPTSTR) &error_msg, 0, NULL );
+    wxString temp = Language.Error_DLLNotFound;
+    temp << "\n" << OTM_d3d9_dll;
+    temp << "\n" << error_msg << "Code: " << error;
+    wxMessageBox(temp, "ERROR", wxOK);
+  }
 }
 
 OTM_Frame::~OTM_Frame(void)
@@ -140,11 +176,13 @@ OTM_Frame::~OTM_Frame(void)
     Server = NULL;
   }
 
-  HMODULE hMod = LoadLibraryW( OTM_d3d9_dll);
-  typedef void (*fkt_typ)(void);
-  fkt_typ RemoveHook = (fkt_typ) GetProcAddress( hMod, "RemoveHook");
-  RemoveHook();
-  FreeLibrary(hMod);
+  if (H_DX9_DLL!=NULL)
+  {
+    typedef void (*fkt_typ)(void);
+    fkt_typ RemoveHook = (fkt_typ) GetProcAddress( H_DX9_DLL, "RemoveHook");
+    if (RemoveHook!=NULL) RemoveHook();
+    FreeLibrary(H_DX9_DLL);
+  }
 
   if (Clients!=NULL) delete [] Clients;
 }
@@ -215,7 +253,6 @@ void OTM_Frame::OnClose(wxCloseEvent& event)
 {
   if (event.CanVeto() && NumberOfGames>0)
   {
-
     if (wxMessageBox(Language.ExitGameAnyway, "ERROR", wxYES_NO)!=wxYES) {event.Veto(); return;}
   }
   event.Skip();
@@ -254,7 +291,11 @@ void OTM_Frame::OnButtonUpdate(wxCommandEvent& WXUNUSED(event))
   if (Notebook->GetPageCount()==0) return;
   OTM_GamePage *page = (OTM_GamePage*) Notebook->GetCurrentPage();
   if (page==NULL) return;
-  page->UpdateGame();
+  if (page->UpdateGame())
+  {
+    wxMessageBox(page->LastError, "ERROR", wxOK);
+    page->LastError.Empty();
+  }
 }
 
 void OTM_Frame::OnButtonSave(wxCommandEvent& WXUNUSED(event))
@@ -262,7 +303,11 @@ void OTM_Frame::OnButtonSave(wxCommandEvent& WXUNUSED(event))
   if (Notebook->GetPageCount()==0) return;
   OTM_GamePage *page = (OTM_GamePage*) Notebook->GetCurrentPage();
   if (page==NULL) return;
-  page->SaveToFile();
+  if (page->SaveToFile())
+  {
+    wxMessageBox(page->LastError, "ERROR", wxOK);
+    page->LastError.Empty();
+  }
 }
 
 /*

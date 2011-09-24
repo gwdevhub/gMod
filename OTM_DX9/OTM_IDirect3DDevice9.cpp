@@ -26,16 +26,13 @@ int OTM_IDirect3DDevice9::CreateSingleTexture(void)
 {
   if (SingleTexture==NULL) //Create green texture
   {
-    if( D3D_OK != CreateTexture(8, 8, 1, 0, D3DFMT_A4R4G4B4, D3DPOOL_MANAGED, (IDirect3DTexture9**) &SingleTexture, NULL)) return (RETURN_TEXTURE_NOT_LOADED);
+    if( D3D_OK != CreateTexture(8, 8, 1, 0, D3DFMT_A8R8G8B8, D3DPOOL_MANAGED, (IDirect3DTexture9**) &SingleTexture, NULL)) return (RETURN_TEXTURE_NOT_LOADED);
     LastCreatedTexture = NULL;
     SingleTexture->FAKE = true;
+    SingleTexture->Reference = -2;
 
-    DWORD colour32 = D3DCOLOR_ARGB(255,0,255,0); //green
-    WORD colour16 = ((WORD)((colour32>>28)&0xF)<<12)
-          |(WORD)(((colour32>>20)&0xF)<<8)
-          |(WORD)(((colour32>>12)&0xF)<<4)
-          |(WORD)(((colour32>>4)&0xF)<<0);
-
+    OTM_Client->TextureColour;
+    TextureColour = OTM_Client->TextureColour;
     D3DLOCKED_RECT d3dlr;
     IDirect3DTexture9 *pD3Dtex = SingleTexture->m_D3Dtex;
 
@@ -45,12 +42,11 @@ int OTM_IDirect3DDevice9::CreateSingleTexture(void)
       SingleTexture=NULL;
       return (RETURN_TEXTURE_NOT_LOADED);
     }
-    WORD *pDst16 = (WORD*)d3dlr.pBits;
+    DWORD *pDst = (DWORD*)d3dlr.pBits;
 
-    for (int xy=0; xy < 8*8; xy++) *(pDst16++) = colour16;
+    for (int xy=0; xy < 8*8; xy++) *(pDst++) = TextureColour;
     pD3Dtex->UnlockRect(0);
   }
-
   return (RETURN_OK);
 }
 
@@ -61,9 +57,12 @@ OTM_IDirect3DDevice9::OTM_IDirect3DDevice9(IDirect3DDevice9* pOriginal, OTM_Text
   OTM_Client = new OTM_TextureClient(  OTM_Server, this);
   LastCreatedTexture = NULL;
 	m_pIDirect3DDevice9 = pOriginal; // store the pointer to original object
+  TextureColour = D3DCOLOR_ARGB(255,0,255,0);
 
-  CounterSaveSingleTexture = 0;
+  CounterSaveSingleTexture = -1;
   SingleTexture = NULL;
+  OSD_Font = NULL;
+  FontColour = D3DCOLOR_ARGB(255,255,0,0);
   //Message("end OTM_IDirect3DDevice9( %lu, %lu): %lu\n", pOriginal, server, this);
 }
 
@@ -113,6 +112,7 @@ ULONG OTM_IDirect3DDevice9::Release(void)
 	  {
 	    //OTM_Client->ReleaseAllFakeTexture();
 	    if (SingleTexture!=NULL) SingleTexture->Release();
+	    if (OSD_Font!=NULL) OSD_Font->Release();
 	    delete OTM_Client;
 	    OTM_Client = NULL;
 	  }
@@ -192,7 +192,8 @@ UINT	 OTM_IDirect3DDevice9::GetNumberOfSwapChains(void)
 
 HRESULT OTM_IDirect3DDevice9::Reset(D3DPRESENT_PARAMETERS* pPresentationParameters)
 {
-	 return(m_pIDirect3DDevice9->Reset(pPresentationParameters));
+  if(OSD_Font!=NULL) {OSD_Font->Release(); OSD_Font=NULL;} //the game will crashes if the font is not released before the game is minimized!
+  return(m_pIDirect3DDevice9->Reset(pPresentationParameters));
 }
 
 HRESULT OTM_IDirect3DDevice9::Present(CONST RECT* pSourceRect,CONST RECT* pDestRect,HWND hDestWindowOverride,CONST RGNDATA* pDirtyRegion)
@@ -355,10 +356,26 @@ HRESULT OTM_IDirect3DDevice9::BeginScene(void)
 
       if (SingleTexture!=NULL)
       {
+        if (TextureColour!=OTM_Client->TextureColour)
+        {
+          D3DLOCKED_RECT d3dlr;
+          IDirect3DTexture9 *pD3Dtex;
+          if (SingleTexture->CrossRef_D3Dtex==NULL) pD3Dtex = SingleTexture->m_D3Dtex;
+          else pD3Dtex = SingleTexture->CrossRef_D3Dtex->m_D3Dtex;
+
+          if (D3D_OK==pD3Dtex->LockRect(0, &d3dlr, 0, 0))
+          {
+            DWORD *pDst = (DWORD*)d3dlr.pBits;
+            TextureColour = OTM_Client->TextureColour;
+            for (int xy=0; xy < 8*8; xy++) *(pDst++) = TextureColour;
+            pD3Dtex->UnlockRect(0);
+          }
+        }
         if (OTM_Client->KeyBack>0 && (GetAsyncKeyState( OTM_Client->KeyBack ) &1) )
         {
           UnswitchTextures( SingleTexture);
-          if (--CounterSaveSingleTexture<0) CounterSaveSingleTexture = OTM_Client->OriginalTextures.GetNumber() - 1;
+          if (CounterSaveSingleTexture<0) CounterSaveSingleTexture = 0; //first initialization
+          else if (--CounterSaveSingleTexture<0) CounterSaveSingleTexture = OTM_Client->OriginalTextures.GetNumber() - 1;
           if (CounterSaveSingleTexture >= 0) SwitchTextures( SingleTexture,  OTM_Client->OriginalTextures[CounterSaveSingleTexture]);
         }
         if (OTM_Client->KeySave>0 && (GetAsyncKeyState( OTM_Client->KeySave ) &1) )
@@ -370,17 +387,45 @@ HRESULT OTM_IDirect3DDevice9::BeginScene(void)
         if (OTM_Client->KeyNext>0 && (GetAsyncKeyState( OTM_Client->KeyNext ) &1) )
         {
           UnswitchTextures( SingleTexture);
-          if (++CounterSaveSingleTexture>=OTM_Client->OriginalTextures.GetNumber()) CounterSaveSingleTexture = 0;
+          if (CounterSaveSingleTexture<0) CounterSaveSingleTexture = 0; //first initialization
+          else if (++CounterSaveSingleTexture>=OTM_Client->OriginalTextures.GetNumber()) CounterSaveSingleTexture = 0;
           if (CounterSaveSingleTexture < OTM_Client->OriginalTextures.GetNumber()) SwitchTextures( SingleTexture,  OTM_Client->OriginalTextures[CounterSaveSingleTexture]);
         }
       }
     }
   }
-  return(m_pIDirect3DDevice9->BeginScene());
+  Return_BeginScene = m_pIDirect3DDevice9->BeginScene();
+  return (Return_BeginScene);
+  //return (m_pIDirect3DDevice9->BeginScene());
 }
 
 HRESULT OTM_IDirect3DDevice9::EndScene(void)
 {
+  if ( Return_BeginScene==D3D_OK && OTM_Client!=NULL && OTM_Client->BoolSaveSingleTexture && SingleTexture!=NULL && SingleTexture->CrossRef_D3Dtex!=NULL)
+  {
+    if (OSD_Font==NULL || FontColour != OTM_Client->FontColour)
+    {
+      FontColour = OTM_Client->FontColour;
+      if (OSD_Font!=NULL) OSD_Font->Release();
+      if (D3D_OK!=D3DXCreateFontA( m_pIDirect3DDevice9, 20, 0, FW_BOLD, 0, FALSE, DEFAULT_CHARSET, OUT_DEFAULT_PRECIS, DEFAULT_QUALITY, DEFAULT_PITCH | FF_DONTCARE, TEXT("Arial"), &OSD_Font))
+      {
+        OSD_Font=NULL;
+        return(m_pIDirect3DDevice9->EndScene());
+      }
+    }
+
+    char buffer[100];
+    sprintf( buffer, "Actual texture: %4d (1..%d): %#lX", CounterSaveSingleTexture+1, OTM_Client->OriginalTextures.GetNumber(), SingleTexture->CrossRef_D3Dtex->Hash);
+    D3DVIEWPORT9 viewport;
+    GetViewport( &viewport);
+    RECT rct;
+    rct.left=viewport.X + 10;
+    rct.right=0;
+    rct.top=viewport.Y + 10;
+    rct.bottom=0;
+     OSD_Font->DrawTextA(NULL, buffer, -1, &rct, DT_NOCLIP, FontColour);
+
+  }
   //Message("EndScene(): %lu\n", this);
   return(m_pIDirect3DDevice9->EndScene());
 }

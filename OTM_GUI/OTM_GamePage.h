@@ -50,7 +50,11 @@ public:
   void OnButtonDown(wxCommandEvent& WXUNUSED(event));
   void OnButtonDelete(wxCommandEvent& WXUNUSED(event));
 
+  wxString LastError;
+
 private:
+  int SetColour( wxTextCtrl** txt, int *colour);
+  int GetColour( wxTextCtrl* txt, int def);
 
   wxBoxSizer *SizerKeys[2];
   wxTextCtrl *TextKeyBack;
@@ -59,6 +63,11 @@ private:
   wxChoice *ChoiceKeyBack;
   wxChoice *ChoiceKeySave;
   wxChoice *ChoiceKeyNext;
+
+  wxBoxSizer *FontColourSizer;
+  wxTextCtrl *FontColour[4];
+  wxBoxSizer *TextureColourSizer;
+  wxTextCtrl *TextureColour[4];
 
   wxBoxSizer *MainSizer;
   wxCheckBox *SaveAllTextures;

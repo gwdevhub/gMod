@@ -59,6 +59,9 @@ public:
   int SetKeySave( int key);
   int SetKeyNext( int key);
 
+  int SetFontColour(DWORD colour);
+  int SetTextureColour(DWORD colour);
+
 private:
   bool BoolSaveAllTextures;
   bool BoolSaveSingleTexture;
@@ -75,6 +78,9 @@ private:
   int KeyBack;
   int KeySave;
   int KeyNext;
+
+  DWORD FontColour;
+  DWORD TextureColour;
 
   HANDLE Mutex;
 

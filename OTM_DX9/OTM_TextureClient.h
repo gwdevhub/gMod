@@ -54,6 +54,10 @@ public:
   int SetKeySave( int key) {if (key>0) KeySave = key; return (RETURN_OK);}
   int SetKeyNext( int key) {if (key>0) KeyNext = key; return (RETURN_OK);}
 
+  int SetFontColour( DWORD r, DWORD g, DWORD b) {FontColour = D3DCOLOR_ARGB(255, r,g,b); return (RETURN_OK);}
+  int SetTextureColour( DWORD r, DWORD g, DWORD b) {TextureColour = D3DCOLOR_ARGB(255, r,g,b); return (RETURN_OK);}
+
+
   int AddUpdate(TextureFileStruct* update, int number);  //client must delete the temp array
   int MergeUpdate(void);
 
@@ -65,6 +69,9 @@ public:
   int KeyBack;
   int KeySave;
   int KeyNext;
+
+  D3DCOLOR FontColour;
+  D3DCOLOR TextureColour;
 
 private:
   OTM_TextureServer* Server;
