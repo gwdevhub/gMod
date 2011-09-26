@@ -44,7 +44,10 @@ OTM_GUI/OTM_Sender.cpp -text
 OTM_GUI/OTM_Sender.h -text
 OTM_GUI/OTM_Server.cpp -text
 OTM_GUI/OTM_Server.h -text
-OTM_GUI/bin/README.txt -text
+OTM_GUI/bin/Example_OTM_LanguagePack_English.txt -text
+OTM_GUI/bin/OTM_LanguagePack_Deutsch.txt -text
+OTM_GUI/bin/README_Deutsch.txt -text
+OTM_GUI/bin/README_English.txt -text
 OTM_GUI/config.gcc -text
 OTM_GUI/makefile -text
 OTM_GUI/unzip.cpp -text

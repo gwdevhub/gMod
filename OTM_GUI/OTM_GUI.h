@@ -13,7 +13,7 @@ MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 GNU General Public License for more details.
 
 You should have received a copy of the GNU General Public License
-along with FooOpenTexMod.  If not, see <http://www.gnu.org/licenses/>.
+along with OpenTexMod.  If not, see <http://www.gnu.org/licenses/>.
 */
 
 
@@ -43,8 +43,7 @@ public:
   void OnButtonSave(wxCommandEvent& WXUNUSED(event));
 
 
-  //void OnMenuPref(wxCommandEvent& WXUNUSED(event));
-  //void OnMenuQuit(wxCommandEvent& WXUNUSED(event));
+  void OnMenuLanguage(wxCommandEvent& WXUNUSED(event));
   void OnMenuHelp(wxCommandEvent& WXUNUSED(event));
   void OnMenuAbout(wxCommandEvent& WXUNUSED(event));
   void OnMenuAddGame(wxCommandEvent& WXUNUSED(event));
@@ -68,7 +67,6 @@ private:
 
 
   wxMenuBar *MenuBar;
-  //wxMenu *MenuMain;
   wxMenu *MenuGame;
   wxMenu *MenuHelp;
 
@@ -81,13 +79,18 @@ private:
   OTM_Client **Clients;
   HMODULE H_DX9_DLL;
 
+  wxString LastError;
+
   DECLARE_EVENT_TABLE();
 };
 
 class MyApp : public wxApp
 {
 public:
+    virtual ~MyApp();
     virtual bool OnInit();
+private:
+    HANDLE CheckForSingleRun;
 };
 
 

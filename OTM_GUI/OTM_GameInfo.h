@@ -13,7 +13,7 @@ MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 GNU General Public License for more details.
 
 You should have received a copy of the GNU General Public License
-along with FooOpenTexMod.  If not, see <http://www.gnu.org/licenses/>.
+along with OpenTexMod.  If not, see <http://www.gnu.org/licenses/>.
 */
 
 
@@ -47,11 +47,11 @@ public:
   int SetSaveAllTextures(bool val);
   bool GetSaveAllTextures(void) const {return SaveAllTextures;}
 
-  void SetTextures(const wxArrayString &textures);
-  void GetTextures( wxArrayString &textures) const;
-  void AddTexture( const wxString &textures);
+  void SetFiles(const wxArrayString &files);
+  void GetFiles( wxArrayString &files) const;
+  //void AddTexture( const wxString &textures);
 
-  int GetNumberOfTextures(void) const {return Textures.GetCount();}
+  int GetNumberOfFiles(void) const {return Files.GetCount();}
 
   int SendTextures(void);
 
@@ -86,7 +86,8 @@ private:
 
   bool SaveSingleTexture;
   bool SaveAllTextures;
-  wxArrayString Textures;
+
+  wxArrayString Files;
 
   int KeyBack;
   int KeySave;

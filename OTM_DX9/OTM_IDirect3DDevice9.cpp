@@ -13,7 +13,7 @@ MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 GNU General Public License for more details.
 
 You should have received a copy of the GNU General Public License
-along with FooOpenTexMod.  If not, see <http://www.gnu.org/licenses/>.
+along with OpenTexMod.  If not, see <http://www.gnu.org/licenses/>.
 */
 
 
@@ -415,7 +415,7 @@ HRESULT OTM_IDirect3DDevice9::EndScene(void)
     }
 
     char buffer[100];
-    sprintf( buffer, "Actual texture: %4d (1..%d): %#lX", CounterSaveSingleTexture+1, OTM_Client->OriginalTextures.GetNumber(), SingleTexture->CrossRef_D3Dtex->Hash);
+    sprintf_s( buffer, 100, "Actual texture: %4d (1..%d): %#lX", CounterSaveSingleTexture+1, OTM_Client->OriginalTextures.GetNumber(), SingleTexture->CrossRef_D3Dtex->Hash);
     D3DVIEWPORT9 viewport;
     GetViewport( &viewport);
     RECT rct;

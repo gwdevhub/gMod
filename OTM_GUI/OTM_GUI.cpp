@@ -13,7 +13,7 @@ MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 GNU General Public License for more details.
 
 You should have received a copy of the GNU General Public License
-along with FooOpenTexMod.  If not, see <http://www.gnu.org/licenses/>.
+along with OpenTexMod.  If not, see <http://www.gnu.org/licenses/>.
 */
 
 
@@ -38,8 +38,7 @@ BEGIN_EVENT_TABLE(OTM_Frame, wxFrame)
   EVT_BUTTON(ID_Button_Update, OTM_Frame::OnButtonUpdate)
   EVT_BUTTON(ID_Button_Save, OTM_Frame::OnButtonSave)
 
-  //EVT_MENU(ID_Menu_Pref, OTM_Frame::OnMenuPref)
-  //EVT_MENU(ID_Menu_Quit, OTM_Frame::OnMenuQuit)
+  EVT_MENU(ID_Menu_Lang, OTM_Frame::OnMenuLanguage)
   EVT_MENU(ID_Menu_Help, OTM_Frame::OnMenuHelp)
   EVT_MENU(ID_Menu_About, OTM_Frame::OnMenuAbout)
   EVT_MENU(ID_Menu_AddGame, OTM_Frame::OnMenuAddGame)
@@ -52,10 +51,20 @@ END_EVENT_TABLE()
 IMPLEMENT_APP(MyApp)
 #endif
 
+MyApp::~MyApp(void)
+{
+  if (CheckForSingleRun!=NULL) CloseHandle( CheckForSingleRun);
+}
+
 bool MyApp::OnInit(void)
 {
-
-  OTM_Frame *frame = new OTM_Frame( "OpenTexMod V0.9 alpha by ROTA", wxDefaultPosition, wxSize(600,400));
+  CheckForSingleRun = CreateMutex( NULL, true, L"Global\\OTM_CheckForSingleRun");
+  if (ERROR_ALREADY_EXISTS == GetLastError())
+  {
+    wxMessageBox( L"An instance of OpenTexMod already exists.", "ERROR", wxOK|wxICON_ERROR);
+    return false;
+  }
+  OTM_Frame *frame = new OTM_Frame( OTM_VERSION, wxDefaultPosition, wxSize(600,400));
   SetTopWindow( frame );
 
   return true;
@@ -66,11 +75,7 @@ OTM_Frame::OTM_Frame(const wxString& title, const wxPoint& pos, const wxSize& si
        : wxFrame((wxFrame *)NULL, -1, title, pos, size)
 {
   SetIcon(wxICON(MAINICON));
-  if (Language.LoadLanguage(1)!=0)
-  {
-    wxMessageBox("Could not load language", "Error", wxOK);
-    Destroy();
-  }
+
   Server = new OTM_Server( this);
   Server->Create();
   Server->Run();
@@ -80,16 +85,14 @@ OTM_Frame::OTM_Frame(const wxString& title, const wxPoint& pos, const wxSize& si
   MenuGame = new wxMenu;
   MenuHelp = new wxMenu;
 
-  //MenuMain->Append( ID_Menu_Pref, Language.MenuPref, Language.MenuPref );
-  //MenuMain->Append( ID_Menu_Quit, Language.MenuQuit, Language.MenuQuit );
 
-  MenuGame->Append( ID_Menu_AddGame, Language.MenuAddGame, Language.MenuAddGame );
-  MenuGame->Append( ID_Menu_DeleteGame, Language.MenuDeleteGame, Language.MenuDeleteGame );
+  MenuGame->Append( ID_Menu_AddGame, Language.MenuAddGame );
+  MenuGame->Append( ID_Menu_DeleteGame, Language.MenuDeleteGame );
 
-  MenuHelp->Append( ID_Menu_Help, Language.MenuHelp, Language.MenuHelp );
-  MenuHelp->Append( ID_Menu_About, Language.MenuAbout, Language.MenuAbout );
+  MenuHelp->Append( ID_Menu_Lang, Language.MenuLanguage );
+  MenuHelp->Append( ID_Menu_Help, Language.MenuHelp );
+  MenuHelp->Append( ID_Menu_About, Language.MenuAbout );
 
-  //MenuBar->Append( MenuMain, Language.MainMenuStart );
   MenuBar->Append( MenuGame, Language.MainMenuGame );
   MenuBar->Append( MenuHelp, Language.MainMenuHelp );
 
@@ -162,7 +165,7 @@ OTM_Frame::OTM_Frame(const wxString& title, const wxPoint& pos, const wxSize& si
     wxString temp = Language.Error_DLLNotFound;
     temp << "\n" << OTM_d3d9_dll;
     temp << "\n" << error_msg << "Code: " << error;
-    wxMessageBox(temp, "ERROR", wxOK);
+    wxMessageBox(temp, "ERROR", wxOK|wxICON_ERROR);
   }
 }
 
@@ -253,7 +256,7 @@ void OTM_Frame::OnClose(wxCloseEvent& event)
 {
   if (event.CanVeto() && NumberOfGames>0)
   {
-    if (wxMessageBox(Language.ExitGameAnyway, "ERROR", wxYES_NO)!=wxYES) {event.Veto(); return;}
+    if (wxMessageBox(Language.ExitGameAnyway, "ERROR", wxYES_NO|wxICON_ERROR)!=wxYES) {event.Veto(); return;}
   }
   event.Skip();
   Destroy();
@@ -293,7 +296,7 @@ void OTM_Frame::OnButtonUpdate(wxCommandEvent& WXUNUSED(event))
   if (page==NULL) return;
   if (page->UpdateGame())
   {
-    wxMessageBox(page->LastError, "ERROR", wxOK);
+    wxMessageBox(page->LastError, "ERROR", wxOK|wxICON_ERROR);
     page->LastError.Empty();
   }
 }
@@ -305,60 +308,94 @@ void OTM_Frame::OnButtonSave(wxCommandEvent& WXUNUSED(event))
   if (page==NULL) return;
   if (page->SaveToFile())
   {
-    wxMessageBox(page->LastError, "ERROR", wxOK);
+    wxMessageBox(page->LastError, "ERROR", wxOK|wxICON_ERROR);
     page->LastError.Empty();
   }
 }
 
-/*
-void OTM_Frame::OnMenuPref(wxCommandEvent& WXUNUSED(event)) {}
-void OTM_Frame::OnMenuQuit(wxCommandEvent& WXUNUSED(event)) {Destroy();}
-*/
+void OTM_Frame::OnMenuLanguage(wxCommandEvent& WXUNUSED(event))
+{
+  wxArrayString lang;
+  Language.GetLanguages( lang);
+  wxString choice = wxGetSingleChoice( Language.SelectLanguage, Language.SelectLanguage, lang);
+  if (choice.Len()>0)
+  {
+    if (Language.LoadLanguage(choice))
+    {
+      wxMessageBox(Language.LastError, "ERROR", wxOK|wxICON_ERROR);
+      Language.LastError.Empty();
+      return;
+    }
+    MenuBar->SetMenuLabel( 0, Language.MainMenuGame);
+    MenuGame->SetLabel( ID_Menu_AddGame, Language.MenuAddGame);
+    MenuGame->SetLabel( ID_Menu_DeleteGame, Language.MenuDeleteGame);
+
+    MenuBar->SetMenuLabel( 1, Language.MainMenuHelp);
+    MenuHelp->SetLabel( ID_Menu_Lang, Language.MenuLanguage);
+    MenuHelp->SetLabel( ID_Menu_Help, Language.MenuHelp);
+    MenuHelp->SetLabel( ID_Menu_About, Language.MenuAbout);
+
+    OpenButton->SetLabel( Language.ButtonOpen);
+    DirectoryButton->SetLabel( Language.ButtonDirectory);
+    UpdateButton->SetLabel( Language.ButtonUpdate);
+    SaveButton->SetLabel( Language.ButtonSave);
+
+    int num = Notebook->GetPageCount();
+    for (int i=0; i<num; i++)
+    {
+      OTM_GamePage* page = (OTM_GamePage*) Notebook->GetPage(i);
+      page->UpdateLanguage();
+    }
+  }
+}
 
 void OTM_Frame::OnMenuHelp(wxCommandEvent& WXUNUSED(event))
 {
-  wxFile dat;
-  if (!dat.Access( "README.txt", wxFile::read)) return;
-  dat.Open("README.txt", wxFile::read);
-  if (!dat.IsOpened())  {return;}
-  unsigned len = dat.Length();
+  wxString help;
+  if (Language.GetHelpMessage( help))
+  {
+    wxMessageBox(Language.LastError, "ERROR", wxOK|wxICON_ERROR);
+    Language.LastError.Empty();
+    return;
+  }
 
-  char* buffer;
-  try {buffer = new char [len+1];}
-  catch (...) {return ;}
-
-  unsigned int result = dat.Read( buffer, len);
-  dat.Close();
-  if (len!=result) {delete [] buffer; return;}
-
-  buffer[len] = 0;
-
-  wxString msg = buffer;
-  wxMessageBox(msg, "help", wxOK);
+  wxMessageBox( help, Language.MenuHelp, wxOK);
 }
 
 void OTM_Frame::OnMenuAbout(wxCommandEvent& WXUNUSED(event))
 {
-  wxMessageBox(L"OpenTexMod V0.9 alpha by ROTA\nhttp://code.google.com/p/texmod/", "Info", wxOK);
+  wxString msg;
+  msg << OTM_VERSION << " by ROTA\nhttp://code.google.com/p/texmod/";
+  wxMessageBox( msg, "Info", wxOK);
 };
 
 void OTM_Frame::OnMenuAddGame(wxCommandEvent& WXUNUSED(event))
 {
-  wxString file_name = wxFileSelector( Language.ChooseFile, "", "", "exe",  "binary (*.exe)|*.exe", wxFD_OPEN | wxFD_FILE_MUST_EXIST, this);
+  wxString file_name = wxFileSelector( Language.ChooseGame, "", "", "exe",  "binary (*.exe)|*.exe", wxFD_OPEN | wxFD_FILE_MUST_EXIST, this);
   if ( !file_name.empty() )
   {
     file_name = file_name.AfterLast('\\');
 
     wxArrayString array;
-    GetHookedGames( array);
+    if (GetHookedGames( array))
+    {
+      wxMessageBox( LastError, "ERROR", wxOK|wxICON_ERROR);
+      LastError.Empty();
+      return;
+    }
     int num = array.GetCount();
     for (int i=0; i<num; i++) if (array[i] == file_name)
     {
-      wxMessageBox(Language.GameAlreadyAdded, "ERROR", wxOK);
+      wxMessageBox(Language.GameAlreadyAdded, "ERROR", wxOK|wxICON_ERROR);
       return;
     }
     array.Add(file_name);
-    SetHookedGames( array);
+    if (SetHookedGames( array))
+    {
+      wxMessageBox( LastError, "ERROR", wxOK|wxICON_ERROR);
+      LastError.Empty();
+      return;
+    }
   }
 }
 
@@ -366,7 +403,12 @@ void OTM_Frame::OnMenuDeleteGame(wxCommandEvent& WXUNUSED(event))
 {
   wxArrayInt selections;
   wxArrayString array;
-  GetHookedGames(array);
+  if (GetHookedGames( array))
+  {
+    wxMessageBox( LastError, "ERROR", wxOK|wxICON_ERROR);
+    LastError.Empty();
+    return;
+  }
   wxGetSelectedChoices( selections, Language.DeleteGame, Language.DeleteGame, array);
 
   int num = selections.GetCount();
@@ -375,7 +417,12 @@ void OTM_Frame::OnMenuDeleteGame(wxCommandEvent& WXUNUSED(event))
     array.RemoveAt( selections[i]-i); //this will work only if selections is sorted !!
   }
 
-  SetHookedGames(array);
+  if (SetHookedGames( array))
+  {
+    wxMessageBox( LastError, "ERROR", wxOK|wxICON_ERROR);
+    LastError.Empty();
+    return;
+  }
 }
 
 
@@ -387,20 +434,20 @@ int OTM_Frame::GetHookedGames( wxArrayString &array)
   wchar_t *app_path = _wgetenv( L"APPDATA");
   name.Printf("%ls\\%ls\\%ls", app_path, OTM_APP_DIR, OTM_APP_DX9);
 
-  if (!file.Access(name, wxFile::read)) return -1;
+  if (!file.Access(name, wxFile::read)) {LastError << Language.Error_FileOpen << "\n" << name; return -1;}
   file.Open(name, wxFile::read);
-  if (!file.IsOpened())  {return -1;}
+  if (!file.IsOpened()) {LastError << Language.Error_FileOpen << "\n" << name ; return -1;}
 
   unsigned len = file.Length();
 
   unsigned char* buffer;
   try {buffer = new unsigned char [len+1];}
-  catch (...) {return -1;}
+  catch (...) {LastError << Language.Error_Memory; return -1;}
 
   unsigned int result = file.Read( buffer, len);
   file.Close();
 
-  if (result != len) return -1;
+  if (result != len) {delete [] buffer; LastError << Language.Error_FileRead<<"\n" << name; return -1;}
 
   buffer[len]=0;
 
@@ -437,7 +484,7 @@ int OTM_Frame::SetHookedGames( const wxArrayString &array)
 
   name.Printf("%ls\\%ls\\%ls", app_path, OTM_APP_DIR, OTM_APP_DX9);
   file.Open(name, wxFile::write);
-  if (!file.IsOpened())  {return -1;}
+  if (!file.IsOpened()) {LastError << Language.Error_FileOpen << "\n" << name ; return -1;}
   wxString content;
 
   int num = array.GetCount();

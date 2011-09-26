@@ -8,10 +8,11 @@ WARNING: You use this program at your own risk!
     Download it by your self and don't use versions, send to you by team or guild members!
     http://code.google.com/p/texmod/downloads/list
 
-OpenTexMod uses the D3DX9_43.dll. Due to the EULA this dll cannot be deliviered together with OpenTexMod . 
+OpenTexMod uses the D3DX9_43.dll. Due to the EULA this dll cannot be delivered together with OpenTexMod .
 If D3DX9_43.dll is not installed on your system, OpenTexMod will give you a hint at program start.
 
-What can OpenTexMod alpha V0.1?
+
+What can OpenTexMod alpha V0.9?
 
 -extract and save single textures from a DX9 game (the target texture can be toggled in the game)
 -extract and save all textures from a DX9 game
@@ -24,6 +25,10 @@ So you can search for a texture in the game, save it to disk, edit it,
 load it into the game, edit it again and load it into the game again, ...
 and all without a restart of the game.
 
+side note: If "save all textures" is switched on, the texture will only be saved, if
+the textures are loaded by the game and only in the moment they are loaded.
+If you switch this option on, while a map is loaded, probably nothing will hapen,
+because all textures are loaded for this map. Change the Map or reload it again.
 
 
 How does OpenTexMod interact with the game?
@@ -34,10 +39,8 @@ It is required, that OpenTexMod is running before the game is started.
 The GUI of OpenTexMod act as a server. A game which is successfully
 intercepted with the OpenTexMod-dll will connect on program start to the server.
 The GUI of OpenTexMod can handle multiple games at the same time. It will
-also process each instance of a game as separate process (if the same game 
+also process each instance of a game as separate process (if the same game
 was started more than once).
-
-
 
 
 How to get OpenTexMod work?
@@ -53,7 +56,7 @@ There are two ways how OpenTexMod can intercept the DirectX connection:
     Only for these games this method will work.
     WARNING: never copy this dll into your system directory!!
 
-If you have chosen one of the two methods, you simply start OpenTexMod 
+If you have chosen one of the two methods, you simply start OpenTexMod
 and afterwards the game. There is no need to (and either you can't) start
 the game through OpenTexMod.
 
@@ -63,10 +66,26 @@ the changes to the game. You can also save your current settings. They will be l
 and committed automatically when you start the same game the next time.
 
 To load a mod, you must set the check mark of the file. If you wish to unload a mod,
-just remove the check mark and click on update again. At the moment pressing the 
+just remove the check mark and click on update again. At the moment pressing the
 X button of a file will remove it from the list but won't unload the mod from the game.
 
 Due to the fact that different mods can modify the same target texture, only the
 mod-texture of the first file in the list is taken into account. The action of this file
 (load or unload) is proceeded regardless of what the following mods are opposed
 to do with their mod-textures.
+
+
+How to get OpenTexMod work together with steam?
+
+OpenTexMod looks only for the name of the executed binary and not of their working directory.
+Thus you shall not add the steam.exe but rather the game.exe
+e.g.: Steam\SteamApps\acoount_name\portal\hl2.exe
+This would also inject into all other HalfLife 2 games.
+
+If you can't find your target binary, just look into the task manager for the binary
+and:
+1) add it by your self : edit under Windows 7
+    C:\Users\user_name\AppData\Roaming\OpenTexMod\OTM_DX9.txt
+    or:
+2) add somewhere on your disk an empty file with the name of the binary and
+    add this file through the menu of OpenTexMod, afterwards you can delete this file.

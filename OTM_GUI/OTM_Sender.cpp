@@ -13,7 +13,7 @@ MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 GNU General Public License for more details.
 
 You should have received a copy of the GNU General Public License
-along with FooOpenTexMod.  If not, see <http://www.gnu.org/licenses/>.
+along with OpenTexMod.  If not, see <http://www.gnu.org/licenses/>.
 */
 
 
@@ -130,16 +130,16 @@ int OTM_Sender::Send( const OTM_GameInfo &game, const OTM_GameInfo &game_old)
 
 
   // the rest of this function is not optimized !!
-  if (game.GetNumberOfTextures()<=0)
+  if (game.GetNumberOfFiles()<=0)
   {
     if (LastError.Len()>0) return 1;
     else return 0;
   }
 
-  wxArrayString textures;
+  wxArrayString files;
 
-  game.GetTextures( textures);
-  int num = textures.GetCount();
+  game.GetFiles( files);
+  int num = files.GetCount();
   bool *checked = new bool [num];
   game.GetChecked( checked, num);
 
@@ -149,30 +149,31 @@ int OTM_Sender::Send( const OTM_GameInfo &game, const OTM_GameInfo &game_old)
   unsigned long temp_hash;
   for (int i=0; i<num; i++)
   {
-    file_type = textures[i];
+    file_type = files[i];
     file_type = file_type.AfterLast( '.');
 
 
     if (file_type == L"zip")
     {
-      AddZip( &tex[i], textures[i], checked[i], true, false);
+      AddZip( &tex[i], files[i], checked[i], true, false);
     }
     else if (file_type == L"tpf")
     {
-      AddZip( &tex[i], textures[i], checked[i], true, true);
+      AddZip( &tex[i], files[i], checked[i], true, true);
     }
     else if (file_type == L"dds")
     {
-      AddFile( &tex[i], textures[i], checked[i], true);
+      AddFile( &tex[i], files[i], checked[i], true);
     }
     else
     {
       wxString msg = Language.FileNotSupported;
-      msg << textures[i];
+      msg << files[i];
       wxMessageBox(msg, "ERROR", wxOK);
     }
   }
   SendTextures( num, tex);
+  delete [] checked;
 
   if (LastError.Len()>0) return 1;
   else return 0;
@@ -248,6 +249,8 @@ int OTM_Sender::SendTextures(unsigned int num, AddTextureClass *tex)
   }
   delete [] hash;
   if (pos) if (int ret = SendToGame( Buffer, pos)) return ret;
+
+  delete [] tex;
 
   if (LastError.Len()>0) return 1;
   else return 0;
@@ -359,7 +362,7 @@ int OTM_Sender::AddZip( AddTextureClass *tex, wxString file, bool add, bool forc
   unsigned int result = dat.Read( buffer, len);
   dat.Close();
 
-  if (result != len) {LastError << Language.Error_FileRead<<"\n" << file; return -1;}
+  if (result != len) {delete [] buffer; LastError << Language.Error_FileRead<<"\n" << file; return -1;}
 
   if (tpf)
   {
@@ -483,6 +486,7 @@ int OTM_Sender::AddContent( char* buffer, unsigned int len, const char* pw, AddT
         count++;
       }
     }
+    delete [] def;
     tex->Num = count;
   }
   else // texmod.def is not present in the zip file

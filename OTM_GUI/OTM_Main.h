@@ -13,7 +13,7 @@ MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 GNU General Public License for more details.
 
 You should have received a copy of the GNU General Public License
-along with FooOpenTexMod.  If not, see <http://www.gnu.org/licenses/>.
+along with OpenTexMod.  If not, see <http://www.gnu.org/licenses/>.
 */
 
 
@@ -82,6 +82,7 @@ enum
   ID_Button_Save,
   ID_Menu_Pref,
   ID_Menu_Quit,
+  ID_Menu_Lang,
   ID_Menu_Help,
   ID_Menu_About,
   ID_Menu_AddGame,

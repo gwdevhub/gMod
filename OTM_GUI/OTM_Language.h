@@ -13,7 +13,7 @@ MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 GNU General Public License for more details.
 
 You should have received a copy of the GNU General Public License
-along with FooOpenTexMod.  If not, see <http://www.gnu.org/licenses/>.
+along with OpenTexMod.  If not, see <http://www.gnu.org/licenses/>.
 */
 
 
@@ -27,16 +27,16 @@ public:
   OTM_Language(void);
 
 
-  int LoadLanguage(int lang);
+  int LoadLanguage(const wxString &name);
+  int GetLanguages(wxArrayString &lang);
+  int GetHelpMessage(wxString &help);
 
-  wxString MenuPref;
-  wxString MenuQuit;
+  wxString MenuLanguage;
   wxString MenuHelp;
   wxString MenuAbout;
   wxString MenuAddGame;
   wxString MenuDeleteGame;
 
-  wxString MainMenuStart;
   wxString MainMenuGame;
   wxString MainMenuHelp;
 
@@ -52,8 +52,10 @@ public:
   wxString CheckBoxSaveAllTextures;
   wxString TextCtrlSavePath;
 
-  wxString DeleteGame;
+  wxString SelectLanguage;
 
+  wxString ChooseGame;
+  wxString DeleteGame;
   wxString GameAlreadyAdded;
   wxString FileNotSupported;
   wxString ExitGameAnyway;
@@ -61,6 +63,8 @@ public:
   wxString Error_FktNotFound;
   wxString Error_DLLNotFound;
   wxString Error_Send;
+  wxString Error_KeyTwice;
+  wxString Error_NoSavePath;
   wxString Error_SaveFile;
   wxString Error_NoPipe;
   wxString Error_WritePipe;
@@ -83,8 +87,18 @@ public:
   wxString FontColour;
   wxString TextureColour;
 
+
+  wxString LastError;
+
 private:
-  int LoadKeys(int lang);
+  int LoadCurrentLanguage(void);
+  int SaveCurrentLanguage(void);
+
+  int LoadDefault(void);
+  int LoadKeys(void);
+
+  wxString CurrentLanguage;
+  const wxString DefaultLanguage;
 };
 
 

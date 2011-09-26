@@ -13,22 +13,11 @@ MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 GNU General Public License for more details.
 
 You should have received a copy of the GNU General Public License
-along with FooOpenTexMod.  If not, see <http://www.gnu.org/licenses/>.
+along with OpenTexMod.  If not, see <http://www.gnu.org/licenses/>.
 */
 
 #include "OTM_Main.h"
 
-/*
-#ifndef __CDT_PARSER__
-
-
-BEGIN_EVENT_TABLE(OTM_GamePage, wxFrame)
-  EVT_BUTTON(ID_Button_Open, OTM_Frame::OnButtonUp)
-  EVT_BUTTON(ID_Button_Path, OTM_Frame::OnButtonDown)
-  EVT_BUTTON(ID_Button_Update, OTM_Frame::OnButtonDelete)
-END_EVENT_TABLE()
-#endif
-*/
 
 OTM_GamePage::OTM_GamePage( wxNotebook *parent, const wxString &name, PipeStruct &pipe, OTM_Language &lang) : wxPanel(parent), Language(lang), Game(name), GameOld(name), Sender(pipe, lang)
 {
@@ -124,11 +113,12 @@ OTM_GamePage::OTM_GamePage( wxNotebook *parent, const wxString &name, PipeStruct
     save_path << Game.GetSavePath();
     SavePath->SetValue(save_path);
 
+    NumberOfEntry = Game.GetNumberOfFiles();
+    Files.Alloc(NumberOfEntry+100);
 
-    wxArrayString array;
-    Game.GetTextures( array);
+    Game.GetFiles( Files);
 
-    NumberOfEntry = array.GetCount();
+    NumberOfEntry = Files.GetCount();
     MaxNumberOfEntry = NumberOfEntry+100;
     CheckBoxes = new wxCheckBox*[MaxNumberOfEntry];
     bool *checked = new bool[NumberOfEntry];
@@ -144,7 +134,7 @@ OTM_GamePage::OTM_GamePage( wxNotebook *parent, const wxString &name, PipeStruct
     for (int i=0; i<NumberOfEntry;i++)
     {
       CheckBoxHSizers[i] = new wxBoxSizer(wxHORIZONTAL);
-      CheckBoxes[i] = new wxCheckBox( this, -1, array[i]);
+      CheckBoxes[i] = new wxCheckBox( this, -1, Files[i]);
       CheckBoxes[i]->SetValue( checked[i]);
 
       wchar_t button_txt[2];
@@ -175,6 +165,13 @@ OTM_GamePage::OTM_GamePage( wxNotebook *parent, const wxString &name, PipeStruct
 
 OTM_GamePage::~OTM_GamePage(void)
 {
+  for (int i=0; i<NumberOfEntry; i++)
+  {
+    Unbind( wxEVT_COMMAND_BUTTON_CLICKED, &OTM_GamePage::OnButtonUp, this, ID_Button_Texture+3*i);
+    Unbind( wxEVT_COMMAND_BUTTON_CLICKED, &OTM_GamePage::OnButtonDown, this, ID_Button_Texture+3*i+1);
+    Unbind( wxEVT_COMMAND_BUTTON_CLICKED, &OTM_GamePage::OnButtonDelete, this, ID_Button_Texture+3*i+2);
+  }
+
   delete [] CheckBoxHSizers;
   delete [] CheckButtonUp;
   delete [] CheckButtonDown;
@@ -219,24 +216,32 @@ void OTM_GamePage::AddTexture( const wxString &file_name)
   CheckBoxHSizers[NumberOfEntry]->Add( (wxWindow*) CheckButtonDelete[NumberOfEntry], 0, wxEXPAND, 0);
 
   MainSizer->Add( CheckBoxHSizers[NumberOfEntry], 0, wxEXPAND, 0);
+  Files.Add( file_name);
   NumberOfEntry++;
-  Game.AddTexture( file_name);
   MainSizer->Layout();
 }
 
-int OTM_GamePage::UpdateGame(void)
+int OTM_GamePage::GetSettings(void)
 {
-  Game.SetSaveSingleTexture(SaveSingleTexture->GetValue());
-  Game.SetSaveAllTextures(SaveAllTextures->GetValue());
+  int key_back = ChoiceKeyBack->GetSelection();
+  int key_save = ChoiceKeySave->GetSelection();
+  int key_next = ChoiceKeyNext->GetSelection();
 
-  int key = ChoiceKeyBack->GetSelection();
-  if (key!=wxNOT_FOUND) Game.SetKeyBack(key);
+  if (key_back==key_save && key_back!=wxNOT_FOUND) {LastError << Language.Error_KeyTwice; return 1;}
+  if (key_back==key_next && key_back!=wxNOT_FOUND) {LastError << Language.Error_KeyTwice; return 1;}
+  if (key_save==key_next && key_save!=wxNOT_FOUND) {LastError << Language.Error_KeyTwice; return 1;}
 
-  key = ChoiceKeySave->GetSelection();
-  if (key!=wxNOT_FOUND) Game.SetKeySave(key);
+  bool save_single = SaveSingleTexture->GetValue();
+  bool save_all = SaveAllTextures->GetValue();
+  wxString path = Game.GetSavePath();
+  if ( (save_single || save_all) && path.Len()==0) {LastError << Language.Error_NoSavePath; return 1;}
 
-  key = ChoiceKeyNext->GetSelection();
-  if (key!=wxNOT_FOUND) Game.SetKeyNext(key);
+  if (key_back!=wxNOT_FOUND) Game.SetKeyBack(key_back);
+  if (key_save!=wxNOT_FOUND) Game.SetKeySave(key_save);
+  if (key_next!=wxNOT_FOUND) Game.SetKeyNext(key_next);
+
+  Game.SetSaveSingleTexture( save_single);
+  Game.SetSaveAllTextures( save_all);
 
   int colour[3];
   colour[0] = GetColour( FontColour[1], 255);
@@ -251,11 +256,19 @@ int OTM_GamePage::UpdateGame(void)
   SetColour( &TextureColour[1], colour);
   Game.SetTextureColour(colour);
 
+  Game.SetFiles( Files);
+
   bool *checked = new bool[NumberOfEntry];
   for (int i=0; i<NumberOfEntry; i++) checked[i] = CheckBoxes[i]->GetValue();
   Game.SetChecked( checked, NumberOfEntry);
   delete [] checked;
 
+  return 0;
+}
+
+int OTM_GamePage::UpdateGame(void)
+{
+  if (int ret = GetSettings()) return ret;
   if (int ret = Sender.Send( Game, GameOld))
   {
     LastError = Language.Error_Send;
@@ -265,6 +278,18 @@ int OTM_GamePage::UpdateGame(void)
   }
 
   GameOld = Game;
+  return 0;
+}
+
+int OTM_GamePage::SaveToFile( const wxString &file_name)
+{
+  if (int ret = GetSettings()) return ret;
+  if (int ret = Game.SaveToFile( file_name))
+  {
+    LastError = Language.Error_SaveFile;
+    LastError <<"\n" << file_name;
+    return ret;
+  }
   return 0;
 }
 
@@ -279,6 +304,7 @@ int OTM_GamePage::SetColour( wxTextCtrl** txt, int *colour)
   }
   return 0;
 }
+
 int OTM_GamePage::GetColour( wxTextCtrl* txt, int def)
 {
   wxString temp = txt->GetValue();
@@ -292,64 +318,18 @@ int OTM_GamePage::GetColour( wxTextCtrl* txt, int def)
   return colour;
 }
 
-int OTM_GamePage::SaveToFile( const wxString &file_name)
-{
-  Game.SetSaveSingleTexture(SaveSingleTexture->GetValue());
-  Game.SetSaveAllTextures(SaveAllTextures->GetValue());
-
-  int key = ChoiceKeyBack->GetSelection();
-  if (key!=wxNOT_FOUND) Game.SetKeyBack(key);
-
-  key = ChoiceKeySave->GetSelection();
-  if (key!=wxNOT_FOUND) Game.SetKeySave(key);
-
-  key = ChoiceKeyNext->GetSelection();
-  if (key!=wxNOT_FOUND) Game.SetKeyNext(key);
-
-  int colour[3];
-  colour[0] = GetColour( FontColour[1], 255);
-  colour[1] = GetColour( FontColour[2], 0);
-  colour[2] = GetColour( FontColour[3], 0);
-  SetColour( &FontColour[1], colour);
-  Game.SetFontColour(colour);
-
-  colour[0] = GetColour( TextureColour[1], 0);
-  colour[1] = GetColour( TextureColour[2], 255);
-  colour[2] = GetColour( TextureColour[3], 0);
-  SetColour( &TextureColour[1], colour);
-  Game.SetTextureColour(colour);
-
-  bool *checked = new bool[NumberOfEntry];
-  for (int i=0; i<NumberOfEntry; i++) checked[i] = CheckBoxes[i]->GetValue();
-  Game.SetChecked( checked, NumberOfEntry);
-  delete [] checked;
-
-  if (int ret = Game.SaveToFile( file_name))
-  {
-    LastError = Language.Error_SaveFile;
-    LastError <<"\n" << file_name;
-    return ret;
-  }
-  return 0;
-}
-
 
 void OTM_GamePage::OnButtonUp(wxCommandEvent& event)
 {
   int id = (event.GetId() - ID_Button_Texture)/3;
   if (id <=0 || id>= NumberOfEntry) return;
 
-  wxArrayString array;
-  Game.GetTextures( array);
+  wxString cpy = Files[id];
+  Files[id] = Files[id-1];
+  Files[id-1] = cpy;
 
-  wxString cpy = array[id];
-  array[id] = array[id-1];
-  array[id-1] = cpy;
-
-  Game.SetTextures( array);
-
-  CheckBoxes[id]->SetLabel(array[id]);
-  CheckBoxes[id-1]->SetLabel(array[id-1]);
+  CheckBoxes[id]->SetLabel(Files[id]);
+  CheckBoxes[id-1]->SetLabel(Files[id-1]);
 
   bool cpy_checked = CheckBoxes[id]->GetValue();
   CheckBoxes[id]->SetValue(CheckBoxes[id-1]);
@@ -361,17 +341,12 @@ void OTM_GamePage::OnButtonDown(wxCommandEvent& event)
   int id = (event.GetId() - ID_Button_Texture-1)/3;
   if (id <0 || id>= NumberOfEntry-1) return;
 
-  wxArrayString array;
-  Game.GetTextures( array);
+  wxString cpy = Files[id];
+  Files[id] = Files[id+1];
+  Files[id+1] = cpy;
 
-  wxString cpy = array[id];
-  array[id] = array[id+1];
-  array[id+1] = cpy;
-
-  Game.SetTextures( array);
-
-  CheckBoxes[id]->SetLabel(array[id]);
-  CheckBoxes[id+1]->SetLabel(array[id+1]);
+  CheckBoxes[id]->SetLabel(Files[id]);
+  CheckBoxes[id+1]->SetLabel(Files[id+1]);
 
   bool cpy_checked = CheckBoxes[id]->GetValue();
   CheckBoxes[id]->SetValue(CheckBoxes[id+1]);
@@ -383,19 +358,15 @@ void OTM_GamePage::OnButtonDelete(wxCommandEvent& event)
   int id = (event.GetId() - ID_Button_Texture-2)/3;
   if (id <0 || id>= NumberOfEntry) return;
 
-  wxArrayString array;
-  Game.GetTextures( array);
+  for (int i=id+1; i<NumberOfEntry; i++) CheckBoxes[i-1]->SetLabel(Files[i]);
 
-  for (int i=id+1; i<NumberOfEntry; i++) CheckBoxes[i-1]->SetLabel(array[i]);
-
-  array.RemoveAt(id, 1);
-  Game.SetTextures( array);
+  Files.RemoveAt(id, 1);
   NumberOfEntry--;
 
 
-  Unbind( wxEVT_COMMAND_BUTTON_CLICKED, &OTM_GamePage::OnButtonUp, this, 3*id);
-  Unbind( wxEVT_COMMAND_BUTTON_CLICKED, &OTM_GamePage::OnButtonDown, this, 3*id+1);
-  Unbind( wxEVT_COMMAND_BUTTON_CLICKED, &OTM_GamePage::OnButtonDelete, this, 3*id+2);
+  Unbind( wxEVT_COMMAND_BUTTON_CLICKED, &OTM_GamePage::OnButtonUp, this, ID_Button_Texture+3*NumberOfEntry);
+  Unbind( wxEVT_COMMAND_BUTTON_CLICKED, &OTM_GamePage::OnButtonDown, this, ID_Button_Texture+3*NumberOfEntry+1);
+  Unbind( wxEVT_COMMAND_BUTTON_CLICKED, &OTM_GamePage::OnButtonDelete, this, ID_Button_Texture+3*NumberOfEntry+2);
 
   CheckBoxVSizer->Detach( CheckBoxHSizers[NumberOfEntry]);
 
@@ -415,3 +386,20 @@ void OTM_GamePage::OnButtonDelete(wxCommandEvent& event)
   delete CheckButtonDelete[NumberOfEntry];
   CheckButtonDelete[NumberOfEntry] = NULL;
 }
+
+
+int OTM_GamePage::UpdateLanguage(void)
+{
+  TextKeyBack->SetValue( Language.KeyBack);
+  TextKeySave->SetValue( Language.KeySave);
+  TextKeyNext->SetValue( Language.KeyNext);
+  FontColour[0]->SetValue( Language.FontColour);
+  TextureColour[0]->SetValue( Language.TextureColour);
+  SaveAllTextures->SetLabel( Language.CheckBoxSaveAllTextures);
+  SaveSingleTexture->SetLabel( Language.CheckBoxSaveSingleTexture);
+  wxString temp = Language.TextCtrlSavePath;
+  temp << Game.GetSavePath();
+  SavePath->SetValue( temp);
+  return 0;
+}
+

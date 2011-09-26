@@ -13,7 +13,7 @@ MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 GNU General Public License for more details.
 
 You should have received a copy of the GNU General Public License
-along with FooOpenTexMod.  If not, see <http://www.gnu.org/licenses/>.
+along with OpenTexMod.  If not, see <http://www.gnu.org/licenses/>.
 */
 
 
@@ -50,9 +50,13 @@ public:
   void OnButtonDown(wxCommandEvent& WXUNUSED(event));
   void OnButtonDelete(wxCommandEvent& WXUNUSED(event));
 
+  int UpdateLanguage(void);
+
   wxString LastError;
 
 private:
+
+  int GetSettings(void);
   int SetColour( wxTextCtrl** txt, int *colour);
   int GetColour( wxTextCtrl* txt, int def);
 
@@ -86,6 +90,7 @@ private:
 
   OTM_Language &Language;
 
+  wxArrayString Files;
   OTM_GameInfo Game;
   OTM_GameInfo GameOld;
 

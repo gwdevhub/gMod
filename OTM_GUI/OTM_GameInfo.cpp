@@ -13,7 +13,7 @@ MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 GNU General Public License for more details.
 
 You should have received a copy of the GNU General Public License
-along with FooOpenTexMod.  If not, see <http://www.gnu.org/licenses/>.
+along with OpenTexMod.  If not, see <http://www.gnu.org/licenses/>.
 */
 
 
@@ -35,6 +35,7 @@ OTM_GameInfo::OTM_GameInfo(const wxString &name)
 
 OTM_GameInfo::~OTM_GameInfo(void)
 {
+  if (Checked!=NULL) delete [] Checked;
 }
 
 void OTM_GameInfo::Init(void)
@@ -50,13 +51,13 @@ void OTM_GameInfo::Init(void)
   NumberOfChecked = 0;
   SavePath.Empty();
   OpenPath.Empty();
-  Textures.Empty();
+  Files.Empty();
 }
 
 int OTM_GameInfo::SaveToFile( const wxString &file_name)
 {
-  wxString name = file_name;
-  name += L"_save.txt";
+  wxString name;
+  name << "OTM_GameSave_" << file_name << ".txt";
   wxFile file;
 
   //if (!file.Access(name, wxFile::write)) return -1;
@@ -100,16 +101,16 @@ int OTM_GameInfo::SaveToFile( const wxString &file_name)
   content.Printf( L"TextureColour:%d,%d,%d\n", TextureColour[0], TextureColour[1], TextureColour[2]);
   file.Write( content.char_str(), content.Len());
 
-  int num = Textures.GetCount();
+  int num = Files.GetCount();
 
   for (int i=0; i<num; i++)
   {
     if (i<NumberOfChecked)
     {
-      if (Checked[i]) content.Printf( L"Add_true:%ls\n", Textures[i].wc_str());
-      else content.Printf( L"Add_false:%ls\n", Textures[i].wc_str());
+      if (Checked[i]) content.Printf( L"Add_true:%ls\n", Files[i].wc_str());
+      else content.Printf( L"Add_false:%ls\n", Files[i].wc_str());
     }
-    else content.Printf( L"Add_true:%ls\n", Textures[i].wc_str());
+    else content.Printf( L"Add_true:%ls\n", Files[i].wc_str());
     file.Write( content.char_str(), content.Len());
   }
 
@@ -122,8 +123,8 @@ int OTM_GameInfo::LoadFromFile( const wxString &file_name)
 {
   Init();
 
-  wxString name = file_name;
-  name += L"_save.txt";
+  wxString name;
+  name << "OTM_GameSave_" << file_name << ".txt";
   wxFile file;
 
   if (!file.Access(name, wxFile::read)) return -1;
@@ -162,6 +163,7 @@ int OTM_GameInfo::LoadFromFile( const wxString &file_name)
   wxString line;
   wxString command;
   wxString temp;
+  Files.Alloc(num);
   for (int i=0; i<num; i++)
   {
     line = token.GetNextToken();
@@ -171,12 +173,12 @@ int OTM_GameInfo::LoadFromFile( const wxString &file_name)
     if (command == L"Add_true")
     {
       Checked[NumberOfChecked++] = true;
-      Textures.Add(line.AfterFirst(':'));
+      Files.Add(line.AfterFirst(':'));
     }
     else if (command == L"Add_false")
     {
       Checked[NumberOfChecked++] = false;
-      Textures.Add(line.AfterFirst(':'));
+      Files.Add(line.AfterFirst(':'));
     }
     else if (command == L"SavePath") SavePath = line.AfterFirst(':');
     else if (command == L"OpenPath") OpenPath = line.AfterFirst(':');
@@ -272,7 +274,7 @@ int OTM_GameInfo::GetChecked( bool* array, int num) const
 
 int OTM_GameInfo::SetChecked( bool* array, int num)
 {
-  if (num>NumberOfChecked)
+  if (num>LengthOfChecked)
   {
     if (Checked!=NULL) delete [] Checked;
     try {Checked = new bool [num+100];}
@@ -280,6 +282,7 @@ int OTM_GameInfo::SetChecked( bool* array, int num)
     LengthOfChecked = num+100;
   }
   for (int i=0; i<num; i++) Checked[i] = array[i];
+  NumberOfChecked = num;
   return 0;
 }
 
@@ -295,21 +298,22 @@ int OTM_GameInfo::SetSaveAllTextures(bool val)
   return 0;
 }
 
-void OTM_GameInfo::SetTextures(const wxArrayString &textures)
+void OTM_GameInfo::SetFiles(const wxArrayString &files)
 {
-  Textures = textures;
+  Files = files;
 }
 
-void OTM_GameInfo::GetTextures( wxArrayString &textures) const
+void OTM_GameInfo::GetFiles( wxArrayString &files) const
 {
-  textures = Textures;
+  files = Files;
 }
 
-void OTM_GameInfo::AddTexture( const wxString &textures)
+/*
+void OTM_GameInfo::AddTexture( const wxString &file)
 {
-  Textures.Add(textures);
+  Files.Add(file);
 }
-
+*/
 
 OTM_GameInfo& OTM_GameInfo::operator = (const  OTM_GameInfo &rhs)
 {
@@ -330,7 +334,7 @@ OTM_GameInfo& OTM_GameInfo::operator = (const  OTM_GameInfo &rhs)
 
   SavePath = rhs.SavePath;
   OpenPath = rhs.OpenPath;
-  Textures = rhs.Textures;
+  Files = rhs.Files;
 
   for (int i=0; i<3; i++) FontColour[i]=rhs.FontColour[i];
   for (int i=0; i<3; i++) TextureColour[i]=rhs.TextureColour[i];

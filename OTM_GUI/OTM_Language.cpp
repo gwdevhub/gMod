@@ -13,7 +13,7 @@ MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 GNU General Public License for more details.
 
 You should have received a copy of the GNU General Public License
-along with FooOpenTexMod.  If not, see <http://www.gnu.org/licenses/>.
+along with OpenTexMod.  If not, see <http://www.gnu.org/licenses/>.
 */
 
 
@@ -21,68 +21,212 @@ along with FooOpenTexMod.  If not, see <http://www.gnu.org/licenses/>.
 #include "OTM_Main.h"
 
 
-OTM_Language::OTM_Language(void)
+OTM_Language::OTM_Language(void) : DefaultLanguage("English")
 {
-  LoadLanguage(0);  //English
+  if (LoadCurrentLanguage()) {CurrentLanguage = DefaultLanguage; LoadDefault();}
+  else LoadLanguage( CurrentLanguage);
+  LoadKeys();
 }
 
-int OTM_Language::LoadLanguage(int lang)
+#define LAST_USED_LANGUAGE_FILE "OTM_LastUsedLanguage.txt"
+
+int OTM_Language::LoadCurrentLanguage(void)
 {
-  if (lang==0) //English
-  {
-    //MenuPref = L"Preferences";
-    //MenuQuit = L"Quit";
-    MenuHelp  = L"Help";
-    MenuAbout  = L"About";
-    MenuAddGame = L"Add game";
-    MenuDeleteGame = L"Delete Game";
+  wxFile file;
+  if (!file.Access( LAST_USED_LANGUAGE_FILE, wxFile::read)) return -1;
+  file.Open( LAST_USED_LANGUAGE_FILE, wxFile::read);
+  if (!file.IsOpened()) return -1;
+  unsigned len = file.Length();
 
-    //MainMenuStart = L"Start";
-    MainMenuGame = L"Game";
-    MainMenuHelp = L"Help";
+  char* buffer;
+  try {buffer = new char [len+1];}
+  catch (...) {return -1;}
 
-    ButtonOpen = L"Open texture";
-    ButtonDirectory = L"Set save directory";
-    ButtonUpdate = L"Update";
-    ButtonSave = L"Save as default";
+  unsigned int result = file.Read( buffer, len);
+  file.Close();
+  if (result != len) return -1;
+  buffer[len]=0;
 
-    ChooseFile = L"Choose a texture file";
-    ChooseDir = L"Choose a directory";
-
-    CheckBoxSaveSingleTexture = L"Save single texture";
-    CheckBoxSaveAllTextures = L"Save all textures";
-    TextCtrlSavePath = L"Save path: ";
-
-    DeleteGame = L"Select the games to be deleted.";
-
-    GameAlreadyAdded = L"Game has been already added.";
-    FileNotSupported = L"This file type is not supported:\n";
-    ExitGameAnyway = L"Closing OpenTexMod while a game is running might lead to a crash of the game.\nExit anyway?";
-
-    Error_DLLNotFound = L"Could not load the dll.\nThe dll injection won't work.\nThis might happen if D3DX9_43.dll is not installed on your system.\nPlease install the newest DirectX End-User Runtime Web Installer.";
-    Error_FktNotFound = L"Could not load function out of dll.\nThe dll injection won't work.";
-
-    Error_Send = L"Could not send to game.";
-    Error_SaveFile = L"Could not save to file.";
-    Error_NoPipe = L"Pipe is not opened.";
-    Error_WritePipe = L"Could not write in pipe.";
-    Error_FlushPipe = L"Could not flush pipe buffer.";
-    Error_Hash = L"Could not find hash, maybe file is not named as *_HASH.dds";
-    Error_FileOpen = L"Could not open file.";
-    Error_FileRead = L"Could not read file.";
-    Error_Memory = L"Could not allocate enough memory";
-    Error_FileformatNotSupported = L"This file format is not supported.";
-    Error_Unzip = L"Could not unzip.";
-    Error_ZipEntry = L"Could not find zip entry.";
-
-    FontColour = L"Font colour (RGB):";
-    TextureColour = L"Texture colour (RGB):";
-  }
-
-  LoadKeys(lang);
+  CurrentLanguage = buffer;
+  delete [] buffer;
   return 0;
 }
-#define QUOTES(x) #x
+
+
+int OTM_Language::SaveCurrentLanguage(void)
+{
+  wxFile file;
+  if (!file.Access( LAST_USED_LANGUAGE_FILE, wxFile::write)) return -1;
+  file.Open( LAST_USED_LANGUAGE_FILE, wxFile::write);
+  if (!file.IsOpened()) return -1;
+
+  file.Write( CurrentLanguage.char_str(), CurrentLanguage.Len());
+  return 0;
+}
+
+
+int OTM_Language::GetLanguages(wxArrayString &lang)
+{
+  wxArrayString files;
+  wxDir::GetAllFiles( wxGetCwd(), &files, "OTM_LanguagePack_*.txt");
+  lang.Empty();
+  lang.Alloc(files.GetCount()+1);
+  lang.Add("English");
+
+  wxString temp;
+  int num = files.GetCount();
+  for (int i=0; i<num; i++)
+  {
+    temp = files[i];
+    temp = temp.AfterLast('\\');
+    temp = temp.AfterFirst('_');
+    temp = temp.AfterFirst('_');
+    temp = temp.BeforeLast('.');
+    lang.Add(temp);
+  }
+  return 0;
+}
+
+
+int OTM_Language::GetHelpMessage(wxString &help)
+{
+  wxString file;
+  file << "README_" << CurrentLanguage << ".txt";
+
+  wxFile dat;
+ if (!dat.Access(file, wxFile::read))
+ {
+   file.Empty();
+   file << "README_" << CurrentLanguage << ".txt";
+   if (!dat.Access(file, wxFile::read)) {LastError << Error_FileOpen <<"\n" << file; return -1;}
+ }
+ dat.Open(file, wxFile::read);
+ if (!dat.IsOpened()) {LastError << Error_FileOpen <<"\n" << file; return -1;}
+ unsigned len = dat.Length();
+
+ unsigned char* buffer;
+ try {buffer = new unsigned char [len+1];}
+ catch (...) {LastError << Error_Memory; return -1;}
+
+ unsigned int result = dat.Read( buffer, len);
+ dat.Close();
+
+ if (result != len) {delete [] buffer; LastError << Error_FileRead<<"\n" << file; return -1;}
+
+ buffer[len]=0;
+ help=buffer;
+
+ return 0;
+}
+
+
+
+#define CheckEntry( command, msg, target) \
+if ( command == #target ) \
+{ \
+  target = msg; \
+} else
+
+int OTM_Language::LoadLanguage(const wxString &name)
+{
+  LoadDefault();
+  CurrentLanguage = name;
+  if (name=="English")
+  {
+    if (wxFile::Exists(LAST_USED_LANGUAGE_FILE)) wxRemoveFile(LAST_USED_LANGUAGE_FILE);
+    return 0;
+  }
+
+  wxString file_name;
+  file_name << "OTM_LanguagePack_" << name << ".txt";
+
+  wxFile dat;
+  if (!dat.Access(file_name, wxFile::read)) {LastError << Error_FileOpen <<"\n" << file_name; return -1;}
+  dat.Open(file_name, wxFile::read);
+  if (!dat.IsOpened()) {LastError << Error_FileOpen <<"\n" << file_name; return -1;}
+  unsigned len = dat.Length();
+
+  unsigned char* buffer;
+  try {buffer = new unsigned char [len+1];}
+  catch (...) {LastError << Error_Memory; return -1;}
+
+  unsigned int result = dat.Read( buffer, len);
+  dat.Close();
+
+  if (result != len) {delete [] buffer; LastError << Error_FileRead<<"\n" << file_name; return -1;}
+
+  buffer[len]=0;
+
+  wxStringTokenizer token( buffer, "|");
+  int num = token.CountTokens();
+  wxString entry;
+  wxString command;
+  wxString msg;
+
+  for (int i=0; i<num; i++)
+  {
+    entry = token.GetNextToken();
+
+    command = entry.BeforeFirst(':');
+    command.Replace( "\r", "");
+    command.Replace( "\n", "");
+    msg = entry.AfterFirst(':');
+
+    while (msg[0]=='\r' || msg[0]=='\n') msg.Remove(0,1);
+    while (msg.Last()=='\n' || msg.Last()=='\r') msg.RemoveLast(1);
+
+    CheckEntry( command, msg, MenuLanguage)
+    CheckEntry( command, msg, MenuHelp)
+    CheckEntry( command, msg, MenuAbout)
+    CheckEntry( command, msg, MenuAddGame)
+    CheckEntry( command, msg, MenuDeleteGame)
+    CheckEntry( command, msg, MainMenuGame)
+    CheckEntry( command, msg, MainMenuHelp)
+    CheckEntry( command, msg, ButtonOpen)
+    CheckEntry( command, msg, ButtonDirectory)
+    CheckEntry( command, msg, ButtonUpdate)
+    CheckEntry( command, msg, ButtonSave)
+    CheckEntry( command, msg, ChooseFile)
+    CheckEntry( command, msg, ChooseDir)
+    CheckEntry( command, msg, CheckBoxSaveSingleTexture)
+    CheckEntry( command, msg, CheckBoxSaveAllTextures)
+    CheckEntry( command, msg, TextCtrlSavePath)
+    CheckEntry( command, msg, SelectLanguage)
+    CheckEntry( command, msg, ChooseGame)
+    CheckEntry( command, msg, DeleteGame)
+    CheckEntry( command, msg, GameAlreadyAdded)
+    CheckEntry( command, msg, FileNotSupported)
+    CheckEntry( command, msg, ExitGameAnyway)
+    CheckEntry( command, msg, Error_FktNotFound)
+    CheckEntry( command, msg, Error_DLLNotFound)
+    CheckEntry( command, msg, Error_Send)
+    CheckEntry( command, msg, Error_KeyTwice)
+    CheckEntry( command, msg, Error_NoSavePath)
+    CheckEntry( command, msg, Error_SaveFile)
+    CheckEntry( command, msg, Error_NoPipe)
+    CheckEntry( command, msg, Error_WritePipe)
+    CheckEntry( command, msg, Error_FlushPipe)
+    CheckEntry( command, msg, Error_Hash)
+    CheckEntry( command, msg, Error_FileOpen)
+    CheckEntry( command, msg, Error_FileRead)
+    CheckEntry( command, msg, Error_Memory)
+    CheckEntry( command, msg, Error_FileformatNotSupported)
+    CheckEntry( command, msg, Error_Unzip)
+    CheckEntry( command, msg, Error_ZipEntry)
+    CheckEntry( command, msg, KeyBack)
+    CheckEntry( command, msg, KeySave)
+    CheckEntry( command, msg, KeyNext)
+    CheckEntry( command, msg, FontColour)
+    CheckEntry( command, msg, TextureColour)
+    {}
+  }
+
+  delete [] buffer;
+
+  SaveCurrentLanguage();
+  return 0;
+}
+#undef CheckEntry
 
 #define AddKey( name, key ) \
 { \
@@ -90,15 +234,68 @@ int OTM_Language::LoadLanguage(int lang)
   KeyValues.Add( key ); \
 }
 
-int OTM_Language::LoadKeys(int lang)
+int OTM_Language::LoadDefault(void)
 {
-  if (lang==0) //English
-  {
-    KeyBack = L"Back";
-    KeySave = L"Save";
-    KeyNext = L"Next";
-  }
+  MenuLanguage = L"Change Language";
+  MenuHelp  = L"Help";
+  MenuAbout  = L"About";
+  MenuAddGame = L"Add game";
+  MenuDeleteGame = L"Delete Game";
 
+  MainMenuGame = L"Game";
+  MainMenuHelp = L"Help";
+
+  ButtonOpen = L"Open texture";
+  ButtonDirectory = L"Set save directory";
+  ButtonUpdate = L"Update";
+  ButtonSave = L"save settings";
+
+  ChooseFile = L"Choose a texture file";
+  ChooseDir = L"Choose a directory";
+
+  CheckBoxSaveSingleTexture = L"Save single texture";
+  CheckBoxSaveAllTextures = L"Save all textures";
+  TextCtrlSavePath = L"Save path:";
+
+  SelectLanguage = L"Select a language.";
+
+  ChooseGame = L"Select a game binary.";
+  DeleteGame = L"Select the games to be deleted.";
+  GameAlreadyAdded = L"Game has been already added.";
+  FileNotSupported = L"This file type is not supported:\n";
+  ExitGameAnyway = L"Closing OpenTexMod while a game is running might lead to a crash of the game.\nExit anyway?";
+
+  Error_DLLNotFound = L"Could not load the dll.\nThe dll injection won't work.\nThis might happen if D3DX9_43.dll is not installed on your system.\nPlease install the newest DirectX End-User Runtime Web Installer.";
+  Error_FktNotFound = L"Could not load function out of dll.\nThe dll injection won't work.";
+
+  Error_Send = L"Could not send to game.";
+  Error_KeyTwice = L"You have assigned the same key twice.";
+  Error_NoSavePath = L"You did not set a save path.";
+  Error_SaveFile = L"Could not save to file.";
+  Error_NoPipe = L"Pipe is not opened.";
+  Error_WritePipe = L"Could not write in pipe.";
+  Error_FlushPipe = L"Could not flush pipe buffer.";
+  Error_Hash = L"Could not find hash, maybe file is not named as *_HASH.dds";
+  Error_FileOpen = L"Could not open file:";
+  Error_FileRead = L"Could not read file:";
+  Error_Memory = L"Could not allocate enough memory.";
+  Error_FileformatNotSupported = L"This file format is not supported.";
+  Error_Unzip = L"Could not unzip.";
+  Error_ZipEntry = L"Could not find zip entry.";
+
+
+  KeyBack = L"Back";
+  KeySave = L"Save";
+  KeyNext = L"Next";
+
+
+  FontColour = L"Font colour (RGB):";
+  TextureColour = L"Texture colour (RGB):";
+  return 0;
+}
+
+int OTM_Language::LoadKeys(void)
+{
   KeyStrings.Empty();
   KeyValues.Empty();
 /*

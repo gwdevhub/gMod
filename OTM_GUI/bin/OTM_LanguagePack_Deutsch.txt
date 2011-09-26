@@ -1,0 +1,56 @@
+MenuLanguage:Sprache|
+MenuHelp:Hilfe|
+MenuAbout:Über|
+MenuAddGame:Spiel hinzufügen|
+MenuDeleteGame:Spiel entfernen|
+MainMenuGame:Spiele|
+MainMenuHelp:Hilfe|
+ButtonOpen:Texturen öffnen|
+ButtonDirectory:Speicherpfad|
+ButtonUpdate:Update|
+ButtonSave:Einstellungen speichern|
+ChooseFile:Wähle eine Textur/Mod|
+ChooseDir:Wähle ein Verzeichnes|
+CheckBoxSaveSingleTexture:Speicher einzelne Texturen|
+CheckBoxSaveAllTextures:Speicher alle Texturen|
+TextCtrlSavePath:Speicherverzeichnis: |
+SelectLanguage:Wähle eine Sprache.|
+ChooseGame:Wähle eine Spiel-exe|
+DeleteGame:Wähle die Spiele zum Entfernen|
+GameAlreadyAdded:Das Spiel wurde bereits hinzugefügt.|
+FileNotSupported:Dieser Filetype wird nicht unterstützt:|
+
+ExitGameAnyway:
+Es ist nicht ratsam OpenTexMod zu schließen, während Spiele noch offen sind.
+Dies kann zum Absturz der Spiele führen.
+Trozdem beenden?|
+
+Error_DLLNotFound:
+Konnte die dll nicht laden,
+Die dll injection wird nicht funktionieren.
+Der Grund dafür kann das fehlen von D3DX9_43.dll sein.
+Bitte installiere den neusten DirectX End-User Runtime Web Installer.|
+
+Error_FktNotFound:
+Konnte nicht die Funktion aus der dll laden.
+Die dll injection wird nicht funktionieren.|
+
+Error_Send:Konnte nicht an das Spiel senden.|
+Error_KeyTwice:Du hast einen Taste mehrmals verwendet.|
+Error_NoSavePath:Du hast kein Speicherverzeichnis gesetzt.|
+Error_SaveFile:Konnte nicht in Datei speichern|
+Error_NoPipe:Pipe ist nicht offen.|
+Error_WritePipe:Konnte nicht in Pipe schreiben.|
+Error_FlushPipe:Konnte Inhalt der Pipe nicht schreiben (flush).|
+Error_Hash:Konnte den Hash nicht erkennen, vielleicht entspricht der Name nicht dem Format *_HASH.dds|
+Error_FileOpen:Konnte Datei nicht öffnen:|
+Error_FileRead:Konnte Datei nich lesen:|
+Error_Memory:Konnte nicht genügen Speicher allokieren.|
+Error_FileformatNotSupported:Dieses Dateiformat wird nicht unterstützt.|
+Error_Unzip:Konnte zip-Datei nicht entpacken.|
+Error_ZipEntry:Konnte Eintrag in zip-Datei nicht finden.|
+KeyBack:Zurück|
+KeySave:Speichern|
+KeyNext:Vorwärts|
+FontColour:Schriftfarbe (RGB):|
+TextureColour:Texturfarbe (RGB):|
