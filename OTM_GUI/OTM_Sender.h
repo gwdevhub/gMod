@@ -22,23 +22,6 @@ along with OpenTexMod.  If not, see <http://www.gnu.org/licenses/>.
 #define OTM_SENDER_H_
 #include "OTM_Main.h"
 
-class AddTextureClass
-{
-public:
-  AddTextureClass(void);
-  void SetSize(int num);
-  ~AddTextureClass(void);
-
-  unsigned int Num;
-  char **Textures;
-  unsigned int *Size;
-  unsigned long *Hash;
-  bool *Add;
-  bool *Force;
-
-  unsigned int Len;
-};
-
 
 // an object of this class is owned by each OTM_GamePage object. It act as sender ^^
 class OTM_Sender
@@ -47,7 +30,7 @@ public:
   OTM_Sender(PipeStruct &pipe, OTM_Language &lang);
   ~OTM_Sender(void);
 
-  int Send( const OTM_GameInfo &game, const OTM_GameInfo &game_old);
+  int Send( const OTM_GameInfo &game, const OTM_GameInfo &game_old, wxArrayString *comments=NULL);
 
   wxString LastError;
 

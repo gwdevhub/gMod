@@ -1,8 +1,4 @@
 * text=auto !eol
-OTM_DX9/.cproject -text
-OTM_DX9/.project -text
-OTM_DX9/.settings/org.eclipse.cdt.codan.core.prefs -text
-OTM_DX9/.settings/org.eclipse.cdt.managedbuilder.core.prefs -text
 OTM_DX9/OTM_ArrayHandler.cpp -text
 OTM_DX9/OTM_ArrayHandler.h -text
 OTM_DX9/OTM_DX9_dll.cpp -text
@@ -21,16 +17,17 @@ OTM_DX9/OTM_TextureClient.cpp -text
 OTM_DX9/OTM_TextureClient.h -text
 OTM_DX9/OTM_TextureServer.cpp -text
 OTM_DX9/OTM_TextureServer.h -text
-OTM_DX9/makefile -text
+OTM_DX9/makefile.gcc -text
+OTM_DX9/makefile.vc -text
 /OTM_Error.h -text
-OTM_GUI/.cproject -text
-OTM_GUI/.project -text
 OTM_GUI/OTM.ico -text
 OTM_GUI/OTM.rc -text
 OTM_GUI/OTM_Client.cpp -text
 OTM_GUI/OTM_Client.h -text
 OTM_GUI/OTM_Event.cpp -text
 OTM_GUI/OTM_Event.h -text
+OTM_GUI/OTM_File.cpp -text
+OTM_GUI/OTM_File.h -text
 OTM_GUI/OTM_GUI.cpp -text
 OTM_GUI/OTM_GUI.h -text
 OTM_GUI/OTM_GameInfo.cpp -text
@@ -49,7 +46,9 @@ OTM_GUI/bin/OTM_LanguagePack_Deutsch.txt -text
 OTM_GUI/bin/README_Deutsch.txt -text
 OTM_GUI/bin/README_English.txt -text
 OTM_GUI/config.gcc -text
-OTM_GUI/makefile -text
+OTM_GUI/config.vc -text
+OTM_GUI/makefile.gcc -text
+OTM_GUI/makefile.vc -text
 OTM_GUI/unzip.cpp -text
 OTM_GUI/unzip.h -text
 OTM_GUI/zip.cpp -text

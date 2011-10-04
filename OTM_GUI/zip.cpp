@@ -1140,7 +1140,7 @@ void send_all_trees(TState &state,int lcodes, int dcodes, int blcodes)
     for (rank = 0; rank < blcodes; rank++) {
         Trace("\nbl code %2d ", bl_order[rank]);
         send_bits(state,state.ts.bl_tree[bl_order[rank]].dl.len, 3);
-    }    
+    }
     Trace("\nbl tree: sent %ld", state.bs.bits_sent);
 
     send_tree(state,(ct_data *)state.ts.dyn_ltree, lcodes-1); /* send the literal tree */
@@ -1637,7 +1637,7 @@ int longest_match(TState &state,IPos cur_match)
                  scan < strend);
 
         Assert(state,scan <= state.ds.window+(unsigned)(state.ds.window_size-1), "wild scan");
-                          
+
         len = MAX_MATCH - (int)(strend - scan);
         scan = strend - MAX_MATCH;
 
@@ -2155,7 +2155,7 @@ lutime_t filetime2timet(const FILETIME ft)
 void filetime2dosdatetime(const FILETIME ft, WORD *dosdate,WORD *dostime)
 { // date: bits 0-4 are day of month 1-31. Bits 5-8 are month 1..12. Bits 9-15 are year-1980
   // time: bits 0-4 are seconds/2, bits 5-10 are minute 0..59. Bits 11-15 are hour 0..23
-  SYSTEMTIME st; FileTimeToSystemTime(&ft,&st); 
+  SYSTEMTIME st; FileTimeToSystemTime(&ft,&st);
   *dosdate = (WORD)(((st.wYear-1980)&0x7f) << 9);
   *dosdate |= (WORD)((st.wMonth&0xf) << 5);
   *dosdate |= (WORD)((st.wDay&0x1f));

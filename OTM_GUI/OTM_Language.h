@@ -57,9 +57,11 @@ public:
   wxString ChooseGame;
   wxString DeleteGame;
   wxString GameAlreadyAdded;
-  wxString FileNotSupported;
   wxString ExitGameAnyway;
+  wxString NoComment;
+  wxString Author;
 
+  wxString Error_FileNotSupported;
   wxString Error_FktNotFound;
   wxString Error_DLLNotFound;
   wxString Error_Send;
@@ -73,7 +75,6 @@ public:
   wxString Error_FileOpen;
   wxString Error_FileRead;
   wxString Error_Memory;
-  wxString Error_FileformatNotSupported;
   wxString Error_Unzip;
   wxString Error_ZipEntry;
 

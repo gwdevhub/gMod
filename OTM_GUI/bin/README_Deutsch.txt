@@ -36,6 +36,16 @@ geladen werden. Stellst du diese Option an, während die Map bereits geladen ist,
 wahrscheinlich nichts geschehen, da alle Texturen für diese Map bereits geladen sind.
 Wechsle also die Map oder lade erneut.
 
+Zip Dateien können eine "texmod.def" Datei enthalten, welche die Hash-Werte und
+Dateinamen enthält. Jede Zeile sollte dem Format "hash|filename.dds" entsprechen.
+Wenn es keine "texmod.def" Datei enthält, wird jede Datei entpackt und jene, deren 
+Namen auf das Wildcard  "*_hash.dds" zutrifft, werden benutzt.
+Die Zip Datei kann eine "Comment.txt" enthalten. Der Inhalte wird als Kommentar
+in der GUI angezeigt.
+
+Wenn du einzelne Dateien lädst, sollten diese dem Wildcard  "*_hash.dds" entsprechen.
+
+
 Wie interagiert OpenTexMod mit den Spielen?
 
 OpenTexMod klingt sich zwischen die Verbindung vom Spiel und DirectX ein.

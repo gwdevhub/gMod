@@ -40,8 +40,8 @@ along with OpenTexMod.  If not, see <http://www.gnu.org/licenses/>.
 #define wxUSE_FILE 1
 #define wxUSE_TEXTCTRL 1
 #define wxUSE_CHOICEDLG 1
+#define wxUSE_TOOLTIPS 1
 #endif
-#define wxUSE_DYNLIB_CLASS 1
 
 #define WINVER _WIN32_WINNT_WINXP
 #define _WIN32_WINNT _WIN32_WINNT_WINXP
@@ -99,6 +99,7 @@ enum
 #include "OTM_Event.h"
 #include "OTM_Client.h"
 #include "OTM_GameInfo.h"
+#include "OTM_File.h"
 #include "OTM_Sender.h"
 #include "OTM_Server.h"
 #include "OTM_GamePage.h"

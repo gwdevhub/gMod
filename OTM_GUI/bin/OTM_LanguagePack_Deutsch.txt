@@ -18,13 +18,15 @@ SelectLanguage:Wähle eine Sprache.|
 ChooseGame:Wähle eine Spiel-exe|
 DeleteGame:Wähle die Spiele zum Entfernen|
 GameAlreadyAdded:Das Spiel wurde bereits hinzugefügt.|
-FileNotSupported:Dieser Filetype wird nicht unterstützt:|
 
 ExitGameAnyway:
 Es ist nicht ratsam OpenTexMod zu schließen, während Spiele noch offen sind.
 Dies kann zum Absturz der Spiele führen.
 Trozdem beenden?|
+NoComment:Kein Kommentar.|
+Author:Autor: |
 
+Error_FileNotSupported:Dieser Filetype wird nicht unterstützt:|
 Error_DLLNotFound:
 Konnte die dll nicht laden,
 Die dll injection wird nicht funktionieren.
@@ -46,7 +48,6 @@ Error_Hash:Konnte den Hash nicht erkennen, vielleicht entspricht der Name nicht 
 Error_FileOpen:Konnte Datei nicht öffnen:|
 Error_FileRead:Konnte Datei nich lesen:|
 Error_Memory:Konnte nicht genügen Speicher allokieren.|
-Error_FileformatNotSupported:Dieses Dateiformat wird nicht unterstützt.|
 Error_Unzip:Konnte zip-Datei nicht entpacken.|
 Error_ZipEntry:Konnte Eintrag in zip-Datei nicht finden.|
 KeyBack:Zurück|

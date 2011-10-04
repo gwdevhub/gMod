@@ -195,8 +195,8 @@ int OTM_Language::LoadLanguage(const wxString &name)
     CheckEntry( command, msg, ChooseGame)
     CheckEntry( command, msg, DeleteGame)
     CheckEntry( command, msg, GameAlreadyAdded)
-    CheckEntry( command, msg, FileNotSupported)
     CheckEntry( command, msg, ExitGameAnyway)
+    CheckEntry( command, msg, Error_FileNotSupported)
     CheckEntry( command, msg, Error_FktNotFound)
     CheckEntry( command, msg, Error_DLLNotFound)
     CheckEntry( command, msg, Error_Send)
@@ -210,7 +210,6 @@ int OTM_Language::LoadLanguage(const wxString &name)
     CheckEntry( command, msg, Error_FileOpen)
     CheckEntry( command, msg, Error_FileRead)
     CheckEntry( command, msg, Error_Memory)
-    CheckEntry( command, msg, Error_FileformatNotSupported)
     CheckEntry( command, msg, Error_Unzip)
     CheckEntry( command, msg, Error_ZipEntry)
     CheckEntry( command, msg, KeyBack)
@@ -262,9 +261,11 @@ int OTM_Language::LoadDefault(void)
   ChooseGame = L"Select a game binary.";
   DeleteGame = L"Select the games to be deleted.";
   GameAlreadyAdded = L"Game has been already added.";
-  FileNotSupported = L"This file type is not supported:\n";
   ExitGameAnyway = L"Closing OpenTexMod while a game is running might lead to a crash of the game.\nExit anyway?";
+  NoComment = L"No comment.";
+  Author = L"Author: ";
 
+  Error_FileNotSupported = L"This file type is not supported:\n";
   Error_DLLNotFound = L"Could not load the dll.\nThe dll injection won't work.\nThis might happen if D3DX9_43.dll is not installed on your system.\nPlease install the newest DirectX End-User Runtime Web Installer.";
   Error_FktNotFound = L"Could not load function out of dll.\nThe dll injection won't work.";
 
@@ -279,7 +280,6 @@ int OTM_Language::LoadDefault(void)
   Error_FileOpen = L"Could not open file:";
   Error_FileRead = L"Could not read file:";
   Error_Memory = L"Could not allocate enough memory.";
-  Error_FileformatNotSupported = L"This file format is not supported.";
   Error_Unzip = L"Could not unzip.";
   Error_ZipEntry = L"Could not find zip entry.";
 

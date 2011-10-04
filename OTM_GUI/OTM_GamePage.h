@@ -79,7 +79,7 @@ private:
   wxTextCtrl *SavePath;
 
   wxBoxSizer **CheckBoxHSizers;
-  wxBoxSizer *CheckBoxVSizer;
+  //wxBoxSizer *CheckBoxVSizer;
   wxButton **CheckButtonUp;
   wxButton **CheckButtonDown;
   wxButton **CheckButtonDelete;

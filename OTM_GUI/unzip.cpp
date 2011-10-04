@@ -3,7 +3,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <wchar.h>  /*added by ROTA*/
+//#include <wchar.h>  /*added by ROTA*/
 #include <tchar.h>
 #include "unzip.h"
 
@@ -1562,8 +1562,9 @@ int inflate_blocks_free(inflate_blocks_statef *s, z_streamp z)
 
 
 
-extern const char inflate_copyright[] =
-   " inflate 1.1.3 Copyright 1995-1998 Mark Adler ";
+// allready added in wxWidgets
+//extern const char inflate_copyright[] =
+//   " inflate 1.1.3 Copyright 1995-1998 Mark Adler ";
 // If you use the zlib library in a product, an acknowledgment is welcome
 // in the documentation of your product. If for some reason you cannot
 // include such an acknowledgment, I would appreciate that you keep this
@@ -3515,7 +3516,7 @@ int unzReadCurrentFile  (unzFile file, voidp buf, unsigned len, bool *reached_eo
     if (uDoEncHead>pfile_in_zip_read_info->stream.avail_in) uDoEncHead=pfile_in_zip_read_info->stream.avail_in;
     if (uDoEncHead>0)
     { char bufcrc=pfile_in_zip_read_info->stream.next_in[uDoEncHead-1];
-      pfile_in_zip_read_info->rest_read_uncompressed-=uDoEncHead;
+      //pfile_in_zip_read_info->rest_read_uncompressed-=uDoEncHead; // commented by ROTA
       pfile_in_zip_read_info->stream.avail_in -= uDoEncHead;
       pfile_in_zip_read_info->stream.next_in += uDoEncHead;
       pfile_in_zip_read_info->encheadleft -= uDoEncHead;

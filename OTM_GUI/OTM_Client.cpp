@@ -65,10 +65,12 @@ void* OTM_Client::Entry(void)
       {
         commands = (MsgStruct*) &buffer[pos];
         //unsigned int add_length = 0;
+        /*
         switch (commands->Control)
         {
 
         }
+        */
         pos+=sizeof(MsgStruct);// + add_length;
       }
     }

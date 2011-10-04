@@ -18,7 +18,7 @@ OBJS = \
 	obj
 OBJS_exe = \
   bin
-WX_DIR = D:\Programme\wx
+WX_DIR = D:\Programme\wxWidgets-2.9.2
 LIBDIRNAME = $(WX_DIR)\lib\gcc_$(LIBTYPE_SUFFIX)$(CFG)
 SETUPHDIR = \
 	$(LIBDIRNAME)\$(PORTNAME)$(WXUNIVNAME)$(WXUNICODEFLAG)$(WXDEBUGFLAG)
@@ -26,7 +26,7 @@ MINIMAL_CXXFLAGS = $(__DEBUGINFO) $(__OPTIMIZEFLAG_2) $(__THREADSFLAG) \
 	$(GCCFLAGS) -DHAVE_W32API_H -D__WXMSW__ $(__WXUNIV_DEFINE_p) \
 	$(__DEBUG_DEFINE_p) $(__EXCEPTIONS_DEFINE_p) $(__RTTI_DEFINE_p) \
 	$(__THREAD_DEFINE_p) $(__UNICODE_DEFINE_p) $(__MSLU_DEFINE_p) \
-	$(__GFXCTX_DEFINE_p) -I$(SETUPHDIR) -I$(WX_DIR)\include -W -Wall -I. \
+	$(__GFXCTX_DEFINE_p) -I$(SETUPHDIR) -I$(WX_DIR)\include -W -Wall -Wextra -I. \
 	$(__DLLFLAG_p) -DNOPCH $(__RTTIFLAG_5) \
 	$(__EXCEPTIONSFLAG_6) -Wno-ctor-dtor-privacy $(CPPFLAGS) $(CXXFLAGS)
 MINIMAL_OBJECTS =  \
@@ -37,6 +37,7 @@ MINIMAL_OBJECTS =  \
 	$(OBJS)\OTM_GamePage.o \
 	$(OBJS)\OTM_Server.o \
 	$(OBJS)\OTM_Client.o \
+	$(OBJS)\OTM_File.o \
 	$(OBJS)\OTM_Sender.o \
 	$(OBJS)\OTM_Language.o
 	
@@ -81,7 +82,7 @@ ifeq ($(MONOLITHIC),1)
 EXTRALIBS_FOR_BASE =  
 endif
 ifeq ($(BUILD),debug)
-__OPTIMIZEFLAG_2 = -O0
+__OPTIMIZEFLAG_2 = -O0 -g
 endif
 ifeq ($(BUILD),release)
 __OPTIMIZEFLAG_2 = -O2
@@ -252,6 +253,9 @@ $(OBJS)\OTM_Server.o: ./OTM_Server.cpp
 	$(CXX) -c -o $@ $(MINIMAL_CXXFLAGS)  $(CPPDEPS) $<
 
 $(OBJS)\OTM_Client.o: ./OTM_Client.cpp
+	$(CXX) -c -o $@ $(MINIMAL_CXXFLAGS)  $(CPPDEPS) $<
+
+$(OBJS)\OTM_File.o: ./OTM_File.cpp
 	$(CXX) -c -o $@ $(MINIMAL_CXXFLAGS)  $(CPPDEPS) $<
 
 $(OBJS)\OTM_Sender.o: ./OTM_Sender.cpp

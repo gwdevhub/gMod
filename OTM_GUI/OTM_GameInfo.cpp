@@ -140,7 +140,7 @@ int OTM_GameInfo::LoadFromFile( const wxString &file_name)
   unsigned int result = file.Read( buffer, len);
   file.Close();
 
-  if (result != len) return -1;
+  if (result != len) {delete [] buffer; return -1;}
 
   buffer[len]=0;
 
@@ -156,7 +156,7 @@ int OTM_GameInfo::LoadFromFile( const wxString &file_name)
   {
     if (Checked!=NULL) delete [] Checked;
     try {Checked = new bool [num+100];}
-    catch (...) {Checked=NULL; return -1;}
+    catch (...) {Checked=NULL;LengthOfChecked=0; return -1;}
     LengthOfChecked = num+100;
   }
 
@@ -250,7 +250,7 @@ int OTM_GameInfo::LoadFromFile( const wxString &file_name)
       else TextureColour[2] = 0;
     }
 
-
+/*
     if (NumberOfChecked>=LengthOfChecked)
     {
       bool *t_bool;
@@ -261,6 +261,7 @@ int OTM_GameInfo::LoadFromFile( const wxString &file_name)
       Checked = t_bool;
       LengthOfChecked +=100;
     }
+    */
   }
   return 0;
 }
@@ -278,7 +279,7 @@ int OTM_GameInfo::SetChecked( bool* array, int num)
   {
     if (Checked!=NULL) delete [] Checked;
     try {Checked = new bool [num+100];}
-    catch (...) {Checked=NULL; return -1;}
+    catch (...) {Checked=NULL; LengthOfChecked = 0; return -1;}
     LengthOfChecked = num+100;
   }
   for (int i=0; i<num; i++) Checked[i] = array[i];
@@ -307,13 +308,6 @@ void OTM_GameInfo::GetFiles( wxArrayString &files) const
 {
   files = Files;
 }
-
-/*
-void OTM_GameInfo::AddTexture( const wxString &file)
-{
-  Files.Add(file);
-}
-*/
 
 OTM_GameInfo& OTM_GameInfo::operator = (const  OTM_GameInfo &rhs)
 {

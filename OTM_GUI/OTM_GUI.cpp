@@ -239,11 +239,10 @@ void OTM_Frame::OnAddGame( wxCommandEvent &event)
 void OTM_Frame::OnDeleteGame( wxCommandEvent &event)
 {
   OTM_Client *client = ((OTM_Event&)event).GetClient();
-  int index = -1;
   for (int i=0; i<NumberOfGames; i++) if (Clients[i]==client)
   {
     Notebook->DeletePage(i);
-    Clients[i]->Delete();
+    Clients[i]->Wait();
     delete Clients[i];
     NumberOfGames--;
     for (int j=i; j<NumberOfGames; j++) Clients[j] = Clients[j+1];
@@ -377,12 +376,8 @@ void OTM_Frame::OnMenuAddGame(wxCommandEvent& WXUNUSED(event))
     file_name = file_name.AfterLast('\\');
 
     wxArrayString array;
-    if (GetHookedGames( array))
-    {
-      wxMessageBox( LastError, "ERROR", wxOK|wxICON_ERROR);
-      LastError.Empty();
-      return;
-    }
+    if (GetHookedGames( array)) array.Empty();
+
     int num = array.GetCount();
     for (int i=0; i<num; i++) if (array[i] == file_name)
     {

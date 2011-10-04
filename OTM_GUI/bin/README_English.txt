@@ -30,6 +30,15 @@ the textures are loaded by the game and only in the moment they are loaded.
 If you switch this option on, while a map is loaded, probably nothing will hapen,
 because all textures are loaded for this map. Change the Map or reload it again.
 
+Zip files can include a "texmod.def" file which contains the hash and the file name.
+Each line should be in the format "hash|filename.dds"
+If it does not contain a "texmod.def" each file will be unpacked and those which match
+the wildcard "*_hash.dds" will be used.
+The zip file can include a "Comment.txt" file. The content will be shown as comment 
+in the GUI.
+
+If you load single files, they should match the wildcard "*_hash.dds"
+
 
 How does OpenTexMod interact with the game?
 

@@ -69,7 +69,7 @@ OTM_GamePage::OTM_GamePage( wxNotebook *parent, const wxString &name, PipeStruct
   SaveAllTextures = new wxCheckBox( this, -1, Language.CheckBoxSaveAllTextures);
   MainSizer->Add( (wxWindow*) SaveAllTextures, 0, wxEXPAND, 0);
 
-  SavePath =  new wxTextCtrl(this, wxID_ANY, Language.TextCtrlSavePath, wxDefaultPosition, wxDefaultSize, wxTE_READONLY);
+  SavePath = new wxTextCtrl(this, wxID_ANY, Language.TextCtrlSavePath, wxDefaultPosition, wxDefaultSize, wxTE_READONLY);
   MainSizer->Add( (wxWindow*) SavePath, 0, wxEXPAND, 0);
 
   MainSizer->AddSpacer(10);
@@ -80,7 +80,6 @@ OTM_GamePage::OTM_GamePage( wxNotebook *parent, const wxString &name, PipeStruct
     NumberOfEntry = 0;
     MaxNumberOfEntry = 100;
     CheckBoxes = new wxCheckBox*[MaxNumberOfEntry];
-    CheckBoxVSizer = new wxBoxSizer(wxVERTICAL);
     CheckBoxHSizers = new wxBoxSizer*[MaxNumberOfEntry];
     CheckButtonUp = new wxButton*[MaxNumberOfEntry];
     CheckButtonDown = new wxButton*[MaxNumberOfEntry];
@@ -91,7 +90,8 @@ OTM_GamePage::OTM_GamePage( wxNotebook *parent, const wxString &name, PipeStruct
   }
   else
   {
-    if (Sender.Send( Game, GameOld)==0) GameOld = Game;
+    wxArrayString comments;
+    if (Sender.Send( Game, GameOld, &comments)==0) GameOld = Game;
 
     int key = Game.GetKeyBack();
     if (key>=0) ChoiceKeyBack->SetSelection( key);
@@ -120,22 +120,21 @@ OTM_GamePage::OTM_GamePage( wxNotebook *parent, const wxString &name, PipeStruct
 
     NumberOfEntry = Files.GetCount();
     MaxNumberOfEntry = NumberOfEntry+100;
-    CheckBoxes = new wxCheckBox*[MaxNumberOfEntry];
     bool *checked = new bool[NumberOfEntry];
     Game.GetChecked( checked, NumberOfEntry);
 
-    CheckBoxVSizer = new wxBoxSizer(wxVERTICAL);
+    CheckBoxes = new wxCheckBox*[MaxNumberOfEntry];
     CheckBoxHSizers = new wxBoxSizer*[MaxNumberOfEntry];
     CheckButtonUp = new wxButton*[MaxNumberOfEntry];
     CheckButtonDown = new wxButton*[MaxNumberOfEntry];
     CheckButtonDelete = new wxButton*[MaxNumberOfEntry];
 
-    wxString name;
-    for (int i=0; i<NumberOfEntry;i++)
+    for (int i=0; i<NumberOfEntry; i++)
     {
       CheckBoxHSizers[i] = new wxBoxSizer(wxHORIZONTAL);
       CheckBoxes[i] = new wxCheckBox( this, -1, Files[i]);
       CheckBoxes[i]->SetValue( checked[i]);
+      CheckBoxes[i]->SetToolTip( comments[i]);
 
       wchar_t button_txt[2];
       button_txt[0] = 8657;
@@ -192,10 +191,18 @@ int OTM_GamePage::SetSavePath( const wxString &path)
 void OTM_GamePage::AddTexture( const wxString &file_name)
 {
   if (NumberOfEntry>=MaxNumberOfEntry) return;
+  OTM_File file( Language, file_name);
+  wxString tool_tip;
+  if (file.GetComment( tool_tip))
+  {
+    LastError = file.LastError;
+    file.LastError.Empty();
+  }
 
   CheckBoxHSizers[NumberOfEntry] = new wxBoxSizer(wxHORIZONTAL);
   CheckBoxes[NumberOfEntry] = new wxCheckBox( this, -1, file_name);
   CheckBoxes[NumberOfEntry]->SetValue( true);
+  CheckBoxes[NumberOfEntry]->SetToolTip( tool_tip);
 
   wchar_t button_txt[2];
   button_txt[0] = 8657;
@@ -269,6 +276,7 @@ int OTM_GamePage::GetSettings(void)
 int OTM_GamePage::UpdateGame(void)
 {
   if (int ret = GetSettings()) return ret;
+
   if (int ret = Sender.Send( Game, GameOld))
   {
     LastError = Language.Error_Send;
@@ -324,16 +332,22 @@ void OTM_GamePage::OnButtonUp(wxCommandEvent& event)
   int id = (event.GetId() - ID_Button_Texture)/3;
   if (id <=0 || id>= NumberOfEntry) return;
 
-  wxString cpy = Files[id];
+  wxString cpy_str = Files[id];
   Files[id] = Files[id-1];
-  Files[id-1] = cpy;
+  Files[id-1] = cpy_str;
 
   CheckBoxes[id]->SetLabel(Files[id]);
   CheckBoxes[id-1]->SetLabel(Files[id-1]);
 
   bool cpy_checked = CheckBoxes[id]->GetValue();
-  CheckBoxes[id]->SetValue(CheckBoxes[id-1]);
+  CheckBoxes[id]->SetValue(CheckBoxes[id-1]->GetValue());
   CheckBoxes[id-1]->SetValue(cpy_checked);
+
+  cpy_str = CheckBoxes[id]->GetToolTip()->GetTip();
+  wxString cpy_str2 = CheckBoxes[id-1]->GetToolTip()->GetTip();
+  CheckBoxes[id]->SetToolTip(cpy_str2);
+  CheckBoxes[id-1]->SetToolTip(cpy_str);
+
 }
 
 void OTM_GamePage::OnButtonDown(wxCommandEvent& event)
@@ -341,16 +355,21 @@ void OTM_GamePage::OnButtonDown(wxCommandEvent& event)
   int id = (event.GetId() - ID_Button_Texture-1)/3;
   if (id <0 || id>= NumberOfEntry-1) return;
 
-  wxString cpy = Files[id];
+  wxString cpy_str = Files[id];
   Files[id] = Files[id+1];
-  Files[id+1] = cpy;
+  Files[id+1] = cpy_str;
 
   CheckBoxes[id]->SetLabel(Files[id]);
   CheckBoxes[id+1]->SetLabel(Files[id+1]);
 
   bool cpy_checked = CheckBoxes[id]->GetValue();
-  CheckBoxes[id]->SetValue(CheckBoxes[id+1]);
+  CheckBoxes[id]->SetValue(CheckBoxes[id+1]->GetValue());
   CheckBoxes[id+1]->SetValue(cpy_checked);
+
+  cpy_str = CheckBoxes[id]->GetToolTip()->GetTip();
+  wxString cpy_str2 = CheckBoxes[id+1]->GetToolTip()->GetTip();
+  CheckBoxes[id]->SetToolTip(cpy_str2);
+  CheckBoxes[id+1]->SetToolTip(cpy_str);
 }
 
 void OTM_GamePage::OnButtonDelete(wxCommandEvent& event)
@@ -359,6 +378,13 @@ void OTM_GamePage::OnButtonDelete(wxCommandEvent& event)
   if (id <0 || id>= NumberOfEntry) return;
 
   for (int i=id+1; i<NumberOfEntry; i++) CheckBoxes[i-1]->SetLabel(Files[i]);
+  for (int i=id+1; i<NumberOfEntry; i++) CheckBoxes[i-1]->SetValue(CheckBoxes[i]->GetValue());
+  wxString cpy_str;
+  for (int i=id+1; i<NumberOfEntry; i++)
+  {
+    cpy_str = CheckBoxes[i]->GetToolTip()->GetTip();
+    CheckBoxes[i-1]->SetToolTip(cpy_str);
+  }
 
   Files.RemoveAt(id, 1);
   NumberOfEntry--;
@@ -368,23 +394,28 @@ void OTM_GamePage::OnButtonDelete(wxCommandEvent& event)
   Unbind( wxEVT_COMMAND_BUTTON_CLICKED, &OTM_GamePage::OnButtonDown, this, ID_Button_Texture+3*NumberOfEntry+1);
   Unbind( wxEVT_COMMAND_BUTTON_CLICKED, &OTM_GamePage::OnButtonDelete, this, ID_Button_Texture+3*NumberOfEntry+2);
 
-  CheckBoxVSizer->Detach( CheckBoxHSizers[NumberOfEntry]);
 
   CheckBoxHSizers[NumberOfEntry]->Detach( (wxWindow*) CheckBoxes[NumberOfEntry]);
   CheckBoxHSizers[NumberOfEntry]->Detach( (wxWindow*) CheckButtonUp[NumberOfEntry]);
   CheckBoxHSizers[NumberOfEntry]->Detach( (wxWindow*) CheckButtonDown[NumberOfEntry]);
   CheckBoxHSizers[NumberOfEntry]->Detach( (wxWindow*) CheckButtonDelete[NumberOfEntry]);
 
-  delete CheckBoxHSizers[NumberOfEntry];
-  CheckBoxHSizers[NumberOfEntry] = NULL;
+  MainSizer->Detach( CheckBoxHSizers[NumberOfEntry]);
+
   delete CheckBoxes[NumberOfEntry];
   CheckBoxes[NumberOfEntry] = NULL;
+
   delete CheckButtonUp[NumberOfEntry];
   CheckButtonUp[NumberOfEntry] = NULL;
+
   delete CheckButtonDown[NumberOfEntry];
   CheckButtonDown[NumberOfEntry] = NULL;
+
   delete CheckButtonDelete[NumberOfEntry];
   CheckButtonDelete[NumberOfEntry] = NULL;
+
+  delete CheckBoxHSizers[NumberOfEntry];
+  CheckBoxHSizers[NumberOfEntry] = NULL;
 }
 
 
