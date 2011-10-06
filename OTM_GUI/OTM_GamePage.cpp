@@ -243,6 +243,8 @@ int OTM_GamePage::GetSettings(void)
   wxString path = Game.GetSavePath();
   if ( (save_single || save_all) && path.Len()==0) {LastError << Language.Error_NoSavePath; return 1;}
 
+  if ( save_single && ( key_back==wxNOT_FOUND || key_save==wxNOT_FOUND || key_next==wxNOT_FOUND) ) {LastError << Language.Error_KeyNotSet; return 1;}
+
   if (key_back!=wxNOT_FOUND) Game.SetKeyBack(key_back);
   if (key_save!=wxNOT_FOUND) Game.SetKeySave(key_save);
   if (key_next!=wxNOT_FOUND) Game.SetKeyNext(key_next);

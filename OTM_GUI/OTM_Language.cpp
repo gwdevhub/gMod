@@ -21,10 +21,9 @@ along with OpenTexMod.  If not, see <http://www.gnu.org/licenses/>.
 #include "OTM_Main.h"
 
 
-OTM_Language::OTM_Language(void) : DefaultLanguage("English")
+OTM_Language::OTM_Language(void)
 {
-  if (LoadCurrentLanguage()) {CurrentLanguage = DefaultLanguage; LoadDefault();}
-  else LoadLanguage( CurrentLanguage);
+  if (LoadCurrentLanguage()) {LoadDefault(); CurrentLanguage = "English"; LastError.Empty();}
   LoadKeys();
 }
 
@@ -47,16 +46,16 @@ int OTM_Language::LoadCurrentLanguage(void)
   if (result != len) return -1;
   buffer[len]=0;
 
-  CurrentLanguage = buffer;
+  wxString lang = buffer;
   delete [] buffer;
-  return 0;
+  return LoadLanguage( lang, false);
 }
 
 
 int OTM_Language::SaveCurrentLanguage(void)
 {
   wxFile file;
-  if (!file.Access( LAST_USED_LANGUAGE_FILE, wxFile::write)) return -1;
+  //if (!file.Access( LAST_USED_LANGUAGE_FILE, wxFile::write)) return -1;
   file.Open( LAST_USED_LANGUAGE_FILE, wxFile::write);
   if (!file.IsOpened()) return -1;
 
@@ -127,10 +126,9 @@ if ( command == #target ) \
   target = msg; \
 } else
 
-int OTM_Language::LoadLanguage(const wxString &name)
+int OTM_Language::LoadLanguage(const wxString &name, bool save)
 {
   LoadDefault();
-  CurrentLanguage = name;
   if (name=="English")
   {
     if (wxFile::Exists(LAST_USED_LANGUAGE_FILE)) wxRemoveFile(LAST_USED_LANGUAGE_FILE);
@@ -156,6 +154,7 @@ int OTM_Language::LoadLanguage(const wxString &name)
   if (result != len) {delete [] buffer; LastError << Error_FileRead<<"\n" << file_name; return -1;}
 
   buffer[len]=0;
+  CurrentLanguage = name;
 
   wxStringTokenizer token( buffer, "|");
   int num = token.CountTokens();
@@ -202,6 +201,7 @@ int OTM_Language::LoadLanguage(const wxString &name)
     CheckEntry( command, msg, Error_Send)
     CheckEntry( command, msg, Error_KeyTwice)
     CheckEntry( command, msg, Error_NoSavePath)
+    CheckEntry( command, msg, Error_KeyNotSet)
     CheckEntry( command, msg, Error_SaveFile)
     CheckEntry( command, msg, Error_NoPipe)
     CheckEntry( command, msg, Error_WritePipe)
@@ -222,78 +222,79 @@ int OTM_Language::LoadLanguage(const wxString &name)
 
   delete [] buffer;
 
-  SaveCurrentLanguage();
+  if (save) SaveCurrentLanguage();
   return 0;
 }
 #undef CheckEntry
+
+
+int OTM_Language::LoadDefault(void)
+{
+  MenuLanguage = "Change Language";
+  MenuHelp  = "Help";
+  MenuAbout  = "About";
+  MenuAddGame = "Add game";
+  MenuDeleteGame = "Delete Game";
+
+  MainMenuGame = "Game";
+  MainMenuHelp = "Help";
+
+  ButtonOpen = "Open texture";
+  ButtonDirectory = "Set save directory";
+  ButtonUpdate = "Update";
+  ButtonSave = "save settings";
+
+  ChooseFile = "Choose a texture file";
+  ChooseDir = "Choose a directory";
+
+  CheckBoxSaveSingleTexture = "Save single texture";
+  CheckBoxSaveAllTextures = "Save all textures";
+  TextCtrlSavePath = "Save path:";
+
+  SelectLanguage = "Select a language.";
+
+  ChooseGame = "Select a game binary.";
+  DeleteGame = "Select the games to be deleted.";
+  GameAlreadyAdded = "Game has been already added.";
+  ExitGameAnyway = "Closing OpenTexMod while a game is running might lead to a crash of the game.\nExit anyway?";
+  NoComment = "No comment.";
+  Author = "Author: ";
+
+  Error_FileNotSupported = "This file type is not supported:\n";
+  Error_DLLNotFound = "Could not load the dll.\nThe dll injection won't work.\nThis might happen if D3DX9_43.dll is not installed on your system.\nPlease install the newest DirectX End-User Runtime Web Installer.";
+  Error_FktNotFound = "Could not load function out of dll.\nThe dll injection won't work.";
+
+  Error_Send = "Could not send to game.";
+  Error_KeyTwice = "You have assigned the same key twice.";
+  Error_NoSavePath = "You did not set a save path.";
+  Error_KeyNotSet = "At least one key is not set.";
+  Error_SaveFile = "Could not save to file.";
+  Error_NoPipe = "Pipe is not opened.";
+  Error_WritePipe = "Could not write in pipe.";
+  Error_FlushPipe = "Could not flush pipe buffer.";
+  Error_Hash = "Could not find hash, maybe file is not named as *_HASH.dds";
+  Error_FileOpen = "Could not open file:";
+  Error_FileRead = "Could not read file:";
+  Error_Memory = "Could not allocate enough memory.";
+  Error_Unzip = "Could not unzip.";
+  Error_ZipEntry = "Could not find zip entry.";
+
+
+  KeyBack = "Back";
+  KeySave = "Save";
+  KeyNext = "Next";
+
+
+  FontColour = "Font colour (RGB):";
+  TextureColour = "Texture colour (RGB):";
+  return 0;
+}
 
 #define AddKey( name, key ) \
 { \
   KeyStrings.Add( name ); \
   KeyValues.Add( key ); \
 }
-
-int OTM_Language::LoadDefault(void)
-{
-  MenuLanguage = L"Change Language";
-  MenuHelp  = L"Help";
-  MenuAbout  = L"About";
-  MenuAddGame = L"Add game";
-  MenuDeleteGame = L"Delete Game";
-
-  MainMenuGame = L"Game";
-  MainMenuHelp = L"Help";
-
-  ButtonOpen = L"Open texture";
-  ButtonDirectory = L"Set save directory";
-  ButtonUpdate = L"Update";
-  ButtonSave = L"save settings";
-
-  ChooseFile = L"Choose a texture file";
-  ChooseDir = L"Choose a directory";
-
-  CheckBoxSaveSingleTexture = L"Save single texture";
-  CheckBoxSaveAllTextures = L"Save all textures";
-  TextCtrlSavePath = L"Save path:";
-
-  SelectLanguage = L"Select a language.";
-
-  ChooseGame = L"Select a game binary.";
-  DeleteGame = L"Select the games to be deleted.";
-  GameAlreadyAdded = L"Game has been already added.";
-  ExitGameAnyway = L"Closing OpenTexMod while a game is running might lead to a crash of the game.\nExit anyway?";
-  NoComment = L"No comment.";
-  Author = L"Author: ";
-
-  Error_FileNotSupported = L"This file type is not supported:\n";
-  Error_DLLNotFound = L"Could not load the dll.\nThe dll injection won't work.\nThis might happen if D3DX9_43.dll is not installed on your system.\nPlease install the newest DirectX End-User Runtime Web Installer.";
-  Error_FktNotFound = L"Could not load function out of dll.\nThe dll injection won't work.";
-
-  Error_Send = L"Could not send to game.";
-  Error_KeyTwice = L"You have assigned the same key twice.";
-  Error_NoSavePath = L"You did not set a save path.";
-  Error_SaveFile = L"Could not save to file.";
-  Error_NoPipe = L"Pipe is not opened.";
-  Error_WritePipe = L"Could not write in pipe.";
-  Error_FlushPipe = L"Could not flush pipe buffer.";
-  Error_Hash = L"Could not find hash, maybe file is not named as *_HASH.dds";
-  Error_FileOpen = L"Could not open file:";
-  Error_FileRead = L"Could not read file:";
-  Error_Memory = L"Could not allocate enough memory.";
-  Error_Unzip = L"Could not unzip.";
-  Error_ZipEntry = L"Could not find zip entry.";
-
-
-  KeyBack = L"Back";
-  KeySave = L"Save";
-  KeyNext = L"Next";
-
-
-  FontColour = L"Font colour (RGB):";
-  TextureColour = L"Texture colour (RGB):";
-  return 0;
-}
-
 int OTM_Language::LoadKeys(void)
 {
   KeyStrings.Empty();

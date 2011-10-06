@@ -27,7 +27,7 @@ public:
   OTM_Language(void);
 
 
-  int LoadLanguage(const wxString &name);
+  int LoadLanguage(const wxString &name, bool save=true);
   int GetLanguages(wxArrayString &lang);
   int GetHelpMessage(wxString &help);
 
@@ -67,6 +67,7 @@ public:
   wxString Error_Send;
   wxString Error_KeyTwice;
   wxString Error_NoSavePath;
+  wxString Error_KeyNotSet;
   wxString Error_SaveFile;
   wxString Error_NoPipe;
   wxString Error_WritePipe;
@@ -99,7 +100,6 @@ private:
   int LoadKeys(void);
 
   wxString CurrentLanguage;
-  const wxString DefaultLanguage;
 };
 
 

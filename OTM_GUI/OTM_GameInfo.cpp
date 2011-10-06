@@ -317,6 +317,7 @@ OTM_GameInfo& OTM_GameInfo::operator = (const  OTM_GameInfo &rhs)
   KeyBack = rhs.KeyBack;
   KeySave = rhs.KeySave;
   KeyNext = rhs.KeyNext;
+
   if (LengthOfChecked<rhs.LengthOfChecked)
   {
     if (Checked!=NULL) delete [] Checked;

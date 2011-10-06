@@ -97,15 +97,15 @@ int OTM_File::GetContent( AddTextureClass *tex, bool add, bool force)
   wxString file_type = FileName.AfterLast( '.');
   if (file_type == L"zip")
   {
-    AddZip( tex, add, true, false);
+    AddZip( tex, add, force, false);
   }
   else if (file_type == L"tpf")
   {
-    AddZip( tex, add, true, true);
+    AddZip( tex, add, force, true);
   }
   else if (file_type == L"dds")
   {
-    AddFile( tex, add, true);
+    AddFile( tex, add, force);
   }
   else
   {
@@ -259,7 +259,7 @@ int OTM_File::AddFile( AddTextureClass *tex, bool add, bool force)
 
   tex->Num = 1;
   tex->Add[0] = add;
-  tex->Force[0] = true;
+  tex->Force[0] = force;
   tex->Hash[0] = temp_hash;
   return 0;
 }
@@ -339,6 +339,8 @@ int OTM_File::AddContent( const char* pw, AddTextureClass *tex, bool add, bool f
       file = entry.AfterFirst( '|');
       file.Replace( "\r", "");
 
+      while ( (file[0]=='.' && (file[1]=='/' || file[1]=='\\')) || file[0]=='/' || file[0]=='\\') file.Remove(0,1);
+
       if (add)
       {
         FindZipItem( ZIP_Handle, file.wc_str(), false, &index, &ze); // look for texture
@@ -367,6 +369,12 @@ int OTM_File::AddContent( const char* pw, AddTextureClass *tex, bool add, bool f
             tex->Force[count] = force;
             count++;
           }
+        }
+        else
+        {
+          LastError << Language.Error_Unzip <<"\nTPF:" << file << "\n";
+          CloseZip(ZIP_Handle); //somehow we need to close and to reopen the zip handle, otherwise the program crashes
+          ZIP_Handle = OpenZip( FileInMemory, FileLen, pw);
         }
       }
       else
