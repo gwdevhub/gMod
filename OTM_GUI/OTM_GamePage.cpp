@@ -188,16 +188,14 @@ int OTM_GamePage::SetSavePath( const wxString &path)
 }
 
 
-void OTM_GamePage::AddTexture( const wxString &file_name)
+int OTM_GamePage::AddTexture( const wxString &file_name)
 {
-  if (NumberOfEntry>=MaxNumberOfEntry) return;
+  if (NumberOfEntry>=MaxNumberOfEntry) {LastError = Language.Error_Memory; return -1;}
   OTM_File file( Language, file_name);
+  if (!file.FileSupported()) {LastError << Language.Error_FileNotSupported << "\n" << file_name; return -1;}
+
   wxString tool_tip;
-  if (file.GetComment( tool_tip))
-  {
-    LastError = file.LastError;
-    file.LastError.Empty();
-  }
+  file.GetComment( tool_tip);
 
   CheckBoxHSizers[NumberOfEntry] = new wxBoxSizer(wxHORIZONTAL);
   CheckBoxes[NumberOfEntry] = new wxCheckBox( this, -1, file_name);
@@ -226,6 +224,8 @@ void OTM_GamePage::AddTexture( const wxString &file_name)
   Files.Add( file_name);
   NumberOfEntry++;
   MainSizer->Layout();
+
+  return 0;
 }
 
 int OTM_GamePage::GetSettings(void)

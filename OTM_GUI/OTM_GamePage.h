@@ -30,7 +30,7 @@ public:
   OTM_GamePage( wxNotebook *parent, const wxString &name, PipeStruct &pipe, OTM_Language &lang);
   virtual ~OTM_GamePage(void);
 
-  void AddTexture( const wxString &file_name);
+  int AddTexture( const wxString &file_name);
 
   int UpdateGame(void);
 

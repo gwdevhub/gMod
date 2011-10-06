@@ -29,6 +29,8 @@ public:
   OTM_File(OTM_Language &lang, const wxString &file);
   ~OTM_File(void);
 
+  bool FileSupported(void);
+
   int GetComment( wxString &tool_tip);
   int GetContent( AddTextureClass *tex, bool add, bool force);
 

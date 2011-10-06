@@ -267,11 +267,17 @@ void OTM_Frame::OnButtonOpen(wxCommandEvent& WXUNUSED(event))
   OTM_GamePage *page = (OTM_GamePage*) Notebook->GetCurrentPage();
   if (page==NULL) return;
 
-  wxString file_name = wxFileSelector( Language.ChooseFile, page->GetOpenPath(), "", "*.*",  "textures (*.dds)|*.dds|zip (*.zip)|*.zip|tpf (*.tpf)|*.tpf", wxFD_OPEN | wxFD_FILE_MUST_EXIST, this);
+
+  //wxString file_name = wxFileSelector( Language.ChooseFile, page->GetOpenPath(), "", "*.*",  "textures (*.dds)|*.dds|zip (*.zip)|*.zip|tpf (*.tpf)|*.tpf", wxFD_OPEN | wxFD_FILE_MUST_EXIST, this);
+  wxString file_name = wxFileSelector( Language.ChooseFile, page->GetOpenPath(), "", "",  "", wxFD_OPEN | wxFD_FILE_MUST_EXIST, this);
   if ( !file_name.empty() )
   {
     page->SetOpenPath(file_name.BeforeLast( '/'));
-    page->AddTexture( file_name);
+    if (page->AddTexture( file_name))
+    {
+      wxMessageBox(page->LastError, "ERROR", wxOK|wxICON_ERROR);
+      page->LastError.Empty();
+    }
   }
 }
 

@@ -73,6 +73,17 @@ OTM_File::~OTM_File(void)
 }
 
 
+bool OTM_File::FileSupported(void)
+{
+  wxString file_type = FileName.AfterLast( '.');
+  if (file_type == L"zip") return true;
+  else if (file_type == L"tpf") return true;
+  else if (file_type == L"dds") return true;
+
+  return false;
+}
+
+
 int OTM_File::GetComment( wxString &tool_tip)
 {
   wxString file_type = FileName.AfterLast( '.');
