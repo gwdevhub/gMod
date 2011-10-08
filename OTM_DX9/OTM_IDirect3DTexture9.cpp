@@ -79,16 +79,19 @@ HRESULT APIENTRY OTM_IDirect3DTexture9::GetDevice(IDirect3DDevice9** ppDevice)
 
 HRESULT APIENTRY OTM_IDirect3DTexture9::SetPrivateData(REFGUID refguid,CONST void* pData,DWORD SizeOfData,DWORD Flags)
 {
+  if (CrossRef_D3Dtex!=NULL) return (CrossRef_D3Dtex->m_D3Dtex->SetPrivateData(refguid, pData, SizeOfData, Flags));
 	return (m_D3Dtex->SetPrivateData(refguid, pData, SizeOfData, Flags));
 }
 
 HRESULT APIENTRY OTM_IDirect3DTexture9::GetPrivateData(REFGUID refguid,void* pData,DWORD* pSizeOfData)
 {
+  if (CrossRef_D3Dtex!=NULL) return (CrossRef_D3Dtex->m_D3Dtex->GetPrivateData(refguid, pData, pSizeOfData));
 	return (m_D3Dtex->GetPrivateData(refguid, pData, pSizeOfData));
 }
 
 HRESULT APIENTRY OTM_IDirect3DTexture9::FreePrivateData(REFGUID refguid)
 {
+  if (CrossRef_D3Dtex!=NULL) return (CrossRef_D3Dtex->m_D3Dtex->FreePrivateData(refguid));
 	return (m_D3Dtex->FreePrivateData(refguid));
 }
 
@@ -144,49 +147,30 @@ void APIENTRY OTM_IDirect3DTexture9::GenerateMipSubLevels()
 
 HRESULT APIENTRY OTM_IDirect3DTexture9::GetLevelDesc(UINT Level,D3DSURFACE_DESC *pDesc)
 {
+  if (CrossRef_D3Dtex!=NULL) return (CrossRef_D3Dtex->m_D3Dtex->GetLevelDesc(Level, pDesc));
 	return (m_D3Dtex->GetLevelDesc(Level, pDesc));
 }
 
 HRESULT APIENTRY OTM_IDirect3DTexture9::GetSurfaceLevel(UINT Level,IDirect3DSurface9** ppSurfaceLevel)
 {
+  if (CrossRef_D3Dtex!=NULL) return (CrossRef_D3Dtex->m_D3Dtex->GetSurfaceLevel(Level, ppSurfaceLevel));
 	return (m_D3Dtex->GetSurfaceLevel(Level, ppSurfaceLevel));
 }
 
 HRESULT APIENTRY OTM_IDirect3DTexture9::LockRect(UINT Level,D3DLOCKED_RECT* pLockedRect,CONST RECT* pRect,DWORD Flags)
 {
+  if (CrossRef_D3Dtex!=NULL) return (CrossRef_D3Dtex->m_D3Dtex->LockRect(Level, pLockedRect, pRect, Flags));
 	return (m_D3Dtex->LockRect(Level, pLockedRect, pRect, Flags));
 }
 
 HRESULT APIENTRY OTM_IDirect3DTexture9::UnlockRect(UINT Level)
 {
+  if (CrossRef_D3Dtex!=NULL) return (CrossRef_D3Dtex->m_D3Dtex->UnlockRect(Level));
 	return (m_D3Dtex->UnlockRect(Level));
 }
 
 HRESULT APIENTRY OTM_IDirect3DTexture9::AddDirtyRect(CONST RECT* pDirtyRect)
 {
+  if (CrossRef_D3Dtex!=NULL) return (CrossRef_D3Dtex->m_D3Dtex->AddDirtyRect(pDirtyRect));
 	return (m_D3Dtex->AddDirtyRect(pDirtyRect));
 }
-
-/*
-//////////////////////////////
-// Useful Functions
-//////////////////////////////
-DWORD QuickChecksum(DWORD *pData, int size)
-{
-	if(!pData) { return (0x0); }
-
-	DWORD sum;
-	DWORD tmp;
-	sum = *pData;
-
-	for(int i = 1; i < (size/4); i++)
-	{
-		tmp = pData[i];
-		tmp = (DWORD)(sum >> 29) + tmp;
-		tmp = (DWORD)(sum >> 17) + tmp;
-		sum = (DWORD)(sum << 3)  ^ tmp;
-	}
-
-	return sum;
-}
-*/

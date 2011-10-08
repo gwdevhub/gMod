@@ -291,7 +291,16 @@ HRESULT OTM_IDirect3DDevice9::UpdateSurface(IDirect3DSurface9* pSourceSurface,CO
 
 HRESULT OTM_IDirect3DDevice9::UpdateTexture(IDirect3DBaseTexture9* pSourceTexture,IDirect3DBaseTexture9* pDestinationTexture)
 {
-	 return(m_pIDirect3DDevice9->UpdateTexture(pSourceTexture,pDestinationTexture));
+  IDirect3DDevice9 *dev = NULL;
+  if (pSourceTexture != NULL && ((OTM_IDirect3DTexture9*)(pSourceTexture))->GetDevice(&dev) == D3D_OK)
+  {
+    if(dev == this) pSourceTexture = ((OTM_IDirect3DTexture9*)(pSourceTexture))->m_D3Dtex;
+  }
+  if (pDestinationTexture != NULL && ((OTM_IDirect3DTexture9*)(pDestinationTexture))->GetDevice(&dev) == D3D_OK)
+  {
+    if(dev == this) pDestinationTexture = ((OTM_IDirect3DTexture9*)(pDestinationTexture))->m_D3Dtex;
+  }
+	return(m_pIDirect3DDevice9->UpdateTexture(pSourceTexture,pDestinationTexture));
 }
 
 HRESULT OTM_IDirect3DDevice9::GetRenderTargetData(IDirect3DSurface9* pRenderTarget,IDirect3DSurface9* pDestSurface)
@@ -542,7 +551,6 @@ HRESULT OTM_IDirect3DDevice9::GetTexture(DWORD Stage,IDirect3DBaseTexture9** ppT
 
 HRESULT OTM_IDirect3DDevice9::SetTexture(DWORD Stage, IDirect3DBaseTexture9* pTexture)
 {
-
 	IDirect3DDevice9 *dev = NULL;
   if (pTexture != NULL && ((OTM_IDirect3DTexture9*)(pTexture))->GetDevice(&dev) == D3D_OK)
   {

@@ -21,6 +21,12 @@ along with OpenTexMod.  If not, see <http://www.gnu.org/licenses/>.
 
 OTM_GamePage::OTM_GamePage( wxNotebook *parent, const wxString &name, PipeStruct &pipe, OTM_Language &lang) : wxPanel(parent), Language(lang), Game(name), GameOld(name), Sender(pipe, lang)
 {
+  CheckBoxHSizers = NULL;
+  CheckButtonUp = NULL;
+  CheckButtonDown = NULL;
+  CheckButtonDelete = NULL;
+  CheckBoxes = NULL;
+
   MainSizer = new wxBoxSizer(wxVERTICAL);
 
   SizerKeys[0] = new wxBoxSizer(wxHORIZONTAL);
@@ -78,13 +84,12 @@ OTM_GamePage::OTM_GamePage( wxNotebook *parent, const wxString &name, PipeStruct
   if (Game.LoadFromFile())
   {
     NumberOfEntry = 0;
-    MaxNumberOfEntry = 100;
-    CheckBoxes = new wxCheckBox*[MaxNumberOfEntry];
-    CheckBoxHSizers = new wxBoxSizer*[MaxNumberOfEntry];
-    CheckButtonUp = new wxButton*[MaxNumberOfEntry];
-    CheckButtonDown = new wxButton*[MaxNumberOfEntry];
-    CheckButtonDelete = new wxButton*[MaxNumberOfEntry];
-
+    MaxNumberOfEntry = 1024;
+    if (GetMemory( CheckBoxes, MaxNumberOfEntry)) {LastError = Language.Error_Memory; return;}
+    if (GetMemory( CheckBoxHSizers, MaxNumberOfEntry)) {LastError = Language.Error_Memory; return ;}
+    if (GetMemory( CheckButtonUp, MaxNumberOfEntry)) {LastError = Language.Error_Memory; return;}
+    if (GetMemory( CheckButtonDown, MaxNumberOfEntry)) {LastError = Language.Error_Memory; return;}
+    if (GetMemory( CheckButtonDelete, MaxNumberOfEntry)) {LastError = Language.Error_Memory; return;}
 
     SavePath->SetValue(Language.TextCtrlSavePath);
   }
@@ -119,15 +124,17 @@ OTM_GamePage::OTM_GamePage( wxNotebook *parent, const wxString &name, PipeStruct
     Game.GetFiles( Files);
 
     NumberOfEntry = Files.GetCount();
-    MaxNumberOfEntry = NumberOfEntry+100;
-    bool *checked = new bool[NumberOfEntry];
+    MaxNumberOfEntry = ((NumberOfEntry/1024)+1)*1024;
+
+    bool *checked = NULL;
+    if (GetMemory( checked, NumberOfEntry)) {LastError = Language.Error_Memory; return;}
     Game.GetChecked( checked, NumberOfEntry);
 
-    CheckBoxes = new wxCheckBox*[MaxNumberOfEntry];
-    CheckBoxHSizers = new wxBoxSizer*[MaxNumberOfEntry];
-    CheckButtonUp = new wxButton*[MaxNumberOfEntry];
-    CheckButtonDown = new wxButton*[MaxNumberOfEntry];
-    CheckButtonDelete = new wxButton*[MaxNumberOfEntry];
+    if (GetMemory( CheckBoxes, MaxNumberOfEntry)) {LastError = Language.Error_Memory; return;}
+    if (GetMemory( CheckBoxHSizers, MaxNumberOfEntry)) {LastError = Language.Error_Memory; return ;}
+    if (GetMemory( CheckButtonUp, MaxNumberOfEntry)) {LastError = Language.Error_Memory; return;}
+    if (GetMemory( CheckButtonDown, MaxNumberOfEntry)) {LastError = Language.Error_Memory; return;}
+    if (GetMemory( CheckButtonDelete, MaxNumberOfEntry)) {LastError = Language.Error_Memory; return;}
 
     for (int i=0; i<NumberOfEntry; i++)
     {
@@ -190,7 +197,15 @@ int OTM_GamePage::SetSavePath( const wxString &path)
 
 int OTM_GamePage::AddTexture( const wxString &file_name)
 {
-  if (NumberOfEntry>=MaxNumberOfEntry) {LastError = Language.Error_Memory; return -1;}
+  if (NumberOfEntry>=MaxNumberOfEntry)
+  {
+    if (GetMoreMemory( CheckBoxes, MaxNumberOfEntry, MaxNumberOfEntry+1024)) {LastError = Language.Error_Memory; return -1;}
+    if (GetMoreMemory( CheckBoxHSizers, MaxNumberOfEntry, MaxNumberOfEntry+1024)) {LastError = Language.Error_Memory; return -1;}
+    if (GetMoreMemory( CheckButtonUp, MaxNumberOfEntry, MaxNumberOfEntry+1024)) {LastError = Language.Error_Memory; return -1;}
+    if (GetMoreMemory( CheckButtonDown, MaxNumberOfEntry, MaxNumberOfEntry+1024)) {LastError = Language.Error_Memory; return -1;}
+    if (GetMoreMemory( CheckButtonDelete, MaxNumberOfEntry, MaxNumberOfEntry+1024)) {LastError = Language.Error_Memory; return -1;}
+    MaxNumberOfEntry+=1024;
+  }
   OTM_File file( Language, file_name);
   if (!file.FileSupported()) {LastError << Language.Error_FileNotSupported << "\n" << file_name; return -1;}
 
@@ -267,7 +282,8 @@ int OTM_GamePage::GetSettings(void)
 
   Game.SetFiles( Files);
 
-  bool *checked = new bool[NumberOfEntry];
+  bool *checked = NULL;
+  if (GetMemory( checked, NumberOfEntry)) {LastError = Language.Error_Memory; return -1;}
   for (int i=0; i<NumberOfEntry; i++) checked[i] = CheckBoxes[i]->GetValue();
   Game.SetChecked( checked, NumberOfEntry);
   delete [] checked;

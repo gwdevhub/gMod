@@ -122,21 +122,13 @@ OTM_Frame::OTM_Frame(const wxString& title, const wxPoint& pos, const wxSize& si
 
   NumberOfGames = 0;
   MaxNumberOfGames  = 10;
-  Clients = new OTM_Client*[MaxNumberOfGames];
+  Clients = NULL;
+  if (GetMemory( Clients, MaxNumberOfGames))
+  {
+    wxMessageBox( Language.Error_Memory, "ERROR", wxOK|wxICON_ERROR);
+  }
 
   Show( true );
-
-  /*
-  wxString dx_dll;
-  wchar_t buffer[MAX_PATH];
-  if (NULL!=_wgetcwd( buffer, MAX_PATH))
-  {
-    dx_dll = buffer;
-    dx_dll << "\\";
-  }
-  dx_dll << OTM_d3d9_dll;
-  //dx_dll = "kernel32.dll";
-  */
 
   H_DX9_DLL = LoadLibraryW(OTM_d3d9_dll);
   if (H_DX9_DLL!=NULL)
@@ -216,7 +208,15 @@ int OTM_Frame::KillServer(void)
 
 void OTM_Frame::OnAddGame( wxCommandEvent &event)
 {
-  if (NumberOfGames>=MaxNumberOfGames) return;
+  if (NumberOfGames>=MaxNumberOfGames)
+  {
+    if (GetMoreMemory( Clients, MaxNumberOfGames, MaxNumberOfGames+10))
+    {
+      wxMessageBox( Language.Error_Memory, "ERROR", wxOK|wxICON_ERROR);
+      return;
+    }
+    MaxNumberOfGames += 10;
+  }
 
   wxString name = ((OTM_Event&)event).GetName();
   PipeStruct pipe;
@@ -229,7 +229,12 @@ void OTM_Frame::OnAddGame( wxCommandEvent &event)
   client->Run();
 
   OTM_GamePage *page = new OTM_GamePage( Notebook, name, client->Pipe, Language);
-
+  if (page->LastError.Len()>0)
+  {
+    wxMessageBox(page->LastError, "ERROR", wxOK|wxICON_ERROR);
+    delete page;
+    return;
+  }
   Notebook->AddPage( page, name, true);
 
   Clients[NumberOfGames] = client;
