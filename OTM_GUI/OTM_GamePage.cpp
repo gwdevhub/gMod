@@ -393,6 +393,9 @@ int OTM_GamePage::LoadTemplate( const wxString &file_name)
   }
   delete [] checked;
   NumberOfEntry = new_NumberOfEntry;
+
+  MainSizer->Layout();
+  MainSizer->FitInside(this);
   return 0;
 }
 

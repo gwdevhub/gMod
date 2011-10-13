@@ -375,7 +375,10 @@ void OTM_Frame::OnMenuOpenTemplate(wxCommandEvent& WXUNUSED(event))
 
 
   //wxString file_name = wxFileSelector( Language->ChooseFile, page->GetOpenPath(), "", "*.*",  "textures (*.dds)|*.dds|zip (*.zip)|*.zip|tpf (*.tpf)|*.tpf", wxFD_OPEN | wxFD_FILE_MUST_EXIST, this);
-  wxString file_name = wxFileSelector( Language->ChooseFile, wxGetCwd(), "", "",  "", wxFD_OPEN | wxFD_FILE_MUST_EXIST, this);
+
+  wxString dir = wxGetCwd();
+  dir << "/templates";
+  wxString file_name = wxFileSelector( Language->ChooseFile, dir, "", "*.txt",  "text (*.txt)|*.txt", wxFD_OPEN | wxFD_FILE_MUST_EXIST, this);
   if ( !file_name.empty() )
   {
     if (page->LoadTemplate( file_name))
