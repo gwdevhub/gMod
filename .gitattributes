@@ -45,8 +45,6 @@ OTM_GUI/OTM_Server.cpp -text
 OTM_GUI/OTM_Server.h -text
 OTM_GUI/OTM_Settings.cpp -text
 OTM_GUI/OTM_Settings.h -text
-OTM_GUI/bin/Example_OTM_LanguagePack_English.txt -text
-OTM_GUI/bin/OTM_LanguagePack_Deutsch.txt -text
 OTM_GUI/bin/README_Deutsch.txt -text
 OTM_GUI/bin/README_English.txt -text
 OTM_GUI/bin/languages/Example_OTM_LanguagePack_English.txt -text
