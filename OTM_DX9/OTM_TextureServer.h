@@ -38,7 +38,7 @@ public:
   int AddClient(OTM_TextureClient *client, TextureFileStruct** update, int* number);
   int RemoveClient(OTM_TextureClient *client);
 
-  int OpenPipe(void);
+  int OpenPipe(wchar_t *name);
   int ClosePipe(void);
   int MainLoop(void);
 

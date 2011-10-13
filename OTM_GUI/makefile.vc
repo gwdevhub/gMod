@@ -41,6 +41,8 @@ MINIMAL_OBJECTS =  \
   $(OBJS)\OTM_Client.obj \
   $(OBJS)\OTM_File.obj \
   $(OBJS)\OTM_Sender.obj \
+  $(OBJS)\OTM_Settings.obj \
+  $(OBJS)\OTM_AddTexture.obj \
   $(OBJS)\OTM_Language.obj
 MINIMAL_RESOURCES =  \
 	$(OBJS)\OTM_GUI.res
@@ -384,6 +386,12 @@ $(OBJS)\OTM_File.obj: .\OTM_File.cpp
 
 $(OBJS)\OTM_Sender.obj: .\OTM_Sender.cpp
   $(CXX) /c /nologo /TP /Fo$@ $(MINIMAL_CXXFLAGS) .\OTM_Sender.cpp
+
+$(OBJS)\OTM_Settings.obj: .\OTM_Settings.cpp
+  $(CXX) /c /nologo /TP /Fo$@ $(MINIMAL_CXXFLAGS) .\OTM_Settings.cpp
+
+$(OBJS)\OTM_AddTexture.obj: .\OTM_AddTexture.cpp
+  $(CXX) /c /nologo /TP /Fo$@ $(MINIMAL_CXXFLAGS) .\OTM_AddTexture.cpp
 
 $(OBJS)\OTM_Language.obj: .\OTM_Language.cpp
   $(CXX) /c /nologo /TP /Fo$@ $(MINIMAL_CXXFLAGS) .\OTM_Language.cpp

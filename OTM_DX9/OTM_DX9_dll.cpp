@@ -26,9 +26,8 @@ along with OpenTexMod.  If not, see <http://www.gnu.org/licenses/>.
 
 
 #include "OTM_Main.h"
-#include <shlwapi.h>
-
-#pragma comment(lib, "Shlwapi.lib")
+//#include <shlwapi.h>
+//#pragma comment(lib, "Shlwapi.lib")
 
 
 OTM_IDirect3DDevice9* gl_pIDirect3DDevice9 = NULL;
@@ -99,14 +98,14 @@ IDirect3D9* WINAPI  Direct3DCreate9(UINT SDKVersion)
 	return (gl_pIDirect3D9);
 }
 
-bool HookThisProgramm( wchar_t *ret)
+bool HookThisProgram( wchar_t *ret)
 {
   wchar_t Executable[MAX_PATH];
   GetModuleFileNameW( GetModuleHandle( NULL ), Executable, MAX_PATH );
-  PathStripPathW( Executable );
+
   int len = 0;
   while (Executable[len]) {ret[len] = Executable[len]; len++;}
-  Executable[len] = 0;
+  ret[len] = 0;
   return (true);
 }
 
@@ -151,33 +150,34 @@ IDirect3D9 *APIENTRY MyDirect3DCreate9(UINT SDKVersion)
   return (gl_pIDirect3D9);
 }
 
-bool HookThisProgramm( wchar_t *ret)
+bool HookThisProgram( wchar_t *ret)
 {
-  //This method should be changed. Maybe the directory should be the user application directory.
   FILE* file;
   wchar_t *app_path = _wgetenv( L"APPDATA");
   wchar_t file_name[MAX_PATH];
   swprintf_s( file_name, MAX_PATH, L"%ls\\%ls\\%ls", app_path, OTM_APP_DIR, OTM_APP_DX9);
-  if (_wfopen_s( &file, file_name, L"rt")) return (false);
+  if (_wfopen_s( &file, file_name, L"rt,ccs=UTF-16LE")) return (false);
 
   wchar_t Executable[MAX_PATH];
   wchar_t Game[MAX_PATH];
   GetModuleFileNameW( GetModuleHandle( NULL ), Executable, MAX_PATH );
-  PathStripPathW( Executable );
 
+  //MessageBoxW( NULL, Executable, L"test", 0);
   while (!feof(file))
   {
-    if ( fgetws ( Game, MAX_PATH, file) != NULL )
+    if ( fgetws( Game, MAX_PATH, file) != NULL )
     {
+      //MessageBoxW( NULL, Game, L"test", 0);
       int len = 0;
       while (Game[len])
       {
-        if (Game[len]=='\r' || Game[len]=='\n') {Game[len]=0; break;}
+        if (Game[len]==L'\r' || Game[len]==L'\n') {Game[len]=0; break;}
         len++;
       }
       if ( _wcsicmp( Executable, Game ) == 0 )
       {
         for (int i=0; i<len; i++) ret[i] = Game[i];
+        ret[len]=0;
         fclose(file);
         return (true);
       }
@@ -203,7 +203,7 @@ void InitInstance(HINSTANCE hModule)
   gl_hThisInstance = (HINSTANCE)  hModule;
 
   wchar_t game[MAX_PATH];
-  if (HookThisProgramm( game))
+  if (HookThisProgram( game))
   {
     OpenMessage();
     Message("InitInstance: %lu\n", hModule);
@@ -211,7 +211,7 @@ void InitInstance(HINSTANCE hModule)
 	  gl_TextureServer = new OTM_TextureServer(game);
 	  if (gl_TextureServer!=NULL)
 	  {
-	    if (gl_TextureServer->OpenPipe())
+	    if (gl_TextureServer->OpenPipe(game))
 	    {
 	      Message("InitInstance: Pipe not opened\n");
 	      return;
@@ -219,7 +219,7 @@ void InitInstance(HINSTANCE hModule)
 	    gl_ServerThread = CreateThread( NULL, 0, ServerThread, NULL, 0, NULL);
 	    if (gl_ServerThread==NULL) Message("InitInstance: Serverthread not started\n");
 
-	    //this is for testing purpose, these function should be called from the server thread, provoked by the OTM_GUI
+	    //this is for testing purpose, these functions should be called from the server thread, provoked by the OTM_GUI
 	    //gl_TextureServer->SaveAllTextures(true);
       //gl_TextureServer->SetSaveDirectory("tex\\");
 	    /*

@@ -20,15 +20,23 @@ along with OpenTexMod.  If not, see <http://www.gnu.org/licenses/>.
 
 #include "OTM_Main.h"
 
+OTM_Language *Language = NULL;
 
 OTM_Language::OTM_Language(void)
 {
-  if (LoadCurrentLanguage()) {LoadDefault(); CurrentLanguage = "English"; LastError.Empty();}
+  LoadDefault();
   LoadKeys();
 }
 
-#define LAST_USED_LANGUAGE_FILE "OTM_LastUsedLanguage.txt"
+OTM_Language::OTM_Language(const wxString &name)
+{
+  LoadLanguage(name);
+  LoadKeys();
+  LastError.Empty();
+}
 
+//#define LAST_USED_LANGUAGE_FILE "OTM_LastUsedLanguage.txt"
+/*
 int OTM_Language::LoadCurrentLanguage(void)
 {
   wxFile file;
@@ -62,12 +70,15 @@ int OTM_Language::SaveCurrentLanguage(void)
   file.Write( CurrentLanguage.char_str(), CurrentLanguage.Len());
   return 0;
 }
-
+*/
 
 int OTM_Language::GetLanguages(wxArrayString &lang)
 {
   wxArrayString files;
-  wxDir::GetAllFiles( wxGetCwd(), &files, "OTM_LanguagePack_*.txt");
+  wxString dir = wxGetCwd();
+  dir << "/languages";
+  wxDir::GetAllFiles( dir, &files, "OTM_LanguagePack_*.txt");
+  wxDir::GetAllFiles( dir, &files, "OTM_LanguagePackU_*.txt");
   lang.Empty();
   lang.Alloc(files.GetCount()+1);
   lang.Add("English");
@@ -93,29 +104,45 @@ int OTM_Language::GetHelpMessage(wxString &help)
   file << "README_" << CurrentLanguage << ".txt";
 
   wxFile dat;
- if (!dat.Access(file, wxFile::read))
- {
-   file.Empty();
-   file << "README_" << CurrentLanguage << ".txt";
-   if (!dat.Access(file, wxFile::read)) {LastError << Error_FileOpen <<"\n" << file; return -1;}
- }
- dat.Open(file, wxFile::read);
- if (!dat.IsOpened()) {LastError << Error_FileOpen <<"\n" << file; return -1;}
- unsigned len = dat.Length();
+  bool utf16=false;
+  if (!dat.Access(file, wxFile::read))
+  {
+    file.Empty();
+    file << "READMEU_" << CurrentLanguage << ".txt";
+    utf16=true;
+    if (!dat.Access(file, wxFile::read))
+    {
+      utf16=false;
+      file = "README_English.txt";
+      if (!dat.Access(file, wxFile::read)) {LastError << Error_FileOpen <<"\n" << file; return -1;}
+    }
+  }
+  dat.Open(file, wxFile::read);
+  if (!dat.IsOpened()) {LastError << Error_FileOpen <<"\n" << file; return -1;}
+  unsigned len = dat.Length();
 
- unsigned char* buffer;
- try {buffer = new unsigned char [len+1];}
- catch (...) {LastError << Error_Memory; return -1;}
+  unsigned char* buffer;
+  try {buffer = new unsigned char [len+2];}
+  catch (...) {LastError << Error_Memory; return -1;}
 
- unsigned int result = dat.Read( buffer, len);
- dat.Close();
+  unsigned int result = dat.Read( buffer, len);
+  dat.Close();
 
- if (result != len) {delete [] buffer; LastError << Error_FileRead<<"\n" << file; return -1;}
+  if (result != len) {delete [] buffer; LastError << Error_FileRead<<"\n" << file; return -1;}
 
- buffer[len]=0;
- help=buffer;
-
- return 0;
+  if (utf16)
+  {
+    wchar_t *buf = (wchar_t*) buffer;
+    len/=2;
+    buf[len]=0;
+    help=buf;
+  }
+  else
+  {
+    buffer[len]=0;
+    help=buffer;
+  }
+  return 0;
 }
 
 
@@ -126,26 +153,29 @@ if ( command == #target ) \
   target = msg; \
 } else
 
-int OTM_Language::LoadLanguage(const wxString &name, bool save)
+int OTM_Language::LoadLanguage(const wxString &name)
 {
   LoadDefault();
-  if (name=="English")
-  {
-    if (wxFile::Exists(LAST_USED_LANGUAGE_FILE)) wxRemoveFile(LAST_USED_LANGUAGE_FILE);
-    return 0;
-  }
+  if (name=="English") return 0;
 
   wxString file_name;
-  file_name << "OTM_LanguagePack_" << name << ".txt";
+  file_name << "languages/OTM_LanguagePack_" << name << ".txt";
 
+  bool utf16=false;
   wxFile dat;
-  if (!dat.Access(file_name, wxFile::read)) {LastError << Error_FileOpen <<"\n" << file_name; return -1;}
+  if (!dat.Access(file_name, wxFile::read))
+  {
+    utf16=true;
+    file_name.Empty();
+    file_name << "languages/OTM_LanguagePackU_" << name << ".txt";
+    if (!dat.Access(file_name, wxFile::read)){LastError << Error_FileOpen <<"\n" << file_name; return -1;}
+  }
   dat.Open(file_name, wxFile::read);
   if (!dat.IsOpened()) {LastError << Error_FileOpen <<"\n" << file_name; return -1;}
   unsigned len = dat.Length();
 
   unsigned char* buffer;
-  try {buffer = new unsigned char [len+1];}
+  try {buffer = new unsigned char [len+2];}
   catch (...) {LastError << Error_Memory; return -1;}
 
   unsigned int result = dat.Read( buffer, len);
@@ -153,10 +183,24 @@ int OTM_Language::LoadLanguage(const wxString &name, bool save)
 
   if (result != len) {delete [] buffer; LastError << Error_FileRead<<"\n" << file_name; return -1;}
 
-  buffer[len]=0;
   CurrentLanguage = name;
+  wxString content;
 
-  wxStringTokenizer token( buffer, "|");
+  if (utf16)
+  {
+    wchar_t *buf = (wchar_t*) buffer;
+    len/=2;
+    buf[len]=0;
+    if (buf[0]==0XFEFF || buf[0]==0XFFFE) content=&buf[1]; //get rid of the BOM
+    else content=buf;
+  }
+  else
+  {
+    buffer[len]=0;
+    content = buffer;
+  }
+
+  wxStringTokenizer token( content, "|");
   int num = token.CountTokens();
   wxString entry;
   wxString command;
@@ -165,7 +209,7 @@ int OTM_Language::LoadLanguage(const wxString &name, bool save)
   for (int i=0; i<num; i++)
   {
     entry = token.GetNextToken();
-
+    if (entry[0]=='#') continue;
     command = entry.BeforeFirst(':');
     command.Replace( "\r", "");
     command.Replace( "\n", "");
@@ -177,16 +221,23 @@ int OTM_Language::LoadLanguage(const wxString &name, bool save)
     CheckEntry( command, msg, MenuLanguage)
     CheckEntry( command, msg, MenuHelp)
     CheckEntry( command, msg, MenuAbout)
+    CheckEntry( command, msg, MenuAcknowledgement)
     CheckEntry( command, msg, MenuAddGame)
     CheckEntry( command, msg, MenuDeleteGame)
-    CheckEntry( command, msg, MainMenuGame)
+    CheckEntry( command, msg, MenuLoadTemplate)
+    CheckEntry( command, msg, MenuSaveTemplate)
+    CheckEntry( command, msg, MenuSaveTemplateAs)
+    CheckEntry( command, msg, MenuSetDefaultTemplate)
+    CheckEntry( command, msg, MenuExit)
+    CheckEntry( command, msg, MainMenuMain)
     CheckEntry( command, msg, MainMenuHelp)
     CheckEntry( command, msg, ButtonOpen)
     CheckEntry( command, msg, ButtonDirectory)
     CheckEntry( command, msg, ButtonUpdate)
-    CheckEntry( command, msg, ButtonSave)
+    CheckEntry( command, msg, ButtonReload)
     CheckEntry( command, msg, ChooseFile)
     CheckEntry( command, msg, ChooseDir)
+    CheckEntry( command, msg, TextCtrlTemplate)
     CheckEntry( command, msg, CheckBoxSaveSingleTexture)
     CheckEntry( command, msg, CheckBoxSaveAllTextures)
     CheckEntry( command, msg, TextCtrlSavePath)
@@ -198,6 +249,7 @@ int OTM_Language::LoadLanguage(const wxString &name, bool save)
     CheckEntry( command, msg, Error_FileNotSupported)
     CheckEntry( command, msg, Error_FktNotFound)
     CheckEntry( command, msg, Error_DLLNotFound)
+    CheckEntry( command, msg, Error_AlreadyRunning)
     CheckEntry( command, msg, Error_Send)
     CheckEntry( command, msg, Error_KeyTwice)
     CheckEntry( command, msg, Error_NoSavePath)
@@ -221,8 +273,6 @@ int OTM_Language::LoadLanguage(const wxString &name, bool save)
   }
 
   delete [] buffer;
-
-  if (save) SaveCurrentLanguage();
   return 0;
 }
 #undef CheckEntry
@@ -230,23 +280,32 @@ int OTM_Language::LoadLanguage(const wxString &name, bool save)
 
 int OTM_Language::LoadDefault(void)
 {
+  CurrentLanguage="English";
+
   MenuLanguage = "Change Language";
   MenuHelp  = "Help";
   MenuAbout  = "About";
+  MenuAcknowledgement = "Acknowledgement";
   MenuAddGame = "Add game";
   MenuDeleteGame = "Delete Game";
+  MenuLoadTemplate = "Load template";
+  MenuSaveTemplate = "Save template";
+  MenuSaveTemplateAs = "Save template as ...";
+  MenuSetDefaultTemplate = "Set template as default";
+  MenuExit = "Exit";
 
-  MainMenuGame = "Game";
+  MainMenuMain = "Main";
   MainMenuHelp = "Help";
 
-  ButtonOpen = "Open texture";
+  ButtonOpen = "Open texture/package";
   ButtonDirectory = "Set save directory";
   ButtonUpdate = "Update";
-  ButtonSave = "save settings";
+  ButtonReload = "Update (reload)";
 
-  ChooseFile = "Choose a texture file";
+  ChooseFile = "Choose a file";
   ChooseDir = "Choose a directory";
 
+  TextCtrlTemplate = "Template: ";
   CheckBoxSaveSingleTexture = "Save single texture";
   CheckBoxSaveAllTextures = "Save all textures";
   TextCtrlSavePath = "Save path:";
@@ -263,6 +322,7 @@ int OTM_Language::LoadDefault(void)
   Error_FileNotSupported = "This file type is not supported:\n";
   Error_DLLNotFound = "Could not load the dll.\nThe dll injection won't work.\nThis might happen if D3DX9_43.dll is not installed on your system.\nPlease install the newest DirectX End-User Runtime Web Installer.";
   Error_FktNotFound = "Could not load function out of dll.\nThe dll injection won't work.";
+  Error_AlreadyRunning = "An other instance of OpenTexMod is already running.";
 
   Error_Send = "Could not send to game.";
   Error_KeyTwice = "You have assigned the same key twice.";

@@ -22,22 +22,23 @@ along with OpenTexMod.  If not, see <http://www.gnu.org/licenses/>.
 #define OTM_GAMEPAGE_H_
 #include "OTM_Main.h"
 
-
 // this page is opened if a game is started.
-class OTM_GamePage : public wxPanel
+class OTM_GamePage : public wxScrolledWindow
 {
 public:
-  OTM_GamePage( wxNotebook *parent, const wxString &name, PipeStruct &pipe, OTM_Language &lang);
+  OTM_GamePage( wxNotebook *parent, const wxString &exe, const wxString &save, PipeStruct &pipe);
   virtual ~OTM_GamePage(void);
 
   int AddTexture( const wxString &file_name);
 
   int UpdateGame(void);
+  int ReloadGame(void);
 
-  int SaveToFile() {return SaveToFile(Game.Name);}
-  int SaveToFile( const wxString &file_name);
-  //int LoadFromFile( const wxString &file_name) {return Game->LoadFromFile( file_name);}
+  int SaveTemplate( const wxString &file_name);
+  int LoadTemplate( const wxString &file_name);
 
+  wxString GetExeName(void) {return ExeName;}
+  wxString GetTemplateName(void) {return TemplateName;}
 
   int SetOpenPath(const wxString &path) {return Game.SetOpenPath(path);}
   wxString GetOpenPath(void) {return Game.GetOpenPath();}
@@ -60,6 +61,9 @@ private:
   int SetColour( wxTextCtrl** txt, int *colour);
   int GetColour( wxTextCtrl* txt, int def);
 
+  wxString ExeName;
+  wxString TemplateName;
+
   wxBoxSizer *SizerKeys[2];
   wxTextCtrl *TextKeyBack;
   wxTextCtrl *TextKeySave;
@@ -74,6 +78,8 @@ private:
   wxTextCtrl *TextureColour[4];
 
   wxBoxSizer *MainSizer;
+
+  wxTextCtrl *TemplateFile;
   wxCheckBox *SaveAllTextures;
   wxCheckBox *SaveSingleTexture;
   wxTextCtrl *SavePath;
@@ -87,7 +93,6 @@ private:
   int NumberOfEntry;
   int MaxNumberOfEntry;
 
-  OTM_Language &Language;
 
   wxArrayString Files;
   OTM_GameInfo Game;

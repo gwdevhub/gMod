@@ -41,7 +41,7 @@ typedef struct
 
 #define OTM_APP_DX9 L"OTM_DX9.txt"
 #define OTM_APP_DIR L"OpenTexMod"
-#define OTM_VERSION L"OpenTexMod V 0.9 alpha"
+#define OTM_VERSION L"OpenTexMod V 1.0 alpha"
 
 #define PIPE_OTM2Game L"\\\\.\\pipe\\OTM2Game"
 #define PIPE_Game2OTM L"\\\\.\\pipe\\Game2OTM"

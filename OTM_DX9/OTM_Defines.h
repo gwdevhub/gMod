@@ -22,13 +22,16 @@ along with OpenTexMod.  If not, see <http://www.gnu.org/licenses/>.
 #define OTM_DEFINES_H_
 
 
+#ifdef ALPHA
 #define Message(...) {if (gl_File!=NULL) {fprintf( gl_File, __VA_ARGS__); fflush(gl_File);}}
 #define OpenMessage(...) {if (fopen_s( &gl_File, "OTM_log.txt", "wt")) gl_File=NULL;}
 #define CloseMessage(...) {if (gl_File!=NULL) fclose(gl_File);}
+#else
+#define OpenMessage(...)
+#define Message(...)
+#define CloseMessage(...)
+#endif
 
-//#define OpenMessage(...)
-//#define Message(...)
-//#define CloseMessage(...)
 
 #ifdef __CDT_PARSER__
 typedef unsigned long DWORD64;

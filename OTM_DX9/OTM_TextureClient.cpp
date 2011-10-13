@@ -334,10 +334,11 @@ int OTM_TextureClient::MergeUpdate(void)
         Update[u].Checked = true;
         found = true;
         Update[u].pTexture = FileToMod[i].pTexture; //might also be a NULL pointer
+
         if (Update[u].ForceReload && Update[i].pTexture!=NULL)
         {
           OTM_IDirect3DTexture9 *pTexture = Update[u].pTexture->CrossRef_D3Dtex;
-          RemoveTexture( Update[u].pTexture);
+          Update[u].pTexture->Release();
           Update[u].pTexture = NULL;
           if (pTexture!=NULL) //should always be the case
           {

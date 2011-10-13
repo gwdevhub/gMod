@@ -22,10 +22,8 @@ along with OpenTexMod.  If not, see <http://www.gnu.org/licenses/>.
 
 
 
-OTM_GameInfo::OTM_GameInfo(const wxString &name)
+OTM_GameInfo::OTM_GameInfo(void)
 {
-  Name = name;
-
   Checked = NULL;
   NumberOfChecked = 0;
   LengthOfChecked = 0;
@@ -56,12 +54,10 @@ void OTM_GameInfo::Init(void)
 
 int OTM_GameInfo::SaveToFile( const wxString &file_name)
 {
-  wxString name;
-  name << "OTM_GameSave_" << file_name << ".txt";
   wxFile file;
 
   //if (!file.Access(name, wxFile::write)) return -1;
-  file.Open(name, wxFile::write);
+  file.Open(file_name, wxFile::write);
   if (!file.IsOpened())  {return -1;}
 
   wxString content;
@@ -122,13 +118,11 @@ int OTM_GameInfo::SaveToFile( const wxString &file_name)
 int OTM_GameInfo::LoadFromFile( const wxString &file_name)
 {
   Init();
+  if (file_name.Len()==0) return -1;
 
-  wxString name;
-  name << "OTM_GameSave_" << file_name << ".txt";
   wxFile file;
-
-  if (!file.Access(name, wxFile::read)) return -1;
-  file.Open(name, wxFile::read);
+  if (!file.Access(file_name, wxFile::read)) return -1;
+  file.Open(file_name, wxFile::read);
   if (!file.IsOpened())  {return -1;}
 
   unsigned len = file.Length();

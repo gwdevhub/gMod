@@ -1,38 +1,37 @@
+/*
+This file is part of OpenTexMod.
+
+
+OpenTexMod is free software: you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation, either version 3 of the License, or
+(at your option) any later version.
+
+OpenTexMod is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License
+along with OpenTexMod.  If not, see <http://www.gnu.org/licenses/>.
+*/
+
 #ifndef OTM_FILE_H_
 #define OTM_FILE_H_
 
-
-class AddTextureClass
-{
-public:
-  AddTextureClass(void);
-  void SetSize(int num);
-  ~AddTextureClass(void);
-
-  unsigned int Num;
-  char **Textures;
-  unsigned int *Size;
-  unsigned long *Hash;
-  bool *Add;
-  bool *Force;
-
-  unsigned int Len;
-};
 #include "OTM_Main.h"
-#include "unzip.h"
-
 
 class OTM_File
 {
 public:
-  OTM_File(OTM_Language &lang);
-  OTM_File(OTM_Language &lang, const wxString &file);
+  OTM_File(void);
+  OTM_File(const wxString &file);
   ~OTM_File(void);
 
   bool FileSupported(void);
 
   int GetComment( wxString &tool_tip);
-  int GetContent( AddTextureClass *tex, bool add, bool force);
+  int GetContent( AddTextureClass &tex, bool add);
 
   int SetFile(const wxString &file) {FileName=file;Loaded=false; return 0;}
   wxString GetFile(void) {return FileName;}
@@ -47,11 +46,10 @@ private:
   int GetCommentZip( wxString &tool_tip);
   int GetCommentTpf( wxString &tool_tip);
 
-  int AddFile( AddTextureClass *tex, bool add, bool force);
-  int AddZip( AddTextureClass *tex, bool add, bool force, bool tpf);
-  int AddContent( const char* pw, AddTextureClass *tex, bool add, bool force);
+  int AddFile( AddTextureClass &tex, bool add);
+  int AddZip( AddTextureClass &tex, bool add, bool tpf);
+  int AddContent( const char* pw, AddTextureClass &tex, bool add);
 
-  OTM_Language &Language;
   wxString FileName;
   bool Loaded;
   bool XORed;

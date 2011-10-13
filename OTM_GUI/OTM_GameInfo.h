@@ -27,15 +27,12 @@ along with OpenTexMod.  If not, see <http://www.gnu.org/licenses/>.
 class OTM_GameInfo
 {
 public:
-  OTM_GameInfo(const wxString &name);
+  OTM_GameInfo(void);
   ~OTM_GameInfo(void);
   void Init(void);
 
-  wxString Name;
 
-  int SaveToFile() {return SaveToFile( Name);}
   int SaveToFile( const wxString &file_name);
-  int LoadFromFile() {return LoadFromFile( Name);}
   int LoadFromFile( const wxString &file_name);
 
   int GetChecked( bool* array, int num) const;

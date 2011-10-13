@@ -20,6 +20,7 @@ along with OpenTexMod.  If not, see <http://www.gnu.org/licenses/>.
 
 #ifndef OTM_SENDER_H_
 #define OTM_SENDER_H_
+
 #include "OTM_Main.h"
 
 
@@ -27,10 +28,10 @@ along with OpenTexMod.  If not, see <http://www.gnu.org/licenses/>.
 class OTM_Sender
 {
 public:
-  OTM_Sender(PipeStruct &pipe, OTM_Language &lang);
+  OTM_Sender(PipeStruct &pipe);
   ~OTM_Sender(void);
 
-  int Send( const OTM_GameInfo &game, const OTM_GameInfo &game_old, wxArrayString *comments=NULL);
+  int Send( const OTM_GameInfo &game, const OTM_GameInfo &game_old, bool force=false, wxArrayString *comments=NULL);
 
   wxString LastError;
 
@@ -54,7 +55,8 @@ private:
   int AddContent( char* buffer, unsigned int len, const char* pw, AddTextureClass *tex, bool add, bool force);
 
   PipeStruct &Pipe;
-  OTM_Language &Language;
+  AddTextureClass *OldTextures;
+  int OldTexturesNum;
 };
 
 

@@ -79,14 +79,20 @@ enum
   ID_Button_Open = wxID_HIGHEST,
   ID_Button_Path,
   ID_Button_Update,
-  ID_Button_Save,
-  ID_Menu_Pref,
-  ID_Menu_Quit,
+  ID_Button_Reload,
+  //ID_Button_Save,
+  //ID_Menu_Pref,
+  ID_Menu_Exit,
   ID_Menu_Lang,
   ID_Menu_Help,
   ID_Menu_About,
+  ID_Menu_Acknowledgement,
   ID_Menu_AddGame,
   ID_Menu_DeleteGame,
+  ID_Menu_LoadTemplate,
+  ID_Menu_SaveTemplate,
+  ID_Menu_SaveTemplateAs,
+  ID_Menu_SetDefaultTemplate,
   ID_Add_Game,
   ID_Delete_Game,
   ID_Button_Texture, //this entry must be the last!!
@@ -95,6 +101,8 @@ enum
 #define ABORT_SERVER L"OTM_Abort_Server"
 #define OTM_d3d9_dll L"OTM_d3d9.dll"
 
+#include "OTM_AddTexture.h"
+#include "OTM_Settings.h"
 #include "OTM_Language.h"
 #include "OTM_Event.h"
 #include "OTM_Client.h"

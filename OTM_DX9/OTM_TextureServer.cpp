@@ -33,9 +33,22 @@ OTM_TextureServer::OTM_TextureServer(wchar_t *game)
   BoolSaveAllTextures = false;
   BoolSaveSingleTexture = false;
   SavePath[0] = 0;
-  int i=0;
-  for (i=0; i<MAX_PATH && (game[i]) && (game[i]!='.'); i++) GameName[i] = game[i];
-  if (i<MAX_PATH) GameName[i] = 0;
+
+  int len=0;
+  int path_pos=0;
+  int dot_pos=0;
+  for (len=0; len<MAX_PATH && (game[len]); len++)
+  {
+    if (game[len]==L'\\' || game[len]==L'/') path_pos=len+1;
+    else if (game[len]==L'.') dot_pos=len;
+  }
+
+  if (dot_pos>path_pos) len = dot_pos - path_pos;
+  else len -= path_pos;
+
+  for (int i=0; i<len; i++) GameName[i] = game[i+path_pos];
+
+  if (len<MAX_PATH) GameName[len] = 0;
   else GameName[0] = 0;
 
   KeyBack = 0;
@@ -580,7 +593,7 @@ int OTM_TextureServer::MainLoop(void) // run as a separated thread !!
         case CONTROL_ADD_TEXTURE_DATA:
         {
           size = commands->Value;
-          Message("MainLoop: CONTROL_ADD_TEXTURE_DATA (%#lX  %u,  %u %u): %lu\n", commands->Hash, size, sizeof(MsgStruct), sizeof(char), this);
+          Message("MainLoop: CONTROL_FORCE_RELOAD_TEXTURE_DATA (%#lX  %u,  %u %u): %lu\n", commands->Hash, size, sizeof(MsgStruct), sizeof(char), this);
           if (pos + sizeof(MsgStruct) + size <= num) AddFile( &buffer[pos + sizeof(MsgStruct)], size, commands->Hash, force);
           update_textures = true;
           force = false;
@@ -669,7 +682,7 @@ int OTM_TextureServer::MainLoop(void) // run as a separated thread !!
   return (RETURN_OK);
 }
 
-int OTM_TextureServer::OpenPipe(void) // called from InitInstance()
+int OTM_TextureServer::OpenPipe(wchar_t *game) // called from InitInstance()
 {
   Message("OpenPipe: Out\n")
   // open first outgoing pipe !!
@@ -685,11 +698,11 @@ int OTM_TextureServer::OpenPipe(void) // called from InitInstance()
   if (Pipe.Out == INVALID_HANDLE_VALUE) return (RETURN_PIPE_NOT_OPENED);
 
   unsigned int len = 0u;
-  while (GameName[len]) len++;
+  while (game[len]) len++;
   len++; //to send also the zero
   unsigned long num;
   //send name of this game to OTM_GUI
-  WriteFile(Pipe.Out, (const void*) GameName, len * sizeof(wchar_t), &num, NULL);
+  WriteFile(Pipe.Out, (const void*) game, len * sizeof(wchar_t), &num, NULL);
 
   Message("OpenPipe: In\n");
   Pipe.In = CreateFileW(PIPE_OTM2Game, // pipe name

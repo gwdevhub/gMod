@@ -25,29 +25,38 @@ class OTM_Language
 {
 public:
   OTM_Language(void);
+  OTM_Language(const wxString &name);
 
 
-  int LoadLanguage(const wxString &name, bool save=true);
+  int LoadLanguage(const wxString &name);
   int GetLanguages(wxArrayString &lang);
   int GetHelpMessage(wxString &help);
+  wxString GetCurrentLanguage(void) {return CurrentLanguage;}
 
   wxString MenuLanguage;
   wxString MenuHelp;
   wxString MenuAbout;
+  wxString MenuAcknowledgement;
   wxString MenuAddGame;
   wxString MenuDeleteGame;
+  wxString MenuLoadTemplate;
+  wxString MenuSaveTemplate;
+  wxString MenuSaveTemplateAs;
+  wxString MenuSetDefaultTemplate;
+  wxString MenuExit;
 
-  wxString MainMenuGame;
+  wxString MainMenuMain;
   wxString MainMenuHelp;
 
   wxString ButtonOpen;
   wxString ButtonDirectory;
   wxString ButtonUpdate;
-  wxString ButtonSave;
+  wxString ButtonReload;
 
   wxString ChooseFile;
   wxString ChooseDir;
 
+  wxString TextCtrlTemplate;
   wxString CheckBoxSaveSingleTexture;
   wxString CheckBoxSaveAllTextures;
   wxString TextCtrlSavePath;
@@ -64,6 +73,8 @@ public:
   wxString Error_FileNotSupported;
   wxString Error_FktNotFound;
   wxString Error_DLLNotFound;
+  wxString Error_AlreadyRunning;
+
   wxString Error_Send;
   wxString Error_KeyTwice;
   wxString Error_NoSavePath;
@@ -93,9 +104,6 @@ public:
   wxString LastError;
 
 private:
-  int LoadCurrentLanguage(void);
-  int SaveCurrentLanguage(void);
-
   int LoadDefault(void);
   int LoadKeys(void);
 
@@ -103,7 +111,7 @@ private:
 };
 
 
-
+extern OTM_Language *Language;
 
 
 #endif /* OTM_LANGUAGE_H_ */

@@ -22,6 +22,8 @@ OTM_DX9/makefile.vc -text
 /OTM_Error.h -text
 OTM_GUI/OTM.ico -text
 OTM_GUI/OTM.rc -text
+OTM_GUI/OTM_AddTexture.cpp -text
+OTM_GUI/OTM_AddTexture.h -text
 OTM_GUI/OTM_Client.cpp -text
 OTM_GUI/OTM_Client.h -text
 OTM_GUI/OTM_Event.cpp -text
@@ -41,10 +43,15 @@ OTM_GUI/OTM_Sender.cpp -text
 OTM_GUI/OTM_Sender.h -text
 OTM_GUI/OTM_Server.cpp -text
 OTM_GUI/OTM_Server.h -text
+OTM_GUI/OTM_Settings.cpp -text
+OTM_GUI/OTM_Settings.h -text
 OTM_GUI/bin/Example_OTM_LanguagePack_English.txt -text
 OTM_GUI/bin/OTM_LanguagePack_Deutsch.txt -text
 OTM_GUI/bin/README_Deutsch.txt -text
 OTM_GUI/bin/README_English.txt -text
+OTM_GUI/bin/languages/Example_OTM_LanguagePack_English.txt -text
+OTM_GUI/bin/languages/OTM_LanguagePackU_Deutsch.txt -text
+OTM_GUI/bin/languages/OTM_LanguagePackU_Russian.txt -text
 OTM_GUI/config.gcc -text
 OTM_GUI/config.vc -text
 OTM_GUI/makefile.gcc -text

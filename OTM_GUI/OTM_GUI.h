@@ -40,34 +40,42 @@ public:
   void OnButtonOpen(wxCommandEvent& WXUNUSED(event));
   void OnButtonPath(wxCommandEvent& WXUNUSED(event));
   void OnButtonUpdate(wxCommandEvent& WXUNUSED(event));
-  void OnButtonSave(wxCommandEvent& WXUNUSED(event));
+  void OnButtonReload(wxCommandEvent& WXUNUSED(event));
 
-
-  void OnMenuLanguage(wxCommandEvent& WXUNUSED(event));
-  void OnMenuHelp(wxCommandEvent& WXUNUSED(event));
-  void OnMenuAbout(wxCommandEvent& WXUNUSED(event));
   void OnMenuAddGame(wxCommandEvent& WXUNUSED(event));
   void OnMenuDeleteGame(wxCommandEvent& WXUNUSED(event));
+
+  void OnMenuOpenTemplate(wxCommandEvent& WXUNUSED(event));
+  void OnMenuSaveTemplate(wxCommandEvent& WXUNUSED(event));
+  void OnMenuSaveTemplateAs(wxCommandEvent& WXUNUSED(event));
+  void OnMenuSetDefaultTemplate(wxCommandEvent& WXUNUSED(event));
+  void OnMenuLanguage(wxCommandEvent& WXUNUSED(event));
+
+  void OnMenuExit(wxCommandEvent& WXUNUSED(event));
+
+  void OnMenuHelp(wxCommandEvent& WXUNUSED(event));
+  void OnMenuAbout(wxCommandEvent& WXUNUSED(event));
+  void OnMenuAcknowledgement(wxCommandEvent& WXUNUSED(event));
 
 private:
   int KillServer(void);
   int GetHookedGames( wxArrayString &array);
   int SetHookedGames( const wxArrayString &array);
 
+
   OTM_Server *Server;
 
-  OTM_Language Language;
   wxNotebook *Notebook;
 
 
   wxButton *OpenButton;
   wxButton *DirectoryButton;
   wxButton *UpdateButton;
-  wxButton *SaveButton;
+  wxButton *ReloadButton;
 
 
   wxMenuBar *MenuBar;
-  wxMenu *MenuGame;
+  wxMenu *MenuMain;
   wxMenu *MenuHelp;
 
   wxBoxSizer *MainSizer;
@@ -77,6 +85,12 @@ private:
   int NumberOfGames;
   int MaxNumberOfGames;
   OTM_Client **Clients;
+
+  int LoadTemplate(void);
+  int SaveTemplate(void);
+  wxArrayString SaveFile_Exe;
+  wxArrayString SaveFile_Name;
+
   HMODULE H_DX9_DLL;
 
   wxString LastError;
@@ -89,6 +103,7 @@ class MyApp : public wxApp
 public:
     virtual ~MyApp();
     virtual bool OnInit();
+
 private:
     HANDLE CheckForSingleRun;
 };

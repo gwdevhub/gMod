@@ -1,10 +1,23 @@
 ifdef NO_INJECTION
-prcompiler_flag = /D "NO_INJECTION"
+
+ifdef ALPHA
+precompiler_flag = /D "ALPHA" /D "NO_INJECTION"
+else
+precompiler_flag = /D "NO_INJECTION"
+endif
+
 def_file = /DEF:"OTM_DX9_dll_NO_INJECTION.def"
 obj_suff = NO_INJECTION.obj
 dll = d3d9.dll
+
 else
-prcompiler_flag = 
+
+ifdef ALPHA
+precompiler_flag = /D "ALPHA"
+else
+precompiler_flag = 
+endif
+
 def_file = /DEF:"OTM_DX9_dll.def"
 obj_suff = obj
 dll = OTM_d3d9.dll
@@ -14,7 +27,7 @@ endif
 CXX = cl
 CLINK = link.exe
 DEFINES = /D "WIN32" /D "_WINDOWS" /D "_USRDLL" /D "_WINDLL" /D "_MBCS"
-CFLAGS = /I "C:\Program Files (x86)\Microsoft DirectX SDK (June 2010)\Include" /nologo /W3 /WX- /O2 ${DEFINES} ${prcompiler_flag} /Gm- /EHsc /MT /GS /fp:precise /Zc:wchar_t
+CFLAGS = /I "C:\Program Files (x86)\Microsoft DirectX SDK (June 2010)\Include" /nologo /W3 /WX- /O2 ${DEFINES} ${precompiler_flag} /Gm- /EHsc /MT /GS /fp:precise /Zc:wchar_t
 LFLAGS = /INCREMENTAL:NO /NOLOGO /LIBPATH:"C:\Program Files (x86)\Microsoft DirectX SDK (June 2010)\Lib\x86" /DLL "Winmm.lib" "d3dx9.lib" "user32.lib" "Kernel32.lib" ${def_file} /SUBSYSTEM:WINDOWS /OPT:REF /OPT:ICF  /TLBID:1 /DYNAMICBASE:NO /NXCOMPAT:NO  /MACHINE:X86
 
 obj = obj

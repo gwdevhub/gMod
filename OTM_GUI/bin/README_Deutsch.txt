@@ -18,7 +18,7 @@ darauf hinweisen.
 
 Was kann OpenTexMod alpha V0.9?
 
--einzelne Texturen aus einem Spiel extrahieren und speichern (Die Zieltextur kann im Spiel geändert werden)
+-einzelne Texturen aus einem Spiel extrahieren und speichern (Die Zieltextur kann im Spiel geändert werden.)
 -alle Texturen aus einem Spiel extrahieren und speichern
 -Texturen in ein Spiel laden und Zieltexturen ersetzen
 -Support von zip-Dateien
@@ -63,7 +63,7 @@ Wie bekomme ich OpenTexMod zum laufen?
 Es gibt zwei Wege wie OpenTexMod sich in die DirectX Verbindung einklinken kann:
 
 1) (bevorzugt)  Füge die Spiel-exe über das Menü Spiele->"Spiel hinzufügen" hinzu.
-    Wenn du Steam verwendest, lies weiter unten nach.
+    Für Steam siehe unten.
    
 2) Kopiere die d3d9.dll (vom OpenTexMod Verzeichnis) in das Spiele Verzeichnis.
     Einige Spiele laden eine dll zuerst aus dem eigenen Verzeichnis bevor sie im
@@ -77,12 +77,17 @@ OpenTexMod zu starten.
 Wenn das Spiel startet und alles glatt läuft, öffnet sich sofort ein neuer Tab in OpenTexMod.
 In diesem Tab kannst du nun das Spiel  modden. Drücke den "Update" Button um
 die Einstellungen an das Spiel zu senden. Du kannst deine aktuellen Einstellungen auch
-speichern. Sie werden dann automatisch geladen und an das Spiel gesendet, wenn du
-dieses Spiel das nächste Mal startest.
+als ein Template speichern. Ein Template kann auch als Standard eingestellt werden.
+Es wird dann automatisch geladen und an das Spiel gesendet, wenn
+dieses Spiel das nächste Mal gestartet wird.
 
 Um einen Mod zu laden, musst du das Häkchen vor den Namen setzen. Wenn du
-den Mod entladen willst, entferne das Häkchen und klicke auf "Update". Zurzeit
-werden die Mods nicht aus dem Spiel entladen, wenn du den "X" Button drückst.
+den Mod entladen willst, entferne das Häkchen und klicke auf "Update".
+
+Der Update Button lädt nur Veränderungen (wenn Pakete aus der Liste entfernt
+wurden, du die Häkchen verändert hast oder sich die Reihenfolge geändert hat)
+Der "neu laden" Button erzwingt das Neuladen von Festplatte (z.B. wenn du die
+Texturen verändert hast).
 
 Weil verschiedene Mods die gleiche Ziel-Textur verändern könnten, wird nur die
 Mod-Textur des ersten Mods berücksichtigt. Die Aktion dieses Mods (also Laden oder
@@ -92,15 +97,6 @@ Ziel-Textur machen sollen.
 
 Wie bekommt man OpenTexMod mit Steam zum Laufen?
 
-OpenTexMod schaut auf den Namen der ausgeführten Spiel-Datei, nicht nach dem Verzeichnis.
+OpenTexMod schaut auf den Namen und auf das Verzeichnis der ausgeführten Spiel-exe.
 Daher solltest du nicht die steam.exe sondern die Spiel.exe hinzufügen.
-z.B.: Steam\SteamApps\acoount_name\portal\hl2.exe
-BTW: Dies würde auch alle anderen HalfLife 2 Spiele betreffen.
-
-Wenn du deine Spiele-exe nicht finden kannst, schau im TaskManager nach und:
-1) füge sie per Hand hinzu: editiere unter Windows 7
-    C:\Users\user_name\AppData\Roaming\OpenTexMod\OTM_DX9.txt
-    oder:
-2) erstelle irgendwo eine Datei mit dem Namen der Spiele-exe und füge diese
-    mithilfe des Menüs in OpenTexMod hinzu, anschließend kannst du diese
-    Datei löschen.
+z.B.: C:\Steam\SteamApps\acoount_name\portal\hl2.exe

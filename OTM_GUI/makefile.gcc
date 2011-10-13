@@ -38,7 +38,9 @@ MINIMAL_OBJECTS =  \
 	$(OBJS)\OTM_Server.o \
 	$(OBJS)\OTM_Client.o \
 	$(OBJS)\OTM_File.o \
-	$(OBJS)\OTM_Sender.o \
+  $(OBJS)\OTM_Sender.o \
+	$(OBJS)\OTM_Settings.o \
+  $(OBJS)\OTM_AddTexture.o \
 	$(OBJS)\OTM_Language.o
 	
 ### Conditionally set variables: ###
@@ -260,6 +262,12 @@ $(OBJS)\OTM_File.o: ./OTM_File.cpp
 
 $(OBJS)\OTM_Sender.o: ./OTM_Sender.cpp
 	$(CXX) -c -o $@ $(MINIMAL_CXXFLAGS)  $(CPPDEPS) $<
+
+$(OBJS)\OTM_Settings.o: ./OTM_Settings.cpp
+  $(CXX) -c -o $@ $(MINIMAL_CXXFLAGS)  $(CPPDEPS) $<
+
+$(OBJS)\OTM_AddTexture.o: ./OTM_AddTexture.cpp
+  $(CXX) -c -o $@ $(MINIMAL_CXXFLAGS)  $(CPPDEPS) $<
 
 $(OBJS)\OTM_Language.o: ./OTM_Language.cpp
 	$(CXX) -c -o $@ $(MINIMAL_CXXFLAGS)  $(CPPDEPS) $<

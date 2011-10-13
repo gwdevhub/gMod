@@ -57,8 +57,7 @@ How to get OpenTexMod work?
 There are two ways how OpenTexMod can intercept the DirectX connection:
 
 1) (recommended) Add the games-binary through the menu Games->"Add game"
-    If you want to get it work with steam, don't add the steam.exe but rather the game.exe.
-    Once you have added the game, OpenTexMod will keep it in mind on further program start.
+    For Steam see below.
 
 2) Copy the d3d9.dll (from the OpenTexMod directory) into the game directory.
     Some games load a dll first from their own directory before they look up the system directory.
@@ -71,12 +70,16 @@ the game through OpenTexMod.
 
 If the game starts and all works fine, a new tab opens immediately in OpenTexMod.
 In this tab you can now mod the game. Press the "update" button to commit
-the changes to the game. You can also save your current settings. They will be loaded
-and committed automatically when you start the same game the next time.
+the changes to the game. You can also save your current settings as a template.
+One template can be set as default for a game, which will be loaded and 
+and committed automatically when you start this game the next time.
 
 To load a mod, you must set the check mark of the file. If you wish to unload a mod,
-just remove the check mark and click on update again. At the moment pressing the
-X button of a file will remove it from the list but won't unload the mod from the game.
+just remove the check mark and click on update again. 
+
+Clicking on update will only update the differences (if packages have been
+removed from the list, you toggled check marks or changed the order). The reload 
+button forces to reload from disk (if you have edited the texture itself).
 
 Due to the fact that different mods can modify the same target texture, only the
 mod-texture of the first file in the list is taken into account. The action of this file
@@ -84,17 +87,8 @@ mod-texture of the first file in the list is taken into account. The action of t
 to do with their mod-textures.
 
 
-How to get OpenTexMod work together with steam?
+How to get OpenTexMod work together with Steam?
 
-OpenTexMod looks only for the name of the executed binary and not of their working directory.
+OpenTexMod looks for the name and the path of the executed binary.
 Thus you shall not add the steam.exe but rather the game.exe
-e.g.: Steam\SteamApps\acoount_name\portal\hl2.exe
-This would also inject into all other HalfLife 2 games.
-
-If you can't find your target binary, just look into the task manager for the binary
-and:
-1) add it by your self : edit under Windows 7
-    C:\Users\user_name\AppData\Roaming\OpenTexMod\OTM_DX9.txt
-    or:
-2) add somewhere on your disk an empty file with the name of the binary and
-    add this file through the menu of OpenTexMod, afterwards you can delete this file.
+e.g.: C:\Steam\SteamApps\acoount_name\portal\hl2.exe

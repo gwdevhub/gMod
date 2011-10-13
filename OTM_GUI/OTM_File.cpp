@@ -1,53 +1,26 @@
+/*
+This file is part of OpenTexMod.
 
 
-#include "OTM_File.h"
+OpenTexMod is free software: you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation, either version 3 of the License, or
+(at your option) any later version.
+
+OpenTexMod is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License
+along with OpenTexMod.  If not, see <http://www.gnu.org/licenses/>.
+*/
+
+#include "OTM_Main.h"
+#include "unzip.h"
 
 
-AddTextureClass::AddTextureClass(void)
-{
-  Num = 0;
-  Textures = NULL;
-  Size = NULL;
-  Hash = NULL;
-  Force = NULL;
-  Add = NULL;
-  Len=0;
-}
-
-void AddTextureClass::SetSize(int num)
-{
-  Num = 0;
-  Force = new bool[num];
-  Add = new bool[num];
-  Size = new unsigned int[num];
-  for (int i=0; i<num; i++) Size[i] = 0u;
-  Hash = new unsigned long[num];
-  Textures = new char*[num];
-  for (int i=0; i<num; i++) Textures[i] = NULL;
-
-  Len = num;
-}
-
-AddTextureClass::~AddTextureClass(void)
-{
-  if (Force!=NULL) delete [] Force;
-  if (Add!=NULL) delete [] Add;
-  if (Size!=NULL) delete [] Size;
-  if (Hash!=NULL) delete [] Hash;
-
-  if (Textures!=NULL)
-  {
-    for (unsigned int i=0; i<Num && i<Len; i++) if (Textures[i]!=NULL) delete [] Textures[i];
-    delete [] Textures;
-  }
-}
-
-
-
-
-
-
-OTM_File::OTM_File(OTM_Language &lang) : Language(lang)
+OTM_File::OTM_File(void)
 {
   Loaded=false;
   XORed=false;
@@ -56,7 +29,7 @@ OTM_File::OTM_File(OTM_Language &lang) : Language(lang)
   FileLen=0u;
 }
 
-OTM_File::OTM_File(OTM_Language &lang, const wxString &file) : Language(lang)
+OTM_File::OTM_File(const wxString &file)
 {
   Loaded=false;
   XORed=false;
@@ -97,34 +70,38 @@ int OTM_File::GetComment( wxString &tool_tip)
   }
   else if (file_type == L"dds")
   {
-    tool_tip = Language.NoComment;
+    tool_tip = Language->NoComment;
     return -1;
   }
   return 0;
 }
 
-int OTM_File::GetContent( AddTextureClass *tex, bool add, bool force)
+int OTM_File::GetContent( AddTextureClass &tex, bool add)
 {
   wxString file_type = FileName.AfterLast( '.');
   if (file_type == L"zip")
   {
-    AddZip( tex, add, force, false);
+    AddZip( tex, add, false);
   }
   else if (file_type == L"tpf")
   {
-    AddZip( tex, add, force, true);
+    AddZip( tex, add, true);
   }
   else if (file_type == L"dds")
   {
-    AddFile( tex, add, force);
+    AddFile( tex, add);
   }
   else
   {
-    LastError << Language.Error_FileNotSupported;
+    LastError << Language->Error_FileNotSupported;
     LastError << "\n" << FileName;
   }
   if (LastError.Len()>0) return -1;
-  else return 0;
+  else
+  {
+    if (add) tex.Loaded = true;
+    return 0;
+  }
 }
 
 int OTM_File::ReadFile(void)
@@ -133,23 +110,23 @@ int OTM_File::ReadFile(void)
   XORed=false;
 
   wxFile dat;
-  if (!dat.Access(FileName, wxFile::read)) {LastError << Language.Error_FileOpen <<"\n" << FileName; return -1;}
+  if (!dat.Access(FileName, wxFile::read)) {LastError << Language->Error_FileOpen <<"\n" << FileName; return -1;}
   dat.Open(FileName, wxFile::read);
-  if (!dat.IsOpened()) {LastError << Language.Error_FileOpen <<"\n" << FileName; return -1;}
+  if (!dat.IsOpened()) {LastError << Language->Error_FileOpen <<"\n" << FileName; return -1;}
   FileLen = dat.Length();
-  if (FileLen==0) {LastError << Language.Error_FileOpen <<"\n" << FileName; return -1;}
+  if (FileLen==0) {LastError << Language->Error_FileOpen <<"\n" << FileName; return -1;}
 
   if (FileLen>=MemoryLength)
   {
     if (FileInMemory!=NULL) delete [] FileInMemory;
     try {FileInMemory = new char [FileLen+1];}
-    catch (...) {FileInMemory=NULL; MemoryLength=0; FileLen=0; LastError << Language.Error_Memory; return -1;}
+    catch (...) {FileInMemory=NULL; MemoryLength=0; FileLen=0; LastError << Language->Error_Memory; return -1;}
     MemoryLength = FileLen+1;
   }
   unsigned int result = dat.Read( FileInMemory, FileLen);
   dat.Close();
 
-  if (result != FileLen) {FileLen=0; LastError << Language.Error_FileRead<<"\n" << FileName; return -1;}
+  if (result != FileLen) {FileLen=0; LastError << Language->Error_FileRead<<"\n" << FileName; return -1;}
   FileInMemory[FileLen]=0;
 
   Loaded = true;
@@ -206,7 +183,7 @@ int OTM_File::GetCommentZip( wxString &tool_tip)
   if (int ret = ReadFile()) return ret;
 
   HZIP ZIP_Handle = OpenZip( FileInMemory, FileLen, NULL);
-  if (ZIP_Handle==NULL)  {tool_tip = Language.NoComment; LastError << Language.Error_Unzip; return -1;}
+  if (ZIP_Handle==NULL)  {tool_tip = Language->NoComment; LastError << Language->Error_Unzip; return -1;}
 
   ZIPENTRY ze;
   int index;
@@ -216,15 +193,15 @@ int OTM_File::GetCommentZip( wxString &tool_tip)
     char* comment;
     int len = ze.unc_size;
     try {comment=new char[len+1];}
-    catch(...) {tool_tip = Language.NoComment; LastError << Language.Error_Memory; return -1;}
+    catch(...) {tool_tip = Language->NoComment; LastError << Language->Error_Memory; return -1;}
     ZRESULT zr = UnzipItem( ZIP_Handle, index, comment, len);
 
-    if (zr!=ZR_OK && zr!=ZR_MORE) {delete [] comment; tool_tip = Language.NoComment;  LastError << Language.Error_Unzip <<"\nZIP:" << L"Comment.txt"; return -1;}
+    if (zr!=ZR_OK && zr!=ZR_MORE) {delete [] comment; tool_tip = Language->NoComment;  LastError << Language->Error_Unzip <<"\nZIP:" << L"Comment.txt"; return -1;}
     comment[len]=0;
     tool_tip = comment;
     delete [] comment;
   }
-  else tool_tip = Language.NoComment;
+  else tool_tip = Language->NoComment;
 
   CloseZip(ZIP_Handle);
   return 0;
@@ -236,7 +213,7 @@ int OTM_File::GetCommentTpf( wxString &tool_tip)
 
   UnXOR();
   tool_tip = &FileInMemory[FileLen];
-  tool_tip.Prepend( Language.Author);
+  tool_tip.Prepend( Language->Author);
   return 0;
 }
 
@@ -248,34 +225,32 @@ int OTM_File::GetCommentTpf( wxString &tool_tip)
 
 
 
-int OTM_File::AddFile( AddTextureClass *tex, bool add, bool force)
+int OTM_File::AddFile( AddTextureClass &tex, bool add)
 {
-  tex->SetSize(1);
+  tex.SetSize(1);
   unsigned long temp_hash;
 
   wxString name = FileName.AfterLast( '_');
   name = name.BeforeLast( '.');
-  if (!name.ToULong( &temp_hash, 16)) {LastError << Language.Error_Hash <<"\n" << FileName << "\n"; return -1;} // return if hash could not be extracted
+  if (!name.ToULong( &temp_hash, 16)) {LastError << Language->Error_Hash <<"\n" << FileName << "\n"; return -1;} // return if hash could not be extracted
 
   if (add)
   {
     if (int ret = ReadFile()) return ret;
 
-    try {tex->Textures[0] = new char[FileLen];}
-    catch (...) {tex->Textures[0]=NULL; LastError << Language.Error_Memory; return -1;}
-    for (unsigned int i=0; i<FileLen; i++) tex->Textures[0][i] = FileInMemory[i];
-    tex->Size[0] = FileLen;
+    try {tex.Textures[0] = new char[FileLen];}
+    catch (...) {tex.Textures[0]=NULL; LastError << Language->Error_Memory; return -1;}
+    for (unsigned int i=0; i<FileLen; i++) tex.Textures[0][i] = FileInMemory[i];
+    tex.Size[0] = FileLen;
   }
-  else {tex->Size[0] = 0; tex->Textures[0] = NULL;}
+  else {tex.Size[0] = 0; tex.Textures[0] = NULL;}
 
-  tex->Num = 1;
-  tex->Add[0] = add;
-  tex->Force[0] = force;
-  tex->Hash[0] = temp_hash;
+  tex.Num = 1;
+  tex.Hash[0] = temp_hash;
   return 0;
 }
 
-int OTM_File::AddZip( AddTextureClass *tex, bool add, bool force, bool tpf)
+int OTM_File::AddZip( AddTextureClass &tex, bool add, bool tpf)
 {
   if (int ret = ReadFile()) return ret;
 
@@ -290,16 +265,16 @@ int OTM_File::AddZip( AddTextureClass *tex, bool add, bool force, bool tpf)
        0x77, 0x6E, 0x46, 0x47, 0x77, 0x49, 0x0C, 0x4B,
        0x46, 0x6F, '\0'};
 
-    return AddContent( pw, tex, add,  force);
+    return AddContent( pw, tex, add);
   }
   else
   {
-    return AddContent( NULL, tex, add,  force);
+    return AddContent( NULL, tex, add);
   }
 }
 
 
-int OTM_File::AddContent( const char* pw, AddTextureClass *tex, bool add, bool force)
+int OTM_File::AddContent( const char* pw, AddTextureClass &tex, bool add)
 {
   // Thats is really nasty code, but atm I am happy that it works. I should try an other unzip api,
   // This one seems to behave very strange.
@@ -313,7 +288,7 @@ int OTM_File::AddContent( const char* pw, AddTextureClass *tex, bool add, bool f
   //
 
   HZIP ZIP_Handle = OpenZip( FileInMemory, FileLen, pw);
-  if (ZIP_Handle==NULL)  {LastError << Language.Error_Unzip; return -1;}
+  if (ZIP_Handle==NULL)  {LastError << Language->Error_Unzip; return -1;}
 
   ZIPENTRY ze;
   int index;
@@ -323,7 +298,7 @@ int OTM_File::AddContent( const char* pw, AddTextureClass *tex, bool add, bool f
     char* def;
     int len = ze.unc_size;
     try {def=new char[len+1];}
-    catch(...) {LastError << Language.Error_Memory; return -1;}
+    catch(...) {LastError << Language->Error_Memory; return -1;}
     ZRESULT zr = UnzipItem( ZIP_Handle, index, def, len);
 
     if (zr!=ZR_OK && zr!=ZR_MORE) {delete [] def; return -1;}
@@ -334,7 +309,7 @@ int OTM_File::AddContent( const char* pw, AddTextureClass *tex, bool add, bool f
     int num = token.CountTokens();
 
 
-    tex->SetSize(num);
+    tex.SetSize(num);
 
     unsigned long temp_hash;
     int count = 0;
@@ -345,7 +320,7 @@ int OTM_File::AddContent( const char* pw, AddTextureClass *tex, bool add, bool f
     {
       entry = token.GetNextToken();
       file = entry.BeforeFirst( '|');
-      if (!file.ToULong( &temp_hash, 16)) {LastError << Language.Error_Hash <<"\nTPF:" << entry << "\n"; continue;}
+      if (!file.ToULong( &temp_hash, 16)) {LastError << Language->Error_Hash <<"\nTPF:" << entry << "\n"; continue;}
 
       file = entry.AfterFirst( '|');
       file.Replace( "\r", "");
@@ -357,60 +332,56 @@ int OTM_File::AddContent( const char* pw, AddTextureClass *tex, bool add, bool f
         FindZipItem( ZIP_Handle, file.wc_str(), false, &index, &ze); // look for texture
         if (index>=0)
         {
-          try {tex->Textures[count] = new char[ze.unc_size];}
+          try {tex.Textures[count] = new char[ze.unc_size];}
           catch(...)
           {
-            tex->Textures[count] = NULL;
-            LastError << Language.Error_Memory;
+            tex.Textures[count] = NULL;
+            LastError << Language->Error_Memory;
             continue;
           }
 
-          ZRESULT rz = UnzipItem( ZIP_Handle, index, tex->Textures[count], ze.unc_size);
+          ZRESULT rz = UnzipItem( ZIP_Handle, index, tex.Textures[count], ze.unc_size);
           if (rz!=ZR_OK && rz!=ZR_MORE)
           {
-            delete [] tex->Textures[count];
-            LastError << Language.Error_Unzip <<"\nTPF:" << file << "\n";
-            tex->Textures[count] = NULL;
+            delete [] tex.Textures[count];
+            LastError << Language->Error_Unzip <<"\nTPF:" << file << "\n";
+            tex.Textures[count] = NULL;
           }
           else
           {
-            tex->Hash[count] = temp_hash;
-            tex->Add[count] = true;
-            tex->Size[count] = ze.unc_size;
-            tex->Force[count] = force;
+            tex.Hash[count] = temp_hash;
+            tex.Size[count] = ze.unc_size;
             count++;
           }
         }
         else
         {
-          LastError << Language.Error_Unzip <<"\nTPF:" << file << "\n";
+          LastError << Language->Error_Unzip <<"\nTPF:" << file << "\n";
           CloseZip(ZIP_Handle); //somehow we need to close and to reopen the zip handle, otherwise the program crashes
           ZIP_Handle = OpenZip( FileInMemory, FileLen, pw);
         }
       }
       else
       {
-        tex->Hash[count] = temp_hash;
-        tex->Add[count] = false;
-        tex->Size[count] = 0;
-        tex->Force[count] = force;
+        tex.Hash[count] = temp_hash;
+        tex.Size[count] = 0;
         count++;
       }
     }
     delete [] def;
-    tex->Num = count;
+    tex.Num = count;
   }
   else // texmod.def is not present in the zip file
   {
     CloseZip(ZIP_Handle); //somehow we need to close and to reopen the zip handle, otherwise the program crashes
     ZIP_Handle = OpenZip( FileInMemory, FileLen, pw);
-    if (ZIP_Handle==NULL)  {LastError << Language.Error_Unzip; return -1;}
+    if (ZIP_Handle==NULL)  {LastError << Language->Error_Unzip; return -1;}
     wxString name;
     wxString file;
     GetZipItem( ZIP_Handle, -1, &ze); //ask for number of entries
     int num = ze.index;
 
-    tex->SetSize(num);
+    tex.SetSize(num);
     int count = 0;
     unsigned long temp_hash;
     for (int i=0; i<num; i++)
@@ -431,7 +402,7 @@ int OTM_File::AddContent( const char* pw, AddTextureClass *tex, bool add, bool f
       {
         delete [] buffer;
         buffer = NULL;
-        LastError << Language.Error_Unzip <<"\nZIP:" << file << "\n";
+        LastError << Language->Error_Unzip <<"\nZIP:" << file << "\n";
       }
 
       file = ze.name;
@@ -443,30 +414,26 @@ int OTM_File::AddContent( const char* pw, AddTextureClass *tex, bool add, bool f
       name = file.AfterLast( '_');
       name = name.BeforeLast( '.');
 
-      if (!name.ToULong( &temp_hash, 16)) {LastError << Language.Error_Hash <<"\nZIP:" << file << "\n"; continue;} //if hash could not be extracted
+      if (!name.ToULong( &temp_hash, 16)) {LastError << Language->Error_Hash <<"\nZIP:" << file << "\n"; continue;} //if hash could not be extracted
 
       if (add)
       {
         if (buffer==NULL) continue;
 
-        tex->Textures[count] = buffer;
-        tex->Hash[count] = temp_hash;
-        tex->Add[count] = true;
-        tex->Size[count] = len;//ze.unc_size;
-        tex->Force[count] = force;
+        tex.Textures[count] = buffer;
+        tex.Hash[count] = temp_hash;
+        tex.Size[count] = len;//ze.unc_size;
         count++;
       }
       else
       {
         if (buffer!=NULL) delete [] buffer;
-        tex->Hash[count] = temp_hash;
-        tex->Add[count] = false;
-        tex->Size[count] = 0;
-        tex->Force[count] = force;
+        tex.Hash[count] = temp_hash;
+        tex.Size[count] = 0;
         count++;
       }
     }
-    tex->Num = count;
+    tex.Num = count;
   }
 
   CloseZip(ZIP_Handle);
