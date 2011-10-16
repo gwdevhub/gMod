@@ -26,28 +26,26 @@ along with OpenTexMod.  If not, see <http://www.gnu.org/licenses/>.
 
 
 #include "OTM_Main.h"
-//#include <shlwapi.h>
-//#pragma comment(lib, "Shlwapi.lib")
 
-
-OTM_IDirect3DDevice9* gl_pIDirect3DDevice9 = NULL;
-OTM_IDirect3D9*       gl_pIDirect3D9 = NULL;
+// global variable which is not linked extern
 HINSTANCE             gl_hOriginalDll = NULL;
 HINSTANCE             gl_hThisInstance = NULL;
-unsigned int          gl_ErrorState = 0u;
 OTM_TextureServer*    gl_TextureServer = NULL;
-FILE*                 gl_File =NULL;
 HANDLE                gl_ServerThread = NULL;
+
+
+// global variable which is linked extern
+unsigned int          gl_ErrorState = 0u;
+
+#ifdef LOG_MESSAGE
+FILE*                 gl_File = NULL;
+#endif
 
 BOOL WINAPI DllMain( HINSTANCE hModule, DWORD  ul_reason_for_call, LPVOID lpReserved)
 {
   UNREFERENCED_PARAMETER(lpReserved);
-  /*
-  Beep(300, 50);
-  Beep(600, 50);
-  Beep(900, 50);
-  Beep(1200, 50);
-*/
+
+  //dll entry routine, here we initialize or clean up
   switch (ul_reason_for_call)
 	{
 	case DLL_PROCESS_ATTACH:
@@ -60,8 +58,7 @@ BOOL WINAPI DllMain( HINSTANCE hModule, DWORD  ul_reason_for_call, LPVOID lpRese
 	  ExitInstance();
 	  break;
 	}
-  case DLL_THREAD_ATTACH:  break;
-	case DLL_THREAD_DETACH:  break;
+  default:  break;
 	}
     
   return (true);
@@ -70,17 +67,19 @@ BOOL WINAPI DllMain( HINSTANCE hModule, DWORD  ul_reason_for_call, LPVOID lpRese
 
 
 #ifdef NO_INJECTION
+
+
 IDirect3D9* WINAPI  Direct3DCreate9(UINT SDKVersion)
 {
   Message("WINAPI  Direct3DCreate9\n");
 
 	if (!gl_hOriginalDll) LoadOriginalDll(); // looking for the "right d3d9.dll"
 	
-	// Hooking IDirect3D Object from Original Library
+	// find original function in original d3d9.dll
 	typedef IDirect3D9 *(WINAPI* D3D9_Type)(UINT SDKVersion);
 	D3D9_Type D3DCreate9_fn = (D3D9_Type) GetProcAddress( gl_hOriginalDll, "Direct3DCreate9");
     
-    // Debug
+
 	if (!D3DCreate9_fn) 
   {
 	  Message("Direct3DCreate9: original function not found in dll\n");
@@ -88,20 +87,20 @@ IDirect3D9* WINAPI  Direct3DCreate9(UINT SDKVersion)
   }
 	
 
-  if (gl_pIDirect3D9!=NULL) gl_ErrorState |= OTM_ERROR_MULTIPLE_IDirect3D9;
-
-	// Request pointer from Original Dll. 
+	//Create originale IDirect3D9 object
 	IDirect3D9 *pIDirect3D9_orig = D3DCreate9_fn(SDKVersion);
-	gl_pIDirect3D9 = new OTM_IDirect3D9( pIDirect3D9_orig, gl_TextureServer);
 
-	// Return pointer to hooking Object instead of "real one"
-	return (gl_pIDirect3D9);
+	//create our OTM_IDirect3D9 object
+	OTM_IDirect3D9 *pIDirect3D9 = new OTM_IDirect3D9( pIDirect3D9_orig, gl_TextureServer);
+
+	// Return pointer to our object instead of "real one"
+	return (pIDirect3D9);
 }
 
-bool HookThisProgram( wchar_t *ret)
+bool HookThisProgram( wchar_t *ret) //this function always return true, it needed for the name and path of te executable
 {
   wchar_t Executable[MAX_PATH];
-  GetModuleFileNameW( GetModuleHandle( NULL ), Executable, MAX_PATH );
+  GetModuleFileNameW( GetModuleHandle( NULL ), Executable, MAX_PATH ); //ask for name and path of this executable
 
   int len = 0;
   while (Executable[len]) {ret[len] = Executable[len]; len++;}
@@ -117,10 +116,10 @@ bool HookThisProgram( wchar_t *ret)
 
 
 typedef IDirect3D9 *(APIENTRY *Direct3DCreate9_type)(UINT);
-Direct3DCreate9_type Direct3DCreate9_fn;
+Direct3DCreate9_type Direct3DCreate9_fn; // we need to store the pointer to the original Direct3DCreate9 function after we have done a detour
 
-bool RetourFunc(BYTE *src, BYTE *restore, const int len);
 void *DetourFunc(BYTE *src, const BYTE *dst, const int len);
+bool RetourFunc(BYTE *src, BYTE *restore, const int len);
 
 IDirect3D9 *APIENTRY MyDirect3DCreate9(UINT SDKVersion)
 {
@@ -140,44 +139,45 @@ IDirect3D9 *APIENTRY MyDirect3DCreate9(UINT SDKVersion)
   IDirect3D9 *pIDirect3D9_orig = NULL;
   if (Direct3DCreate9_fn)
   {
-    pIDirect3D9_orig = Direct3DCreate9_fn(SDKVersion);
+    pIDirect3D9_orig = Direct3DCreate9_fn(SDKVersion); //creating the original IDirect3D9 object
   }
   else return (NULL);
+  OTM_IDirect3D9 *pIDirect3D9;
   if (pIDirect3D9_orig)
   {
-    gl_pIDirect3D9 = new OTM_IDirect3D9( pIDirect3D9_orig, gl_TextureServer);
+    pIDirect3D9 = new OTM_IDirect3D9( pIDirect3D9_orig, gl_TextureServer); //creating our OTM_IDirect3D9 object
   }
-  return (gl_pIDirect3D9);
+  return (pIDirect3D9); //return our object instead of the "real one"
 }
 
 bool HookThisProgram( wchar_t *ret)
 {
   FILE* file;
-  wchar_t *app_path = _wgetenv( L"APPDATA");
+  wchar_t *app_path = _wgetenv( L"APPDATA"); //asc for the user application directory
   wchar_t file_name[MAX_PATH];
   swprintf_s( file_name, MAX_PATH, L"%ls\\%ls\\%ls", app_path, OTM_APP_DIR, OTM_APP_DX9);
-  if (_wfopen_s( &file, file_name, L"rt,ccs=UTF-16LE")) return (false);
+  if (_wfopen_s( &file, file_name, L"rt,ccs=UTF-16LE")) return (false); // open the file in utf-16 LE mode
 
   wchar_t Executable[MAX_PATH];
   wchar_t Game[MAX_PATH];
-  GetModuleFileNameW( GetModuleHandle( NULL ), Executable, MAX_PATH );
+  GetModuleFileNameW( GetModuleHandle( NULL ), Executable, MAX_PATH ); //ask for name and path of this executable
 
   //MessageBoxW( NULL, Executable, L"test", 0);
   while (!feof(file))
   {
-    if ( fgetws( Game, MAX_PATH, file) != NULL )
+    if ( fgetws( Game, MAX_PATH, file) != NULL ) //get each line of the file
     {
       //MessageBoxW( NULL, Game, L"test", 0);
       int len = 0;
       while (Game[len])
       {
-        if (Game[len]==L'\r' || Game[len]==L'\n') {Game[len]=0; break;}
+        if (Game[len]==L'\r' || Game[len]==L'\n') {Game[len]=0; break;} //removing the new line symbols
         len++;
       }
-      if ( _wcsicmp( Executable, Game ) == 0 )
+      if ( _wcsicmp( Executable, Game ) == 0 ) //compare both strings
       {
         for (int i=0; i<len; i++) ret[i] = Game[i];
-        ret[len]=0;
+        ret[len] = 0;
         fclose(file);
         return (true);
       }
@@ -192,37 +192,42 @@ bool HookThisProgram( wchar_t *ret)
 DWORD WINAPI ServerThread( LPVOID lpParam )
 {
   UNREFERENCED_PARAMETER(lpParam);
-  if (gl_TextureServer!=NULL) gl_TextureServer->MainLoop();
+  if (gl_TextureServer!=NULL) gl_TextureServer->MainLoop(); //This is and endless mainloop, it sleep till something is written into the pipe
   return (0);
 }
 
 void InitInstance(HINSTANCE hModule)
 {
-  DisableThreadLibraryCalls( hModule );
+  DisableThreadLibraryCalls( hModule ); //reduce overhead
 
   gl_hThisInstance = (HINSTANCE)  hModule;
 
   wchar_t game[MAX_PATH];
-  if (HookThisProgram( game))
+  if (HookThisProgram( game)) //ask if we need to hook this program
   {
     OpenMessage();
     Message("InitInstance: %lu\n", hModule);
 
-	  gl_TextureServer = new OTM_TextureServer(game);
+	  gl_TextureServer = new OTM_TextureServer(game); //create the server which listen on the pipe and prepare the update for the texture clients
 	  if (gl_TextureServer!=NULL)
 	  {
-	    if (gl_TextureServer->OpenPipe(game))
+	    if (gl_TextureServer->OpenPipe(game)) //open the pipe and send the name+path of this executable
 	    {
 	      Message("InitInstance: Pipe not opened\n");
 	      return;
 	    }
-	    gl_ServerThread = CreateThread( NULL, 0, ServerThread, NULL, 0, NULL);
-	    if (gl_ServerThread==NULL) Message("InitInstance: Serverthread not started\n");
+	    gl_ServerThread = CreateThread( NULL, 0, ServerThread, NULL, 0, NULL); //creating a thread for the mainloop
+	    if (gl_ServerThread==NULL) {Message("InitInstance: Serverthread not started\n");}
 
-	    //this is for testing purpose, these functions should be called from the server thread, provoked by the OTM_GUI
-	    //gl_TextureServer->SaveAllTextures(true);
-      //gl_TextureServer->SetSaveDirectory("tex\\");
+
 	    /*
+	    //
+	    //this is for testing purpose, these functions should be called from the server thread, provoked by the OTM_GUI
+	    //
+
+	    gl_TextureServer->SaveAllTextures(true);
+      gl_TextureServer->SetSaveDirectory("tex\\");
+
 	    gl_TextureServer->AddFile("BF_0xbc2a9196.dds", 0xbc2a9196ul);
       gl_TextureServer->AddFile("0X1FD33669.dds", 0X1FD33669ul);
       gl_TextureServer->AddFile("0X26D19B9A.dds", 0X26D19B9Aul);
@@ -256,7 +261,6 @@ void LoadOriginalDll(void)
 	// try to load the system's d3d9.dll, if pointer empty
 	if (!gl_hOriginalDll) gl_hOriginalDll = LoadLibrary(buffer);
 
-	// Debug
 	if (!gl_hOriginalDll)
 	{
 		ExitProcess(0); // exit the hard way
@@ -324,7 +328,7 @@ bool RetourFunc(BYTE *src, BYTE *restore, const int len)
 HHOOK gl_hHook = NULL;
 LRESULT CALLBACK HookProc(int nCode, WPARAM wParam, LPARAM lParam)
 {
-    return (CallNextHookEx( gl_hHook, nCode, wParam, lParam));
+    return (CallNextHookEx( gl_hHook, nCode, wParam, lParam)); //we do not change something, we need this hook only to get our dll loaded into a starting program
 }
 
 void InstallHook()

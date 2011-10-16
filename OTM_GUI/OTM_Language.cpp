@@ -284,12 +284,12 @@ int OTM_Language::LoadDefault(void)
 {
   CurrentLanguage="English";
 
-  MenuLanguage = "Change Language";
+  MenuLanguage = "Change language";
   MenuHelp  = "Help";
   MenuAbout  = "About";
   MenuAcknowledgement = "Acknowledgement";
   MenuAddGame = "Add game";
-  MenuDeleteGame = "Delete Game";
+  MenuDeleteGame = "Delete game";
   MenuLoadTemplate = "Load template";
   MenuSaveTemplate = "Save template";
   MenuSaveTemplateAs = "Save template as ...";

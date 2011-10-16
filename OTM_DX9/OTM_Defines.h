@@ -23,9 +23,15 @@ along with OpenTexMod.  If not, see <http://www.gnu.org/licenses/>.
 
 
 #ifdef ALPHA
+
+#define LOG_MESSAGE
+extern FILE *gl_File;
+
 #define Message(...) {if (gl_File!=NULL) {fprintf( gl_File, __VA_ARGS__); fflush(gl_File);}}
 #define OpenMessage(...) {if (fopen_s( &gl_File, "OTM_log.txt", "wt")) gl_File=NULL;}
 #define CloseMessage(...) {if (gl_File!=NULL) fclose(gl_File);}
+
+
 #else
 #define OpenMessage(...)
 #define Message(...)

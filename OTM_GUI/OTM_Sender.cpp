@@ -275,11 +275,15 @@ int OTM_Sender::SendTextures(unsigned int num, AddTextureClass *tex)
     // tex[i].Add!=true we can always remove, cause removing does take time in the render thread
     // if tex[i].Add==true and WasAdded[j]!=true this texture was not loaded but should be loaded, so maybe we can load it now
     {
-      bool hit = false;
+      bool hit = false; //we send only if this has was not send before
       unsigned long temp_hash = tex[i].Hash[j];
       for (unsigned int ii=0u; ii<i && !hit; ii++) for (unsigned int jj=0u; jj<tex[ii].Num && !hit; jj++) if (temp_hash==tex[ii].Hash[jj]) hit=true;
       for (unsigned int jj=0u; jj<j && !hit; jj++) if (temp_hash==tex[i].Hash[jj]) hit=true;
-      if (hit) continue;
+      if (hit)
+      {
+        tex[i].WasAdded[j]=false; //no matter what is done for this hash before, this texture is not added!
+        continue;
+      }
 
       if (tex[i].Size[j]+sizeof(MsgStruct)+pos>BIG_BUFSIZE)
       {
@@ -294,8 +298,8 @@ int OTM_Sender::SendTextures(unsigned int num, AddTextureClass *tex)
 
       if (tex[i].Add)
       {
-        msg->Control = CONTROL_FORCE_RELOAD_TEXTURE_DATA; //we always force because whether force==true
-        //or Add==true && WasAdded[j]!=true which means it is loaded the first time, or in previous loads it could not be loaded
+        msg->Control = CONTROL_FORCE_RELOAD_TEXTURE_DATA; //we always force because whether force is true or not
+        //if (Add==true && WasAdded[j]!=true) the texture is loaded the first time, or in previous loads it could not be loaded
         //because an other texture was send with the same hash, in all cases forcing is the best choice (atm)
         char* temp = tex[i].Textures[j];
         if (temp!=NULL)

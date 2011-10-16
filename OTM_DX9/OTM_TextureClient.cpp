@@ -20,10 +20,6 @@ along with OpenTexMod.  If not, see <http://www.gnu.org/licenses/>.
 
 #include "OTM_Main.h"
 
-FILE *file;
-
-
-
 
 OTM_TextureClient::OTM_TextureClient(OTM_TextureServer* server, IDirect3DDevice9* device)
 {
@@ -46,13 +42,12 @@ OTM_TextureClient::OTM_TextureClient(OTM_TextureServer* server, IDirect3DDevice9
       FileToMod = NULL;
     }
   }
-  Mutex = NULL;//CreateMutex(NULL, false, NULL);
+  Mutex = CreateMutex(NULL, false, NULL);
 
   Update = NULL;
   NumberOfUpdate = -1;
   FontColour = D3DCOLOR_ARGB(255,255,0,0);
   TextureColour = D3DCOLOR_ARGB(255,0,255,0);
-  //Message("end OTM_TextureClient(void): %lu\n", this);
 }
 
 OTM_TextureClient::~OTM_TextureClient(void)
@@ -60,39 +55,34 @@ OTM_TextureClient::~OTM_TextureClient(void)
   Message("~OTM_TextureClient(void): %lu\n", this);
   if (Server!=NULL) Server->RemoveClient(this);
 
- //Message("after Server ~OTM_TextureClient(void): %lu\n", this);
-
   if (Mutex!=NULL) CloseHandle(Mutex);
-  //Message("after CloseHandle ~OTM_TextureClient(void): %lu\n", this);
 
   if (Update!=NULL) delete [] Update;
-  //Message("after Update ~OTM_TextureClient(void): %lu\n", this);
-
   if (FileToMod!=NULL) delete [] FileToMod;
-  //Message("end ~OTM_TextureClient(void): %lu\n", this);
 }
 
 
 int OTM_TextureClient::AddTexture( OTM_IDirect3DTexture9* pTexture)
 {
-  ((OTM_IDirect3DDevice9*)D3D9Device)->SetLastCreatedTexture(NULL); //a loop would arise if a texture would be switched
-  if (pTexture->FAKE) return  (RETURN_OK); // this is a fake texture
+  ((OTM_IDirect3DDevice9*)D3D9Device)->SetLastCreatedTexture(NULL); //this texture must no be added twice
+  if (pTexture->FAKE) return (RETURN_OK); // this is a fake texture
+
   Message("OTM_TextureClient::AddTexture( %lu): %lu (thread: %lu)\n", pTexture, this, GetCurrentThread());
 
   D3DLOCKED_RECT d3dlr;
-  if (pTexture->LockRect( 0, &d3dlr, NULL, 0)!=D3D_OK)
+  if (pTexture->LockRect( 0, &d3dlr, NULL, 0)!=D3D_OK) //get the raw data of the texture
   {
     return (RETURN_LockRect_FAILED);
   }
   D3DSURFACE_DESC desc;
-  if (pTexture->GetLevelDesc(0, &desc)!=D3D_OK)
+  if (pTexture->GetLevelDesc(0, &desc)!=D3D_OK) //get the format and the size of the texture
   {
     pTexture->UnlockRect(0);
     return (RETURN_GetLevelDesc_FAILED);
   }
 
   int size=0;
-  switch(desc.Format)
+  switch(desc.Format) //switch trough the formats to calculate the size of the raw data
   {
   case D3DFMT_A1: // 1-bit monochrome.
   {
@@ -170,20 +160,21 @@ int OTM_TextureClient::AddTexture( OTM_IDirect3DTexture9* pTexture)
     break;
   }
   }
-  //MyTypeHash hash = GetHash( (unsigned char*) d3dlr.pBits, size);
-  MyTypeHash hash = GetCRC32( (char*) d3dlr.pBits, size);
 
-  if (pTexture->UnlockRect(0)!=D3D_OK)
+  //MyTypeHash hash = GetHash( (unsigned char*) d3dlr.pBits, size);
+  MyTypeHash hash = GetCRC32( (char*) d3dlr.pBits, size); //calaculate the crc32 of the texture
+
+  if (pTexture->UnlockRect(0)!=D3D_OK) //unlock the raw data
   {
     return (RETURN_UnlockRect_FAILED);
   }
 
-  pTexture->Hash = hash; // note: this will only be done for original textures
+  pTexture->Hash = hash;
   if (BoolSaveAllTextures) SaveTexture(pTexture);
 
   if (gl_ErrorState & OTM_ERROR_FATAL) return (RETURN_FATAL_ERROR);
 
-  OriginalTextures.Add( pTexture);
+  OriginalTextures.Add( pTexture); // add the texture to the list of original texture
 
   return (LookUpToMod(pTexture)); // check if this texture should be modded
 }
@@ -197,11 +188,14 @@ int OTM_TextureClient::RemoveTexture( OTM_IDirect3DTexture9* pTexture) // is cal
   IDirect3DDevice9 *dev = NULL;
   if (pTexture != NULL && pTexture->GetDevice(&dev) == D3D_OK)
   {
+    // this condition is senseless, since this function is only called if a OTM_IDirect3DTexture9 object is released
+    // and OTM_IDirect3DTexture9 object are created only from a OTM_IDirect3DDevice9 object, hence the pointers must be equal
     if (dev == D3D9Device)
     {
       if (gl_ErrorState & OTM_ERROR_FATAL) return (RETURN_FATAL_ERROR);
       if (pTexture->FAKE)
       {
+        // we need to set the corresponding FileToMod[X].pTexture to NULL, to avoid a link to a non existing texture object
         int ref = pTexture->Reference;
         if (ref>=0 && ref<NumberToMod && FileToMod[ref].pTexture==pTexture) FileToMod[ref].pTexture = NULL;
       }
@@ -215,20 +209,13 @@ int OTM_TextureClient::RemoveTexture( OTM_IDirect3DTexture9* pTexture) // is cal
           fake_texture ->Release(); //this will call this->RemoveTexture again and the fake_texture will also be deleted from the FileToMod.
         }
         */
-        return (OriginalTextures.Remove( pTexture));
+        return (OriginalTextures.Remove( pTexture)); //remove this texture form the list
       }
     }
   }
   return (RETURN_OK);
 }
 
-/*
-int OTM_TextureClient::ReleaseAllFakeTexture(void)
-{
-  Message("ReleaseAllFakeTexture(): %lu\n", this);
-  return (FakeTextures.RemoveAll());
-}
-*/
 
 int OTM_TextureClient::SaveAllTextures(bool val)
 {
@@ -240,13 +227,10 @@ int OTM_TextureClient::SaveAllTextures(bool val)
 int OTM_TextureClient::SaveSingleTexture(bool val)
 {
   Message("OTM_TextureClient::SaveSingleTexture( %d): %lu\n", val, this);
-  if (BoolSaveSingleTexture && !val)
+  if (BoolSaveSingleTexture && !val) //if BoolSaveSingleTexture is set to false and was previously true we switch the SingleTexture back
   {
-    if (D3D9Device!=NULL)
-    {
-      OTM_IDirect3DTexture9* pTexture = ((OTM_IDirect3DDevice9*)D3D9Device)->GetSingleTexture();
-      if (pTexture!=NULL) UnswitchTextures(pTexture);
-    }
+    OTM_IDirect3DTexture9* pTexture = ((OTM_IDirect3DDevice9*)D3D9Device)->GetSingleTexture();
+    if (pTexture!=NULL) UnswitchTextures(pTexture);
   }
   BoolSaveSingleTexture = val;
   return (RETURN_OK);
@@ -263,7 +247,7 @@ int OTM_TextureClient::SetSaveDirectory( wchar_t *dir)
     SavePath[0]=0;
     return (RETURN_BAD_ARGUMENT);
   }
-  SavePath[i]=0;
+  else SavePath[i]=0;
   return (RETURN_OK);
 }
 
@@ -277,7 +261,7 @@ int OTM_TextureClient::SetGameName( wchar_t *name)
     GameName[0]=0;
     return (RETURN_BAD_ARGUMENT);
   }
-  GameName[i]=0;
+  else GameName[i]=0;
   return (RETURN_OK);
 }
 
@@ -285,25 +269,21 @@ int OTM_TextureClient::SaveTexture(OTM_IDirect3DTexture9* pTexture)
 {
   if (pTexture==NULL) return (RETURN_BAD_ARGUMENT);
   if (SavePath[0]==0) {Message("OTM_TextureClient::SaveTexture( %#lX, %lu): %lu,   SavePath not set\n", pTexture->Hash, pTexture->m_D3Dtex, this); return (RETURN_TEXTURE_NOT_SAVED);}
-  Message("OTM_TextureClient::SaveTexture( %#lX, %lu): %lu\n", pTexture->Hash, pTexture->m_D3Dtex, this);
 
   wchar_t file[MAX_PATH];
   if (GameName[0]) swprintf_s( file, MAX_PATH, L"%ls\\%ls_%#lX.dds", SavePath, GameName, pTexture->Hash);
   else swprintf_s( file, MAX_PATH, L"%ls\\%#lX.dds", SavePath, pTexture->Hash);
-  Message("OTM_TextureClient::SaveTexture( %ls ) \n", file);
+  Message("OTM_TextureClient::SaveTexture( %ls): %lu\n", file, this);
 
   if (D3D_OK!=D3DXSaveTextureToFileW( file, D3DXIFF_DDS, pTexture->m_D3Dtex, NULL)) return (RETURN_TEXTURE_NOT_SAVED);
-  Message("OTM_TextureClient::SaveTexture( ) Done!\n", file);
-
   return (RETURN_OK);
 }
 
 
 
-int OTM_TextureClient::AddUpdate(TextureFileStruct* update, int number)  //client must delete the temp array
+int OTM_TextureClient::AddUpdate(TextureFileStruct* update, int number)  //client must delete the update array
 {
   Message("AddUpdate( %lu, %d): %lu\n", update, number, this);
-  //if (update==NULL || number<=0) return (RETURN_OK);
   if (int ret = LockMutex()) {gl_ErrorState |= OTM_ERROR_TEXTURE; return (ret);}
   if (Update!=NULL) delete [] Update;
   Update = update;
@@ -315,65 +295,74 @@ int OTM_TextureClient::AddUpdate(TextureFileStruct* update, int number)  //clien
 
 int OTM_TextureClient::MergeUpdate(void)
 {
-  if (NumberOfUpdate<0) {Update=NULL; return  (RETURN_OK);}
+  if (NumberOfUpdate<0) {return (RETURN_OK);}
   if (int ret = LockMutex()) {gl_ErrorState |= OTM_ERROR_TEXTURE ; return (ret);}
 
   Message("MergeUpdate(): %lu\n", this);
 
-  for (int i=0; i<NumberOfUpdate; i++) Update[i].Checked=false;
+  for (int i=0; i<NumberOfUpdate; i++) Update[i].pTexture = NULL; //this is already done, but safety comes first ^^
+
 
   // looking through all current modified texture and removing if texture is not any more in the update or take it over otherwise
-  for (int i=0; i<NumberToMod; i++)
+  for (int i=0; i<NumberToMod; i++) //if NumberToMod is zero, we must merge nothing
   {
     MyTypeHash hash = FileToMod[i].Hash;
     bool found=false;
-    for (int u=0; u<NumberOfUpdate; u++)
+    for (int u=0; u<NumberOfUpdate; u++) //if NumberOfUpdate is zero, each fake texture will be released
     {
       if (hash==Update[u].Hash)
       {
-        Update[u].Checked = true;
         found = true;
         Update[u].pTexture = FileToMod[i].pTexture; //might also be a NULL pointer
 
-        if (Update[u].ForceReload && Update[i].pTexture!=NULL)
+
+        if (Update[u].pTexture!=NULL)
         {
-          OTM_IDirect3DTexture9 *pTexture = Update[u].pTexture->CrossRef_D3Dtex;
-          Update[u].pTexture->Release();
-          Update[u].pTexture = NULL;
-          if (pTexture!=NULL) //should always be the case
+          if (Update[u].ForceReload) // if force is enable, we reload the texture
           {
-            OTM_IDirect3DTexture9 *fake_Texture;
-            if (int ret = LoadTexture( & (Update[u]), &fake_Texture)) return (ret);
-            if (SwitchTextures( fake_Texture, pTexture))
+            OTM_IDirect3DTexture9 *pTexture = Update[u].pTexture->CrossRef_D3Dtex;
+            Update[u].pTexture->Release(); //release the old fake texture
+            Update[u].pTexture = NULL;
+            if (pTexture!=NULL) //should always be the case
             {
-              Message("MergeUpdate(): textures not switched %#lX\n", hash);
-              fake_Texture->Release();
-            }
-            else
-            {
-              //FakeTextures.Add(fake_Texture);
-              Update[u].pTexture = fake_Texture;
-              fake_Texture->Reference = u;
+              OTM_IDirect3DTexture9 *fake_Texture;
+              if (int ret = LoadTexture( & (Update[u]), &fake_Texture)) return (ret);
+              if (SwitchTextures( fake_Texture, pTexture))
+              {
+                Message("MergeUpdate(): textures not switched %#lX\n", hash);
+                fake_Texture->Release();
+              }
+              else
+              {
+                Update[u].pTexture = fake_Texture;
+                fake_Texture->Reference = u;
+              }
             }
           }
+          else Update[u].pTexture->Reference = u; //set the new reference, needed for a fast delete
         }
         break;
       }
     }
     if (!found)
     {
-      if (FileToMod[i].pTexture!=NULL) FileToMod[i].pTexture->Release();
+      if (FileToMod[i].pTexture!=NULL) FileToMod[i].pTexture->Release(); //release the fake texture, if it is not included in the update
     }
   }
 
-  // looking through the update and switch the textures if they are currently used in the game
+  // looking through the non switched texture in the update and search for a target hash in the list of original game textures
   int num = OriginalTextures.GetNumber();
-  for (int u=0; u<NumberOfUpdate; u++) if (!Update[u].Checked && Update[u].pTexture==NULL)
+  for (int u=0; u<NumberOfUpdate; u++) if (Update[u].pTexture==NULL) //for this fake texture the target texture was not found
   {
     MyTypeHash hash = Update[u].Hash;
-    for (int i=0; i<num; i++) if (hash==OriginalTextures[i]->Hash && OriginalTextures[i]->CrossRef_D3Dtex==NULL)
+    for (int i=0; i<num; i++) if (hash==OriginalTextures[i]->Hash)
     {
-      Update[u].Checked = true;
+      if (OriginalTextures[i]->CrossRef_D3Dtex!=NULL)
+      {
+        //if the texture is already switched, it might be the SingleTexture (for saving a single texture)
+        if (OriginalTextures[i]->CrossRef_D3Dtex==((OTM_IDirect3DDevice9*)D3D9Device)->GetSingleTexture()) UnswitchTextures(OriginalTextures[i]);
+        else continue; //bug, this might happen if a hash is twice in the update list or due to an other bug^^
+      }
       OTM_IDirect3DTexture9 *pTexture = OriginalTextures[i];
       OTM_IDirect3DTexture9 *fake_Texture;
       if (RETURN_OK == LoadTexture( & (Update[u]), &fake_Texture))
@@ -387,9 +376,10 @@ int OTM_TextureClient::MergeUpdate(void)
         {
           Update[u].pTexture = fake_Texture;
           fake_Texture->Reference = u;
-          //FakeTextures.Add(fake_Texture);
         }
       }
+
+      break;
     }
   }
 
@@ -406,14 +396,14 @@ int OTM_TextureClient::MergeUpdate(void)
 
 int OTM_TextureClient::LockMutex(void)
 {
-  //if (( gl_ErrorState & (OTM_ERROR_FATAL | OTM_ERROR_MUTEX) )) return (RETURN_NO_MUTEX);
-  //if (WAIT_OBJECT_0!=WaitForSingleObject( Mutex, 100)) return (RETURN_MUTEX_LOCK); //waiting 100ms, to wait infinite pass INFINITE
+  if (( gl_ErrorState & (OTM_ERROR_FATAL | OTM_ERROR_MUTEX) )) return (RETURN_NO_MUTEX);
+  if (WAIT_OBJECT_0!=WaitForSingleObject( Mutex, 100)) return (RETURN_MUTEX_LOCK); //waiting 100ms, to wait infinite pass INFINITE
   return  (RETURN_OK);
 }
 
 int OTM_TextureClient::UnlockMutex(void)
 {
-  //if (ReleaseMutex(Mutex)==0) return (RETURN_MUTEX_UNLOCK);
+  if (ReleaseMutex(Mutex)==0) return (RETURN_MUTEX_UNLOCK);
   return  (RETURN_OK);
 }
 
@@ -424,12 +414,13 @@ int OTM_TextureClient::UnlockMutex(void)
 int OTM_TextureClient::LookUpToMod( OTM_IDirect3DTexture9* pTexture) // should only be called for original textures
 {
   Message("OTM_TextureClient::LookUpToMod( %lu): hash: %#lX,  %lu\n", pTexture, pTexture->Hash, this);
-  if (pTexture->CrossRef_D3Dtex!=NULL) return (RETURN_OK); // to avoid broken links
+  if (pTexture->CrossRef_D3Dtex!=NULL) return (RETURN_OK); // bug, this texture is already switched
+
   MyTypeHash hash = pTexture->Hash;
   for (int i=0; i<NumberToMod; i++)
   {
-    if (hash == FileToMod[i].Hash && FileToMod[i].pTexture==NULL) // to avoid broken links
-    {
+    if (hash == FileToMod[i].Hash && FileToMod[i].pTexture==NULL)
+    { // if (FileToMod[i].pTexture!=NULL)    the corresponding fake texture is already switched, thus the game has loaded textures with the same hash
       OTM_IDirect3DTexture9 *fake_Texture;
       if (int ret = LoadTexture( & (FileToMod[i]), &fake_Texture)) return (ret);
       if (SwitchTextures( fake_Texture, pTexture))
@@ -439,7 +430,6 @@ int OTM_TextureClient::LookUpToMod( OTM_IDirect3DTexture9* pTexture) // should o
       }
       else
       {
-        //FakeTextures.Add(fake_Texture);
         FileToMod[i].pTexture = fake_Texture;
         fake_Texture->Reference = i;
       }
@@ -449,28 +439,29 @@ int OTM_TextureClient::LookUpToMod( OTM_IDirect3DTexture9* pTexture) // should o
 }
 
 
-int OTM_TextureClient::LoadTexture( TextureFileStruct* file_in_memory, OTM_IDirect3DTexture9 **ppTexture) // to load fake texture from file in memory
+int OTM_TextureClient::LoadTexture( TextureFileStruct* file_in_memory, OTM_IDirect3DTexture9 **ppTexture) // to load fake texture from a file in memory
 {
   Message("LoadTexture( %lu, %lu): %lu\n", file_in_memory, ppTexture, this);
-
   if (D3D_OK != D3DXCreateTextureFromFileInMemory( D3D9Device, file_in_memory->pData, file_in_memory->Size, (IDirect3DTexture9 **) ppTexture))
   {
     *ppTexture=NULL;
     return (RETURN_TEXTURE_NOT_LOADED);
   }
   (*ppTexture)->FAKE = true;
+  ((OTM_IDirect3DDevice9*)D3D9Device)->SetLastCreatedTexture(NULL); //this texture is a fake texture and must not be added
   Message("LoadTexture(): DONE\n", file_in_memory, ppTexture, this);
   return (RETURN_OK);
 }
 
 
+/*
 MyTypeHash OTM_TextureClient::GetHash(unsigned char *str, int len) // estimate the hash
 {
   MyTypeHash hash = 0;
   for (int i=0; i<len; i++) hash = str[i] + (hash << 6) + (hash << 16) - hash;
   return (hash);
 }
-
+*/
 
 
 

@@ -28,7 +28,11 @@ along with OpenTexMod.  If not, see <http://www.gnu.org/licenses/>.
 
 class OTM_TextureServer;
 
-
+/*
+ *  An object of this class is owned by each d3d9 device.
+ *  functions called by the Server are called from the server thread instance.
+ *  All other functions are called from the render thread instance of the game itself.
+ */
 
 class OTM_TextureClient
 {
@@ -36,10 +40,8 @@ public:
   OTM_TextureClient(OTM_TextureServer* server, IDirect3DDevice9* device);
   ~OTM_TextureClient(void);
 
-  int AddTexture( OTM_IDirect3DTexture9* tex); //called from OTM_IDirect3DDevice9::CreateTexture(...)
+  int AddTexture( OTM_IDirect3DTexture9* tex); //called from OTM_IDirect3DDevice9::CreateTexture(...) or OTM_IDirect3DDevice9::BeginScene()
   int RemoveTexture( OTM_IDirect3DTexture9* tex); //called from  OTM_IDirect3DTexture9::Release()
-
-  //int ReleaseAllFakeTexture(void); // called when the Game is closed
 
   int SaveAllTextures(bool val); //called from the Server
   int SaveSingleTexture(bool val); //called from the Server
@@ -47,23 +49,22 @@ public:
   int SetSaveDirectory( wchar_t *dir); //called from the Server
   int SetGameName( wchar_t *dir); //called from the Server
 
-  int SaveTexture(OTM_IDirect3DTexture9* pTexture);
+  int SaveTexture(OTM_IDirect3DTexture9* pTexture); //called from OTM_IDirect3DDevice9::BeginScene() (save button) or from AddTexture(...) (SaveAllTextures)
 
 
-  int SetKeyBack( int key) {if (key>0) KeyBack = key; return (RETURN_OK);}
-  int SetKeySave( int key) {if (key>0) KeySave = key; return (RETURN_OK);}
-  int SetKeyNext( int key) {if (key>0) KeyNext = key; return (RETURN_OK);}
+  int SetKeyBack( int key) {if (key>0) KeyBack = key; return (RETURN_OK);} //called from the Server
+  int SetKeySave( int key) {if (key>0) KeySave = key; return (RETURN_OK);} //called from the Server
+  int SetKeyNext( int key) {if (key>0) KeyNext = key; return (RETURN_OK);} //called from the Server
 
-  int SetFontColour( DWORD r, DWORD g, DWORD b) {FontColour = D3DCOLOR_ARGB(255, r,g,b); return (RETURN_OK);}
-  int SetTextureColour( DWORD r, DWORD g, DWORD b) {TextureColour = D3DCOLOR_ARGB(255, r,g,b); return (RETURN_OK);}
-
-
-  int AddUpdate(TextureFileStruct* update, int number);  //client must delete the temp array
-  int MergeUpdate(void);
+  int SetFontColour( DWORD r, DWORD g, DWORD b) {FontColour = D3DCOLOR_ARGB(255, r,g,b); return (RETURN_OK);} //called from the Server
+  int SetTextureColour( DWORD r, DWORD g, DWORD b) {TextureColour = D3DCOLOR_ARGB(255, r,g,b); return (RETURN_OK);} //called from the Server
 
 
-  //OTM_TextureHandler FakeTextures;
-  OTM_TextureHandler OriginalTextures;
+  int AddUpdate(TextureFileStruct* update, int number);  //called from the Server, client object must delete update array
+  int MergeUpdate(void); //called from OTM_IDirect3DDevice9::BeginScene()
+
+
+  OTM_TextureHandler OriginalTextures; // stores the pointer to the OTM_IDirect3DTexture9 objects created by the game
   bool BoolSaveAllTextures;
   bool BoolSaveSingleTexture;
   int KeyBack;
@@ -86,15 +87,16 @@ private:
   int UnlockMutex();
   HANDLE Mutex;
 
-  int NumberToMod;
-  TextureFileStruct* FileToMod;
+  int NumberToMod; // number of texture to be modded
+  TextureFileStruct* FileToMod; // array which stores the file in memory and the hash of each texture to be modded
 
 
-  int LookUpToMod( OTM_IDirect3DTexture9* pTexture);
-  int LoadTexture( TextureFileStruct* file_in_memory, OTM_IDirect3DTexture9 **ppTexture);
-  MyTypeHash GetHash(unsigned char *str, int len);
+  int LookUpToMod( OTM_IDirect3DTexture9* pTexture); // called at the end AddTexture(...)
+  int LoadTexture( TextureFileStruct* file_in_memory, OTM_IDirect3DTexture9 **ppTexture); // called if a target texture is found
+  // and the corresponding fake texture should be loaded
+
+  //MyTypeHash GetHash(unsigned char *str, int len);
   unsigned int GetCRC32(char *pcDatabuf, unsigned int ulDatalen);
-
 };
 
 

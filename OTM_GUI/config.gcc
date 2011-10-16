@@ -140,7 +140,7 @@ CPPUNIT_LIBS ?=
 # Version of C runtime library to use. You can change this to
 # static if SHARED=0, but it is highly recommended to not do
 # it if SHARED=1 unless you know what you are doing. [dynamic,static]
-RUNTIME_LIBS ?= dynamic
+RUNTIME_LIBS ?= static
 
 # Set the version of your Mingw installation here.
 #     "3" ...... this is for Mingw 2.0 or newer (comes with gcc3)

@@ -50,6 +50,7 @@ MenuLoadTemplate:Load template|
 MenuSaveTemplate:Save template|
 MenuSaveTemplateAs:Save template as ...|
 MenuSetDefaultTemplate:Set template as default|
+MenuLanguage:Change language|
 MenuExit:Exit|
 MainMenuMain:Main|
 MainMenuHelp:

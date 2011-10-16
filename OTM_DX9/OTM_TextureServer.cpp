@@ -25,6 +25,7 @@ OTM_TextureServer::OTM_TextureServer(wchar_t *game)
   Message("OTM_TextureServer(void): %lu\n", this);
   Message("sizeof(unsigned long)=%lu\n", sizeof(unsigned long));
   Message("sizeof(DWORDLONG)=%lu\n", sizeof(DWORDLONG));
+
   Mutex = CreateMutex(NULL, false, NULL);
 
   Clients = NULL;
@@ -69,10 +70,10 @@ OTM_TextureServer::~OTM_TextureServer(void)
 
   //delete the files in memory
   int num = CurrentMod.GetNumber();
-  for (int i = 0; i < num; i++) delete[] CurrentMod[i]->pData;
+  for (int i = 0; i < num; i++) delete[] CurrentMod[i]->pData; //delete the file content of the texture
 
   num = OldMod.GetNumber();
-  for (int i = 0; i < num; i++) delete[] OldMod[i]->pData;
+  for (int i = 0; i < num; i++) delete[] OldMod[i]->pData; //delete the file content of the texture
 
   if (Pipe.In != INVALID_HANDLE_VALUE ) CloseHandle(Pipe.In);
   Pipe.In = INVALID_HANDLE_VALUE;
@@ -91,7 +92,7 @@ int OTM_TextureServer::AddClient(OTM_TextureClient *client, TextureFileStruct** 
 
   // the following functions must not change the original OTM_IDirect3DDevice9 object
   // somehow on game start some OTM_IDirect3DDevice9 object are created, which must rest unchanged!!
-  // these objects are released and are not uses for rendering
+  // these objects are released and are not used for rendering
   client->SetGameName(GameName);
   client->SaveAllTextures(BoolSaveAllTextures);
   client->SaveSingleTexture(BoolSaveSingleTexture);
@@ -116,12 +117,12 @@ int OTM_TextureServer::AddClient(OTM_TextureClient *client, TextureFileStruct** 
   }
 
 
-  if (int ret = PrepareUpdate( update, number)) return (ret);
+  if (int ret = PrepareUpdate( update, number)) return (ret); // get a copy of all texture to be modded
 
-  OTM_TextureClient** temp = NULL;
 
-  if (NumberOfClients == LenghtOfClients)
+  if (NumberOfClients == LenghtOfClients) //allocate more memory
   {
+    OTM_TextureClient** temp = NULL;
     try {temp = new OTM_TextureClient*[LenghtOfClients + 10];}
     catch (...)
     {
@@ -157,19 +158,19 @@ int OTM_TextureServer::RemoveClient(OTM_TextureClient *client) // called from a 
   return (UnlockMutex());
 }
 
-int OTM_TextureServer::AddFile( char* buffer, unsigned int size,  MyTypeHash hash, bool force) // called from the server
+int OTM_TextureServer::AddFile( char* buffer, unsigned int size,  MyTypeHash hash, bool force) // called from Mainloop()
 {
   Message("OTM_TextureServer::AddFile( %lu %lu, %#lX, %d): %lu\n", buffer, size, hash, force, this);
 
   TextureFileStruct* temp = NULL;
 
   int num = CurrentMod.GetNumber();
-  for (int i = 0; i < num; i++) if (CurrentMod[i]->Hash == hash)
+  for (int i = 0; i<num; i++) if (CurrentMod[i]->Hash == hash) //look through all current textures
   {
-    if (force) {temp = CurrentMod[i]; break;}
-    else return (RETURN_OK);
+    if (force) {temp = CurrentMod[i]; break;} // we need to reload it
+    else return (RETURN_OK); // we still have added this texture
   }
-  if (temp==NULL)
+  if (temp==NULL) // if not found, look through all old textures
   {
     num = OldMod.GetNumber();
     for (int i = 0; i < num; i++) if (OldMod[i]->Hash == hash)
@@ -177,19 +178,19 @@ int OTM_TextureServer::AddFile( char* buffer, unsigned int size,  MyTypeHash has
       temp = OldMod[i];
       OldMod.Remove(temp);
       CurrentMod.Add(temp);
-      if (force) break;
-      else return (RETURN_OK);
+      if (force) break; // we must reload it
+      else return (RETURN_OK); // we should not reload it
     }
   }
 
   bool new_file = true;
-  if (temp!=NULL)
+  if (temp!=NULL) //if it was found, we delete the old file content
   {
     new_file = false;
     if (temp->pData!=NULL) delete [] temp->pData;
     temp->pData = NULL;
   }
-  else
+  else //if it was not found, we need to create a new object
   {
     new_file = true;
     temp = new TextureFileStruct;
@@ -202,7 +203,7 @@ int OTM_TextureServer::AddFile( char* buffer, unsigned int size,  MyTypeHash has
   }
   catch (...)
   {
-    if (!new_file) CurrentMod.Remove( temp);
+    if (!new_file) CurrentMod.Remove( temp); // if this is a not a new file it is in the list of the CurrentMod
     delete temp;
     gl_ErrorState |= OTM_ERROR_MEMORY | OTM_ERROR_SERVER;
     return (RETURN_NO_MEMORY);
@@ -210,20 +211,20 @@ int OTM_TextureServer::AddFile( char* buffer, unsigned int size,  MyTypeHash has
 
   for (unsigned int i=0; i<size; i++) temp->pData[i] = buffer[i];
 
-  temp->Checked = false;
   temp->Size = size;
   temp->pTexture = NULL;
   temp->Hash = hash;
 
-  if (new_file) temp->ForceReload = false;
+  if (new_file) temp->ForceReload = false; // no need to force a load of the texture
   else temp->ForceReload = force;
 
   Message("End AddFile(%#lX)\n", hash);
-  if (new_file) return (CurrentMod.Add(temp));
+  if (new_file) return (CurrentMod.Add(temp)); // new files must be added to the list of the CurrentMod
   else return (RETURN_OK);
 }
 
-int OTM_TextureServer::AddFile(wchar_t* file_name, MyTypeHash hash, bool force) // called from the server
+int OTM_TextureServer::AddFile(wchar_t* file_name, MyTypeHash hash, bool force) // called from Mainloop
+// this functions does the same, but loads the file content from disk
 {
   Message("OTM_TextureServer::AddFile( %ls, %#lX, %d): %lu\n", file_name, hash, force, this);
 
@@ -284,19 +285,16 @@ int OTM_TextureServer::AddFile(wchar_t* file_name, MyTypeHash hash, bool force) 
     gl_ErrorState |= OTM_ERROR_MEMORY | OTM_ERROR_SERVER;
     return (RETURN_NO_MEMORY);
   }
-  //Message("Read AddFile( %lu)\n", hash, this);
   int result = fread(temp->pData, 1, size, file);
   fclose(file);
   if (result != size)
   {
-    //Message("Read Failed AddFile( %lu): %lu\n", hash, this);
     delete[] temp->pData;
     if (!new_file) CurrentMod.Remove( temp);
     delete temp;
     return (RETURN_FILE_NOT_LOADED);
   }
 
-  temp->Checked = false;
   temp->Size = size;
   temp->pTexture = NULL;
   temp->Hash = hash;
@@ -309,7 +307,7 @@ int OTM_TextureServer::AddFile(wchar_t* file_name, MyTypeHash hash, bool force) 
   else return (RETURN_OK);
 }
 
-int OTM_TextureServer::RemoveFile(MyTypeHash hash) // called from the server
+int OTM_TextureServer::RemoveFile(MyTypeHash hash) // called from Mainloop()
 {
   Message("RemoveFile( %lu): %lu\n", hash, this);
 
@@ -323,7 +321,7 @@ int OTM_TextureServer::RemoveFile(MyTypeHash hash) // called from the server
   return (RETURN_OK);
 }
 
-int OTM_TextureServer::SaveAllTextures(bool val) // called from the server
+int OTM_TextureServer::SaveAllTextures(bool val) // called from Mainloop()
 {
   if (BoolSaveAllTextures == val) return (RETURN_OK);
   BoolSaveAllTextures = val;
@@ -340,7 +338,7 @@ int OTM_TextureServer::SaveAllTextures(bool val) // called from the server
   return (UnlockMutex());
 }
 
-int OTM_TextureServer::SaveSingleTexture(bool val) // called from the server
+int OTM_TextureServer::SaveSingleTexture(bool val) // called from Mainloop()
 {
   if (BoolSaveSingleTexture == val) return (RETURN_OK);
   BoolSaveSingleTexture = val;
@@ -357,7 +355,7 @@ int OTM_TextureServer::SaveSingleTexture(bool val) // called from the server
   return (UnlockMutex());
 }
 
-int OTM_TextureServer::SetSaveDirectory(wchar_t *dir) // called from the server
+int OTM_TextureServer::SetSaveDirectory(wchar_t *dir) // called from Mainloop()
 {
   Message("OTM_TextureServer::SetSaveDirectory( %ls): %lu\n", dir, this);
   int i = 0;
@@ -367,7 +365,7 @@ int OTM_TextureServer::SetSaveDirectory(wchar_t *dir) // called from the server
     SavePath[0] = 0;
     return (RETURN_BAD_ARGUMENT);
   }
-  SavePath[i] = 0;
+  else SavePath[i] = 0;
 
   if (int ret = LockMutex())
   {
@@ -381,7 +379,7 @@ int OTM_TextureServer::SetSaveDirectory(wchar_t *dir) // called from the server
   return (UnlockMutex());
 }
 
-int OTM_TextureServer::SetKeyBack(int key) // called from the server
+int OTM_TextureServer::SetKeyBack(int key) // called from Mainloop()
 {
   if (KeyBack == key || KeySave == key || KeyNext == key) return (RETURN_OK);
   if (int ret = LockMutex())
@@ -397,7 +395,7 @@ int OTM_TextureServer::SetKeyBack(int key) // called from the server
   return (UnlockMutex());
 }
 
-int OTM_TextureServer::SetKeySave(int key) // called from the server
+int OTM_TextureServer::SetKeySave(int key) // called from Mainloop()
 {
   if (KeyBack == key || KeySave == key || KeyNext == key) return (RETURN_OK);
   if (int ret = LockMutex())
@@ -413,7 +411,7 @@ int OTM_TextureServer::SetKeySave(int key) // called from the server
   return (UnlockMutex());
 }
 
-int OTM_TextureServer::SetKeyNext(int key) // called from the server
+int OTM_TextureServer::SetKeyNext(int key) // called from Mainloop()
 {
   if (KeyBack == key || KeySave == key || KeyNext == key) return (RETURN_OK);
   if (int ret = LockMutex())
@@ -429,7 +427,7 @@ int OTM_TextureServer::SetKeyNext(int key) // called from the server
   return (UnlockMutex());
 }
 
-int OTM_TextureServer::SetFontColour(DWORD colour) // called from the server
+int OTM_TextureServer::SetFontColour(DWORD colour) // called from Mainloop()
 {
   if (colour==0u) return (RETURN_OK);
   if (int ret = LockMutex())
@@ -449,7 +447,7 @@ int OTM_TextureServer::SetFontColour(DWORD colour) // called from the server
   return (UnlockMutex());
 }
 
-int OTM_TextureServer::SetTextureColour(DWORD colour) // called from the server
+int OTM_TextureServer::SetTextureColour(DWORD colour) // called from Mainloop()
 {
   if (colour==0u) return (RETURN_OK);
   if (int ret = LockMutex())
@@ -469,7 +467,7 @@ int OTM_TextureServer::SetTextureColour(DWORD colour) // called from the server
   return (UnlockMutex());
 }
 
-int OTM_TextureServer::PropagateUpdate(OTM_TextureClient* client) // called from the server, send the update to all clients
+int OTM_TextureServer::PropagateUpdate(OTM_TextureClient* client) // called from Mainloop(), send the update to all clients
 {
   Message("PropagateUpdate(%lu): %lu\n", client, this);
   if (int ret = LockMutex())
@@ -498,7 +496,7 @@ int OTM_TextureServer::PropagateUpdate(OTM_TextureClient* client) // called from
 }
 
 #define cpy_file_struct( a, b) \
-{ a.Checked = b.Checked; \
+{  \
   a.ForceReload = b.ForceReload; \
   a.pData = b.pData; \
   a.Size = b.Size; \
@@ -506,7 +504,8 @@ int OTM_TextureServer::PropagateUpdate(OTM_TextureClient* client) // called from
   a.pTexture = b.pTexture; \
   a.Hash = b.Hash; }
 
-int OTM_TextureServer::PrepareUpdate(TextureFileStruct** update, int* number) // called from the server, prepare an update for one client. the allocated memory must deleted by the client
+int OTM_TextureServer::PrepareUpdate(TextureFileStruct** update, int* number) // called from the PropagateUpdate() and AddClient.
+// Prepare an update for one client. The allocated memory must deleted by the client.
 {
   Message("PrepareUpdate(%lu, %d): %lu\n", update, number, this);
   TextureFileStruct* temp = NULL;
@@ -532,18 +531,18 @@ int OTM_TextureServer::PrepareUpdate(TextureFileStruct** update, int* number) //
 
 int OTM_TextureServer::LockMutex(void)
 {
-  //if (( gl_ErrorState & (OTM_ERROR_FATAL | OTM_ERROR_MUTEX) )) return (RETURN_NO_MUTEX);
-  //if (WAIT_OBJECT_0!=WaitForSingleObject( Mutex, 100)) return (RETURN_MUTEX_LOCK); //waiting 100ms, to wait infinite pass INFINITE
+  if (( gl_ErrorState & (OTM_ERROR_FATAL | OTM_ERROR_MUTEX) )) return (RETURN_NO_MUTEX);
+  if (WAIT_OBJECT_0!=WaitForSingleObject( Mutex, 100)) return (RETURN_MUTEX_LOCK); //waiting 100ms, to wait infinite pass INFINITE
   return (RETURN_OK);
 }
 
 int OTM_TextureServer::UnlockMutex(void)
 {
-  //if (ReleaseMutex(Mutex)==0) return (RETURN_MUTEX_UNLOCK);
+  if (ReleaseMutex(Mutex)==0) return (RETURN_MUTEX_UNLOCK);
   return (RETURN_OK);
 }
 
-int OTM_TextureServer::MainLoop(void) // run as a separated thread !!
+int OTM_TextureServer::MainLoop(void) // run as a separated thread
 {
   Message("MainLoop: begin\n");
   if (Pipe.In == INVALID_HANDLE_VALUE) return (RETURN_PIPE_NOT_OPENED);
@@ -564,12 +563,10 @@ int OTM_TextureServer::MainLoop(void) // run as a separated thread !!
         NULL); // not overlapped
 
     Message("MainLoop: read something (%lu)\n", num);
-    //for (int i=0; i<size; i++) {Message("%d\n",buffer[i]);}
     if (ret || GetLastError() == ERROR_MORE_DATA)
     {
       unsigned int pos = 0;
       MsgStruct *commands;
-      //wchar_t *file;
       bool update_textures = false;
       while (pos <= num - sizeof(MsgStruct))
       {
@@ -704,6 +701,7 @@ int OTM_TextureServer::OpenPipe(wchar_t *game) // called from InitInstance()
   //send name of this game to OTM_GUI
   WriteFile(Pipe.Out, (const void*) game, len * sizeof(wchar_t), &num, NULL);
 
+  // now we can open the pipe for reading
   Message("OpenPipe: In\n");
   Pipe.In = CreateFileW(PIPE_OTM2Game, // pipe name
       GENERIC_READ, // read access
@@ -728,12 +726,17 @@ int OTM_TextureServer::ClosePipe(void) //called from ExitInstance, this must be 
 {
   Message("ClosePipe:\n");
 
+  // We close the outgoing pipe first.
+  // The GUI will notice that the opposite side of it incoming pipe is closed
+  // and closes it outgoing (our incoming) pipe and thus cancel the ReadFile() in the Mainloop()
+
   if (Pipe.Out != INVALID_HANDLE_VALUE)
   {
     DisconnectNamedPipe(Pipe.Out);
     CloseHandle(Pipe.Out);
     Pipe.Out = INVALID_HANDLE_VALUE;
   }
+
   if (Pipe.In != INVALID_HANDLE_VALUE)
   {
     DisconnectNamedPipe(Pipe.In);

@@ -160,25 +160,22 @@ public:
 	HRESULT __stdcall CreateQuery(D3DQUERYTYPE Type,IDirect3DQuery9** ppQuery);
 	// END: The original DX9 function definitions
 
+
+
 	OTM_TextureClient* GetOTM_Client(void) {return (OTM_Client);}
 	OTM_IDirect3DTexture9* GetLastCreatedTexture(void) {return (LastCreatedTexture);}
   int SetLastCreatedTexture(OTM_IDirect3DTexture9* pTexture) {LastCreatedTexture=pTexture; return (RETURN_OK);}
   OTM_IDirect3DTexture9* GetSingleTexture(void) {return (SingleTexture);}
-/*
-  int SetKeyBack( int key) {if (key>0) KeyBack=key; return (0);}
-  int SetKeySave( int key) {if (key>0) KeySave=key; return (0);}
-  int SetKeyNext( int key) {if (key>0) KeyNext=key; return (0);}
-*/
+
  private:
   int CreateSingleTexture(void);
   int CounterSaveSingleTexture;
   OTM_IDirect3DTexture9* SingleTexture;
   D3DCOLOR TextureColour;
   ID3DXFont *OSD_Font;
-  D3DCOLOR FontColour;
+  //D3DCOLOR FontColour;
 
-
-  HRESULT Return_BeginScene;
+  int OTM_Reference;
 	IDirect3DDevice9* m_pIDirect3DDevice9;
 	OTM_IDirect3DTexture9* LastCreatedTexture;
 	OTM_TextureServer* OTM_Server;

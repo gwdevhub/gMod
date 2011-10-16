@@ -51,12 +51,6 @@ along with OpenTexMod.  If not, see <http://www.gnu.org/licenses/>.
 #include "OTM_TextureClient.h"
 
 
-
-extern OTM_IDirect3DDevice9 *gl_pIDirect3DDevice9;
-extern OTM_IDirect3D9       *gl_pIDirect3D9;
-extern HINSTANCE             gl_hOriginalDll;
-extern HINSTANCE             gl_hThisInstance;
-extern unsigned int          gl_ErrorState;
-extern FILE                 *gl_File;
+extern unsigned int gl_ErrorState;
 
 #endif

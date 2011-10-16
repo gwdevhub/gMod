@@ -39,12 +39,12 @@ interface OTM_IDirect3DTexture9 : public IDirect3DTexture9
 {
 	OTM_IDirect3DTexture9(IDirect3DTexture9 **ppTex, IDirect3DDevice9 *pIDirect3DDevice9, UINT Width, UINT Height, D3DFORMAT Format)
 	{
-	  //Message("OTM_IDirect3DTexture9( %lu, %lu): %lu\n", ppTex, pIDirect3DDevice9, this);
 		m_D3Dtex = *ppTex; //Texture which will be displayed and will be passed to the game
 		m_D3Ddev = pIDirect3DDevice9; //device pointer
 		CrossRef_D3Dtex = NULL; //cross reference
-		// fake texture: store the pointer to the original OTM_IDirect3DTexture9 object, needed if a fake texture is deselected
-		// original texture: stores the pointer to the fake texture object, is needed if original texture is deleted (that fake texture can be replaced, if original texture is loaded again)
+		// fake texture: store the pointer to the original OTM_IDirect3DTexture9 object, needed if a fake texture is unselected
+		// original texture: stores the pointer to the fake texture object, is needed if original texture is deleted,
+		// thus the fake texture can also be deleted
 		Reference = -1; //need for fast deleting
     Hash = 0u;
     FAKE = false;
@@ -90,7 +90,7 @@ inline void UnswitchTextures(OTM_IDirect3DTexture9 *pTexture)
   OTM_IDirect3DTexture9* CrossRef = pTexture->CrossRef_D3Dtex;
   if (CrossRef!=NULL)
   {
-    //switch textures back
+    // switch textures back
     IDirect3DTexture9* cpy = pTexture->m_D3Dtex;
     pTexture->m_D3Dtex = CrossRef->m_D3Dtex;
     CrossRef->m_D3Dtex = cpy;
@@ -105,11 +105,11 @@ inline int SwitchTextures( OTM_IDirect3DTexture9 *pTexture1, OTM_IDirect3DTextur
 {
   if (pTexture1->m_D3Ddev == pTexture2->m_D3Ddev && pTexture1->CrossRef_D3Dtex == NULL && pTexture2->CrossRef_D3Dtex == NULL)
   {
-    //make cross reference
+    // make cross reference
     pTexture1->CrossRef_D3Dtex = pTexture2;
     pTexture2->CrossRef_D3Dtex = pTexture1;
 
-    //switch textures
+    // switch textures
     IDirect3DTexture9* cpy = pTexture2->m_D3Dtex;
     pTexture2->m_D3Dtex = pTexture1->m_D3Dtex;
     pTexture1->m_D3Dtex = cpy;

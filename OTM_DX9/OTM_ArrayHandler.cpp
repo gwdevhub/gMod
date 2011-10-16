@@ -50,7 +50,7 @@ int OTM_FileHandler::Add(TextureFileStruct* file)
 
   if (file->Reference>=0) return (RETURN_UPDATE_ALLREADY_ADDED);
 
-  if (Number/FieldLength==FieldCounter)
+  if (Number/FieldLength==FieldCounter) // get more memory
   {
     TextureFileStruct*** temp = NULL;
     try {temp = new TextureFileStruct**[FieldCounter+10];}
@@ -60,9 +60,9 @@ int OTM_FileHandler::Add(TextureFileStruct* file)
       return (RETURN_NO_MEMORY);
     }
 
-    for (int i=0; i<FieldCounter; i++) temp[i] = Files[i];
+    for (int i=0; i<FieldCounter; i++) temp[i] = Files[i]; //copy to new allocated memory
 
-    for (int i=FieldCounter; i<FieldCounter+10; i++) temp[i] = NULL;
+    for (int i=FieldCounter; i<FieldCounter+10; i++) temp[i] = NULL; // initialize unused parts to zero
 
     FieldCounter += 10;
 
@@ -70,7 +70,7 @@ int OTM_FileHandler::Add(TextureFileStruct* file)
 
     Files = temp;
   }
-  if (Number%FieldLength==0)
+  if (Number%FieldLength==0) // maybe we need to get more memory
   {
     try {if (Files[Number/FieldLength]==NULL) Files[Number/FieldLength] = new TextureFileStruct*[FieldLength];}
     catch (...)
@@ -82,7 +82,7 @@ int OTM_FileHandler::Add(TextureFileStruct* file)
   }
 
   Files[Number/FieldLength][Number%FieldLength] = file;
-  file->Reference = Number++;
+  file->Reference = Number++; //set the reference for a fast deleting
 
   return (RETURN_OK);
 }
@@ -93,12 +93,13 @@ int OTM_FileHandler::Remove(TextureFileStruct* file)
   Message("OTM_FileHandler::Remove(%lu): %lu\n", file, this);
   if (gl_ErrorState & OTM_ERROR_FATAL) return (RETURN_FATAL_ERROR);
   int ref = file->Reference;
+
   if (ref<0) return (RETURN_OK); // returning if no Reference is set
-  file->Reference = -1;
-  if (ref<(--Number))
+  file->Reference = -1; //set reference outside of bound
+  if (ref<(--Number)) //if reference is unequal to Number-1 we copy the last entry to the index "ref"
   {
     Files[ref/FieldLength][ref%FieldLength] = Files[Number/FieldLength][Number%FieldLength];
-    Files[ref/FieldLength][ref%FieldLength]->Reference = ref;
+    Files[ref/FieldLength][ref%FieldLength]->Reference = ref; //set the new reference entry
   }
   return (RETURN_OK);
 }
@@ -214,13 +215,3 @@ int OTM_TextureHandler::Remove(OTM_IDirect3DTexture9* pTexture) //will be called
   }
   return (RETURN_OK);
 }
-
-/*
-int OTM_TextureHandler::RemoveAll(void) //only for deleting all fake textures
-{
-  Message("OTM_TextureHandler::RemoveAll() %d: %lu\n", Number, this);
-  for (int i=0; i<Number; i++) Textures[i/FieldLength][i%FieldLength]->Release();
-  Number=0;
-  return (RETURN_OK);
-}
-*/
