@@ -75,10 +75,12 @@ HRESULT OTM_IDirect3DDevice9::QueryInterface(REFIID riid, void** ppvObj)
 	 // check if original dll can provide interface. then send *our* address
 	*ppvObj = NULL;
 
+  Message("IDirect3DDevice9::QueryInterface(): %lu\n", this);
 	HRESULT hRes = m_pIDirect3DDevice9->QueryInterface(riid, ppvObj); 
 
-	if (hRes == NOERROR)
+	if (*ppvObj == m_pIDirect3DDevice9)
 	{
+	  OTM_Reference++; //increasing our counter
 		*ppvObj = this;
 	}
 	
@@ -88,6 +90,7 @@ HRESULT OTM_IDirect3DDevice9::QueryInterface(REFIID riid, void** ppvObj)
 ULONG OTM_IDirect3DDevice9::AddRef(void)
 {
   OTM_Reference++; //increasing our counter
+  Message("%lu = IDirect3DDevice9::AddRef(): %lu\n", OTM_Reference, this);
   return (m_pIDirect3DDevice9->AddRef());
 }
 
@@ -339,12 +342,12 @@ HRESULT OTM_IDirect3DDevice9::BeginScene(void)
 {
   //if ( OTM_Client!=NULL) // this if condition is senseless, since an exception is raised if the client could not be created
   {
-    OTM_Client->MergeUpdate(); // merge an update, if present
     if (LastCreatedTexture!=NULL) // add the last created texture
     {
       OTM_Client->AddTexture( LastCreatedTexture);
       LastCreatedTexture = NULL;
     }
+    OTM_Client->MergeUpdate(); // merge an update, if present
     if (OTM_Client->BoolSaveSingleTexture)
     {
       if (SingleTexture==NULL) CreateSingleTexture();

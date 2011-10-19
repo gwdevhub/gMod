@@ -24,5 +24,21 @@ along with OpenTexMod.  If not, see <http://www.gnu.org/licenses/>.
 void InitInstance(HINSTANCE hModule);
 void ExitInstance(void);
 void LoadOriginalDll(void);
+bool HookThisProgram( wchar_t *ret);
+DWORD WINAPI ServerThread( LPVOID lpParam);
+
+
+
+#ifndef NO_INJECTION
+
+void *DetourFunc(BYTE *src, const BYTE *dst, const int len);
+bool RetourFunc(BYTE *src, BYTE *restore, const int len);
+IDirect3D9 *APIENTRY MyDirect3DCreate9(UINT SDKVersion);
+
+LRESULT CALLBACK HookProc(int nCode, WPARAM wParam, LPARAM lParam);
+void InstallHook(void);
+void RemoveHook(void);
+
+#endif
 
 #endif

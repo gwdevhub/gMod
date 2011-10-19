@@ -33,6 +33,10 @@ OTM_TextureClient::OTM_TextureClient(OTM_TextureServer* server, IDirect3DDevice9
   KeyNext = 0;
   SavePath[0]=0;
   GameName[0]=0;
+
+  NumberToMod = 0;
+  FileToMod = NULL;
+
   if (Server!=NULL)
   {
     if (Server->AddClient( this, &FileToMod, &NumberToMod))
@@ -162,7 +166,7 @@ int OTM_TextureClient::AddTexture( OTM_IDirect3DTexture9* pTexture)
   }
 
   //MyTypeHash hash = GetHash( (unsigned char*) d3dlr.pBits, size);
-  MyTypeHash hash = GetCRC32( (char*) d3dlr.pBits, size); //calaculate the crc32 of the texture
+  MyTypeHash hash = GetCRC32( (char*) d3dlr.pBits, size); //calculate the crc32 of the texture
 
   if (pTexture->UnlockRect(0)!=D3D_OK) //unlock the raw data
   {
@@ -183,7 +187,7 @@ int OTM_TextureClient::AddTexture( OTM_IDirect3DTexture9* pTexture)
 
 int OTM_TextureClient::RemoveTexture( OTM_IDirect3DTexture9* pTexture) // is called from a texture, if it is finally released
 {
-  Message("RemoveTexture( %lu): %lu\n", pTexture, this);
+  Message("OTM_TextureClient::RemoveTexture( %lu, %#lX): %lu\n", pTexture, pTexture->Hash, this);
 
   IDirect3DDevice9 *dev = NULL;
   if (pTexture != NULL && pTexture->GetDevice(&dev) == D3D_OK)
@@ -415,12 +419,62 @@ int OTM_TextureClient::LookUpToMod( OTM_IDirect3DTexture9* pTexture) // should o
 {
   Message("OTM_TextureClient::LookUpToMod( %lu): hash: %#lX,  %lu\n", pTexture, pTexture->Hash, this);
   if (pTexture->CrossRef_D3Dtex!=NULL) return (RETURN_OK); // bug, this texture is already switched
-
-  MyTypeHash hash = pTexture->Hash;
-  for (int i=0; i<NumberToMod; i++)
+  int index = -1;
+  if(NumberToMod>0)
   {
-    if (hash == FileToMod[i].Hash && FileToMod[i].pTexture==NULL)
-    { // if (FileToMod[i].pTexture!=NULL)    the corresponding fake texture is already switched, thus the game has loaded textures with the same hash
+    MyTypeHash hash = pTexture->Hash;
+    if (hash<FileToMod[0].Hash || hash>FileToMod[NumberToMod-1].Hash) return (RETURN_OK);
+    int pos = NumberToMod/2;
+    //int end = NumberToMod;
+    int old_pos = -1;
+    int begin = 0;
+    int end = NumberToMod-1;
+    while (old_pos!=pos)
+    {
+      old_pos=pos;
+      if (hash > FileToMod[pos].Hash)
+      {
+        begin = pos;
+        pos = (begin + end)/2;
+      }
+      else if (hash < FileToMod[pos].Hash)
+      {
+        end = pos;
+        pos = (begin + end)/2;
+      }
+      else {index = pos; break;}
+    }
+    if (FileToMod[pos].Hash==hash) index = pos;
+    else if (++pos<NumberToMod && FileToMod[pos].Hash==hash) index = pos;
+  }
+
+  if (index>=0)
+  {
+    // if (FileToMod[index].pTexture!=NULL)    the corresponding fake texture is already switched, thus the game has loaded textures with the same hash
+    if (FileToMod[index].pTexture==NULL)
+    {
+      OTM_IDirect3DTexture9 *fake_Texture;
+      if (int ret = LoadTexture( & (FileToMod[index]), &fake_Texture)) return (ret);
+      if (SwitchTextures( fake_Texture, pTexture))
+      {
+        Message("OTM_TextureClient::LookUpToMod(): textures not switched %#lX\n", FileToMod[index].Hash);
+        fake_Texture->Release();
+      }
+      else
+      {
+        FileToMod[index].pTexture = fake_Texture;
+        fake_Texture->Reference = index;
+      }
+    }
+  }
+
+  /*
+  MyTypeHash hash = pTexture->Hash;
+  for (int i=0; i<NumberToMod; i++) if (hash == FileToMod[i].Hash)
+  {
+    // if (FileToMod[i].pTexture!=NULL)    the corresponding fake texture is already switched, thus the game has loaded textures with the same hash
+    if (FileToMod[i].pTexture==NULL)
+    {
       OTM_IDirect3DTexture9 *fake_Texture;
       if (int ret = LoadTexture( & (FileToMod[i]), &fake_Texture)) return (ret);
       if (SwitchTextures( fake_Texture, pTexture))
@@ -434,14 +488,16 @@ int OTM_TextureClient::LookUpToMod( OTM_IDirect3DTexture9* pTexture) // should o
         fake_Texture->Reference = i;
       }
     }
+    break;
   }
+  */
   return (RETURN_OK);
 }
 
 
 int OTM_TextureClient::LoadTexture( TextureFileStruct* file_in_memory, OTM_IDirect3DTexture9 **ppTexture) // to load fake texture from a file in memory
 {
-  Message("LoadTexture( %lu, %lu): %lu\n", file_in_memory, ppTexture, this);
+  Message("LoadTexture( %lu, %lu, %#lX): %lu\n", file_in_memory, ppTexture, file_in_memory->Hash, this);
   if (D3D_OK != D3DXCreateTextureFromFileInMemory( D3D9Device, file_in_memory->pData, file_in_memory->Size, (IDirect3DTexture9 **) ppTexture))
   {
     *ppTexture=NULL;
@@ -449,7 +505,7 @@ int OTM_TextureClient::LoadTexture( TextureFileStruct* file_in_memory, OTM_IDire
   }
   (*ppTexture)->FAKE = true;
   ((OTM_IDirect3DDevice9*)D3D9Device)->SetLastCreatedTexture(NULL); //this texture is a fake texture and must not be added
-  Message("LoadTexture(): DONE\n", file_in_memory, ppTexture, this);
+  Message("LoadTexture( %lu, %#lX): DONE\n", *ppTexture, file_in_memory->Hash);
   return (RETURN_OK);
 }
 

@@ -165,7 +165,7 @@ int OTM_TextureServer::AddFile( char* buffer, unsigned int size,  MyTypeHash has
   TextureFileStruct* temp = NULL;
 
   int num = CurrentMod.GetNumber();
-  for (int i = 0; i<num; i++) if (CurrentMod[i]->Hash == hash) //look through all current textures
+  for (int i=0; i<num; i++) if (CurrentMod[i]->Hash == hash) //look through all current textures
   {
     if (force) {temp = CurrentMod[i]; break;} // we need to reload it
     else return (RETURN_OK); // we still have added this texture
@@ -173,7 +173,7 @@ int OTM_TextureServer::AddFile( char* buffer, unsigned int size,  MyTypeHash has
   if (temp==NULL) // if not found, look through all old textures
   {
     num = OldMod.GetNumber();
-    for (int i = 0; i < num; i++) if (OldMod[i]->Hash == hash)
+    for (int i=0; i<num; i++) if (OldMod[i]->Hash == hash)
     {
       temp = OldMod[i];
       OldMod.Remove(temp);
@@ -484,7 +484,7 @@ int OTM_TextureServer::PropagateUpdate(OTM_TextureClient* client) // called from
   }
   else
   {
-    for (int i = 0; i < NumberOfClients; i++)
+    for (int i=0; i<NumberOfClients; i++)
     {
       TextureFileStruct* update;
       int number;
@@ -504,12 +504,21 @@ int OTM_TextureServer::PropagateUpdate(OTM_TextureClient* client) // called from
   a.pTexture = b.pTexture; \
   a.Hash = b.Hash; }
 
+int TextureFileStruct_Compare( const void * elem1, const void * elem2 )
+{
+  TextureFileStruct *tex1 = (TextureFileStruct*)elem1;
+  TextureFileStruct *tex2 = (TextureFileStruct*)elem2;
+  if (tex1->Hash < tex2->Hash) return (-1);
+  if (tex1->Hash > tex2->Hash) return (+1);
+  return (0);
+}
+
 int OTM_TextureServer::PrepareUpdate(TextureFileStruct** update, int* number) // called from the PropagateUpdate() and AddClient.
 // Prepare an update for one client. The allocated memory must deleted by the client.
 {
   Message("PrepareUpdate(%lu, %d): %lu\n", update, number, this);
-  TextureFileStruct* temp = NULL;
 
+  TextureFileStruct* temp = NULL;
   int num = CurrentMod.GetNumber();
   if (num>0)
   {
@@ -519,9 +528,11 @@ int OTM_TextureServer::PrepareUpdate(TextureFileStruct** update, int* number) //
       gl_ErrorState |= OTM_ERROR_MEMORY | OTM_ERROR_SERVER;
       return (RETURN_NO_MEMORY);
     }
+
+    for (int i=0; i<num; i++) cpy_file_struct(temp[i], (*(CurrentMod[i])));
+    qsort( temp, num, sizeof(TextureFileStruct), TextureFileStruct_Compare);
   }
 
-  for (int i = 0; i < num; i++) cpy_file_struct(temp[i], (*(CurrentMod[i])));
 
   *update = temp;
   *number = num;
@@ -538,7 +549,7 @@ int OTM_TextureServer::LockMutex(void)
 
 int OTM_TextureServer::UnlockMutex(void)
 {
-  if (ReleaseMutex(Mutex)==0) return (RETURN_MUTEX_UNLOCK);
+  if (ReleaseMutex( Mutex) == 0) return (RETURN_MUTEX_UNLOCK);
   return (RETURN_OK);
 }
 

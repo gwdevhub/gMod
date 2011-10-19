@@ -24,13 +24,14 @@ along with OpenTexMod.  If not, see <http://www.gnu.org/licenses/>.
 
 OTM_IDirect3D9::OTM_IDirect3D9(IDirect3D9 *pOriginal, OTM_TextureServer* server)
 {
-  Message("OTM_IDirect3D9( %lu, %lu): %lu\n", pOriginal, server, this);
+  Message("OTM_IDirect3D9::OTM_IDirect3D9( %lu, %lu): %lu\n", pOriginal, server, this);
   m_pIDirect3D9 = pOriginal;
   OTM_Server = server;
 }
 
 OTM_IDirect3D9::~OTM_IDirect3D9(void)
 {
+  Message("OTM_IDirect3D9::~OTM_IDirect3D9(): %lu\n", this);
 }
 
 HRESULT  __stdcall OTM_IDirect3D9::QueryInterface(REFIID riid, void** ppvObj)
