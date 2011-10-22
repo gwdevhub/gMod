@@ -304,89 +304,162 @@ int OTM_TextureClient::MergeUpdate(void)
 
   Message("MergeUpdate(): %lu\n", this);
 
-  for (int i=0; i<NumberOfUpdate; i++) Update[i].pTexture = NULL; //this is already done, but safety comes first ^^
+  for (int i=0; i<NumberOfUpdate; i++) Update[i].pTexture = NULL; // this is already done, but safety comes first ^^
 
+  int pos_old=0;
+  int pos_new=0;
+  int *to_lookup = NULL;
+  if (NumberOfUpdate>0) to_lookup = new int[NumberOfUpdate];
+  int num_to_lookup = 0;
 
-  // looking through all current modified texture and removing if texture is not any more in the update or take it over otherwise
-  for (int i=0; i<NumberToMod; i++) //if NumberToMod is zero, we must merge nothing
+  /*
+   * FileToMod contains the old files (textures) which should replace the target textures (if they are loaded by the game)
+   * Update contains the new files (textures) which should replace the target textures (if they are loaded by the game)
+   *
+   * Both arrays (FileToMod and Update) are sorted according to their hash values.
+   *
+   * First we go through both arrays linearly and
+   * 1) take over the old entry if the hash is the same,
+   * 2) release old fake texture (if target texture exist and is not in the Update)
+   * 3) or mark newly added fake texture (if they are not in FileToMod)
+   */
+
+  while (pos_old<NumberToMod && pos_new<NumberOfUpdate)
   {
-    MyTypeHash hash = FileToMod[i].Hash;
-    bool found=false;
-    for (int u=0; u<NumberOfUpdate; u++) //if NumberOfUpdate is zero, each fake texture will be released
+    if (FileToMod[pos_old].Hash > Update[pos_new].Hash) // this fake texture is new
     {
-      if (hash==Update[u].Hash)
+      to_lookup[num_to_lookup++] = pos_new++; // keep this fake texture in mind, we must search later for it through all original textures
+      // we increase only the new counter by one
+    }
+    else if (FileToMod[pos_old].Hash < Update[pos_new].Hash) // this fake texture is not in the update
+    {
+      if (FileToMod[pos_old].pTexture!=NULL) FileToMod[pos_old].pTexture->Release(); // we release the fake texture
+      pos_old++; // we increase only the old counter by one
+    }
+    else // the hash value is the same, thus this texture is in the array FileToMod as well as in the array Update
+    {
+      if (FileToMod[pos_old].pTexture!=NULL)
       {
-        found = true;
-        Update[u].pTexture = FileToMod[i].pTexture; //might also be a NULL pointer
-
-
-        if (Update[u].pTexture!=NULL)
+        if (Update[pos_new].ForceReload)
         {
-          if (Update[u].ForceReload) // if force is enable, we reload the texture
+          OTM_IDirect3DTexture9 *pTexture = FileToMod[pos_old].pTexture->CrossRef_D3Dtex;
+          FileToMod[pos_old].pTexture->Release(); // release the old fake texture
+          FileToMod[pos_old].pTexture = NULL;
+          if (pTexture!=NULL) // should always be the case
           {
-            OTM_IDirect3DTexture9 *pTexture = Update[u].pTexture->CrossRef_D3Dtex;
-            Update[u].pTexture->Release(); //release the old fake texture
-            Update[u].pTexture = NULL;
-            if (pTexture!=NULL) //should always be the case
+            OTM_IDirect3DTexture9 *fake_Texture;
+            if (int ret = LoadTexture( & (Update[pos_new]), &fake_Texture)) return (ret);
+            if (SwitchTextures( fake_Texture, pTexture))
             {
-              OTM_IDirect3DTexture9 *fake_Texture;
-              if (int ret = LoadTexture( & (Update[u]), &fake_Texture)) return (ret);
-              if (SwitchTextures( fake_Texture, pTexture))
-              {
-                Message("MergeUpdate(): textures not switched %#lX\n", hash);
-                fake_Texture->Release();
-              }
-              else
-              {
-                Update[u].pTexture = fake_Texture;
-                fake_Texture->Reference = u;
-              }
+              Message("MergeUpdate(): textures not switched %#lX\n", pTexture->Hash);
+              fake_Texture->Release();
+            }
+            else
+            {
+              Update[pos_new].pTexture = fake_Texture;
+              fake_Texture->Reference = pos_new;
             }
           }
-          else Update[u].pTexture->Reference = u; //set the new reference, needed for a fast delete
-        }
-        break;
-      }
-    }
-    if (!found)
-    {
-      if (FileToMod[i].pTexture!=NULL) FileToMod[i].pTexture->Release(); //release the fake texture, if it is not included in the update
-    }
-  }
-
-  // looking through the non switched texture in the update and search for a target hash in the list of original game textures
-  int num = OriginalTextures.GetNumber();
-  for (int u=0; u<NumberOfUpdate; u++) if (Update[u].pTexture==NULL) //for this fake texture the target texture was not found
-  {
-    MyTypeHash hash = Update[u].Hash;
-    for (int i=0; i<num; i++) if (hash==OriginalTextures[i]->Hash)
-    {
-      if (OriginalTextures[i]->CrossRef_D3Dtex!=NULL)
-      {
-        //if the texture is already switched, it might be the SingleTexture (for saving a single texture)
-        if (OriginalTextures[i]->CrossRef_D3Dtex==((OTM_IDirect3DDevice9*)D3D9Device)->GetSingleTexture()) UnswitchTextures(OriginalTextures[i]);
-        else continue; //bug, this might happen if a hash is twice in the update list or due to an other bug^^
-      }
-      OTM_IDirect3DTexture9 *pTexture = OriginalTextures[i];
-      OTM_IDirect3DTexture9 *fake_Texture;
-      if (RETURN_OK == LoadTexture( & (Update[u]), &fake_Texture))
-      {
-        if (SwitchTextures( fake_Texture, pTexture))
-        {
-          Message("MergeUpdate(): textures not switched %#lX\n", hash);
-          fake_Texture->Release();
         }
         else
         {
-          Update[u].pTexture = fake_Texture;
-          fake_Texture->Reference = u;
+          Update[pos_new].pTexture = FileToMod[pos_old].pTexture;
+          Update[pos_new].pTexture->Reference = pos_new; // set the new reference, needed for a fast delete
         }
       }
-
-      break;
+      /*
+      else
+      {
+        // This texture is not loaded, because the game did not load the target texture,
+        // thus we need not to look later for this hash.
+        // -> There is nothing to do.
+      }
+      */
+      // we increase both counters by one
+      pos_old++;
+      pos_new++;
     }
   }
 
+  while (pos_old<NumberToMod) //this fake textures are not in the Update
+  {
+    if (FileToMod[pos_old].pTexture!=NULL) FileToMod[pos_old].pTexture->Release();
+    pos_old++;
+  }
+  while (pos_new<NumberOfUpdate) //this fake textures are newly added
+  {
+    to_lookup[num_to_lookup++] = pos_new++; //keep this fake texture in mind, we must search later for it through all original textures
+  }
+
+
+  /*
+   * if (num_to_lookup>0) we need to look through all original textures
+   * because there were newly added textures and we don't know
+   * if the corresponding target textures are loaded by the game or not.
+   *
+   * Note: to_lookup[num_to_lookup++] = pos_new++; is in ascending order,
+   * thus Update[to_lookup[pos]].Hash is also sorted ascending!
+   */
+
+  if (num_to_lookup>0)
+  {
+    int num = OriginalTextures.GetNumber();
+    for (int i=0; i<num; i++)
+    {
+      MyTypeHash hash = OriginalTextures[i]->Hash;
+
+      if (hash<Update[to_lookup[0]].Hash || hash>Update[to_lookup[num_to_lookup-1]].Hash) continue;
+
+      int index = -1;
+      int pos = num_to_lookup/2;
+      int old_pos = -1;
+      int begin = 0;
+      int end = num_to_lookup-1;
+
+      // we look always in the middle of the interval and each step we halve the interval
+      while (old_pos!=pos) // if (old_pos==pos) the interval has a size of one or two -> we are finished
+      {
+        old_pos=pos;
+        if (hash > Update[to_lookup[pos]].Hash) // the new interval is the right half of the actual interval
+        {
+          begin = pos;
+          pos = (begin + end)/2;
+        }
+        else if (hash < Update[to_lookup[pos]].Hash) // the new interval is the left half of the actual interval
+        {
+          end = pos;
+          pos = (begin + end)/2;
+        }
+        else {index = to_lookup[pos]; break;} // we hit the correct hash
+      }
+      if (index<0) // if we did not find the hash, it might be in the last interval, which has a size of one or two
+      {
+        if (Update[to_lookup[pos]].Hash==hash) index = to_lookup[pos];
+        else if (++pos<num_to_lookup && Update[to_lookup[pos]].Hash==hash) index = to_lookup[pos];
+      }
+
+      if (index>=0) // target texture is loaded by the game
+      {
+        if (Update[index].pTexture==NULL) // if not this is a bug!!
+        {
+          OTM_IDirect3DTexture9 *fake_Texture;
+          if (int ret = LoadTexture( & (Update[index]), &fake_Texture)) return (ret);
+          if (SwitchTextures( fake_Texture, OriginalTextures[i]))
+          {
+            Message("OTM_TextureClient::LookUpToMod(): textures not switched %#lX\n", FileToMod[index].Hash);
+            fake_Texture->Release();
+          }
+          else
+          {
+            Update[index].pTexture = fake_Texture;
+            fake_Texture->Reference = index;
+          }
+        }
+      }
+    }
+  }
+
+  if (to_lookup != NULL) delete [] to_lookup;
   if (FileToMod!=NULL) delete [] FileToMod;
   FileToMod = Update;
   NumberToMod = NumberOfUpdate;
@@ -425,27 +498,31 @@ int OTM_TextureClient::LookUpToMod( OTM_IDirect3DTexture9* pTexture) // should o
     MyTypeHash hash = pTexture->Hash;
     if (hash<FileToMod[0].Hash || hash>FileToMod[NumberToMod-1].Hash) return (RETURN_OK);
     int pos = NumberToMod/2;
-    //int end = NumberToMod;
     int old_pos = -1;
     int begin = 0;
     int end = NumberToMod-1;
-    while (old_pos!=pos)
+
+    // we look always in the middle of the interval and each step we halve the interval
+    while (old_pos!=pos) // if (old_pos==pos) the interval has a size of one or two -> we are finished
     {
       old_pos=pos;
-      if (hash > FileToMod[pos].Hash)
+      if (hash > FileToMod[pos].Hash) // the new interval is the right half of the actual interval
       {
         begin = pos;
         pos = (begin + end)/2;
       }
-      else if (hash < FileToMod[pos].Hash)
+      else if (hash < FileToMod[pos].Hash) // the new interval is the left half of the actual interval
       {
         end = pos;
         pos = (begin + end)/2;
       }
-      else {index = pos; break;}
+      else {index = pos; break;} // we hit the correct hash
     }
-    if (FileToMod[pos].Hash==hash) index = pos;
-    else if (++pos<NumberToMod && FileToMod[pos].Hash==hash) index = pos;
+    if (index<0) // if we did not find the hash, it might be in the last interval, which has a size of one or two
+    {
+      if (FileToMod[pos].Hash==hash) index = pos;
+      else if (++pos<NumberToMod && FileToMod[pos].Hash==hash) index = pos;
+    }
   }
 
   if (index>=0)
