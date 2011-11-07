@@ -25,8 +25,8 @@ along with OpenTexMod.  If not, see <http://www.gnu.org/licenses/>.
  */
 
 
-#ifndef OTM_IDirect3DTexture9_H
-#define OTM_IDirect3DTexture9_H
+#ifndef OTM_IDirect3DVolumeTexture9_H
+#define OTM_IDirect3DVolumeTexture9_H
 
 #include <d3d9.h>
 #include <d3dx9.h>
@@ -35,14 +35,14 @@ along with OpenTexMod.  If not, see <http://www.gnu.org/licenses/>.
 
 
 
-interface OTM_IDirect3DTexture9 : public IDirect3DTexture9
+interface OTM_IDirect3DVolumeTexture9 : public IDirect3DVolumeTexture9
 {
-	OTM_IDirect3DTexture9(IDirect3DTexture9 **ppTex, IDirect3DDevice9 *pIDirect3DDevice9)
+	OTM_IDirect3DVolumeTexture9(IDirect3DVolumeTexture9 **ppTex, IDirect3DDevice9 *pIDirect3DDevice9)
 	{
 		m_D3Dtex = *ppTex; //Texture which will be displayed and will be passed to the game
 		m_D3Ddev = pIDirect3DDevice9; //device pointer
 		CrossRef_D3Dtex = NULL; //cross reference
-		// fake texture: store the pointer to the original OTM_IDirect3DTexture9 object, needed if a fake texture is unselected
+		// fake texture: store the pointer to the original OTM_IDirect3DVolumeTexture9 object, needed if a fake texture is unselected
 		// original texture: stores the pointer to the fake texture object, is needed if original texture is deleted,
 		// thus the fake texture can also be deleted
 		Reference = -1; //need for fast deleting
@@ -51,8 +51,8 @@ interface OTM_IDirect3DTexture9 : public IDirect3DTexture9
 	}
 
 	// callback interface
-	IDirect3DTexture9 *m_D3Dtex;
-	OTM_IDirect3DTexture9 *CrossRef_D3Dtex;
+	IDirect3DVolumeTexture9 *m_D3Dtex;
+	OTM_IDirect3DVolumeTexture9 *CrossRef_D3Dtex;
 	IDirect3DDevice9 *m_D3Ddev;
 	int Reference;
 	MyTypeHash Hash;
@@ -76,24 +76,25 @@ interface OTM_IDirect3DTexture9 : public IDirect3DTexture9
     STDMETHOD(SetAutoGenFilterType)(D3DTEXTUREFILTERTYPE FilterType);
     STDMETHOD_(D3DTEXTUREFILTERTYPE, GetAutoGenFilterType)();
     STDMETHOD_(void, GenerateMipSubLevels)();
-    STDMETHOD(GetLevelDesc)(UINT Level,D3DSURFACE_DESC *pDesc);
-    STDMETHOD(GetSurfaceLevel)(UINT Level,IDirect3DSurface9** ppSurfaceLevel);
-    STDMETHOD(LockRect)(UINT Level,D3DLOCKED_RECT* pLockedRect,CONST RECT* pRect,DWORD Flags);
-    STDMETHOD(UnlockRect)(UINT Level);
-    STDMETHOD(AddDirtyRect)(CONST RECT* pDirtyRect);
+    STDMETHOD(AddDirtyBox)(CONST D3DBOX *pDirtyBox);
+    STDMETHOD(GetLevelDesc)(UINT Level, D3DVOLUME_DESC *pDesc);
+    STDMETHOD(GetVolumeLevel)(UINT Level, IDirect3DVolume9 **ppVolumeLevel);
+    STDMETHOD(LockBox)(UINT Level, D3DLOCKED_BOX *pLockedVolume, CONST D3DBOX *pBox, DWORD Flags);
+    STDMETHOD(UnlockBox)(UINT Level);
+
 
     int GetHash(MyTypeHash &hash);
 };
 
 
 
-inline void UnswitchTextures(OTM_IDirect3DTexture9 *pTexture)
+inline void UnswitchTextures(OTM_IDirect3DVolumeTexture9 *pTexture)
 {
-  OTM_IDirect3DTexture9* CrossRef = pTexture->CrossRef_D3Dtex;
+  OTM_IDirect3DVolumeTexture9* CrossRef = pTexture->CrossRef_D3Dtex;
   if (CrossRef!=NULL)
   {
     // switch textures back
-    IDirect3DTexture9* cpy = pTexture->m_D3Dtex;
+    IDirect3DVolumeTexture9* cpy = pTexture->m_D3Dtex;
     pTexture->m_D3Dtex = CrossRef->m_D3Dtex;
     CrossRef->m_D3Dtex = cpy;
 
@@ -103,7 +104,7 @@ inline void UnswitchTextures(OTM_IDirect3DTexture9 *pTexture)
   }
 }
 
-inline int SwitchTextures( OTM_IDirect3DTexture9 *pTexture1, OTM_IDirect3DTexture9 *pTexture2)
+inline int SwitchTextures( OTM_IDirect3DVolumeTexture9 *pTexture1, OTM_IDirect3DVolumeTexture9 *pTexture2)
 {
   if (pTexture1->m_D3Ddev == pTexture2->m_D3Ddev && pTexture1->CrossRef_D3Dtex == NULL && pTexture2->CrossRef_D3Dtex == NULL)
   {
@@ -112,7 +113,7 @@ inline int SwitchTextures( OTM_IDirect3DTexture9 *pTexture1, OTM_IDirect3DTextur
     pTexture2->CrossRef_D3Dtex = pTexture1;
 
     // switch textures
-    IDirect3DTexture9* cpy = pTexture2->m_D3Dtex;
+    IDirect3DVolumeTexture9* cpy = pTexture2->m_D3Dtex;
     pTexture2->m_D3Dtex = pTexture1->m_D3Dtex;
     pTexture1->m_D3Dtex = cpy;
     return (RETURN_OK);

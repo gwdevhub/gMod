@@ -41,7 +41,12 @@ public:
   ~OTM_TextureClient(void);
 
   int AddTexture( OTM_IDirect3DTexture9* tex); //called from OTM_IDirect3DDevice9::CreateTexture(...) or OTM_IDirect3DDevice9::BeginScene()
+  int AddTexture( OTM_IDirect3DVolumeTexture9* tex); //called from OTM_IDirect3DVolumeTexture9::CreateTexture(...) or OTM_IDirect3DDevice9::BeginScene()
+  int AddTexture( OTM_IDirect3DCubeTexture9* tex); //called from OTM_IDirect3DCubeTexture9::CreateTexture(...) or OTM_IDirect3DDevice9::BeginScene()
+
   int RemoveTexture( OTM_IDirect3DTexture9* tex); //called from  OTM_IDirect3DTexture9::Release()
+  int RemoveTexture( OTM_IDirect3DVolumeTexture9* tex); //called from  OTM_IDirect3DVolumeTexture9::Release()
+  int RemoveTexture( OTM_IDirect3DCubeTexture9* tex); //called from  OTM_IDirect3DCubeTexture9::Release()
 
   int SaveAllTextures(bool val); //called from the Server
   int SaveSingleTexture(bool val); //called from the Server
@@ -50,6 +55,9 @@ public:
   int SetGameName( wchar_t *dir); //called from the Server
 
   int SaveTexture(OTM_IDirect3DTexture9* pTexture); //called from OTM_IDirect3DDevice9::BeginScene() (save button) or from AddTexture(...) (SaveAllTextures)
+  int SaveTexture(OTM_IDirect3DVolumeTexture9* pTexture); //called from OTM_IDirect3DDevice9::BeginScene() (save button) or from AddTexture(...) (SaveAllTextures)
+  int SaveTexture(OTM_IDirect3DCubeTexture9* pTexture); //called from OTM_IDirect3DDevice9::BeginScene() (save button) or from AddTexture(...) (SaveAllTextures)
+
 
 
   int SetKeyBack( int key) {if (key>0) KeyBack = key; return (RETURN_OK);} //called from the Server
@@ -63,8 +71,14 @@ public:
   int AddUpdate(TextureFileStruct* update, int number);  //called from the Server, client object must delete update array
   int MergeUpdate(void); //called from OTM_IDirect3DDevice9::BeginScene()
 
+  int LookUpToMod( OTM_IDirect3DTexture9* pTexture); // called at the end AddTexture(...) and from Device->UpdateTexture(...)
+  int LookUpToMod( OTM_IDirect3DVolumeTexture9* pTexture); // called at the end AddTexture(...) and from Device->UpdateTexture(...)
+  int LookUpToMod( OTM_IDirect3DCubeTexture9* pTexture); // called at the end AddTexture(...) and from Device->UpdateTexture(...)
 
-  OTM_TextureHandler OriginalTextures; // stores the pointer to the OTM_IDirect3DTexture9 objects created by the game
+  OTM_TextureHandler<OTM_IDirect3DTexture9> OriginalTextures; // stores the pointer to the OTM_IDirect3DTexture9 objects created by the game
+  OTM_TextureHandler<OTM_IDirect3DVolumeTexture9> OriginalVolumeTextures; // stores the pointer to the OTM_IDirect3DVolumeTexture9 objects created by the game
+  OTM_TextureHandler<OTM_IDirect3DCubeTexture9> OriginalCubeTextures; // stores the pointer to the OTM_IDirect3DCubeTexture9 objects created by the game
+
   bool BoolSaveAllTextures;
   bool BoolSaveSingleTexture;
   int KeyBack;
@@ -91,12 +105,15 @@ private:
   TextureFileStruct* FileToMod; // array which stores the file in memory and the hash of each texture to be modded
 
 
-  int LookUpToMod( OTM_IDirect3DTexture9* pTexture); // called at the end AddTexture(...)
+  int LookUpToMod( MyTypeHash hash); // called from LookUpToMod(...);
   int LoadTexture( TextureFileStruct* file_in_memory, OTM_IDirect3DTexture9 **ppTexture); // called if a target texture is found
+  int LoadTexture( TextureFileStruct* file_in_memory, OTM_IDirect3DVolumeTexture9 **ppTexture); // called if a target texture is found
+  int LoadTexture( TextureFileStruct* file_in_memory, OTM_IDirect3DCubeTexture9 **ppTexture); // called if a target texture is found
+
   // and the corresponding fake texture should be loaded
 
   //MyTypeHash GetHash(unsigned char *str, int len);
-  unsigned int GetCRC32(char *pcDatabuf, unsigned int ulDatalen);
+  //unsigned int GetCRC32(char *pcDatabuf, unsigned int ulDatalen);
 };
 
 

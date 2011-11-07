@@ -537,6 +537,7 @@ void OTM_Frame::OnMenuAcknowledgement(wxCommandEvent& WXUNUSED(event))
   wxString title;
   title << OTM_VERSION << " by ROTA";
   wxString msg;
+  msg << "RS for coding the original TexMod and for information about the used hashing algorithm\n";
   msg << "EvilAlex for translation into Russian and bug fixing";
   wxMessageBox( msg, title, wxOK);
 }
@@ -547,8 +548,6 @@ void OTM_Frame::OnMenuAddGame(wxCommandEvent& WXUNUSED(event))
   wxString file_name = wxFileSelector( Language->ChooseGame, "", "", "exe",  "binary (*.exe)|*.exe", wxFD_OPEN | wxFD_FILE_MUST_EXIST, this);
   if ( !file_name.empty() )
   {
-    //file_name = file_name.AfterLast('\\');
-
     wxArrayString array;
     if (GetHookedGames( array)) array.Empty();
 
@@ -655,9 +654,6 @@ int OTM_Frame::SetHookedGames( const wxArrayString &array)
   file.Open(name, wxFile::write);
   if (!file.IsOpened()) {LastError << Language->Error_FileOpen << "\n" << name ; return -1;}
   wxString content;
-
-  //wchar_t code = 0xFFFE;
-  //file.Write( content.wc_str(), 2);
 
   int num = array.GetCount();
   for (int i=0; i<num; i++)

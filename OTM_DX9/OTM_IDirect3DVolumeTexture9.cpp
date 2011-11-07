@@ -24,8 +24,7 @@ along with OpenTexMod.  If not, see <http://www.gnu.org/licenses/>.
 
 #include "OTM_Main.h"
 
-//this function yields for the non switched texture object
-HRESULT APIENTRY OTM_IDirect3DTexture9::QueryInterface(REFIID riid, void** ppvObj)
+HRESULT APIENTRY OTM_IDirect3DVolumeTexture9::QueryInterface(REFIID riid, void** ppvObj)
 {
   if (riid==IID_IDirect3D9)
   {
@@ -36,7 +35,7 @@ HRESULT APIENTRY OTM_IDirect3DTexture9::QueryInterface(REFIID riid, void** ppvOb
     // 0x01000002L == OTM_IDirect3DCubeTexture9
 
     *ppvObj = this;
-    return (0x01000000L);
+    return (0x01000001L);
   }
   HRESULT hRes;
   if (CrossRef_D3Dtex!=NULL)
@@ -53,7 +52,7 @@ HRESULT APIENTRY OTM_IDirect3DTexture9::QueryInterface(REFIID riid, void** ppvOb
 }
 
 //this function yields for the non switched texture object
-ULONG APIENTRY OTM_IDirect3DTexture9::AddRef()
+ULONG APIENTRY OTM_IDirect3DVolumeTexture9::AddRef()
 {
   if (FAKE) return (1); //bug, this case should never happen
   if (CrossRef_D3Dtex!=NULL)
@@ -64,7 +63,7 @@ ULONG APIENTRY OTM_IDirect3DTexture9::AddRef()
 }
 
 //this function yields for the non switched texture object
-ULONG APIENTRY OTM_IDirect3DTexture9::Release()
+ULONG APIENTRY OTM_IDirect3DVolumeTexture9::Release()
 {
   ULONG count;
   if (FAKE)
@@ -76,12 +75,12 @@ ULONG APIENTRY OTM_IDirect3DTexture9::Release()
   {
     if (CrossRef_D3Dtex!=NULL) //if this texture is switched with a fake texture
     {
-      OTM_IDirect3DTexture9 *fake_texture = CrossRef_D3Dtex;
+      OTM_IDirect3DVolumeTexture9 *fake_texture = CrossRef_D3Dtex;
       count = fake_texture->m_D3Dtex->Release(); //release the original texture
       if (count==0) //if texture is released we switch the textures back
       {
         UnswitchTextures(this);
-        if (((OTM_IDirect3DDevice9*)m_D3Ddev)->GetSingleTexture()!=fake_texture) fake_texture->Release(); // we release the fake texture
+        if (((OTM_IDirect3DDevice9*)m_D3Ddev)->GetSingleVolumeTexture()!=fake_texture) fake_texture->Release(); // we release the fake texture
       }
     }
     else
@@ -94,7 +93,7 @@ ULONG APIENTRY OTM_IDirect3DTexture9::Release()
   {
     // if this texture is the LastCreatedTexture, the next time LastCreatedTexture would be added,
     // the hash of a non existing texture would be calculated
-    if (((OTM_IDirect3DDevice9*)m_D3Ddev)->GetLastCreatedTexture()==this) ((OTM_IDirect3DDevice9*)m_D3Ddev)->SetLastCreatedTexture( NULL);
+    if (((OTM_IDirect3DDevice9*)m_D3Ddev)->GetLastCreatedVolumeTexture()==this) ((OTM_IDirect3DDevice9*)m_D3Ddev)->SetLastCreatedVolumeTexture( NULL);
     else ((OTM_IDirect3DDevice9*) m_D3Ddev)->GetOTM_Client()->RemoveTexture(this); // remove this texture from the texture client
 
     delete(this);
@@ -102,177 +101,186 @@ ULONG APIENTRY OTM_IDirect3DTexture9::Release()
 	return (count);
 }
 
-HRESULT APIENTRY OTM_IDirect3DTexture9::GetDevice(IDirect3DDevice9** ppDevice)
+HRESULT APIENTRY OTM_IDirect3DVolumeTexture9::GetDevice(IDirect3DDevice9** ppDevice)
 {
 	*ppDevice = m_D3Ddev;
 	return D3D_OK;
 }
 
 //this function yields for the non switched texture object
-HRESULT APIENTRY OTM_IDirect3DTexture9::SetPrivateData(REFGUID refguid,CONST void* pData,DWORD SizeOfData,DWORD Flags)
+HRESULT APIENTRY OTM_IDirect3DVolumeTexture9::SetPrivateData(REFGUID refguid,CONST void* pData,DWORD SizeOfData,DWORD Flags)
 {
   if (CrossRef_D3Dtex!=NULL) return (CrossRef_D3Dtex->m_D3Dtex->SetPrivateData(refguid, pData, SizeOfData, Flags));
 	return (m_D3Dtex->SetPrivateData(refguid, pData, SizeOfData, Flags));
 }
 
 //this function yields for the non switched texture object
-HRESULT APIENTRY OTM_IDirect3DTexture9::GetPrivateData(REFGUID refguid,void* pData,DWORD* pSizeOfData)
+HRESULT APIENTRY OTM_IDirect3DVolumeTexture9::GetPrivateData(REFGUID refguid,void* pData,DWORD* pSizeOfData)
 {
   if (CrossRef_D3Dtex!=NULL) return (CrossRef_D3Dtex->m_D3Dtex->GetPrivateData(refguid, pData, pSizeOfData));
 	return (m_D3Dtex->GetPrivateData(refguid, pData, pSizeOfData));
 }
 
 //this function yields for the non switched texture object
-HRESULT APIENTRY OTM_IDirect3DTexture9::FreePrivateData(REFGUID refguid)
+HRESULT APIENTRY OTM_IDirect3DVolumeTexture9::FreePrivateData(REFGUID refguid)
 {
   if (CrossRef_D3Dtex!=NULL) return (CrossRef_D3Dtex->m_D3Dtex->FreePrivateData(refguid));
 	return (m_D3Dtex->FreePrivateData(refguid));
 }
 
-DWORD APIENTRY OTM_IDirect3DTexture9::SetPriority(DWORD PriorityNew)
+DWORD APIENTRY OTM_IDirect3DVolumeTexture9::SetPriority(DWORD PriorityNew)
 {
 	return (m_D3Dtex->SetPriority(PriorityNew));
 }
 
-DWORD APIENTRY OTM_IDirect3DTexture9::GetPriority()
+DWORD APIENTRY OTM_IDirect3DVolumeTexture9::GetPriority()
 {
 	return (m_D3Dtex->GetPriority());
 }
 
-void APIENTRY OTM_IDirect3DTexture9::PreLoad()
+void APIENTRY OTM_IDirect3DVolumeTexture9::PreLoad()
 {
 	m_D3Dtex->PreLoad();
 }
 
-D3DRESOURCETYPE APIENTRY OTM_IDirect3DTexture9::GetType()
+D3DRESOURCETYPE APIENTRY OTM_IDirect3DVolumeTexture9::GetType()
 {
 	return (m_D3Dtex->GetType());
 }
 
-DWORD APIENTRY OTM_IDirect3DTexture9::SetLOD(DWORD LODNew)
+DWORD APIENTRY OTM_IDirect3DVolumeTexture9::SetLOD(DWORD LODNew)
 {
 	return (m_D3Dtex->SetLOD(LODNew));
 }
 
-DWORD APIENTRY OTM_IDirect3DTexture9::GetLOD()
+DWORD APIENTRY OTM_IDirect3DVolumeTexture9::GetLOD()
 {
 	return (m_D3Dtex->GetLOD());
 }
 
-DWORD APIENTRY OTM_IDirect3DTexture9::GetLevelCount()
+DWORD APIENTRY OTM_IDirect3DVolumeTexture9::GetLevelCount()
 {
 	return (m_D3Dtex->GetLevelCount());
 }
 
-HRESULT APIENTRY OTM_IDirect3DTexture9::SetAutoGenFilterType(D3DTEXTUREFILTERTYPE FilterType)
+HRESULT APIENTRY OTM_IDirect3DVolumeTexture9::SetAutoGenFilterType(D3DTEXTUREFILTERTYPE FilterType)
 {
 	return (m_D3Dtex->SetAutoGenFilterType(FilterType));
 }
 
-D3DTEXTUREFILTERTYPE APIENTRY OTM_IDirect3DTexture9::GetAutoGenFilterType()
+D3DTEXTUREFILTERTYPE APIENTRY OTM_IDirect3DVolumeTexture9::GetAutoGenFilterType()
 {
 	return (m_D3Dtex->GetAutoGenFilterType());
 }
 
-void APIENTRY OTM_IDirect3DTexture9::GenerateMipSubLevels()
+void APIENTRY OTM_IDirect3DVolumeTexture9::GenerateMipSubLevels()
 {
 	m_D3Dtex->GenerateMipSubLevels();
 }
 
+
+
 //this function yields for the non switched texture object
-HRESULT APIENTRY OTM_IDirect3DTexture9::GetLevelDesc(UINT Level,D3DSURFACE_DESC *pDesc)
+HRESULT APIENTRY OTM_IDirect3DVolumeTexture9::AddDirtyBox(CONST D3DBOX *pDirtyBox)
+{
+  if (CrossRef_D3Dtex!=NULL) return (CrossRef_D3Dtex->m_D3Dtex->AddDirtyBox(pDirtyBox));
+  return (m_D3Dtex->AddDirtyBox(pDirtyBox));
+}
+
+//this function yields for the non switched texture object
+HRESULT APIENTRY OTM_IDirect3DVolumeTexture9::GetLevelDesc(UINT Level, D3DVOLUME_DESC *pDesc)
 {
   if (CrossRef_D3Dtex!=NULL) return (CrossRef_D3Dtex->m_D3Dtex->GetLevelDesc(Level, pDesc));
 	return (m_D3Dtex->GetLevelDesc(Level, pDesc));
 }
 
 //this function yields for the non switched texture object
-HRESULT APIENTRY OTM_IDirect3DTexture9::GetSurfaceLevel(UINT Level,IDirect3DSurface9** ppSurfaceLevel)
+HRESULT APIENTRY OTM_IDirect3DVolumeTexture9::GetVolumeLevel(UINT Level, IDirect3DVolume9 **ppVolumeLevel)
 {
-  if (CrossRef_D3Dtex!=NULL) return (CrossRef_D3Dtex->m_D3Dtex->GetSurfaceLevel(Level, ppSurfaceLevel));
-	return (m_D3Dtex->GetSurfaceLevel(Level, ppSurfaceLevel));
+  if (CrossRef_D3Dtex!=NULL) return (CrossRef_D3Dtex->m_D3Dtex->GetVolumeLevel(Level, ppVolumeLevel));
+	return (m_D3Dtex->GetVolumeLevel(Level, ppVolumeLevel));
 }
 
 //this function yields for the non switched texture object
-HRESULT APIENTRY OTM_IDirect3DTexture9::LockRect(UINT Level,D3DLOCKED_RECT* pLockedRect,CONST RECT* pRect,DWORD Flags)
+HRESULT APIENTRY OTM_IDirect3DVolumeTexture9::LockBox(UINT Level, D3DLOCKED_BOX *pLockedVolume, CONST D3DBOX *pBox ,DWORD Flags)
 {
-  if (CrossRef_D3Dtex!=NULL) return (CrossRef_D3Dtex->m_D3Dtex->LockRect(Level, pLockedRect, pRect, Flags));
-	return (m_D3Dtex->LockRect(Level, pLockedRect, pRect, Flags));
+  if (CrossRef_D3Dtex!=NULL) return (CrossRef_D3Dtex->m_D3Dtex->LockBox(Level, pLockedVolume, pBox, Flags));
+	return (m_D3Dtex->LockBox(Level, pLockedVolume, pBox, Flags));
 }
 
 //this function yields for the non switched texture object
-HRESULT APIENTRY OTM_IDirect3DTexture9::UnlockRect(UINT Level)
+HRESULT APIENTRY OTM_IDirect3DVolumeTexture9::UnlockBox(UINT Level)
 {
-  if (CrossRef_D3Dtex!=NULL) return (CrossRef_D3Dtex->m_D3Dtex->UnlockRect(Level));
-	return (m_D3Dtex->UnlockRect(Level));
-}
-
-//this function yields for the non switched texture object
-HRESULT APIENTRY OTM_IDirect3DTexture9::AddDirtyRect(CONST RECT* pDirtyRect)
-{
-  if (CrossRef_D3Dtex!=NULL) return (CrossRef_D3Dtex->m_D3Dtex->AddDirtyRect(pDirtyRect));
-	return (m_D3Dtex->AddDirtyRect(pDirtyRect));
+  if (CrossRef_D3Dtex!=NULL) return (CrossRef_D3Dtex->m_D3Dtex->UnlockBox(Level));
+	return (m_D3Dtex->UnlockBox(Level));
 }
 
 
-int OTM_IDirect3DTexture9::GetHash(MyTypeHash &hash)
+int OTM_IDirect3DVolumeTexture9::GetHash(MyTypeHash &hash)
 {
   hash=0u;
   if (FAKE) return (RETURN_BAD_ARGUMENT);
-  IDirect3DTexture9 *pTexture = m_D3Dtex;
+  IDirect3DVolumeTexture9 *pTexture = m_D3Dtex;
   if (CrossRef_D3Dtex!=NULL) pTexture = CrossRef_D3Dtex->m_D3Dtex;
 
-  IDirect3DSurface9 *pOffscreenSurface = NULL;
-  //IDirect3DTexture9 *pOffscreenTexture = NULL;
-  IDirect3DSurface9 *pResolvedSurface = NULL;
-  D3DLOCKED_RECT d3dlr;
-  D3DSURFACE_DESC desc;
+  //IDirect3DVolume9  *pOffscreenSurface = NULL;
+  //IDirect3DVolumeTexture9 *pOffscreenTexture = NULL;
+  IDirect3DVolume9  *pResolvedSurface = NULL;
+  D3DLOCKED_BOX d3dlr;
+  D3DVOLUME_DESC desc;
 
   if (pTexture->GetLevelDesc(0, &desc)!=D3D_OK) //get the format and the size of the texture
   {
-    Message("OTM_IDirect3DTexture9::GetHash() Failed: GetLevelDesc \n");
+    Message("OTM_IDirect3DVolumeTexture9::GetHash() Failed: GetLevelDesc \n");
     return (RETURN_GetLevelDesc_FAILED);
   }
 
-  Message("OTM_IDirect3DTexture9::GetHash() (%d %d) %d\n", desc.Width, desc.Height, desc.Format);
+  Message("OTM_IDirect3DVolumeTexture9::GetHash() (%d %d %d) %d\n", desc.Width, desc.Height, desc.Depth, desc.Format);
 
-
+/*
   if (desc.Pool==D3DPOOL_DEFAULT) //get the raw data of the texture
   {
-    //Message("OTM_IDirect3DTexture9::GetHash() (D3DPOOL_DEFAULT)\n");
+    //Message("OTM_IDirect3DVolumeTexture9::GetHash() (D3DPOOL_DEFAULT)\n");
 
     IDirect3DSurface9 *pSurfaceLevel_orig = NULL;
     if (pTexture->GetSurfaceLevel( 0, &pSurfaceLevel_orig)!=D3D_OK)
     {
-      Message("OTM_IDirect3DTexture9::GetHash() Failed: GetSurfaceLevel 1  (D3DPOOL_DEFAULT)\n");
+      Message("OTM_IDirect3DVolumeTexture9::GetHash() Failed: GetSurfaceLevel 1  (D3DPOOL_DEFAULT)\n");
       return (RETURN_LockRect_FAILED);
     }
-
+/*
     if (desc.MultiSampleType != D3DMULTISAMPLE_NONE)
     {
-      //Message("OTM_IDirect3DTexture9::GetHash() MultiSampleType\n");
+      //Message("OTM_IDirect3DVolumeTexture9::GetHash() MultiSampleType\n");
       if (D3D_OK!=m_D3Ddev->CreateRenderTarget( desc.Width, desc.Height, desc.Format, D3DMULTISAMPLE_NONE, 0, FALSE, &pResolvedSurface, NULL ))
       {
         pSurfaceLevel_orig->Release();
-        Message("OTM_IDirect3DTexture9::GetHash() Failed: CreateRenderTarget  (D3DPOOL_DEFAULT)\n");
+        Message("OTM_IDirect3DVolumeTexture9::GetHash() Failed: CreateRenderTarget  (D3DPOOL_DEFAULT)\n");
         return (RETURN_LockRect_FAILED);
       }
       if (D3D_OK!=m_D3Ddev->StretchRect( pSurfaceLevel_orig, NULL, pResolvedSurface, NULL, D3DTEXF_NONE ))
       {
         pSurfaceLevel_orig->Release();
-        Message("OTM_IDirect3DTexture9::GetHash() Failed: StretchRect  (D3DPOOL_DEFAULT)\n");
+        Message("OTM_IDirect3DVolumeTexture9::GetHash() Failed: StretchRect  (D3DPOOL_DEFAULT)\n");
         return (RETURN_LockRect_FAILED);
       }
 
       pSurfaceLevel_orig = pResolvedSurface;
     }
-
-    if (D3D_OK!=m_D3Ddev->CreateOffscreenPlainSurface( desc.Width, desc.Height, desc.Format, D3DPOOL_SYSTEMMEM, &pOffscreenSurface, NULL))
+    */
+//CreateTexture(8, 8, 1, 0, D3DFMT_A8R8G8B8, D3DPOOL_MANAGED, (IDirect3DVolumeTexture9**) &SingleTexture, NULL)
+    /*
+    if (D3D_OK!=m_D3Ddev->CreateTexture( desc.Width, desc.Height, 1, 0, desc.Format, D3DPOOL_SYSTEMMEM, &pOffscreenTexture, NULL))
     {
       pSurfaceLevel_orig->Release();
       if (pResolvedSurface!=NULL) pResolvedSurface->Release();
-      Message("OTM_IDirect3DTexture9::GetHash() Failed: CreateOffscreenPlainSurface (D3DPOOL_DEFAULT)\n");
+      Message("OTM_IDirect3DVolumeTexture9::GetHash() Failed: CreateTexture  (D3DPOOL_DEFAULT)\n");
       return (RETURN_TEXTURE_NOT_LOADED);
+    }
+    if (pOffscreenTexture->GetSurfaceLevel( 0, &pOffscreenSurface)!=D3D_OK)
+    {
+      Message("OTM_IDirect3DVolumeTexture9::GetHash() Failed: GetSurfaceLevel 2  (D3DPOOL_DEFAULT)\n");
+      return (RETURN_LockRect_FAILED);
     }
 
     if (D3D_OK!=m_D3Ddev->GetRenderTargetData( pSurfaceLevel_orig, pOffscreenSurface))
@@ -280,7 +288,8 @@ int OTM_IDirect3DTexture9::GetHash(MyTypeHash &hash)
       pSurfaceLevel_orig->Release();
       if (pResolvedSurface!=NULL) pResolvedSurface->Release();
       pOffscreenSurface->Release();
-      Message("OTM_IDirect3DTexture9::GetHash() Failed: GetRenderTargetData (D3DPOOL_DEFAULT)\n");
+      pOffscreenTexture->Release();
+      Message("OTM_IDirect3DVolumeTexture9::GetHash() Failed: GetRenderTargetData  (D3DPOOL_DEFAULT)\n");
       return (RETURN_LockRect_FAILED);
     }
     pSurfaceLevel_orig->Release();
@@ -289,43 +298,68 @@ int OTM_IDirect3DTexture9::GetHash(MyTypeHash &hash)
     {
       if (pResolvedSurface!=NULL) pResolvedSurface->Release();
       pOffscreenSurface->Release();
-      Message("OTM_IDirect3DTexture9::GetHash() Failed: LockRect (D3DPOOL_DEFAULT)\n");
+      pOffscreenTexture->Release();
+      Message("OTM_IDirect3DVolumeTexture9::GetHash() Failed:  LockRect  (D3DPOOL_DEFAULT)\n");
+      return (RETURN_LockRect_FAILED);
+    }
+    */
+/*
+    if (D3D_OK!=m_D3Ddev->CreateOffscreenPlainSurface( desc.Width, desc.Height, desc.Format, D3DPOOL_SYSTEMMEM, &pOffscreenSurface, NULL))
+    {
+      pSurfaceLevel_orig->Release();
+      if (pResolvedSurface!=NULL) pResolvedSurface->Release();
+      Message("OTM_IDirect3DVolumeTexture9::GetHash() Failed: CreateOffscreenPlainSurface (D3DPOOL_DEFAULT)\n");
+      return (RETURN_TEXTURE_NOT_LOADED);
+    }
+
+    if (D3D_OK!=m_D3Ddev->GetRenderTargetData( pSurfaceLevel_orig, pOffscreenSurface))
+    {
+      pSurfaceLevel_orig->Release();
+      if (pResolvedSurface!=NULL) pResolvedSurface->Release();
+      pOffscreenSurface->Release();
+      Message("OTM_IDirect3DVolumeTexture9::GetHash() Failed: GetRenderTargetData (D3DPOOL_DEFAULT)\n");
+      return (RETURN_LockRect_FAILED);
+    }
+    pSurfaceLevel_orig->Release();
+
+    if (pOffscreenSurface->LockRect( &d3dlr, NULL, D3DLOCK_READONLY)!=D3D_OK)
+    {
+      if (pResolvedSurface!=NULL) pResolvedSurface->Release();
+      pOffscreenSurface->Release();
+      Message("OTM_IDirect3DVolumeTexture9::GetHash() Failed: LockRect (D3DPOOL_DEFAULT)\n");
       return (RETURN_LockRect_FAILED);
     }
   }
-  else if (pTexture->LockRect( 0, &d3dlr, NULL, D3DLOCK_READONLY)!=D3D_OK)
+  else
+  */
+  if (pTexture->LockBox( 0, &d3dlr, NULL, D3DLOCK_READONLY)!=D3D_OK)
   {
-    Message("OTM_IDirect3DTexture9::GetHash() Failed: LockRect 1\n");
-    if (pTexture->GetSurfaceLevel(0, &pResolvedSurface)!=D3D_OK)
+    Message("OTM_IDirect3DVolumeTexture9::GetHash() Failed: LockRect 1\n");
+    if (pTexture->GetVolumeLevel(0, &pResolvedSurface)!=D3D_OK)
     {
-      Message("OTM_IDirect3DTexture9::GetHash() Failed: GetSurfaceLevel\n");
+      Message("OTM_IDirect3DVolumeTexture9::GetHash() Failed: GetSurfaceLevel\n");
       return (RETURN_LockRect_FAILED);
     }
-    if (pResolvedSurface->LockRect( &d3dlr, NULL, D3DLOCK_READONLY)!=D3D_OK)
+    if (pResolvedSurface->LockBox( &d3dlr, NULL, D3DLOCK_READONLY)!=D3D_OK)
     {
       pResolvedSurface->Release();
-      Message("OTM_IDirect3DTexture9::GetHash() Failed: LockRect 2\n");
+      Message("OTM_IDirect3DVolumeTexture9::GetHash() Failed: LockRect 2\n");
       return (RETURN_LockRect_FAILED);
     }
   }
 
-  int size = (GetBitsFromFormat( desc.Format) * desc.Width*desc.Height)/8;
+  int size = (GetBitsFromFormat( desc.Format) * desc.Width*desc.Height*desc.Depth)/8;
 
   hash = GetCRC32( (char*) d3dlr.pBits, size); //calculate the crc32 of the texture
 
-  if (pOffscreenSurface!=NULL)
+
+  if (pResolvedSurface!=NULL)
   {
-    pOffscreenSurface->UnlockRect();
-    pOffscreenSurface->Release();
-    if (pResolvedSurface!=NULL) pResolvedSurface->Release();
-  }
-  else if (pResolvedSurface!=NULL)
-  {
-    pResolvedSurface->UnlockRect();
+    pResolvedSurface->UnlockBox();
     pResolvedSurface->Release();
   }
-  else pTexture->UnlockRect(0);
+  else pTexture->UnlockBox(0);
 
-  Message("OTM_IDirect3DTexture9::GetHash() %#lX (%d %d) %d = %d\n", hash, desc.Width, desc.Height, desc.Format, size);
+  Message("OTM_IDirect3DVolumeTexture9::GetHash() %#lX (%d %d) %d = %d\n", hash, desc.Width, desc.Height, desc.Format, size);
   return (RETURN_OK);
 }

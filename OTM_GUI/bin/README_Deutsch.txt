@@ -1,12 +1,12 @@
 Warnung: Du verwendest diese Programm auf eigene Gefahr hin!
-1) Wenn das Programm abstürzt wird du wahrscheinlich keinen Support
+1) Wenn das Programm abstürzt, wirst du wahrscheinlich keinen Support
     vom Spielehersteller bekommen. Aber du kannst den Fehler gerne
-    angeben unter  http://code.google.com/p/texmod/issues/list
-2) Spiele können detektieren ob sie verändert werde, daher riskierst du
+    angeben unter:  http://code.google.com/p/texmod/issues/list
+2) Spiele können detektieren, ob sie verändert werden, daher riskierst du
     einen Bann deines online Accounts.
 3) Dies ist eine open-source Projekt. Der Code kann von jedem erhalten, verändert
     und kompiliert werden. Lade OpenTexMod nur von offiziellen Quellen runter,
-    denen du vertraust. Lade es selbst runter und verwende keine Versionen
+    denen du vertraust. Lade es selbst runter und verwende keine Versionen,
     die du von Team- oder Gildenmitgliedern geschickt bekommen hast.
     http://code.google.com/p/texmod/downloads/list
 
@@ -16,18 +16,19 @@ mit geliefert werden. Wenn diese dll auf deinem System nicht installiert ist, wi
 darauf hinweisen.
 
 
-Was kann OpenTexMod alpha V0.9?
+Was kann OpenTexMod beta V1.0?
 
 -einzelne Texturen aus einem Spiel extrahieren und speichern (Die Zieltextur kann im Spiel geändert werden.)
 -alle Texturen aus einem Spiel extrahieren und speichern
 -Texturen in ein Spiel laden und Zieltexturen ersetzen
+-Support einzelner dds Texturen
 -Support von zip-Dateien
 -Support der originalen TexMod *.tpf Datein
 
 Alle diese Optionen können während des Spieles an und aus geschaltet werden!
 Du kannst also nach einer Textur suchen, diese speichern, sie anschließend
 editieren, sie in das Spiel laden, sie nach bearbeiten und wieder in das
-Spiel laden, ...
+Spiel laden, ... oder Mods aktivieren und deaktivieren
 und das alles ohne das Spiel neu starten zu müssen.
 
 Randbemerkung: Wenn alle Texturen gespeichert werden sollen, so geschieht das nur,
@@ -40,7 +41,7 @@ Zip Dateien können eine "texmod.def" Datei enthalten, welche die Hash-Werte und
 Dateinamen enthält. Jede Zeile sollte dem Format "hash|filename.dds" entsprechen.
 Wenn es keine "texmod.def" Datei enthält, wird jede Datei entpackt und jene, deren 
 Namen auf das Wildcard  "*_hash.dds" zutrifft, werden benutzt.
-Die Zip Datei kann eine "Comment.txt" enthalten. Der Inhalte wird als Kommentar
+Die Zip Datei kann eine "Comment.txt" Datei enthalten. Der Inhalte wird als Kommentar
 in der GUI angezeigt.
 
 Wenn du einzelne Dateien lädst, sollten diese dem Wildcard  "*_hash.dds" entsprechen.
@@ -84,8 +85,8 @@ dieses Spiel das nächste Mal gestartet wird.
 Um einen Mod zu laden, musst du das Häkchen vor den Namen setzen. Wenn du
 den Mod entladen willst, entferne das Häkchen und klicke auf "Update".
 
-Der Update Button lädt nur Veränderungen (wenn Pakete aus der Liste entfernt
-wurden, du die Häkchen verändert hast oder sich die Reihenfolge geändert hat)
+Der Update Button lädt nur Veränderungen (wenn 1) Pakete aus der Liste entfernt
+wurden, 2) du die Häkchen verändert hast oder 3) sich die Reihenfolge geändert hat)
 Der "neu laden" Button erzwingt das Neuladen von Festplatte (z.B. wenn du die
 Texturen verändert hast).
 
@@ -100,3 +101,6 @@ Wie bekommt man OpenTexMod mit Steam zum Laufen?
 OpenTexMod schaut auf den Namen und auf das Verzeichnis der ausgeführten Spiel-exe.
 Daher solltest du nicht die steam.exe sondern die Spiel.exe hinzufügen.
 z.B.: C:\Steam\SteamApps\acoount_name\portal\hl2.exe
+Wenn du die entsprechende exe nicht findest, kannst du das Spiel normal starten und 
+über den TaskManager die entsprechende exe suchen. Über Rechstklick->Eigenschaften
+erfährst du dann auch den Pfad der exe.

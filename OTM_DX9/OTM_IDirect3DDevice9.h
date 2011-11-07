@@ -31,6 +31,8 @@ along with OpenTexMod.  If not, see <http://www.gnu.org/licenses/>.
 #include <d3d9.h>
 #include <d3dx9.h>
 #include "OTM_IDirect3DTexture9.h"
+#include "OTM_IDirect3DVolumeTexture9.h"
+#include "OTM_IDirect3DCubeTexture9.h"
 
 class OTM_IDirect3DDevice9 : public IDirect3DDevice9
 {
@@ -163,21 +165,40 @@ public:
 
 
 	OTM_TextureClient* GetOTM_Client(void) {return (OTM_Client);}
+
 	OTM_IDirect3DTexture9* GetLastCreatedTexture(void) {return (LastCreatedTexture);}
   int SetLastCreatedTexture(OTM_IDirect3DTexture9* pTexture) {LastCreatedTexture=pTexture; return (RETURN_OK);}
+
+  OTM_IDirect3DVolumeTexture9* GetLastCreatedVolumeTexture(void) {return (LastCreatedVolumeTexture);}
+  int SetLastCreatedVolumeTexture(OTM_IDirect3DVolumeTexture9* pTexture) {LastCreatedVolumeTexture=pTexture; return (RETURN_OK);}
+
+  OTM_IDirect3DCubeTexture9* GetLastCreatedCubeTexture(void) {return (LastCreatedCubeTexture);}
+  int SetLastCreatedCubeTexture(OTM_IDirect3DCubeTexture9* pTexture) {LastCreatedCubeTexture=pTexture; return (RETURN_OK);}
+
+
   OTM_IDirect3DTexture9* GetSingleTexture(void) {return (SingleTexture);}
+  OTM_IDirect3DVolumeTexture9* GetSingleVolumeTexture(void) {return (SingleVolumeTexture);}
+  OTM_IDirect3DCubeTexture9* GetSingleCubeTexture(void) {return (SingleCubeTexture);}
 
  private:
   int CreateSingleTexture(void);
   int CounterSaveSingleTexture;
   OTM_IDirect3DTexture9* SingleTexture;
+  OTM_IDirect3DVolumeTexture9* SingleVolumeTexture;
+  OTM_IDirect3DCubeTexture9* SingleCubeTexture;
+  char SingleTextureMod;
+
   D3DCOLOR TextureColour;
   ID3DXFont *OSD_Font;
   //D3DCOLOR FontColour;
 
   int OTM_Reference;
 	IDirect3DDevice9* m_pIDirect3DDevice9;
+
 	OTM_IDirect3DTexture9* LastCreatedTexture;
+  OTM_IDirect3DVolumeTexture9* LastCreatedVolumeTexture;
+  OTM_IDirect3DCubeTexture9* LastCreatedCubeTexture;
+
 	OTM_TextureServer* OTM_Server;
 	OTM_TextureClient* OTM_Client;
 };

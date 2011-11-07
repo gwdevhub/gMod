@@ -24,19 +24,28 @@ along with OpenTexMod.  If not, see <http://www.gnu.org/licenses/>.
 
 int OTM_IDirect3DDevice9::CreateSingleTexture(void)
 {
+  if (SingleTexture!=NULL && SingleVolumeTexture!=NULL && SingleCubeTexture!=NULL && TextureColour==OTM_Client->TextureColour) return (RETURN_OK);
+  TextureColour = OTM_Client->TextureColour;
   if (SingleTexture==NULL) //create texture
   {
-    if( D3D_OK != CreateTexture(8, 8, 1, 0, D3DFMT_A8R8G8B8, D3DPOOL_MANAGED, (IDirect3DTexture9**) &SingleTexture, NULL)) return (RETURN_TEXTURE_NOT_LOADED);
+    if( D3D_OK != CreateTexture(8, 8, 1, 0, D3DFMT_A8R8G8B8, D3DPOOL_MANAGED, (IDirect3DTexture9**) &SingleTexture, NULL))
+    {
+      Message("OTM_IDirect3DDevice9::CreateSingleTexture(): CreateTexture Failed\n");
+      SingleTexture = NULL;
+      return (RETURN_TEXTURE_NOT_LOADED);
+    }
     LastCreatedTexture = NULL; // set LastCreatedTexture to NULL, cause LastCreatedTexture is equal SingleTexture
     SingleTexture->FAKE = true; //this is no texture created from by game
     SingleTexture->Reference = -2;
+  }
 
-    TextureColour = OTM_Client->TextureColour;
+  {
     D3DLOCKED_RECT d3dlr;
     IDirect3DTexture9 *pD3Dtex = SingleTexture->m_D3Dtex;
 
     if (D3D_OK!=pD3Dtex->LockRect(0, &d3dlr, 0, 0))
     {
+      Message("OTM_IDirect3DDevice9::CreateSingleTexture(): LockRect Failed\n");
       SingleTexture->Release();
       SingleTexture=NULL;
       return (RETURN_TEXTURE_NOT_LOADED);
@@ -46,6 +55,69 @@ int OTM_IDirect3DDevice9::CreateSingleTexture(void)
     for (int i=0; i<8*8; i++) pDst[i] = TextureColour;
     pD3Dtex->UnlockRect(0);
   }
+
+  if (SingleVolumeTexture==NULL) //create texture
+  {
+    if( D3D_OK != CreateVolumeTexture(8, 8, 8, 1, 0, D3DFMT_A8R8G8B8, D3DPOOL_MANAGED, (IDirect3DVolumeTexture9**) &SingleVolumeTexture, NULL))
+    {
+      Message("OTM_IDirect3DDevice9::CreateSingleTexture(): CreateVolumeTexture Failed\n");
+      SingleVolumeTexture = NULL;
+      return (RETURN_TEXTURE_NOT_LOADED);
+    }
+    LastCreatedVolumeTexture = NULL; // set LastCreatedTexture to NULL, cause LastCreatedTexture is equal SingleTexture
+    SingleVolumeTexture->FAKE = true; //this is no texture created from by game
+    SingleVolumeTexture->Reference = -2;
+  }
+
+  {
+    D3DLOCKED_BOX d3dlr;
+    IDirect3DVolumeTexture9 *pD3Dtex = SingleVolumeTexture->m_D3Dtex;
+    //LockBox)(UINT Level, D3DLOCKED_BOX *pLockedVolume, CONST D3DBOX *pBox,
+    if (D3D_OK!=pD3Dtex->LockBox(0, &d3dlr, 0, 0))
+    {
+      Message("OTM_IDirect3DDevice9::CreateSingleTexture(): LockBox Failed\n");
+      SingleVolumeTexture->Release();
+      SingleVolumeTexture=NULL;
+      return (RETURN_TEXTURE_NOT_LOADED);
+    }
+    DWORD *pDst = (DWORD*)d3dlr.pBits;
+
+    for (int i=0; i<8*8*8; i++) pDst[i] = TextureColour;
+    pD3Dtex->UnlockBox(0);
+  }
+  if (SingleCubeTexture==NULL) //create texture
+  {
+    if( D3D_OK != CreateCubeTexture(8, 1, 0, D3DFMT_A8R8G8B8, D3DPOOL_MANAGED, (IDirect3DCubeTexture9**) &SingleCubeTexture, NULL))
+    {
+      Message("OTM_IDirect3DDevice9::CreateSingleTexture(): CreateCubeTexture Failed\n");
+      SingleCubeTexture = NULL;
+      return (RETURN_TEXTURE_NOT_LOADED);
+    }
+    LastCreatedCubeTexture = NULL; // set LastCreatedTexture to NULL, cause LastCreatedTexture is equal SingleTexture
+    SingleCubeTexture->FAKE = true; //this is no texture created from by game
+    SingleCubeTexture->Reference = -2;
+  }
+
+  {
+    D3DLOCKED_RECT d3dlr;
+    IDirect3DCubeTexture9 *pD3Dtex = SingleCubeTexture->m_D3Dtex;
+
+    for (int c=0; c<6; c++)
+    {
+      if (D3D_OK!=pD3Dtex->LockRect( (D3DCUBEMAP_FACES) c, 0, &d3dlr, 0, 0))
+      {
+        Message("OTM_IDirect3DDevice9::CreateSingleTexture(): LockRect (Cube) Failed\n");
+        SingleCubeTexture->Release();
+        SingleCubeTexture=NULL;
+        return (RETURN_TEXTURE_NOT_LOADED);
+      }
+      DWORD *pDst = (DWORD*)d3dlr.pBits;
+
+      for (int i=0; i<8*8; i++) pDst[i] = TextureColour;
+      pD3Dtex->UnlockRect((D3DCUBEMAP_FACES)c, 0);
+    }
+  }
+
   return (RETURN_OK);
 }
 
@@ -57,11 +129,17 @@ OTM_IDirect3DDevice9::OTM_IDirect3DDevice9(IDirect3DDevice9* pOriginal, OTM_Text
   OTM_Client = new OTM_TextureClient(  OTM_Server, this); //get a new texture client for this device
 
   LastCreatedTexture = NULL;
+  LastCreatedVolumeTexture = NULL;
+  LastCreatedCubeTexture = NULL;
 	m_pIDirect3DDevice9 = pOriginal; // store the pointer to original object
   TextureColour = D3DCOLOR_ARGB(255,0,255,0);
 
-  CounterSaveSingleTexture = -1;
+  CounterSaveSingleTexture = -20;
+
+  SingleTextureMod = 0;
   SingleTexture = NULL;
+  SingleVolumeTexture = NULL;
+  SingleCubeTexture = NULL;
   OSD_Font = NULL;
   OTM_Reference = 1;
 }
@@ -102,6 +180,8 @@ ULONG OTM_IDirect3DDevice9::Release(void)
     // and the target textures are released by the game.
 
     if (SingleTexture!=NULL) SingleTexture->Release(); //this is the only texture we must release by ourself
+    if (SingleVolumeTexture!=NULL) SingleVolumeTexture->Release(); //this is the only texture we must release by ourself
+    if (SingleCubeTexture!=NULL) SingleCubeTexture->Release(); //this is the only texture we must release by ourself
     if (OSD_Font!=NULL) OSD_Font->Release();
 
     if (OTM_Client!=NULL) delete OTM_Client; //must be deleted at the end, because other releases might call a function of this object
@@ -226,11 +306,12 @@ void OTM_IDirect3DDevice9::GetGammaRamp(UINT iSwapChain,D3DGAMMARAMP* pRamp)
 HRESULT OTM_IDirect3DDevice9::CreateTexture(UINT Width,UINT Height,UINT Levels,DWORD Usage,D3DFORMAT Format,D3DPOOL Pool,IDirect3DTexture9** ppTexture,HANDLE* pSharedHandle)
 {
   //create real texture
+  //Message("OTM_IDirect3DDevice9::CreateTexture()\n");
 	HRESULT ret = (m_pIDirect3DDevice9->CreateTexture(Width,Height,Levels,Usage,Format,Pool,ppTexture,pSharedHandle));
 	if(ret != D3D_OK) return (ret);
 
 	//create fake texture
-	OTM_IDirect3DTexture9 *texture  = new OTM_IDirect3DTexture9(ppTexture, this, Width, Height, Format);
+	OTM_IDirect3DTexture9 *texture  = new OTM_IDirect3DTexture9(ppTexture, this);
 	if (texture) *ppTexture = texture;
 	
 	if (LastCreatedTexture!=NULL) //if a texture was loaded before, hopefully this texture contains now the data, so we can add it
@@ -243,12 +324,40 @@ HRESULT OTM_IDirect3DDevice9::CreateTexture(UINT Width,UINT Height,UINT Levels,D
 
 HRESULT OTM_IDirect3DDevice9::CreateVolumeTexture(UINT Width,UINT Height,UINT Depth,UINT Levels,DWORD Usage,D3DFORMAT Format,D3DPOOL Pool,IDirect3DVolumeTexture9** ppVolumeTexture,HANDLE* pSharedHandle)
 {
-  return (m_pIDirect3DDevice9->CreateVolumeTexture(Width,Height,Depth,Levels,Usage,Format,Pool,ppVolumeTexture,pSharedHandle));
+  //create real texture
+  //Message("OTM_IDirect3DDevice9::CreateVolumeTexture()\n");
+  HRESULT ret = (m_pIDirect3DDevice9->CreateVolumeTexture(Width,Height,Depth, Levels,Usage,Format,Pool,ppVolumeTexture,pSharedHandle));
+  if(ret != D3D_OK) return (ret);
+
+  //create fake texture
+  OTM_IDirect3DVolumeTexture9 *texture  = new OTM_IDirect3DVolumeTexture9(ppVolumeTexture, this);
+  if (texture) *ppVolumeTexture = texture;
+
+  if (LastCreatedVolumeTexture!=NULL) //if a texture was loaded before, hopefully this texture contains now the data, so we can add it
+  {
+    if ( OTM_Client!=NULL) OTM_Client->AddTexture( LastCreatedVolumeTexture);
+  }
+  LastCreatedVolumeTexture = texture;
+  return (ret);
 }
 
 HRESULT OTM_IDirect3DDevice9::CreateCubeTexture(UINT EdgeLength,UINT Levels,DWORD Usage,D3DFORMAT Format,D3DPOOL Pool,IDirect3DCubeTexture9** ppCubeTexture,HANDLE* pSharedHandle)
 {
-  return(m_pIDirect3DDevice9->CreateCubeTexture(EdgeLength,Levels,Usage,Format,Pool,ppCubeTexture,pSharedHandle));
+  //create real texture
+  //Message("OTM_IDirect3DDevice9::CreateCubeTexture()\n");
+  HRESULT ret = (m_pIDirect3DDevice9->CreateCubeTexture(EdgeLength, Levels,Usage,Format,Pool,ppCubeTexture,pSharedHandle));
+  if(ret != D3D_OK) return (ret);
+
+  //create fake texture
+  OTM_IDirect3DCubeTexture9 *texture  = new OTM_IDirect3DCubeTexture9( ppCubeTexture, this);
+  if (texture) *ppCubeTexture = texture;
+
+  if (LastCreatedCubeTexture!=NULL) //if a texture was loaded before, hopefully this texture contains now the data, so we can add it
+  {
+    if ( OTM_Client!=NULL) OTM_Client->AddTexture( LastCreatedCubeTexture);
+  }
+  LastCreatedCubeTexture = texture;
+  return (ret);
 }
 
 HRESULT OTM_IDirect3DDevice9::CreateVertexBuffer(UINT Length,DWORD Usage,DWORD FVF,D3DPOOL Pool,IDirect3DVertexBuffer9** ppVertexBuffer,HANDLE* pSharedHandle)
@@ -278,17 +387,148 @@ HRESULT OTM_IDirect3DDevice9::UpdateSurface(IDirect3DSurface9* pSourceSurface,CO
 
 HRESULT OTM_IDirect3DDevice9::UpdateTexture(IDirect3DBaseTexture9* pSourceTexture,IDirect3DBaseTexture9* pDestinationTexture)
 {
+  Message("OTM_IDirect3DDevice9::UpdateTexture( %lu, %lu): %lu\n", pSourceTexture, pDestinationTexture, this);
   // we must pass the real texture objects
-  // if (dev != this) this texture was not initialized through our device and is thus no fake texture object
 
-  IDirect3DDevice9 *dev = NULL;
-  if (pSourceTexture != NULL && ((OTM_IDirect3DTexture9*)(pSourceTexture))->GetDevice(&dev) == D3D_OK)
+
+  OTM_IDirect3DTexture9* pSource = NULL;
+  OTM_IDirect3DVolumeTexture9* pSourceVolume = NULL;
+  OTM_IDirect3DCubeTexture9* pSourceCube = NULL;
+  IDirect3DBaseTexture9* cpy;
+  if( pSourceTexture != NULL )
   {
-    if (dev == this) pSourceTexture = ((OTM_IDirect3DTexture9*)(pSourceTexture))->m_D3Dtex;
+    long int ret = pSourceTexture->QueryInterface( IID_IDirect3D9, (void**) &cpy);
+    switch (ret)
+    {
+      case 0x01000000L:
+      {
+        MyTypeHash hash;
+        pSource = (OTM_IDirect3DTexture9*)(pSourceTexture);
+        if (pSource->GetHash( hash) == RETURN_OK)
+        {
+          if (hash != pSource->Hash) // this hash has changed !!
+          {
+            pSource->Hash = hash;
+            if (pSource->CrossRef_D3Dtex!=NULL) UnswitchTextures(pSource);
+            OTM_Client->LookUpToMod( pSource);
+          }
+        }
+        else if (pSource->CrossRef_D3Dtex!=NULL) UnswitchTextures(pSource); // we better unswitch
+
+        // the source must be the original texture if not switched and the fake texture if it is switched
+        if (pSource->CrossRef_D3Dtex!=NULL) pSourceTexture = pSource->CrossRef_D3Dtex->m_D3Dtex;
+        else pSourceTexture = pSource->m_D3Dtex;
+        break;
+      }
+      case 0x01000001L:
+      {
+        MyTypeHash hash;
+        pSourceVolume = (OTM_IDirect3DVolumeTexture9*)(pSourceTexture);
+        if (pSourceVolume->GetHash( hash) == RETURN_OK)
+        {
+          if (hash != pSourceVolume->Hash) // this hash has changed !!
+          {
+            pSourceVolume->Hash = hash;
+            if (pSourceVolume->CrossRef_D3Dtex!=NULL) UnswitchTextures(pSourceVolume);
+            OTM_Client->LookUpToMod( pSourceVolume);
+          }
+        }
+        else if (pSourceVolume->CrossRef_D3Dtex!=NULL) UnswitchTextures(pSourceVolume); // we better unswitch
+
+        // the source must be the original texture if not switched and the fake texture if it is switched
+        if (pSourceVolume->CrossRef_D3Dtex!=NULL) pSourceTexture = pSourceVolume->CrossRef_D3Dtex->m_D3Dtex;
+        else pSourceTexture = pSourceVolume->m_D3Dtex;
+        break;
+      }
+      case 0x01000002L:
+      {
+        MyTypeHash hash;
+        pSourceCube = (OTM_IDirect3DCubeTexture9*)(pSourceTexture);
+        if (pSourceCube->GetHash( hash) == RETURN_OK)
+        {
+          if (hash != pSourceCube->Hash) // this hash has changed !!
+          {
+            pSourceCube->Hash = hash;
+            if (pSourceCube->CrossRef_D3Dtex!=NULL) UnswitchTextures(pSourceCube);
+            OTM_Client->LookUpToMod( pSourceCube);
+          }
+        }
+        else if (pSourceCube->CrossRef_D3Dtex!=NULL) UnswitchTextures(pSourceCube); // we better unswitch
+
+        // the source must be the original texture if not switched and the fake texture if it is switched
+        if (pSourceCube->CrossRef_D3Dtex!=NULL) pSourceTexture = pSourceCube->CrossRef_D3Dtex->m_D3Dtex;
+        else pSourceTexture = pSourceCube->m_D3Dtex;
+        break;
+      }
+      default:
+        break; // this is no fake texture and QueryInterface failed, because IDirect3DBaseTexture9 object cannot be a IDirect3D9 object ;)
+    }
   }
-  if (pDestinationTexture != NULL && ((OTM_IDirect3DTexture9*)(pDestinationTexture))->GetDevice(&dev) == D3D_OK)
+
+
+  if (pDestinationTexture != NULL)
   {
-    if (dev == this) pDestinationTexture = ((OTM_IDirect3DTexture9*)(pDestinationTexture))->m_D3Dtex;
+    long int ret = pSourceTexture->QueryInterface( IID_IDirect3D9, (void**) &cpy);
+    switch (ret)
+    {
+      case 0x01000000L:
+      {
+        OTM_IDirect3DTexture9* pDest = (OTM_IDirect3DTexture9*)(pDestinationTexture);
+
+        if (pSource!=NULL && pDest->Hash!=pSource->Hash)
+        {
+          pDest->Hash = pSource->Hash; // take over the hash
+          UnswitchTextures(pDest);
+          if (pSource->CrossRef_D3Dtex!=NULL)
+          {
+            OTM_IDirect3DTexture9 *cpy = pSource->CrossRef_D3Dtex;
+            UnswitchTextures(pSource);
+            SwitchTextures( cpy, pDest);
+          }
+        }
+        if (pDest->CrossRef_D3Dtex!=NULL) pDestinationTexture = pDest->CrossRef_D3Dtex->m_D3Dtex; // make sure to copy into the original texture
+        else pDestinationTexture = pDest->m_D3Dtex;
+        break;
+      }
+      case 0x01000001L:
+      {
+        OTM_IDirect3DVolumeTexture9* pDest = (OTM_IDirect3DVolumeTexture9*)(pDestinationTexture);
+
+        if (pSourceVolume!=NULL && pDest->Hash!=pSourceVolume->Hash)
+        {
+          pDest->Hash = pSourceVolume->Hash; // take over the hash
+          UnswitchTextures(pDest);
+          if (pSourceVolume->CrossRef_D3Dtex!=NULL)
+          {
+            OTM_IDirect3DVolumeTexture9 *cpy = pSourceVolume->CrossRef_D3Dtex;
+            UnswitchTextures(pSourceVolume);
+            SwitchTextures( cpy, pDest);
+          }
+        }
+        if (pDest->CrossRef_D3Dtex!=NULL) pDestinationTexture = pDest->CrossRef_D3Dtex->m_D3Dtex; // make sure to copy into the original texture
+        else pDestinationTexture = pDest->m_D3Dtex;
+        break;
+      }
+      case 0x01000002L:
+      {
+        OTM_IDirect3DCubeTexture9* pDest = (OTM_IDirect3DCubeTexture9*)(pDestinationTexture);
+
+        if (pSourceCube!=NULL && pDest->Hash!=pSourceCube->Hash)
+        {
+          pDest->Hash = pSourceCube->Hash; // take over the hash
+          UnswitchTextures(pDest);
+          if (pSourceCube->CrossRef_D3Dtex!=NULL)
+          {
+            OTM_IDirect3DCubeTexture9 *cpy = pSourceCube->CrossRef_D3Dtex;
+            UnswitchTextures(pSourceCube);
+            SwitchTextures( cpy, pDest);
+          }
+        }
+        if (pDest->CrossRef_D3Dtex!=NULL) pDestinationTexture = pDest->CrossRef_D3Dtex->m_D3Dtex; // make sure to copy into the original texture
+        else pDestinationTexture = pDest->m_D3Dtex;
+        break;
+      }
+    }
   }
 	return(m_pIDirect3DDevice9->UpdateTexture(pSourceTexture,pDestinationTexture));
 }
@@ -345,54 +585,138 @@ HRESULT OTM_IDirect3DDevice9::BeginScene(void)
     if (LastCreatedTexture!=NULL) // add the last created texture
     {
       OTM_Client->AddTexture( LastCreatedTexture);
-      LastCreatedTexture = NULL;
+    }
+    if (LastCreatedVolumeTexture!=NULL) // add the last created texture
+    {
+      OTM_Client->AddTexture( LastCreatedVolumeTexture);
+    }
+    if (LastCreatedCubeTexture!=NULL) // add the last created texture
+    {
+      OTM_Client->AddTexture( LastCreatedCubeTexture);
     }
     OTM_Client->MergeUpdate(); // merge an update, if present
+
     if (OTM_Client->BoolSaveSingleTexture)
     {
-      if (SingleTexture==NULL) CreateSingleTexture();
-
-      if (SingleTexture!=NULL)
+      if (CreateSingleTexture()==0)
       {
-        if (TextureColour!=OTM_Client->TextureColour) //if TextureColour has changed, dye the texture in the new colour
-        {
-          D3DLOCKED_RECT d3dlr;
-          IDirect3DTexture9 *pD3Dtex;
-          if (SingleTexture->CrossRef_D3Dtex==NULL) pD3Dtex = SingleTexture->m_D3Dtex;
-          else pD3Dtex = SingleTexture->CrossRef_D3Dtex->m_D3Dtex;
-
-          if (D3D_OK==pD3Dtex->LockRect(0, &d3dlr, 0, 0))
-          {
-            DWORD *pDst = (DWORD*)d3dlr.pBits;
-            TextureColour = OTM_Client->TextureColour;
-            for (int xy=0; xy < 8*8; xy++) *(pDst++) = TextureColour;
-            pD3Dtex->UnlockRect(0);
-          }
-        }
         if (OTM_Client->KeyBack>0 && (GetAsyncKeyState( OTM_Client->KeyBack ) &1) ) //ask for the status of the back key
         {
           UnswitchTextures( SingleTexture); // can be called, even if texture is not switched
-          if (CounterSaveSingleTexture<0) CounterSaveSingleTexture = 0; //first initialization of the counter
-          else if (--CounterSaveSingleTexture<0) CounterSaveSingleTexture = OTM_Client->OriginalTextures.GetNumber() - 1;
+          UnswitchTextures( SingleVolumeTexture); // can be called, even if texture is not switched
+          UnswitchTextures( SingleCubeTexture); // can be called, even if texture is not switched
+
+          if (CounterSaveSingleTexture<-10) {CounterSaveSingleTexture = 0; SingleTextureMod=0;} //first initialization of the counter
+          else if (--CounterSaveSingleTexture<0)
+          {
+            if (--SingleTextureMod<0) SingleTextureMod=2;
+            switch (SingleTextureMod)
+            {
+              case 0:
+                CounterSaveSingleTexture = OTM_Client->OriginalTextures.GetNumber() - 1;
+                break;
+              case 1:
+                CounterSaveSingleTexture = OTM_Client->OriginalVolumeTextures.GetNumber() - 1;
+                break;
+              case 2:
+                CounterSaveSingleTexture = OTM_Client->OriginalCubeTextures.GetNumber() - 1;
+                break;
+            }
+          }
+
           if (CounterSaveSingleTexture >= 0)
           {
-            SwitchTextures( SingleTexture,  OTM_Client->OriginalTextures[CounterSaveSingleTexture]);
-            SingleTexture->Hash = OTM_Client->OriginalTextures[CounterSaveSingleTexture]->Hash; //set the hash for the display
+            switch (SingleTextureMod)
+            {
+              case 0:
+                SwitchTextures( SingleTexture,  OTM_Client->OriginalTextures[CounterSaveSingleTexture]);
+                SingleTexture->Hash = OTM_Client->OriginalTextures[CounterSaveSingleTexture]->Hash; //set the hash for the display
+                break;
+              case 1:
+                SwitchTextures( SingleVolumeTexture,  OTM_Client->OriginalVolumeTextures[CounterSaveSingleTexture]);
+                SingleVolumeTexture->Hash = OTM_Client->OriginalVolumeTextures[CounterSaveSingleTexture]->Hash; //set the hash for the display
+                break;
+              case 2:
+                SwitchTextures( SingleCubeTexture,  OTM_Client->OriginalCubeTextures[CounterSaveSingleTexture]);
+                SingleCubeTexture->Hash = OTM_Client->OriginalCubeTextures[CounterSaveSingleTexture]->Hash; //set the hash for the display
+                break;
+            }
           }
         }
+
         if (OTM_Client->KeySave>0 && (GetAsyncKeyState( OTM_Client->KeySave ) &1) ) //ask for the status of the save key
         {
-          OTM_Client->SaveTexture( SingleTexture); //after switching the SingleTexture holds the pointer to the original texture object
+          switch (SingleTextureMod)
+          {
+            case 0:
+              OTM_Client->SaveTexture( SingleTexture); //after switching the SingleTexture holds the pointer to the original texture object
+              break;
+            case 1:
+              OTM_Client->SaveTexture( SingleVolumeTexture); //after switching the SingleTexture holds the pointer to the original texture object
+              break;
+            case 2:
+              OTM_Client->SaveTexture( SingleCubeTexture); //after switching the SingleTexture holds the pointer to the original texture object
+              break;
+          }
         }
+
         if (OTM_Client->KeyNext>0 && (GetAsyncKeyState( OTM_Client->KeyNext ) &1) ) //ask for the status of the next key
         {
           UnswitchTextures( SingleTexture); // can be called, even if texture is not switched
-          if (CounterSaveSingleTexture<0) CounterSaveSingleTexture = 0; //first initialization of the counter
-          else if (++CounterSaveSingleTexture>=OTM_Client->OriginalTextures.GetNumber()) CounterSaveSingleTexture = 0;
-          if (CounterSaveSingleTexture < OTM_Client->OriginalTextures.GetNumber())
+          UnswitchTextures( SingleVolumeTexture); // can be called, even if texture is not switched
+          UnswitchTextures( SingleCubeTexture); // can be called, even if texture is not switched
+
+          if (CounterSaveSingleTexture<-10)  {CounterSaveSingleTexture = 0; SingleTextureMod=0;} //first initialization of the counter
+          else
           {
-            SwitchTextures( SingleTexture,  OTM_Client->OriginalTextures[CounterSaveSingleTexture]);
-            SingleTexture->Hash = OTM_Client->OriginalTextures[CounterSaveSingleTexture]->Hash; //set the hash for the display
+            int num = 0;
+            switch (SingleTextureMod)
+            {
+              case 0:
+                num = OTM_Client->OriginalTextures.GetNumber();
+                break;
+              case 1:
+                num = OTM_Client->OriginalVolumeTextures.GetNumber();
+                break;
+              case 2:
+                num = OTM_Client->OriginalCubeTextures.GetNumber();
+                break;
+            }
+            if (++CounterSaveSingleTexture>=num)
+            {
+              if (++SingleTextureMod>2) SingleTextureMod=0;
+              switch (SingleTextureMod)
+              {
+                case 0:
+                  CounterSaveSingleTexture = OTM_Client->OriginalTextures.GetNumber()>0 ? 0 : - 1;
+                  break;
+                case 1:
+                  CounterSaveSingleTexture = OTM_Client->OriginalVolumeTextures.GetNumber()>0 ? 0 : - 1;
+                  break;
+                case 2:
+                  CounterSaveSingleTexture = OTM_Client->OriginalCubeTextures.GetNumber()>0 ? 0 : - 1;
+                  break;
+              }
+            }
+          }
+
+          if (CounterSaveSingleTexture >= 0)
+          {
+            switch (SingleTextureMod)
+            {
+              case 0:
+                SwitchTextures( SingleTexture,  OTM_Client->OriginalTextures[CounterSaveSingleTexture]);
+                SingleTexture->Hash = OTM_Client->OriginalTextures[CounterSaveSingleTexture]->Hash; //set the hash for the display
+                break;
+              case 1:
+                SwitchTextures( SingleVolumeTexture,  OTM_Client->OriginalVolumeTextures[CounterSaveSingleTexture]);
+                SingleVolumeTexture->Hash = OTM_Client->OriginalVolumeTextures[CounterSaveSingleTexture]->Hash; //set the hash for the display
+                break;
+              case 2:
+                SwitchTextures( SingleCubeTexture,  OTM_Client->OriginalCubeTextures[CounterSaveSingleTexture]);
+                SingleCubeTexture->Hash = OTM_Client->OriginalCubeTextures[CounterSaveSingleTexture]->Hash; //set the hash for the display
+                break;
+            }
           }
         }
       }
@@ -404,7 +728,7 @@ HRESULT OTM_IDirect3DDevice9::BeginScene(void)
 
 HRESULT OTM_IDirect3DDevice9::EndScene(void)
 {
-  if ( /*OTM_Client!=NULL &&*/ OTM_Client->BoolSaveSingleTexture && SingleTexture!=NULL && SingleTexture->CrossRef_D3Dtex!=NULL)
+  if ( /*OTM_Client!=NULL &&*/ OTM_Client->BoolSaveSingleTexture && SingleTexture!=NULL && SingleVolumeTexture!=NULL && SingleCubeTexture!=NULL)
   {
     if (OSD_Font==NULL) // create the font
     {
@@ -416,7 +740,40 @@ HRESULT OTM_IDirect3DDevice9::EndScene(void)
     }
 
     char buffer[100];
-    sprintf_s( buffer, 100, "Actual texture: %4d (1..%d): %#lX", CounterSaveSingleTexture+1, OTM_Client->OriginalTextures.GetNumber(), SingleTexture->Hash);
+    buffer[0]=0;
+    switch (SingleTextureMod)
+    {
+      case 0:
+      {
+        if (SingleTexture->CrossRef_D3Dtex!=NULL) sprintf_s( buffer, 100, "normal texture: %4d (1..%d): %#lX", CounterSaveSingleTexture+1, OTM_Client->OriginalTextures.GetNumber(), SingleTexture->Hash);
+        else
+        {
+          if (OTM_Client->OriginalTextures.GetNumber()>0) sprintf_s( buffer, 100, "normal texture: nothing selected (1..%d)", OTM_Client->OriginalTextures.GetNumber());
+          else sprintf_s( buffer, 100, "normal texture: nothing loaded");
+        }
+        break;
+      }
+      case 1:
+      {
+        if (SingleVolumeTexture->CrossRef_D3Dtex!=NULL) sprintf_s( buffer, 100, "volume texture: %4d (1..%d): %#lX", CounterSaveSingleTexture+1, OTM_Client->OriginalVolumeTextures.GetNumber(), SingleVolumeTexture->Hash);
+        else
+        {
+          if (OTM_Client->OriginalVolumeTextures.GetNumber()>0) sprintf_s( buffer, 100, "volume texture: nothing selected (1..%d)", OTM_Client->OriginalVolumeTextures.GetNumber());
+          else sprintf_s( buffer, 100, "volume texture: nothing loaded");
+        }
+        break;
+      }
+      case 2:
+      {
+        if (SingleCubeTexture->CrossRef_D3Dtex!=NULL) sprintf_s( buffer, 100, "cube texture: %4d (1..%d): %#lX", CounterSaveSingleTexture+1, OTM_Client->OriginalCubeTextures.GetNumber(), SingleCubeTexture->Hash);
+        else
+        {
+          if (OTM_Client->OriginalCubeTextures.GetNumber()>0) sprintf_s( buffer, 100, "cube texture: nothing selected (1..%d)", OTM_Client->OriginalCubeTextures.GetNumber());
+          else sprintf_s( buffer, 100, "cube   texture: nothing loaded");
+        }
+        break;
+      }
+    }
     D3DVIEWPORT9 viewport;
     GetViewport( &viewport);
     RECT rct;
@@ -544,11 +901,29 @@ HRESULT OTM_IDirect3DDevice9::SetTexture(DWORD Stage, IDirect3DBaseTexture9* pTe
   // we must pass the real texture objects
   // if (dev != this) this texture was not initialized through our device and is thus no fake texture object
 
-	IDirect3DDevice9 *dev = NULL;
+	//IDirect3DDevice9 *dev = NULL;
+  IDirect3DBaseTexture9* cpy;
+	if( pTexture != NULL )
+	{
+	  long int ret = pTexture->QueryInterface( IID_IDirect3D9, (void**) &cpy);
+	  switch (ret)
+	  {
+	    case 0x01000000L:
+	      pTexture = ((OTM_IDirect3DTexture9*)(pTexture))->m_D3Dtex; break;
+      case 0x01000001L:
+        pTexture = ((OTM_IDirect3DVolumeTexture9*)(pTexture))->m_D3Dtex; break;
+      case 0x01000002L:
+        pTexture = ((OTM_IDirect3DCubeTexture9*)(pTexture))->m_D3Dtex; break;
+	    default:
+	      break; // this is no fake texture and QueryInterface failed, because IDirect3DBaseTexture9 object cannot be a IDirect3D9 object ;)
+	  }
+	}
+	/*
   if (pTexture != NULL && ((OTM_IDirect3DTexture9*)(pTexture))->GetDevice(&dev) == D3D_OK)
   {
 		if(dev == this)	pTexture = ((OTM_IDirect3DTexture9*)(pTexture))->m_D3Dtex;
   }
+  */
   return (m_pIDirect3DDevice9->SetTexture(Stage, pTexture));
 }
 

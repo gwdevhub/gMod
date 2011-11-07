@@ -23,8 +23,6 @@ along with OpenTexMod.  If not, see <http://www.gnu.org/licenses/>.
 OTM_TextureServer::OTM_TextureServer(wchar_t *game)
 {
   Message("OTM_TextureServer(void): %lu\n", this);
-  Message("sizeof(unsigned long)=%lu\n", sizeof(unsigned long));
-  Message("sizeof(DWORDLONG)=%lu\n", sizeof(DWORDLONG));
 
   Mutex = CreateMutex(NULL, false, NULL);
 
@@ -212,7 +210,9 @@ int OTM_TextureServer::AddFile( char* buffer, unsigned int size,  MyTypeHash has
   for (unsigned int i=0; i<size; i++) temp->pData[i] = buffer[i];
 
   temp->Size = size;
-  temp->pTexture = NULL;
+  temp->NumberOfTextures = 0;
+  temp->Reference = -1;
+  temp->Textures = NULL;
   temp->Hash = hash;
 
   if (new_file) temp->ForceReload = false; // no need to force a load of the texture
@@ -296,7 +296,9 @@ int OTM_TextureServer::AddFile(wchar_t* file_name, MyTypeHash hash, bool force) 
   }
 
   temp->Size = size;
-  temp->pTexture = NULL;
+  temp->NumberOfTextures = 0;
+  temp->Reference = -1;
+  temp->Textures = NULL;
   temp->Hash = hash;
 
   if (new_file) temp->ForceReload = false;
@@ -500,8 +502,9 @@ int OTM_TextureServer::PropagateUpdate(OTM_TextureClient* client) // called from
   a.ForceReload = b.ForceReload; \
   a.pData = b.pData; \
   a.Size = b.Size; \
+  a.NumberOfTextures = b.NumberOfTextures; \
   a.Reference = b.Reference; \
-  a.pTexture = b.pTexture; \
+  a.Textures = b.Textures; \
   a.Hash = b.Hash; }
 
 int TextureFileStruct_Compare( const void * elem1, const void * elem2 )

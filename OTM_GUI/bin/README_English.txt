@@ -12,18 +12,19 @@ OpenTexMod uses the D3DX9_43.dll. Due to the EULA this dll cannot be delivered t
 If D3DX9_43.dll is not installed on your system, OpenTexMod will give you a hint at program start.
 
 
-What can OpenTexMod alpha V0.9?
+What can OpenTexMod beta V1.0?
 
 -extract and save single textures from a DX9 game (the target texture can be toggled in the game)
 -extract and save all textures from a DX9 game
 -load textures into a game to replace target textures
+-support single dds texture
 -support zip-files as whole mod package
 -support the original TexMod *.tpf files
 
 All these options can be switched on or off, while the game is already running!
 So you can search for a texture in the game, save it to disk, edit it,
-load it into the game, edit it again and load it into the game again, ...
-and all without a restart of the game.
+load it into the game, edit it again and load it into the game again, ...,
+actiavate or deactivate mods and all without a restart of the game.
 
 side note: If "save all textures" is switched on, the texture will only be saved, if
 the textures are loaded by the game and only in the moment they are loaded.
@@ -92,3 +93,5 @@ How to get OpenTexMod work together with Steam?
 OpenTexMod looks for the name and the path of the executed binary.
 Thus you shall not add the steam.exe but rather the game.exe
 e.g.: C:\Steam\SteamApps\acoount_name\portal\hl2.exe
+If you cannot find the exe, just start the game and use the TaskManager
+to search for it. You can figure out the path through right click->properties.
