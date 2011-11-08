@@ -23,9 +23,11 @@ along with OpenTexMod.  If not, see <http://www.gnu.org/licenses/>.
 
 OTM_Settings::OTM_Settings(void)
 {
-  XSize=600;
-  YSize=400;
-  Language="English";
+  XSize = 600;
+  YSize = 400;
+  XPos = -1;
+  YPos = -1;
+  Language = "English";
 }
 
 #define SETTINGS_FILE "OTM_Settings.txt"
@@ -81,6 +83,16 @@ int OTM_Settings::Load(void)
       long y;
       if (value.ToLong( &y)) YSize=y;
     }
+    else if (command == "x_pos")
+    {
+      long x;
+      if (value.ToLong( &x)) XPos=x;
+    }
+    else if (command == "y_pos")
+    {
+      long y;
+      if (value.ToLong( &y)) YPos=y;
+    }
   }
 
   return 0;
@@ -103,10 +115,15 @@ int OTM_Settings::Save(void)
 
   content.Printf("y_size:%d\n", YSize);
   file.Write( content.wc_str(), content.Len()*2);
+
+  content.Printf("x_pos:%d\n", XPos);
+  file.Write( content.wc_str(), content.Len()*2);
+
+  content.Printf("y_pos:%d\n", YPos);
+  file.Write( content.wc_str(), content.Len()*2);
   file.Close();
 
   return 0;
-
 }
 
 

@@ -79,7 +79,7 @@ bool MyApp::OnInit(void)
     wxMessageBox( Language->Error_AlreadyRunning, "ERROR", wxOK|wxICON_ERROR);
     return false;
   }
-  OTM_Frame *frame = new OTM_Frame( OTM_VERSION, wxDefaultPosition, wxSize(set.XSize,set.YSize));
+  OTM_Frame *frame = new OTM_Frame( OTM_VERSION, wxPoint(set.XPos,set.YPos), wxSize(set.XSize,set.YSize));
   SetTopWindow( frame );
 
   return true;
@@ -209,6 +209,7 @@ OTM_Frame::~OTM_Frame(void)
   OTM_Settings set;
   set.Language = Language->GetCurrentLanguage();
   GetSize( &set.XSize, &set.YSize);
+  GetPosition( &set.XPos, &set.YPos);
   set.Save();
 }
 

@@ -30,6 +30,7 @@ public:
 
 
   int XSize, YSize;
+  int XPos, YPos;
   wxString Language;
 
   int Load(void);

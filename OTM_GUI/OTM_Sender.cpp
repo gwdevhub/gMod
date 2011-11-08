@@ -110,7 +110,11 @@ int OTM_Sender::Send( const OTM_GameInfo &game, const OTM_GameInfo &game_old, bo
     for (int i=0; i<num; i++)
     {
       OTM_File file( files[i]);
-      file.GetComment(comment);
+      if (file.GetComment(comment))
+      {
+        LastError << file.LastError;
+        file.LastError.Empty();
+      }
       tex[i].Comment = comment;
 
       tex[i].Add = checked[i];
@@ -153,17 +157,16 @@ int OTM_Sender::Send( const OTM_GameInfo &game, const OTM_GameInfo &game_old, bo
     int pos = 0;
     bool *hit=NULL;
     if (GetMemory( hit, OldTexturesNum, false)) {LastError << Language->Error_Memory; return -1;}
-    for (int i=0; i<num && i<OldTexturesNum; i++)
+    for (pos=0; pos<num && pos<OldTexturesNum; pos++)
     {
-      if (OldTextures[i].File == files[i])
+      if (OldTextures[pos].File == files[pos])
       {
-        tex[i].InheriteMemory(OldTextures[i]);
-        tex[i].Force = false;
-        hit[i] = true;
+        tex[pos].InheriteMemory(OldTextures[pos]);
+        tex[pos].Force = false;
+        hit[pos] = true;
       }
       else
       {
-        pos = i;
         break;
       }
     }
@@ -187,13 +190,21 @@ int OTM_Sender::Send( const OTM_GameInfo &game, const OTM_GameInfo &game_old, bo
       if (tex[i].Len==0 || (tex[i].Add && !tex[i].Loaded) )
       {
         OTM_File file( files[i]);
-        file.GetComment(comment);
+        if (file.GetComment(comment))
+        {
+          LastError << file.LastError;
+          file.LastError.Empty();
+        }
         tex[i].Comment = comment;
 
         tex[i].Add = checked[i];
         tex[i].Force = true;
         tex[i].File = files[i];
-        file.GetContent( tex[i], tex[i].Add);
+        if (file.GetContent( tex[i], checked[i]))
+        {
+          LastError << file.LastError;
+          file.LastError.Empty();
+        }
       }
     }
 
@@ -218,6 +229,7 @@ int OTM_Sender::Send( const OTM_GameInfo &game, const OTM_GameInfo &game_old, bo
       }
     }
     SendTextures( num+append, tex);
+    if (hit!=NULL) delete [] hit;
   }
   if (checked!=NULL) delete [] checked;
 
@@ -272,7 +284,7 @@ int OTM_Sender::SendTextures(unsigned int num, AddTextureClass *tex)
   {
     if (tex[i].Force || !tex[i].Add || !tex[i].WasAdded[j])
     // if force==true we must update
-    // tex[i].Add!=true we can always remove, cause removing does take time in the render thread
+    // tex[i].Add!=true we can always remove, cause removing does cost time in the render thread
     // if tex[i].Add==true and WasAdded[j]!=true this texture was not loaded but should be loaded, so maybe we can load it now
     {
       bool hit = false; //we send only if this has was not send before
@@ -285,8 +297,11 @@ int OTM_Sender::SendTextures(unsigned int num, AddTextureClass *tex)
         continue;
       }
 
-      if (tex[i].Size[j]+sizeof(MsgStruct)+pos>BIG_BUFSIZE)
+      if (tex[i].Size[j]+2*sizeof(MsgStruct)+pos>BIG_BUFSIZE) //the buffer is full
       {
+        msg = (MsgStruct*) &Buffer[pos];
+        msg->Control = CONTROL_MORE_TEXTURES; // we will send more textures
+        pos+=sizeof(MsgStruct);
         if (int ret = SendToGame( Buffer, pos)) return ret;
         pos = 0;
       }
@@ -313,6 +328,17 @@ int OTM_Sender::SendTextures(unsigned int num, AddTextureClass *tex)
       {
         msg->Control = CONTROL_REMOVE_TEXTURE;
         tex[i].WasAdded[j] = false;
+      }
+    }
+    else if (tex[i].Add && tex[i].WasAdded[j]) // this texture could be removed, due to a rearranging of the list
+    {
+      bool hit = false; //we send only if this has was not send before
+      unsigned long temp_hash = tex[i].Hash[j];
+      for (unsigned int ii=0u; ii<i && !hit; ii++) for (unsigned int jj=0u; jj<tex[ii].Num && !hit; jj++) if (temp_hash==tex[ii].Hash[jj]) hit=true;
+      for (unsigned int jj=0u; jj<j && !hit; jj++) if (temp_hash==tex[i].Hash[jj]) hit=true;
+      if (hit)
+      {
+        tex[i].WasAdded[j]=false; // due to rearranging this texture is replaced by an other texture
       }
     }
   }

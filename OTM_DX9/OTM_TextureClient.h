@@ -71,9 +71,9 @@ public:
   int AddUpdate(TextureFileStruct* update, int number);  //called from the Server, client object must delete update array
   int MergeUpdate(void); //called from OTM_IDirect3DDevice9::BeginScene()
 
-  int LookUpToMod( OTM_IDirect3DTexture9* pTexture); // called at the end AddTexture(...) and from Device->UpdateTexture(...)
-  int LookUpToMod( OTM_IDirect3DVolumeTexture9* pTexture); // called at the end AddTexture(...) and from Device->UpdateTexture(...)
-  int LookUpToMod( OTM_IDirect3DCubeTexture9* pTexture); // called at the end AddTexture(...) and from Device->UpdateTexture(...)
+  int LookUpToMod( OTM_IDirect3DTexture9* pTexture, int num_index_list=0, int *index_list=NULL); // called at the end AddTexture(...) and from Device->UpdateTexture(...)
+  int LookUpToMod( OTM_IDirect3DVolumeTexture9* pTexture, int num_index_list=0, int *index_list=NULL); // called at the end AddTexture(...) and from Device->UpdateTexture(...)
+  int LookUpToMod( OTM_IDirect3DCubeTexture9* pTexture, int num_index_list=0, int *index_list=NULL); // called at the end AddTexture(...) and from Device->UpdateTexture(...)
 
   OTM_TextureHandler<OTM_IDirect3DTexture9> OriginalTextures; // stores the pointer to the OTM_IDirect3DTexture9 objects created by the game
   OTM_TextureHandler<OTM_IDirect3DVolumeTexture9> OriginalVolumeTextures; // stores the pointer to the OTM_IDirect3DVolumeTexture9 objects created by the game
@@ -105,7 +105,7 @@ private:
   TextureFileStruct* FileToMod; // array which stores the file in memory and the hash of each texture to be modded
 
 
-  int LookUpToMod( MyTypeHash hash); // called from LookUpToMod(...);
+  int LookUpToMod( MyTypeHash hash, int num_index_list, int *index_list); // called from LookUpToMod(...);
   int LoadTexture( TextureFileStruct* file_in_memory, OTM_IDirect3DTexture9 **ppTexture); // called if a target texture is found
   int LoadTexture( TextureFileStruct* file_in_memory, OTM_IDirect3DVolumeTexture9 **ppTexture); // called if a target texture is found
   int LoadTexture( TextureFileStruct* file_in_memory, OTM_IDirect3DCubeTexture9 **ppTexture); // called if a target texture is found

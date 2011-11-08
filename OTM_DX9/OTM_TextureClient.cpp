@@ -154,6 +154,8 @@ int OTM_TextureClient::RemoveTexture( OTM_IDirect3DTexture9* pTexture) // is cal
       {
         FileToMod[ref].NumberOfTextures--;
         for (int j=i; j<FileToMod[ref].NumberOfTextures; j++) FileToMod[ref].Textures[j] = FileToMod[ref].Textures[j+1];
+        FileToMod[ref].Textures[FileToMod[ref].NumberOfTextures] = NULL;
+        break;
       }
     }
   }
@@ -179,6 +181,8 @@ int OTM_TextureClient::RemoveTexture( OTM_IDirect3DVolumeTexture9* pTexture) // 
       {
         FileToMod[ref].NumberOfTextures--;
         for (int j=i; j<FileToMod[ref].NumberOfTextures; j++) FileToMod[ref].Textures[j] = FileToMod[ref].Textures[j+1];
+        FileToMod[ref].Textures[FileToMod[ref].NumberOfTextures] = NULL;
+        break;
       }
     }
   }
@@ -204,6 +208,8 @@ int OTM_TextureClient::RemoveTexture( OTM_IDirect3DCubeTexture9* pTexture) // is
       {
         FileToMod[ref].NumberOfTextures--;
         for (int j=i; j<FileToMod[ref].NumberOfTextures; j++) FileToMod[ref].Textures[j] = FileToMod[ref].Textures[j+1];
+        FileToMod[ref].Textures[FileToMod[ref].NumberOfTextures] = NULL;
+        break;
       }
     }
   }
@@ -358,8 +364,11 @@ int OTM_TextureClient::MergeUpdate(void)
     }
     else if (FileToMod[pos_old].Hash < Update[pos_new].Hash) // this fake texture is not in the update
     {
-      for (int i=0; i<FileToMod[pos_old].NumberOfTextures; i++) FileToMod[pos_old].Textures[i]->Release(); // we release the fake textures
+      for (int i=FileToMod[pos_old].NumberOfTextures-1; i>=0; i--) FileToMod[pos_old].Textures[i]->Release(); // we release the fake textures
       if (FileToMod[pos_old].Textures!=NULL) delete [] FileToMod[pos_old].Textures; // we delete the memory
+      FileToMod[pos_old].NumberOfTextures = 0;
+      FileToMod[pos_old].Textures = NULL;
+
       pos_old++; // we increase only the old counter by one
     }
     else // the hash value is the same, thus this texture is in the array FileToMod as well as in the array Update
@@ -380,13 +389,14 @@ int OTM_TextureClient::MergeUpdate(void)
             {
               OTM_IDirect3DTexture9 *pTexture = (OTM_IDirect3DTexture9*) FileToMod[pos_old].Textures[i];//
               OTM_IDirect3DTexture9 *pRefTexture = pTexture->CrossRef_D3Dtex;
-              FileToMod[pos_old].Textures[i]->Release();
-              FileToMod[pos_old].Textures[i] = NULL;
+              pTexture->Release();
+              i--; //after the Release of the old fake texture FileToMod[pos_old].Textures[i] is overwritten by entries with index greater than i
+
               OTM_IDirect3DTexture9 *fake_Texture;
               if (int ret = LoadTexture( & (Update[pos_new]), &fake_Texture)) return (ret);
-              if (SwitchTextures( fake_Texture, pTexture))
+              if (SwitchTextures( fake_Texture, pRefTexture))
               {
-                Message("MergeUpdate(): textures not switched %#lX\n", pTexture->Hash);
+                Message("MergeUpdate(): textures not switched %#lX\n", pRefTexture->Hash);
                 fake_Texture->Release();
               }
               else
@@ -400,13 +410,14 @@ int OTM_TextureClient::MergeUpdate(void)
             {
               OTM_IDirect3DVolumeTexture9 *pTexture = (OTM_IDirect3DVolumeTexture9*) FileToMod[pos_old].Textures[i];//
               OTM_IDirect3DVolumeTexture9 *pRefTexture = pTexture->CrossRef_D3Dtex;
-              FileToMod[pos_old].Textures[i]->Release();
-              FileToMod[pos_old].Textures[i] = NULL;
+              pTexture->Release();
+              i--; //after the Release of the old fake texture FileToMod[pos_old].Textures[i] is overwritten by entries with index greater than i
+
               OTM_IDirect3DVolumeTexture9 *fake_Texture;
               if (int ret = LoadTexture( & (Update[pos_new]), &fake_Texture)) return (ret);
-              if (SwitchTextures( fake_Texture, pTexture))
+              if (SwitchTextures( fake_Texture, pRefTexture))
               {
-                Message("MergeUpdate(): textures not switched %#lX\n", pTexture->Hash);
+                Message("MergeUpdate(): textures not switched %#lX\n", pRefTexture->Hash);
                 fake_Texture->Release();
               }
               else
@@ -420,13 +431,14 @@ int OTM_TextureClient::MergeUpdate(void)
             {
               OTM_IDirect3DCubeTexture9 *pTexture = (OTM_IDirect3DCubeTexture9*) FileToMod[pos_old].Textures[i];//
               OTM_IDirect3DCubeTexture9 *pRefTexture = pTexture->CrossRef_D3Dtex;
-              FileToMod[pos_old].Textures[i]->Release();
-              FileToMod[pos_old].Textures[i] = NULL;
+              pTexture->Release();
+              i--; //after the Release of the old fake texture FileToMod[pos_old].Textures[i] is overwritten by entries with index greater than i
+
               OTM_IDirect3DCubeTexture9 *fake_Texture;
               if (int ret = LoadTexture( & (Update[pos_new]), &fake_Texture)) return (ret);
-              if (SwitchTextures( fake_Texture, pTexture))
+              if (SwitchTextures( fake_Texture, pRefTexture))
               {
-                Message("MergeUpdate(): textures not switched %#lX\n", pTexture->Hash);
+                Message("MergeUpdate(): textures not switched %#lX\n", pRefTexture->Hash);
                 fake_Texture->Release();
               }
               else
@@ -445,6 +457,7 @@ int OTM_TextureClient::MergeUpdate(void)
       {
         Update[pos_new].NumberOfTextures = FileToMod[pos_old].NumberOfTextures;
         Update[pos_new].Textures = FileToMod[pos_old].Textures;
+        FileToMod[pos_old].NumberOfTextures = 0;
         FileToMod[pos_old].Textures = NULL;
       }
       // we increase both counters by one
@@ -455,8 +468,10 @@ int OTM_TextureClient::MergeUpdate(void)
 
   while (pos_old<NumberToMod) //this fake textures are not in the Update
   {
-    for (int i=0; i<FileToMod[pos_old].NumberOfTextures; i++) FileToMod[pos_old].Textures[i]->Release(); // we release the fake textures
+    for (int i=FileToMod[pos_old].NumberOfTextures-1; i>=0; i--) FileToMod[pos_old].Textures[i]->Release(); // we release the fake textures
+    //for (int i=0; i<FileToMod[pos_old].NumberOfTextures; i++) FileToMod[pos_old].Textures[i]->Release(); // we release the fake textures
     if (FileToMod[pos_old].Textures!=NULL) delete [] FileToMod[pos_old].Textures; // we delete the memory
+    FileToMod[pos_old].Textures = NULL;
     pos_old++;
   }
   while (pos_new<NumberOfUpdate) //this fake textures are newly added
@@ -473,7 +488,7 @@ int OTM_TextureClient::MergeUpdate(void)
    * Note: to_lookup[num_to_lookup++] = pos_new++; is in ascending order,
    * thus Update[to_lookup[pos]].Hash is also sorted ascending!
    */
-
+/*
   OTM_IDirect3DTexture9 *single_texture = ((OTM_IDirect3DDevice9*)D3D9Device)->GetSingleTexture();
   if (num_to_lookup>0)
   {
@@ -497,7 +512,6 @@ int OTM_TextureClient::MergeUpdate(void)
       // Note: contradicting to normal C-code here the interval includes the index "begin" and "end"!
       while (begin+1<end) // as long as the interval is longer than two
       {
-        //old_pos=pos;
         if (hash > Update[to_lookup[pos]].Hash) // the new interval is the right half of the actual interval
         {
           begin = pos+1; // the new interval does not contain the index "pos"
@@ -540,14 +554,50 @@ int OTM_TextureClient::MergeUpdate(void)
       }
     }
   }
+*/
 
-  if (to_lookup != NULL) delete [] to_lookup;
-  if (FileToMod!=NULL) delete [] FileToMod;
+  if (FileToMod!=NULL)
+  {
+    //for (int i=0; i<NumberToMod; i++) if (FileToMod[i].Textures!=NULL) delete [] FileToMod[i].Textures;
+    delete [] FileToMod;
+  }
+
   FileToMod = Update;
   NumberToMod = NumberOfUpdate;
 
   NumberOfUpdate = -1;
   Update = NULL;
+
+
+  if (num_to_lookup>0)
+  {
+    OTM_IDirect3DTexture9 *single_texture = ((OTM_IDirect3DDevice9*)D3D9Device)->GetSingleTexture();
+    int num = OriginalTextures.GetNumber();
+    for (int i=0; i<num; i++) if (OriginalTextures[i]->CrossRef_D3Dtex==NULL || OriginalTextures[i]->CrossRef_D3Dtex==single_texture)
+    {
+      UnswitchTextures(OriginalTextures[i]); //this we can do always, so we unswitch the single texture
+      LookUpToMod( OriginalTextures[i], num_to_lookup, to_lookup);
+    }
+    OTM_IDirect3DVolumeTexture9 *single_volume_texture = ((OTM_IDirect3DDevice9*)D3D9Device)->GetSingleVolumeTexture();
+    num = OriginalVolumeTextures.GetNumber();
+    for (int i=0; i<num; i++) if (OriginalVolumeTextures[i]->CrossRef_D3Dtex==NULL || OriginalVolumeTextures[i]->CrossRef_D3Dtex==single_volume_texture)
+    {
+      UnswitchTextures(OriginalVolumeTextures[i]); //this we can do always, so we unswitch the single texture
+      LookUpToMod( OriginalVolumeTextures[i], num_to_lookup, to_lookup);
+    }
+    OTM_IDirect3DCubeTexture9 *single_cube_texture = ((OTM_IDirect3DDevice9*)D3D9Device)->GetSingleCubeTexture();
+    num = OriginalCubeTextures.GetNumber();
+    for (int i=0; i<num; i++) if (OriginalCubeTextures[i]->CrossRef_D3Dtex==NULL || OriginalCubeTextures[i]->CrossRef_D3Dtex==single_cube_texture)
+    {
+      UnswitchTextures(OriginalCubeTextures[i]); //this we can do always, so we unswitch the single texture
+      LookUpToMod( OriginalCubeTextures[i], num_to_lookup, to_lookup);
+    }
+  }
+
+
+
+  if (to_lookup != NULL) delete [] to_lookup;
+
   return (UnlockMutex());
 }
 
@@ -570,42 +620,71 @@ int OTM_TextureClient::UnlockMutex(void)
 
 
 
-int OTM_TextureClient::LookUpToMod( MyTypeHash hash)
+int OTM_TextureClient::LookUpToMod( MyTypeHash hash, int num_index_list, int *index_list)
 {
   if(NumberToMod>0)
   {
-    if (hash<FileToMod[0].Hash || hash>FileToMod[NumberToMod-1].Hash) return (-1);
-    int pos = NumberToMod/2;
-    int begin = 0;
-    int end = NumberToMod-1;
-
-    // We look in the middle of the interval and each step we halve the interval,
-    // unless we find the texture or the size of the interval is less than 3.
-    // Note: contradicting to normal C-code here the interval includes the index "begin" and "end"!
-    while (begin+1<end) // as long as the interval is longer than two
+    if (index_list==NULL || num_index_list==0)
     {
-      if (hash > FileToMod[pos].Hash) // the new interval is the right half of the actual interval
+      if (hash<FileToMod[0].Hash || hash>FileToMod[NumberToMod-1].Hash) return (-1);
+      int pos = NumberToMod/2;
+      int begin = 0;
+      int end = NumberToMod-1;
+
+      // We look in the middle of the interval and each step we halve the interval,
+      // unless we find the texture or the size of the interval is less than 3.
+      // Note: contradicting to normal C-code here the interval includes the index "begin" and "end"!
+      while (begin+1<end) // as long as the interval is longer than two
       {
-        begin = pos+1; // the new interval does not contain the index "pos"
-        pos = (begin + end)/2; // set "pos" somewhere inside the new intervall
+        if (hash > FileToMod[pos].Hash) // the new interval is the right half of the actual interval
+        {
+          begin = pos+1; // the new interval does not contain the index "pos"
+          pos = (begin + end)/2; // set "pos" somewhere inside the new intervall
+        }
+        else if (hash < FileToMod[pos].Hash) // the new interval is the left half of the actual interval
+        {
+          end = pos-1; // the new interval does not contain the index "pos"
+          pos = (begin + end)/2; // set "pos" somewhere inside the new intervall
+        }
+        else {return (pos); break;} // we hit the correct hash
       }
-      else if (hash < FileToMod[pos].Hash) // the new interval is the left half of the actual interval
-      {
-        end = pos-1; // the new interval does not contain the index "pos"
-        pos = (begin + end)/2; // set "pos" somewhere inside the new intervall
-      }
-      else {return (pos); break;} // we hit the correct hash
+      for ( pos=begin; pos<=end; pos++) if (FileToMod[pos].Hash==hash) return (pos);
     }
-    for (int i=begin; i<=end; i++) if (FileToMod[i].Hash==hash) return (i);
+    else
+    {
+      if (hash<FileToMod[index_list[0]].Hash || hash>FileToMod[index_list[num_index_list-1]].Hash) return (-1);
+      int pos = num_index_list/2;
+      int begin = 0;
+      int end = num_index_list-1;
+
+      // We look in the middle of the interval and each step we halve the interval,
+      // unless we find the texture or the size of the interval is less than 3.
+      // Note: contradicting to normal C-code here the interval includes the index "begin" and "end"!
+      while (begin+1<end) // as long as the interval is longer than two
+      {
+        if (hash > FileToMod[index_list[pos]].Hash) // the new interval is the right half of the actual interval
+        {
+          begin = pos+1; // the new interval does not contain the index "pos"
+          pos = (begin + end)/2; // set "pos" somewhere inside the new intervall
+        }
+        else if (hash < FileToMod[index_list[pos]].Hash) // the new interval is the left half of the actual interval
+        {
+          end = pos-1; // the new interval does not contain the index "pos"
+          pos = (begin + end)/2; // set "pos" somewhere inside the new intervall
+        }
+        else {return (index_list[pos]); break;} // we hit the correct hash
+      }
+      for ( pos=begin; pos<=end; pos++) if (FileToMod[index_list[pos]].Hash==hash) return (index_list[pos]);
+    }
   }
   return (-1);
 }
 
-int OTM_TextureClient::LookUpToMod( OTM_IDirect3DTexture9* pTexture) // should only be called for original textures
+int OTM_TextureClient::LookUpToMod( OTM_IDirect3DTexture9* pTexture, int num_index_list, int *index_list) // should only be called for original textures
 {
   Message("OTM_TextureClient::LookUpToMod( %lu): hash: %#lX,  %lu\n", pTexture, pTexture->Hash, this);
   if (pTexture->CrossRef_D3Dtex!=NULL) return (RETURN_OK); // bug, this texture is already switched
-  int index = LookUpToMod( pTexture->Hash);
+  int index = LookUpToMod( pTexture->Hash, num_index_list, index_list);
   if (index>=0)
   {
     OTM_IDirect3DTexture9 *fake_Texture;
@@ -630,11 +709,11 @@ int OTM_TextureClient::LookUpToMod( OTM_IDirect3DTexture9* pTexture) // should o
   return (RETURN_OK);
 }
 
-int OTM_TextureClient::LookUpToMod( OTM_IDirect3DVolumeTexture9* pTexture) // should only be called for original textures
+int OTM_TextureClient::LookUpToMod( OTM_IDirect3DVolumeTexture9* pTexture, int num_index_list, int *index_list) // should only be called for original textures
 {
   Message("OTM_TextureClient::LookUpToMod( Volume %lu): hash: %#lX,  %lu\n", pTexture, pTexture->Hash, this);
   if (pTexture->CrossRef_D3Dtex!=NULL) return (RETURN_OK); // bug, this texture is already switched
-  int index = LookUpToMod( pTexture->Hash);
+  int index = LookUpToMod( pTexture->Hash, num_index_list, index_list);
   if (index>=0)
   {
     OTM_IDirect3DVolumeTexture9 *fake_Texture;
@@ -659,11 +738,11 @@ int OTM_TextureClient::LookUpToMod( OTM_IDirect3DVolumeTexture9* pTexture) // sh
   return (RETURN_OK);
 }
 
-int OTM_TextureClient::LookUpToMod( OTM_IDirect3DCubeTexture9* pTexture) // should only be called for original textures
+int OTM_TextureClient::LookUpToMod( OTM_IDirect3DCubeTexture9* pTexture, int num_index_list, int *index_list) // should only be called for original textures
 {
   Message("OTM_TextureClient::LookUpToMod( Cube %lu): hash: %#lX,  %lu\n", pTexture, pTexture->Hash, this);
   if (pTexture->CrossRef_D3Dtex!=NULL) return (RETURN_OK); // bug, this texture is already switched
-  int index = LookUpToMod( pTexture->Hash);
+  int index = LookUpToMod( pTexture->Hash, num_index_list, index_list);
   if (index>=0)
   {
     OTM_IDirect3DCubeTexture9 *fake_Texture;

@@ -211,12 +211,12 @@ int OTM_TextureServer::AddFile( char* buffer, unsigned int size,  MyTypeHash has
 
   temp->Size = size;
   temp->NumberOfTextures = 0;
-  temp->Reference = -1;
   temp->Textures = NULL;
   temp->Hash = hash;
 
-  if (new_file) temp->ForceReload = false; // no need to force a load of the texture
-  else temp->ForceReload = force;
+  //if (new_file) temp->ForceReload = false; // no need to force a load of the texture
+  //else
+  temp->ForceReload = force;
 
   Message("End AddFile(%#lX)\n", hash);
   if (new_file) return (CurrentMod.Add(temp)); // new files must be added to the list of the CurrentMod
@@ -297,7 +297,6 @@ int OTM_TextureServer::AddFile(wchar_t* file_name, MyTypeHash hash, bool force) 
 
   temp->Size = size;
   temp->NumberOfTextures = 0;
-  temp->Reference = -1;
   temp->Textures = NULL;
   temp->Hash = hash;
 
@@ -567,6 +566,8 @@ int OTM_TextureServer::MainLoop(void) // run as a separated thread
   unsigned long num;
 
   Message("MainLoop: started\n");
+  bool update_textures = false;
+  bool more_textures = false;
   while (1)
   {
     Message("MainLoop: run\n");
@@ -581,7 +582,7 @@ int OTM_TextureServer::MainLoop(void) // run as a separated thread
     {
       unsigned int pos = 0;
       MsgStruct *commands;
-      bool update_textures = false;
+      more_textures = false;
       while (pos <= num - sizeof(MsgStruct))
       {
         commands = (MsgStruct*) &buffer[pos];
@@ -590,6 +591,11 @@ int OTM_TextureServer::MainLoop(void) // run as a separated thread
 
         switch (commands->Control)
         {
+        case CONTROL_MORE_TEXTURES:
+        {
+          more_textures=true;
+          break;
+        }
         case CONTROL_FORCE_RELOAD_TEXTURE: force=true;
         case CONTROL_ADD_TEXTURE:
         {
@@ -678,7 +684,7 @@ int OTM_TextureServer::MainLoop(void) // run as a separated thread
         }
         pos += sizeof(MsgStruct) + size;
       }
-      if (update_textures) PropagateUpdate();
+      if (!more_textures && update_textures) {PropagateUpdate(); update_textures=false;}
     }
     else
     {

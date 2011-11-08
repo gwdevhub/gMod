@@ -322,7 +322,7 @@ int OTM_Language::LoadDefault(void)
   Author = "Author: ";
 
   Error_FileNotSupported = "This file type is not supported:\n";
-  Error_DLLNotFound = "Could not load the dll.\nThe dll injection won't work.\nThis might happen if D3DX9_43.dll is not installed on your system.\nPlease install the newest DirectX End-User Runtime Web Installer.";
+  Error_DLLNotFound = "Could not load the dll.\nThe dll injection won't work.\nThis might happen if D3DX9_43.dll (32bit) is not installed on your system.\nPlease install the newest DirectX End-User Runtime Web Installer.";
   Error_FktNotFound = "Could not load function out of dll.\nThe dll injection won't work.";
   Error_AlreadyRunning = "An other instance of OpenTexMod is already running.";
 

@@ -8,7 +8,7 @@ WARNING: You use this program at your own risk!
     Download it by your self and don't use versions, send to you by team or guild members!
     http://code.google.com/p/texmod/downloads/list
 
-OpenTexMod uses the D3DX9_43.dll. Due to the EULA this dll cannot be delivered together with OpenTexMod .
+OpenTexMod uses the D3DX9_43.dll (32bit). Due to the EULA this dll cannot be delivered together with OpenTexMod .
 If D3DX9_43.dll is not installed on your system, OpenTexMod will give you a hint at program start.
 
 

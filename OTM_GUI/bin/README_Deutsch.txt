@@ -11,7 +11,7 @@ Warnung: Du verwendest diese Programm auf eigene Gefahr hin!
     http://code.google.com/p/texmod/downloads/list
 
    
-OpenTexMod verwendet die D3DX9_43.dll. Wegen den EULA kann diese dll nicht mit OpenTexMod
+OpenTexMod verwendet die D3DX9_43.dll (32bit). Wegen den EULA kann diese dll nicht mit OpenTexMod
 mit geliefert werden. Wenn diese dll auf deinem System nicht installiert ist, wird dich OpenTexMod
 darauf hinweisen.
 
