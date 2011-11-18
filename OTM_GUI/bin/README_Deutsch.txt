@@ -61,19 +61,29 @@ mehrfach gestartet wird).
 
 Wie bekomme ich OpenTexMod zum laufen?
 
-Es gibt zwei Wege wie OpenTexMod sich in die DirectX Verbindung einklinken kann:
+Es gibt drei Wege wie OpenTexMod sich in die DirectX Verbindung einklinken kann:
+(Benutze NICHT mehrere Methoden gleichzeitig!)
 
-1) (bevorzugt)  Füge die Spiel-exe über das Menü Spiele->"Spiel hinzufügen" hinzu.
+1) Füge die Spiel-exe über das Menü "Einstellungen->Spiel hinzufügen" hinzu.
     Für Steam siehe unten.
-   
-2) Kopiere die d3d9.dll (vom OpenTexMod Verzeichnis) in das Spiele Verzeichnis.
+    
+    bekannte Probleme: Guild Wars (Win XP)
+    
+2) Starte das Spiel direkt durch OTM über das Menü
+     "Einstellungen->Sarte Spiel durch OTM" oder
+     "Einstellungen->Sarte Spiel durch OTM (mit Kommandozeile)".
+     Das Spiel startet sofort.
+
+3) Kopiere die d3d9.dll (vom OpenTexMod Verzeichnis) in das Spiele Verzeichnis.
     Einige Spiele laden eine dll zuerst aus dem eigenen Verzeichnis bevor sie im
     Systemverzeichnis suchen. Nur für diese Spiele wird diese Methode funktionieren.
     WARNUNG: Kopiere diese dll niemals in das Systemverzeichnis!!
+    
+    bekannte Probleme: Guild Wars
    
-Wenn  du dich für eine Methode entschieden hast, starte einfach OpenTexMod
-und danach das Spiel. Es ist nicht nötig (du kannst auch nicht) das Spiel über
-OpenTexMod zu starten.
+Wenn  du dich für die erste oder dritte Methode entschieden hast, starte einfach
+OpenTexMod und danach das Spiel. Starte das Spiel in beiden Fällen NICHT über
+OpenTexMod .
 
 Wenn das Spiel startet und alles glatt läuft, öffnet sich sofort ein neuer Tab in OpenTexMod.
 In diesem Tab kannst du nun das Spiel  modden. Drücke den "Update" Button um

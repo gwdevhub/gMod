@@ -17,28 +17,11 @@ along with OpenTexMod.  If not, see <http://www.gnu.org/licenses/>.
 */
 
 
-#ifndef OTM_SETTINGS_H_
-#define OTM_SETTINGS_H_
+#ifndef OTM_INJECTDIRECTLY_H_
+#define OTM_INJECTDIRECTLY_H_
 
 
-#include "OTM_Main.h"
 
-class OTM_Settings
-{
-public:
-  OTM_Settings(void);
-  OTM_Settings(OTM_Settings &set);
+void Inject(HANDLE hProcess, const wchar_t* dllname, const char* funcname);
 
-
-  int XSize, YSize;
-  int XPos, YPos;
-  bool UseHook;
-  wxString Language;
-
-  int Load(void);
-  int Save(void);
-
-};
-
-
-#endif /* OTM_SETTINGS_H_ */
+#endif /* OTM_INJECTDIRECTLY_H_ */

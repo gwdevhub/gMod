@@ -1,0 +1,5 @@
+LIBRARY	"OTM_d3d9_DI"
+EXPORTS
+  OTM_Direct3DCreate9 @1
+  OTM_Direct3DCreate9Ex @2
+  Nothing @3

@@ -87,6 +87,9 @@ enum
   ID_Menu_Help,
   ID_Menu_About,
   ID_Menu_Acknowledgement,
+  ID_Menu_StartGame,
+  ID_Menu_StartGameCMD,
+  ID_Menu_UseHook,
   ID_Menu_AddGame,
   ID_Menu_DeleteGame,
   ID_Menu_LoadTemplate,
@@ -99,7 +102,8 @@ enum
 };
 
 #define ABORT_SERVER L"OTM_Abort_Server"
-#define OTM_d3d9_dll L"OTM_d3d9.dll"
+#define OTM_d3d9_Hook_dll L"OTM_d3d9_Hook.dll"
+#define OTM_d3d9_DI_dll L"OTM_d3d9_DI.dll"
 
 #include "OTM_AddTexture.h"
 #include "OTM_Settings.h"
@@ -111,6 +115,7 @@ enum
 #include "OTM_Sender.h"
 #include "OTM_Server.h"
 #include "OTM_GamePage.h"
+#include "OTM_DirectInjection.h"
 #include "OTM_GUI.h"
 
 

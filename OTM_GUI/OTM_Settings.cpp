@@ -27,8 +27,20 @@ OTM_Settings::OTM_Settings(void)
   YSize = 400;
   XPos = -1;
   YPos = -1;
+  UseHook = true;
   Language = "English";
 }
+
+OTM_Settings::OTM_Settings(OTM_Settings &set)
+{
+  XSize = set.XSize;
+  YSize = set.YSize;
+  XPos = set.XPos;
+  YPos = set.YPos;
+  UseHook = set.UseHook;
+  Language = set.Language;
+}
+
 
 #define SETTINGS_FILE "OTM_Settings.txt"
 
@@ -65,6 +77,8 @@ int OTM_Settings::Load(void)
   wxString line;
   wxString command;
   wxString value;
+
+  UseHook = false;
   for (int i=0; i<num; i++)
   {
     line = token.GetNextToken();
@@ -92,6 +106,15 @@ int OTM_Settings::Load(void)
     {
       long y;
       if (value.ToLong( &y)) YPos=y;
+    }
+    else if (command == "UseHook")
+    {
+      long use;
+      if (value.ToLong( &use))
+      {
+        if (use) UseHook = true;
+        else UseHook = false;
+      }
     }
   }
 
@@ -121,6 +144,11 @@ int OTM_Settings::Save(void)
 
   content.Printf("y_pos:%d\n", YPos);
   file.Write( content.wc_str(), content.Len()*2);
+
+  if (UseHook) content = "UseHook:1\n";
+  else content = "UseHook:0\n";
+  file.Write( content.wc_str(), content.Len()*2);
+
   file.Close();
 
   return 0;

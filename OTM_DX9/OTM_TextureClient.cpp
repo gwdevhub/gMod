@@ -23,7 +23,7 @@ along with OpenTexMod.  If not, see <http://www.gnu.org/licenses/>.
 
 OTM_TextureClient::OTM_TextureClient(OTM_TextureServer* server, IDirect3DDevice9* device)
 {
-  Message("OTM_TextureClient(void): %lu\n", this);
+  Message("OTM_TextureClient::OTM_TextureClient(void): %lu\n", this);
   Server = server;
   D3D9Device = device;
   BoolSaveAllTextures = false;
@@ -60,7 +60,7 @@ OTM_TextureClient::OTM_TextureClient(OTM_TextureServer* server, IDirect3DDevice9
 
 OTM_TextureClient::~OTM_TextureClient(void)
 {
-  Message("~OTM_TextureClient(void): %lu\n", this);
+  Message("OTM_TextureClient::~OTM_TextureClient(void): %lu\n", this);
   if (Server!=NULL) Server->RemoveClient(this);
 
   if (Mutex!=NULL) CloseHandle(Mutex);
@@ -76,7 +76,11 @@ OTM_TextureClient::~OTM_TextureClient(void)
 
 int OTM_TextureClient::AddTexture( OTM_IDirect3DTexture9* pTexture)
 {
-  ((OTM_IDirect3DDevice9*)D3D9Device)->SetLastCreatedTexture(NULL); //this texture must no be added twice
+  void *cpy;
+  long ret = D3D9Device->QueryInterface( IID_IDirect3DTexture9, &cpy);
+  if (ret == 0x01000000L) ((OTM_IDirect3DDevice9*)D3D9Device)->SetLastCreatedTexture(NULL); //this texture must no be added twice
+  else  ((OTM_IDirect3DDevice9Ex*) D3D9Device)->SetLastCreatedTexture(NULL); //this texture must no be added twice
+
   if (pTexture->FAKE) return (RETURN_OK); // this is a fake texture
 
   Message("OTM_TextureClient::AddTexture( %lu): %lu (thread: %lu)\n", pTexture, this, GetCurrentThreadId());
@@ -97,7 +101,11 @@ int OTM_TextureClient::AddTexture( OTM_IDirect3DTexture9* pTexture)
 
 int OTM_TextureClient::AddTexture( OTM_IDirect3DVolumeTexture9* pTexture)
 {
-  ((OTM_IDirect3DDevice9*)D3D9Device)->SetLastCreatedVolumeTexture(NULL); //this texture must no be added twice
+  void *cpy;
+  long ret = D3D9Device->QueryInterface( IID_IDirect3DTexture9, &cpy);
+  if (ret == 0x01000000L) ((OTM_IDirect3DDevice9*)D3D9Device)->SetLastCreatedVolumeTexture(NULL); //this texture must no be added twice
+  else  ((OTM_IDirect3DDevice9Ex*) D3D9Device)->SetLastCreatedVolumeTexture(NULL); //this texture must no be added twice
+
   if (pTexture->FAKE) return (RETURN_OK); // this is a fake texture
 
   Message("OTM_TextureClient::AddTexture( Volume: %lu): %lu (thread: %lu)\n", pTexture, this, GetCurrentThreadId());
@@ -118,7 +126,11 @@ int OTM_TextureClient::AddTexture( OTM_IDirect3DVolumeTexture9* pTexture)
 
 int OTM_TextureClient::AddTexture( OTM_IDirect3DCubeTexture9* pTexture)
 {
-  ((OTM_IDirect3DDevice9*)D3D9Device)->SetLastCreatedCubeTexture(NULL); //this texture must no be added twice
+  void *cpy;
+  long ret = D3D9Device->QueryInterface( IID_IDirect3DTexture9, &cpy);
+  if (ret == 0x01000000L) ((OTM_IDirect3DDevice9*)D3D9Device)->SetLastCreatedCubeTexture(NULL); //this texture must no be added twice
+  else  ((OTM_IDirect3DDevice9Ex*) D3D9Device)->SetLastCreatedCubeTexture(NULL); //this texture must no be added twice
+
   if (pTexture->FAKE) return (RETURN_OK); // this is a fake texture
 
   Message("OTM_TextureClient::AddTexture( Cube: %lu): %lu (thread: %lu)\n", pTexture, this, GetCurrentThreadId());
@@ -233,7 +245,12 @@ int OTM_TextureClient::SaveSingleTexture(bool val)
   Message("OTM_TextureClient::SaveSingleTexture( %d): %lu\n", val, this);
   if (BoolSaveSingleTexture && !val) //if BoolSaveSingleTexture is set to false and was previously true we switch the SingleTexture back
   {
-    OTM_IDirect3DTexture9* pTexture = ((OTM_IDirect3DDevice9*)D3D9Device)->GetSingleTexture();
+    OTM_IDirect3DTexture9* pTexture;
+    void *cpy;
+    long ret = D3D9Device->QueryInterface( IID_IDirect3DTexture9, &cpy);
+    if (ret == 0x01000000L) pTexture = ((OTM_IDirect3DDevice9*)D3D9Device)->GetSingleTexture(); //this texture must no be added twice
+    else pTexture = ((OTM_IDirect3DDevice9Ex*) D3D9Device)->GetSingleTexture(); //this texture must no be added twice
+
     if (pTexture!=NULL) UnswitchTextures(pTexture);
   }
   BoolSaveSingleTexture = val;
@@ -571,21 +588,32 @@ int OTM_TextureClient::MergeUpdate(void)
 
   if (num_to_lookup>0)
   {
-    OTM_IDirect3DTexture9 *single_texture = ((OTM_IDirect3DDevice9*)D3D9Device)->GetSingleTexture();
+    OTM_IDirect3DTexture9* single_texture;
+    void *cpy;
+    long ret = D3D9Device->QueryInterface( IID_IDirect3DTexture9, &cpy);
+    if (ret == 0x01000000L) single_texture = ((OTM_IDirect3DDevice9*)D3D9Device)->GetSingleTexture(); //this texture must no be added twice
+    else single_texture = ((OTM_IDirect3DDevice9Ex*) D3D9Device)->GetSingleTexture(); //this texture must no be added twice
+
     int num = OriginalTextures.GetNumber();
     for (int i=0; i<num; i++) if (OriginalTextures[i]->CrossRef_D3Dtex==NULL || OriginalTextures[i]->CrossRef_D3Dtex==single_texture)
     {
       UnswitchTextures(OriginalTextures[i]); //this we can do always, so we unswitch the single texture
       LookUpToMod( OriginalTextures[i], num_to_lookup, to_lookup);
     }
-    OTM_IDirect3DVolumeTexture9 *single_volume_texture = ((OTM_IDirect3DDevice9*)D3D9Device)->GetSingleVolumeTexture();
+
+    OTM_IDirect3DVolumeTexture9 *single_volume_texture;
+    if (ret == 0x01000000L) single_volume_texture = ((OTM_IDirect3DDevice9*)D3D9Device)->GetSingleVolumeTexture(); //this texture must no be added twice
+    else single_volume_texture = ((OTM_IDirect3DDevice9Ex*) D3D9Device)->GetSingleVolumeTexture(); //this texture must no be added twice
     num = OriginalVolumeTextures.GetNumber();
     for (int i=0; i<num; i++) if (OriginalVolumeTextures[i]->CrossRef_D3Dtex==NULL || OriginalVolumeTextures[i]->CrossRef_D3Dtex==single_volume_texture)
     {
       UnswitchTextures(OriginalVolumeTextures[i]); //this we can do always, so we unswitch the single texture
       LookUpToMod( OriginalVolumeTextures[i], num_to_lookup, to_lookup);
     }
-    OTM_IDirect3DCubeTexture9 *single_cube_texture = ((OTM_IDirect3DDevice9*)D3D9Device)->GetSingleCubeTexture();
+
+    OTM_IDirect3DCubeTexture9 *single_cube_texture;
+    if (ret == 0x01000000L) single_cube_texture = ((OTM_IDirect3DDevice9*)D3D9Device)->GetSingleCubeTexture(); //this texture must no be added twice
+    else single_cube_texture = ((OTM_IDirect3DDevice9Ex*) D3D9Device)->GetSingleCubeTexture(); //this texture must no be added twice
     num = OriginalCubeTextures.GetNumber();
     for (int i=0; i<num; i++) if (OriginalCubeTextures[i]->CrossRef_D3Dtex==NULL || OriginalCubeTextures[i]->CrossRef_D3Dtex==single_cube_texture)
     {
@@ -639,12 +667,12 @@ int OTM_TextureClient::LookUpToMod( MyTypeHash hash, int num_index_list, int *in
         if (hash > FileToMod[pos].Hash) // the new interval is the right half of the actual interval
         {
           begin = pos+1; // the new interval does not contain the index "pos"
-          pos = (begin + end)/2; // set "pos" somewhere inside the new intervall
+          pos = (begin + end)/2; // set "pos" somewhere inside the new interval
         }
         else if (hash < FileToMod[pos].Hash) // the new interval is the left half of the actual interval
         {
           end = pos-1; // the new interval does not contain the index "pos"
-          pos = (begin + end)/2; // set "pos" somewhere inside the new intervall
+          pos = (begin + end)/2; // set "pos" somewhere inside the new interval
         }
         else {return (pos); break;} // we hit the correct hash
       }
@@ -665,12 +693,12 @@ int OTM_TextureClient::LookUpToMod( MyTypeHash hash, int num_index_list, int *in
         if (hash > FileToMod[index_list[pos]].Hash) // the new interval is the right half of the actual interval
         {
           begin = pos+1; // the new interval does not contain the index "pos"
-          pos = (begin + end)/2; // set "pos" somewhere inside the new intervall
+          pos = (begin + end)/2; // set "pos" somewhere inside the new interval
         }
         else if (hash < FileToMod[index_list[pos]].Hash) // the new interval is the left half of the actual interval
         {
           end = pos-1; // the new interval does not contain the index "pos"
-          pos = (begin + end)/2; // set "pos" somewhere inside the new intervall
+          pos = (begin + end)/2; // set "pos" somewhere inside the new interval
         }
         else {return (index_list[pos]); break;} // we hit the correct hash
       }
@@ -773,13 +801,19 @@ int OTM_TextureClient::LookUpToMod( OTM_IDirect3DCubeTexture9* pTexture, int num
 int OTM_TextureClient::LoadTexture( TextureFileStruct* file_in_memory, OTM_IDirect3DTexture9 **ppTexture) // to load fake texture from a file in memory
 {
   Message("LoadTexture( %lu, %lu, %#lX): %lu\n", file_in_memory, ppTexture, file_in_memory->Hash, this);
-  if (D3D_OK != D3DXCreateTextureFromFileInMemory( D3D9Device, file_in_memory->pData, file_in_memory->Size, (IDirect3DTexture9 **) ppTexture))
+  if (D3D_OK != D3DXCreateTextureFromFileInMemoryEx( D3D9Device, file_in_memory->pData, file_in_memory->Size, D3DX_DEFAULT, D3DX_DEFAULT, D3DX_DEFAULT, 0, D3DFMT_UNKNOWN, D3DPOOL_MANAGED, D3DX_DEFAULT, D3DX_DEFAULT, 0, NULL, NULL, (IDirect3DTexture9 **) ppTexture))
+  //if (D3D_OK != D3DXCreateTextureFromFileInMemory( D3D9Device, file_in_memory->pData, file_in_memory->Size, (IDirect3DTexture9 **) ppTexture))
   {
     *ppTexture=NULL;
     return (RETURN_TEXTURE_NOT_LOADED);
   }
   (*ppTexture)->FAKE = true;
-  ((OTM_IDirect3DDevice9*)D3D9Device)->SetLastCreatedTexture(NULL); //this texture is a fake texture and must not be added
+
+  void *cpy;
+  long ret = D3D9Device->QueryInterface( IID_IDirect3DTexture9, &cpy);
+  if (ret == 0x01000000L) ((OTM_IDirect3DDevice9*)D3D9Device)->SetLastCreatedTexture(NULL); //this texture must no be added twice
+  else  ((OTM_IDirect3DDevice9Ex*) D3D9Device)->SetLastCreatedTexture(NULL); //this texture must no be added twice
+
   Message("LoadTexture( %lu, %#lX): DONE\n", *ppTexture, file_in_memory->Hash);
   return (RETURN_OK);
 }
@@ -787,13 +821,19 @@ int OTM_TextureClient::LoadTexture( TextureFileStruct* file_in_memory, OTM_IDire
 int OTM_TextureClient::LoadTexture( TextureFileStruct* file_in_memory, OTM_IDirect3DVolumeTexture9 **ppTexture) // to load fake texture from a file in memory
 {
   Message("LoadTexture( Volume %lu, %lu, %#lX): %lu\n", file_in_memory, ppTexture, file_in_memory->Hash, this);
-  if (D3D_OK != D3DXCreateVolumeTextureFromFileInMemory( D3D9Device, file_in_memory->pData, file_in_memory->Size, (IDirect3DVolumeTexture9 **) ppTexture))
+  if (D3D_OK != D3DXCreateVolumeTextureFromFileInMemoryEx( D3D9Device, file_in_memory->pData, file_in_memory->Size, D3DX_DEFAULT, D3DX_DEFAULT, D3DX_DEFAULT, D3DX_DEFAULT, 0, D3DFMT_UNKNOWN, D3DPOOL_MANAGED, D3DX_DEFAULT, D3DX_DEFAULT, 0, NULL, NULL, (IDirect3DVolumeTexture9 **) ppTexture))
+  //if (D3D_OK != D3DXCreateVolumeTextureFromFileInMemory( D3D9Device, file_in_memory->pData, file_in_memory->Size, (IDirect3DVolumeTexture9 **) ppTexture))
   {
     *ppTexture=NULL;
     return (RETURN_TEXTURE_NOT_LOADED);
   }
   (*ppTexture)->FAKE = true;
-  ((OTM_IDirect3DDevice9*)D3D9Device)->SetLastCreatedVolumeTexture(NULL); //this texture is a fake texture and must not be added
+
+  void *cpy;
+  long ret = D3D9Device->QueryInterface( IID_IDirect3DTexture9, &cpy);
+  if (ret == 0x01000000L) ((OTM_IDirect3DDevice9*)D3D9Device)->SetLastCreatedVolumeTexture(NULL); //this texture must no be added twice
+  else  ((OTM_IDirect3DDevice9Ex*) D3D9Device)->SetLastCreatedVolumeTexture(NULL); //this texture must no be added twice
+
   Message("LoadTexture( Volume %lu, %#lX): DONE\n", *ppTexture, file_in_memory->Hash);
   return (RETURN_OK);
 }
@@ -801,13 +841,19 @@ int OTM_TextureClient::LoadTexture( TextureFileStruct* file_in_memory, OTM_IDire
 int OTM_TextureClient::LoadTexture( TextureFileStruct* file_in_memory, OTM_IDirect3DCubeTexture9 **ppTexture) // to load fake texture from a file in memory
 {
   Message("LoadTexture( Cube %lu, %lu, %#lX): %lu\n", file_in_memory, ppTexture, file_in_memory->Hash, this);
-  if (D3D_OK != D3DXCreateCubeTextureFromFileInMemory( D3D9Device, file_in_memory->pData, file_in_memory->Size, (IDirect3DCubeTexture9 **) ppTexture))
+  if (D3D_OK != D3DXCreateCubeTextureFromFileInMemoryEx( D3D9Device, file_in_memory->pData, file_in_memory->Size, D3DX_DEFAULT, D3DX_DEFAULT, 0, D3DFMT_UNKNOWN, D3DPOOL_MANAGED, D3DX_DEFAULT, D3DX_DEFAULT, 0, NULL, NULL, (IDirect3DCubeTexture9 **) ppTexture))
+  //if (D3D_OK != D3DXCreateCubeTextureFromFileInMemory( D3D9Device, file_in_memory->pData, file_in_memory->Size, (IDirect3DCubeTexture9 **) ppTexture))
   {
     *ppTexture=NULL;
     return (RETURN_TEXTURE_NOT_LOADED);
   }
   (*ppTexture)->FAKE = true;
-  ((OTM_IDirect3DDevice9*)D3D9Device)->SetLastCreatedCubeTexture(NULL); //this texture is a fake texture and must not be added
+
+  void *cpy;
+  long ret = D3D9Device->QueryInterface( IID_IDirect3DTexture9, &cpy);
+  if (ret == 0x01000000L) ((OTM_IDirect3DDevice9*)D3D9Device)->SetLastCreatedCubeTexture(NULL); //this texture must no be added twice
+  else  ((OTM_IDirect3DDevice9Ex*) D3D9Device)->SetLastCreatedCubeTexture(NULL); //this texture must no be added twice
+
   Message("LoadTexture( Cube %lu, %#lX): DONE\n", *ppTexture, file_in_memory->Hash);
   return (RETURN_OK);
 }

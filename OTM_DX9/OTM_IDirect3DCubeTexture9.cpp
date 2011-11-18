@@ -66,6 +66,11 @@ ULONG APIENTRY OTM_IDirect3DCubeTexture9::AddRef()
 //this function yields for the non switched texture object
 ULONG APIENTRY OTM_IDirect3DCubeTexture9::Release()
 {
+  Message("OTM_IDirect3DCubeTexture9::Release(): %lu\n", this);
+
+  void *cpy;
+  long ret = m_D3Ddev->QueryInterface( IID_IDirect3DTexture9, &cpy);
+
   ULONG count;
   if (FAKE)
   {
@@ -81,7 +86,14 @@ ULONG APIENTRY OTM_IDirect3DCubeTexture9::Release()
       if (count==0) //if texture is released we switch the textures back
       {
         UnswitchTextures(this);
-        if (((OTM_IDirect3DDevice9*)m_D3Ddev)->GetSingleCubeTexture()!=fake_texture) fake_texture->Release(); // we release the fake texture
+        if (ret == 0x01000000L)
+        {
+          if (((OTM_IDirect3DDevice9*) m_D3Ddev)->GetSingleCubeTexture()!=fake_texture) fake_texture->Release(); // we release the fake texture
+        }
+        else
+        {
+          if (((OTM_IDirect3DDevice9Ex*) m_D3Ddev)->GetSingleCubeTexture()!=fake_texture) fake_texture->Release(); // we release the fake texture
+        }
       }
     }
     else
@@ -94,8 +106,16 @@ ULONG APIENTRY OTM_IDirect3DCubeTexture9::Release()
   {
     // if this texture is the LastCreatedTexture, the next time LastCreatedTexture would be added,
     // the hash of a non existing texture would be calculated
-    if (((OTM_IDirect3DDevice9*)m_D3Ddev)->GetLastCreatedCubeTexture()==this) ((OTM_IDirect3DDevice9*)m_D3Ddev)->SetLastCreatedCubeTexture( NULL);
-    else ((OTM_IDirect3DDevice9*) m_D3Ddev)->GetOTM_Client()->RemoveTexture(this); // remove this texture from the texture client
+    if (ret == 0x01000000L)
+    {
+      if (((OTM_IDirect3DDevice9*) m_D3Ddev)->GetLastCreatedCubeTexture()==this) ((OTM_IDirect3DDevice9*) m_D3Ddev)->SetLastCreatedCubeTexture( NULL);
+      else ((OTM_IDirect3DDevice9*) m_D3Ddev)->GetOTM_Client()->RemoveTexture(this); // remove this texture from the texture client
+    }
+    else
+    {
+      if (((OTM_IDirect3DDevice9Ex*) m_D3Ddev)->GetLastCreatedCubeTexture()==this) ((OTM_IDirect3DDevice9Ex*) m_D3Ddev)->SetLastCreatedCubeTexture( NULL);
+      else ((OTM_IDirect3DDevice9Ex*) m_D3Ddev)->GetOTM_Client()->RemoveTexture(this); // remove this texture from the texture client
+    }
 
     delete(this);
   }

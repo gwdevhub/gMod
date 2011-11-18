@@ -12,15 +12,29 @@ dll = d3d9.dll
 
 else
 
+ifdef DIRECT_INJECTION
 ifdef ALPHA
-precompiler_flag = /D "ALPHA"
+precompiler_flag = /D "ALPHA" /D "DIRECT_INJECTION"
 else
-precompiler_flag = 
+precompiler_flag =  /D "DIRECT_INJECTION"
 endif
 
-def_file = /DEF:"OTM_DX9_dll.def"
-obj_suff = obj
-dll = OTM_d3d9.dll
+def_file = /DEF:"OTM_DX9_dll_DIRECT_INJECTION.def"
+obj_suff = DI.obj
+dll = OTM_d3d9_DI.dll
+
+else
+
+ifdef ALPHA
+precompiler_flag = /D "ALPHA" /D "HOOK_INJECTION"
+else
+precompiler_flag =  /D "HOOK_INJECTION"
+endif
+
+def_file = /DEF:"OTM_DX9_dll_HOOK_INJECTION.def"
+obj_suff = HOOK.obj
+dll = OTM_d3d9_Hook.dll
+endif
 endif
 
 
@@ -35,7 +49,9 @@ bin = bin
 
 objects = ${obj}\OTM_DX9_dll.${obj_suff} \
 	${obj}\OTM_IDirect3D9.${obj_suff} \
+  ${obj}\OTM_IDirect3D9Ex.${obj_suff} \
   ${obj}\OTM_IDirect3DDevice9.${obj_suff} \
+  ${obj}\OTM_IDirect3DDevice9Ex.${obj_suff} \
   ${obj}\OTM_TextureFunction.${obj_suff} \
   ${obj}\OTM_IDirect3DTexture9.${obj_suff} \
   ${obj}\OTM_IDirect3DVolumeTexture9.${obj_suff} \
@@ -67,7 +83,13 @@ ${obj}\OTM_DX9_dll.${obj_suff}: OTM_DX9_dll.cpp  ${headers}
 ${obj}\OTM_IDirect3D9.${obj_suff}: OTM_IDirect3D9.cpp ${headers}
 	${CXX} ${CFLAGS} /c $< /Fo$@
 
+${obj}\OTM_IDirect3D9Ex.${obj_suff}: OTM_IDirect3D9Ex.cpp ${headers}
+	${CXX} ${CFLAGS} /c $< /Fo$@
+
 ${obj}\OTM_IDirect3DDevice9.${obj_suff}: OTM_IDirect3DDevice9.cpp  ${headers}
+	${CXX} ${CFLAGS} /c $< /Fo$@
+
+${obj}\OTM_IDirect3DDevice9Ex.${obj_suff}: OTM_IDirect3DDevice9Ex.cpp  ${headers}
 	${CXX} ${CFLAGS} /c $< /Fo$@
 
 ${obj}\OTM_TextureFunction.${obj_suff}: OTM_TextureFunction.cpp  ${headers}

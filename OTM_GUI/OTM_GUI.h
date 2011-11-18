@@ -27,8 +27,9 @@ along with OpenTexMod.  If not, see <http://www.gnu.org/licenses/>.
 class OTM_Frame : public wxFrame
 {
 public:
-  OTM_Frame(const wxString& title, const wxPoint& pos, const wxSize& size);
+  OTM_Frame(const wxString& title, OTM_Settings &set);
   ~OTM_Frame(void);
+
 
 
   void OnAddGame( wxCommandEvent &event);
@@ -42,6 +43,9 @@ public:
   void OnButtonUpdate(wxCommandEvent& WXUNUSED(event));
   void OnButtonReload(wxCommandEvent& WXUNUSED(event));
 
+  void OnMenuStartGame( wxCommandEvent &event);
+
+  void OnMenuUseHook( wxCommandEvent &event);
   void OnMenuAddGame(wxCommandEvent& WXUNUSED(event));
   void OnMenuDeleteGame(wxCommandEvent& WXUNUSED(event));
 
@@ -58,10 +62,15 @@ public:
   void OnMenuAcknowledgement(wxCommandEvent& WXUNUSED(event));
 
 private:
+
+
+  OTM_Settings Settings;
   int KillServer(void);
   int GetHookedGames( wxArrayString &array);
   int SetHookedGames( const wxArrayString &array);
 
+  int GetInjectedGames( wxArrayString &games, wxArrayString &cmd);
+  int SetInjectedGames( wxArrayString &games, wxArrayString &cmd);
 
   OTM_Server *Server;
 
@@ -90,6 +99,10 @@ private:
   int SaveTemplate(void);
   wxArrayString SaveFile_Exe;
   wxArrayString SaveFile_Name;
+
+
+  void InstallHook(void);
+  void RemoveHook(void);
 
   HMODULE H_DX9_DLL;
 

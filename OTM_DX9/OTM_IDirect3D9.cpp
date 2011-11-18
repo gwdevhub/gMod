@@ -22,16 +22,20 @@ along with OpenTexMod.  If not, see <http://www.gnu.org/licenses/>.
 
 #include "OTM_Main.h"
 
-OTM_IDirect3D9::OTM_IDirect3D9(IDirect3D9 *pOriginal, OTM_TextureServer* server)
+#ifndef PRE_MESSAGE
+#define PRE_MESSAGE "OTM_IDirect3D9"
+#endif
+
+OTM_IDirect3D9::OTM_IDirect3D9( IDirect3D9 *pOriginal, OTM_TextureServer* server)
 {
-  Message("OTM_IDirect3D9::OTM_IDirect3D9( %lu, %lu): %lu\n", pOriginal, server, this);
+  Message( PRE_MESSAGE "::" PRE_MESSAGE "( %lu, %lu): %lu\n", pOriginal, server, this);
   m_pIDirect3D9 = pOriginal;
   OTM_Server = server;
 }
 
 OTM_IDirect3D9::~OTM_IDirect3D9(void)
 {
-  Message("OTM_IDirect3D9::~OTM_IDirect3D9(): %lu\n", this);
+  Message( PRE_MESSAGE "::~" PRE_MESSAGE "(): %lu\n", this);
 }
 
 HRESULT  __stdcall OTM_IDirect3D9::QueryInterface(REFIID riid, void** ppvObj)
@@ -137,6 +141,7 @@ HMONITOR __stdcall OTM_IDirect3D9::GetAdapterMonitor(UINT Adapter)
 
 HRESULT __stdcall OTM_IDirect3D9::CreateDevice(UINT Adapter,D3DDEVTYPE DeviceType,HWND hFocusWindow,DWORD BehaviorFlags,D3DPRESENT_PARAMETERS* pPresentationParameters,IDirect3DDevice9** ppReturnedDeviceInterface)
 {
+  Message( PRE_MESSAGE "::CreateDevice(): %lu\n", this);
 	// we intercept this call and provide our own "fake" Device Object
 	HRESULT hres = m_pIDirect3D9->CreateDevice( Adapter, DeviceType, hFocusWindow, BehaviorFlags, pPresentationParameters, ppReturnedDeviceInterface);
 

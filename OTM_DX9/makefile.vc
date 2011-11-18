@@ -12,15 +12,29 @@ dll = d3d9.dll
 
 !ELSE
 
+!IFDEF DIRECT_INJECTION
 !IFDEF ALPHA
-precompiler_flag = /D "ALPHA"
+precompiler_flag = /D "ALPHA" /D "DIRECT_INJECTION"
 !ELSE
-precompiler_flag = 
+precompiler_flag =  /D "DIRECT_INJECTION"
 !ENDIF
 
-def_file = /DEF:"OTM_DX9_dll.def"
-obj_suff = obj
-dll = OTM_d3d9.dll
+def_file = /DEF:"OTM_DX9_dll_DIRECT_INJECTION.def"
+obj_suff = DI.obj
+dll = OTM_d3d9_DI.dll
+
+!ELSE
+
+!IFDEF ALPHA
+precompiler_flag = /D "ALPHA" /D "HOOK_INJECTION"
+!ELSE
+precompiler_flag =  /D "HOOK_INJECTION"
+!ENDIF
+
+def_file = /DEF:"OTM_DX9_dll_HOOK_INJECTION.def"
+obj_suff = HOOK.obj
+dll = OTM_d3d9_Hook.dll
+
 !ENDIF
 
 
@@ -35,7 +49,9 @@ bin = bin
 
 objects = $(obj)\OTM_DX9_dll.$(obj_suff) \
 	$(obj)\OTM_IDirect3D9.$(obj_suff) \
+  $(obj)\OTM_IDirect3D9Ex.$(obj_suff) \
   $(obj)\OTM_IDirect3DDevice9.$(obj_suff) \
+  $(obj)\OTM_IDirect3DDevice9Ex.$(obj_suff) \
   $(obj)\OTM_TextureFunction.$(obj_suff) \
   $(obj)\OTM_IDirect3DTexture9.$(obj_suff) \
   $(obj)\OTM_IDirect3DVolumeTexture9.$(obj_suff) \
@@ -63,18 +79,24 @@ $(bin)\d3d9.dll: $(objects)
 
 $(obj)\OTM_DX9_dll.$(obj_suff): OTM_DX9_dll.cpp  $(headers)
 	$(CXX) $(CFLAGS) /c /Fo$@ OTM_DX9_dll.cpp
-	
+  
 $(obj)\OTM_IDirect3D9.$(obj_suff): OTM_IDirect3D9.cpp $(headers)
 	$(CXX) $(CFLAGS) /c /Fo$@ OTM_IDirect3D9.cpp
+  
+$(obj)\OTM_IDirect3D9Ex.$(obj_suff): OTM_IDirect3D9Ex.cpp $(headers)
+	$(CXX) $(CFLAGS) /c /Fo$@ OTM_IDirect3D9Ex.cpp
 	
 $(obj)\OTM_IDirect3DDevice9.$(obj_suff): OTM_IDirect3DDevice9.cpp  $(headers)
 	$(CXX) $(CFLAGS) /c /Fo$@ OTM_IDirect3DDevice9.cpp
   
+$(obj)\OTM_IDirect3DDevice9Ex.$(obj_suff): OTM_IDirect3DDevice9Ex.cpp  $(headers)
+	$(CXX) $(CFLAGS) /c /Fo$@ OTM_IDirect3DDevice9Ex.cpp
+  
 $(obj)\OTM_TextureFunction.$(obj_suff): OTM_TextureFunction.cpp  $(headers)
-  $(CXX) $(CFLAGS) /c /Fo$@ OTM_TextureFunction.cpp
+	$(CXX) $(CFLAGS) /c /Fo$@ OTM_TextureFunction.cpp
   
 $(obj)\OTM_IDirect3DTexture9.$(obj_suff): OTM_IDirect3DTexture9.cpp  $(headers)
-  $(CXX) $(CFLAGS) /c /Fo$@ OTM_IDirect3DTexture9.cpp
+	$(CXX) $(CFLAGS) /c /Fo$@ OTM_IDirect3DTexture9.cpp
   
 $(obj)\OTM_IDirect3DVolumeTexture9.$(obj_suff): OTM_IDirect3DVolumeTexture9.cpp  $(headers)
   $(CXX) $(CFLAGS) /c /Fo$@ OTM_IDirect3DVolumeTexture9.cpp

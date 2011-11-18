@@ -43,8 +43,12 @@ BEGIN_EVENT_TABLE(OTM_Frame, wxFrame)
   EVT_MENU(ID_Menu_Acknowledgement, OTM_Frame::OnMenuAcknowledgement)
 
 
+  EVT_MENU(ID_Menu_StartGame, OTM_Frame::OnMenuStartGame)
+  EVT_MENU(ID_Menu_StartGameCMD, OTM_Frame::OnMenuStartGame)
+
   EVT_MENU(ID_Menu_AddGame, OTM_Frame::OnMenuAddGame)
   EVT_MENU(ID_Menu_DeleteGame, OTM_Frame::OnMenuDeleteGame)
+  EVT_MENU(ID_Menu_UseHook, OTM_Frame::OnMenuUseHook)
 
   EVT_MENU(ID_Menu_LoadTemplate, OTM_Frame::OnMenuOpenTemplate)
   EVT_MENU(ID_Menu_SaveTemplate, OTM_Frame::OnMenuSaveTemplate)
@@ -79,17 +83,18 @@ bool MyApp::OnInit(void)
     wxMessageBox( Language->Error_AlreadyRunning, "ERROR", wxOK|wxICON_ERROR);
     return false;
   }
-  OTM_Frame *frame = new OTM_Frame( OTM_VERSION, wxPoint(set.XPos,set.YPos), wxSize(set.XSize,set.YSize));
+  OTM_Frame *frame = new OTM_Frame( OTM_VERSION, set);
   SetTopWindow( frame );
 
   return true;
 }
 
 
-OTM_Frame::OTM_Frame(const wxString& title, const wxPoint& pos, const wxSize& size)
-       : wxFrame((wxFrame *)NULL, -1, title, pos, size)
+OTM_Frame::OTM_Frame(const wxString& title, OTM_Settings &set)
+       : wxFrame((wxFrame *)NULL, -1, title, wxPoint(set.XPos,set.YPos), wxSize(set.XSize,set.YSize)), Settings(set)
 {
   SetIcon(wxICON(MAINICON));
+  H_DX9_DLL = NULL;
 
   Server = new OTM_Server( this);
   Server->Create();
@@ -100,9 +105,15 @@ OTM_Frame::OTM_Frame(const wxString& title, const wxPoint& pos, const wxSize& si
   MenuMain = new wxMenu;
   MenuHelp = new wxMenu;
 
+  MenuMain->Append ( ID_Menu_StartGame, Language->MenuStartGame);
+  MenuMain->Append ( ID_Menu_StartGameCMD, Language->MenuStartGameCMD);
+  MenuMain->AppendSeparator();
 
   MenuMain->Append( ID_Menu_AddGame, Language->MenuAddGame );
   MenuMain->Append( ID_Menu_DeleteGame, Language->MenuDeleteGame );
+  MenuMain->AppendCheckItem ( ID_Menu_UseHook, Language->MenuUseHook);
+  MenuMain->Check( ID_Menu_UseHook, Settings.UseHook);
+
   MenuMain->AppendSeparator();
   MenuMain->Append( ID_Menu_LoadTemplate, Language->MenuLoadTemplate );
   MenuMain->Append( ID_Menu_SaveTemplate, Language->MenuSaveTemplate );
@@ -154,36 +165,7 @@ OTM_Frame::OTM_Frame(const wxString& title, const wxPoint& pos, const wxSize& si
   LoadTemplate();
 
   Show( true );
-
-  H_DX9_DLL = LoadLibraryW(OTM_d3d9_dll);
-  if (H_DX9_DLL!=NULL)
-  {
-    typedef void (*fkt_typ)(void);
-    fkt_typ InstallHook = (fkt_typ) GetProcAddress( H_DX9_DLL, "InstallHook");
-    if (InstallHook!=NULL) InstallHook();
-    else
-    {
-      DWORD error = GetLastError();
-      wchar_t *error_msg;
-      FormatMessage( FORMAT_MESSAGE_ALLOCATE_BUFFER | FORMAT_MESSAGE_FROM_SYSTEM | FORMAT_MESSAGE_IGNORE_INSERTS,
-              NULL, error, MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT), (LPTSTR) &error_msg, 0, NULL );
-      wxString temp = Language->Error_DLLNotFound;
-      temp << "\n" << OTM_d3d9_dll;
-      temp << "\n" << error_msg << "Code: " << error;
-      wxMessageBox( temp, "ERROR", wxOK);
-    }
-  }
-  else
-  {
-    DWORD error = GetLastError();
-    wchar_t *error_msg;
-    FormatMessage( FORMAT_MESSAGE_ALLOCATE_BUFFER | FORMAT_MESSAGE_FROM_SYSTEM | FORMAT_MESSAGE_IGNORE_INSERTS,
-            NULL, error, MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT), (LPTSTR) &error_msg, 0, NULL );
-    wxString temp = Language->Error_DLLNotFound;
-    temp << "\n" << OTM_d3d9_dll;
-    temp << "\n" << error_msg << "Code: " << error;
-    wxMessageBox(temp, "ERROR", wxOK|wxICON_ERROR);
-  }
+  if (Settings.UseHook) InstallHook();
 }
 
 OTM_Frame::~OTM_Frame(void)
@@ -196,21 +178,14 @@ OTM_Frame::~OTM_Frame(void)
     Server = NULL;
   }
 
-  if (H_DX9_DLL!=NULL)
-  {
-    typedef void (*fkt_typ)(void);
-    fkt_typ RemoveHook = (fkt_typ) GetProcAddress( H_DX9_DLL, "RemoveHook");
-    if (RemoveHook!=NULL) RemoveHook();
-    FreeLibrary(H_DX9_DLL);
-  }
+  RemoveHook();
 
   if (Clients!=NULL) delete [] Clients;
 
-  OTM_Settings set;
-  set.Language = Language->GetCurrentLanguage();
-  GetSize( &set.XSize, &set.YSize);
-  GetPosition( &set.XPos, &set.YPos);
-  set.Save();
+  Settings.Language = Language->GetCurrentLanguage();
+  GetSize( &Settings.XSize, &Settings.YSize);
+  GetPosition( &Settings.XPos, &Settings.YPos);
+  Settings.Save();
 }
 
 int OTM_Frame::KillServer(void)
@@ -477,8 +452,12 @@ void OTM_Frame::OnMenuLanguage(wxCommandEvent& WXUNUSED(event))
       return;
     }
     MenuBar->SetMenuLabel( 0, Language->MainMenuMain);
+    MenuMain->SetLabel( ID_Menu_StartGame, Language->MenuStartGame);
+    MenuMain->SetLabel( ID_Menu_StartGameCMD, Language->MenuStartGameCMD);
+
     MenuMain->SetLabel( ID_Menu_AddGame, Language->MenuAddGame);
     MenuMain->SetLabel( ID_Menu_DeleteGame, Language->MenuDeleteGame);
+    MenuMain->SetLabel( ID_Menu_UseHook, Language->MenuUseHook);
 
     MenuMain->SetLabel( ID_Menu_LoadTemplate, Language->MenuLoadTemplate );
     MenuMain->SetLabel( ID_Menu_SaveTemplate, Language->MenuSaveTemplate );
@@ -539,10 +518,117 @@ void OTM_Frame::OnMenuAcknowledgement(wxCommandEvent& WXUNUSED(event))
   title << OTM_VERSION << " by ROTA";
   wxString msg;
   msg << "RS for coding the original TexMod and for information about the used hashing algorithm\n";
-  msg << "EvilAlex for translation into Russian and bug fixing";
+  msg << "EvilAlex for translation into Russian and bug fixing\n";
+  msg << "King Brace Blane for a tutorial video on YouTube and bug fixing";
   wxMessageBox( msg, title, wxOK);
 }
 
+void OTM_Frame::OnMenuStartGame(wxCommandEvent& event)
+{
+  bool use_cmd = false;
+  if (event.GetId() ==  ID_Menu_StartGameCMD) use_cmd = true;
+
+  wxArrayString games, cmd, choices;
+
+  GetInjectedGames( games, cmd);
+  int num = games.GetCount();
+
+  choices = games;
+  choices.Add( Language->StartGame);
+
+  int index = wxGetSingleChoiceIndex( Language->MenuStartGame, Language->MenuStartGame, choices);
+
+  if (index < 0) return;
+  else if (index==num)
+  {
+    wxString file_name = wxFileSelector( Language->ChooseGame, "", "", "exe",  "binary (*.exe)|*.exe", wxFD_OPEN | wxFD_FILE_MUST_EXIST, this);
+    if ( !file_name.empty() )
+    {
+      bool hit = false;
+      for (int i=0; i<num; i++) if (file_name==games[i]) {hit=true; index=i; break;}
+
+      if (!hit)
+      {
+        games.Add(file_name);
+        cmd.Add("");
+      }
+    }
+    else return;
+  }
+
+  wxString command_line;
+  if (use_cmd)
+  {
+    command_line = cmd[index];
+    command_line = wxGetTextFromUser( Language->CommandLine, Language->CommandLine, command_line);
+    if (!command_line.IsEmpty()) cmd[index] = command_line;
+  }
+
+  SetInjectedGames( games, cmd);
+
+  if (Settings.UseHook)
+  {
+    wxArrayString array;
+    if (GetHookedGames( array)) array.Empty();
+
+    int num = array.GetCount();
+    for (int i=0; i<num; i++) if (array[i] == games[index])
+    {
+      wxMessageBox(Language->Error_GameIsHooked, "ERROR", wxOK|wxICON_ERROR);
+      return;
+    }
+  }
+
+  STARTUPINFOW si = {0};
+  si.cb = sizeof(STARTUPINFO);
+  PROCESS_INFORMATION pi = {0};
+
+  wxString path = games[index].BeforeLast('\\');
+  wxString exe;
+
+  if (use_cmd) exe << "\"" << games[index] << "\" " << command_line;
+  else exe = games[index];
+
+
+  bool result = CreateProcess(NULL, (wchar_t*) exe.wc_str(), NULL, NULL, FALSE,
+                              CREATE_SUSPENDED, NULL, path.wc_str(), &si, &pi);
+  if(!result)
+  {
+    wxMessageBox( Language->Error_ProcessNotStarted, "ERROR",  wxOK|wxICON_ERROR);
+    return ;
+  }
+
+
+  wxString dll = wxGetCwd();
+  dll.Append( L"\\" OTM_d3d9_DI_dll);
+
+  Inject(pi.hProcess, dll.wc_str(), "Nothing");
+  ResumeThread(pi.hThread);
+}
+
+void OTM_Frame::OnMenuUseHook(wxCommandEvent& WXUNUSED(event))
+{
+  bool use_hook = MenuMain->IsChecked(ID_Menu_UseHook);
+
+  if (Settings.UseHook!=use_hook)
+  {
+    if (Settings.UseHook)
+    {
+      if (NumberOfGames>0)
+      {
+        MenuMain->Check(ID_Menu_UseHook, true);
+        wxMessageBox(Language->Error_RemoveHook, "ERROR", wxOK|wxICON_ERROR);
+        return;
+      }
+      RemoveHook();
+    }
+    else
+    {
+      InstallHook();
+    }
+    Settings.UseHook=use_hook;
+  }
+}
 
 void OTM_Frame::OnMenuAddGame(wxCommandEvent& WXUNUSED(event))
 {
@@ -667,6 +753,73 @@ int OTM_Frame::SetHookedGames( const wxArrayString &array)
   return 0;
 }
 
+#define DI_FILE "OTM_DI_Games.txt"
+int OTM_Frame::GetInjectedGames( wxArrayString &games, wxArrayString &cmd)
+{
+  wxFile file;
+
+  if (!file.Access( DI_FILE, wxFile::read)) {LastError << Language->Error_FileOpen << "\n" << DI_FILE; return -1;}
+  file.Open( DI_FILE, wxFile::read);
+  if (!file.IsOpened()) {LastError << Language->Error_FileOpen << "\n" << DI_FILE ; return -1;}
+
+  unsigned len = file.Length();
+
+  unsigned char* buffer;
+  try {buffer = new unsigned char [len+2];}
+  catch (...) {LastError << Language->Error_Memory; return -1;}
+
+  unsigned int result = file.Read( buffer, len);
+  file.Close();
+
+  if (result != len) {delete [] buffer; LastError << Language->Error_FileRead<<"\n" << DI_FILE; return -1;}
+
+  wchar_t *buff = (wchar_t*)buffer;
+  len/=2;
+  buff[len]=0;
+
+  wxString content;
+  content =  buff;
+  delete [] buffer;
+
+  wxStringTokenizer token( content, "\n");
+
+  int num = token.CountTokens();
+
+  games.Empty();
+  games.Alloc(num);
+  cmd.Empty();
+  cmd.Alloc(num);
+  wxString entry;
+
+  for (int i=0; i<num; i++)
+  {
+    entry = token.GetNextToken();
+    games.Add( entry.BeforeFirst('|'));
+    cmd.Add( entry.AfterFirst('|'));
+  }
+  return 0;
+}
+
+int OTM_Frame::SetInjectedGames( wxArrayString &games, wxArrayString &cmd)
+{
+  wxFile file;
+
+  file.Open( DI_FILE, wxFile::write);
+  if (!file.IsOpened()) {LastError << Language->Error_FileOpen << "\n" << DI_FILE ; return -1;}
+  wxString content;
+
+  int num = games.GetCount();
+  for (int i=0; i<num; i++)
+  {
+    content = games[i];
+    content << "|" <<  cmd[i] << "\n";
+    file.Write( content.wc_str(), content.Len()*2);
+  }
+  file.Close();
+  return 0;
+}
+
+
 #define SAVE_FILE "OTM_SaveFiles.txt"
 
 int OTM_Frame::LoadTemplate(void)
@@ -735,4 +888,54 @@ int OTM_Frame::SaveTemplate(void)
   }
   file.Close();
   return 0;
+}
+
+
+
+void OTM_Frame::InstallHook(void)
+{
+  if (H_DX9_DLL==NULL)
+  {
+    H_DX9_DLL = LoadLibraryW(OTM_d3d9_Hook_dll);
+    if (H_DX9_DLL!=NULL)
+    {
+      typedef void (*fkt_typ)(void);
+      fkt_typ install_hook = (fkt_typ) GetProcAddress( H_DX9_DLL, "InstallHook");
+      if (install_hook!=NULL) install_hook();
+      else
+      {
+        DWORD error = GetLastError();
+        wchar_t *error_msg;
+        FormatMessage( FORMAT_MESSAGE_ALLOCATE_BUFFER | FORMAT_MESSAGE_FROM_SYSTEM | FORMAT_MESSAGE_IGNORE_INSERTS,
+              NULL, error, MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT), (LPTSTR) &error_msg, 0, NULL );
+        wxString temp = Language->Error_DLLNotFound;
+        temp << "\n" << OTM_d3d9_Hook_dll;
+        temp << "\n" << error_msg << "Code: " << error;
+        wxMessageBox( temp, "ERROR", wxOK);
+      }
+    }
+    else
+    {
+      DWORD error = GetLastError();
+      wchar_t *error_msg;
+      FormatMessage( FORMAT_MESSAGE_ALLOCATE_BUFFER | FORMAT_MESSAGE_FROM_SYSTEM | FORMAT_MESSAGE_IGNORE_INSERTS,
+            NULL, error, MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT), (LPTSTR) &error_msg, 0, NULL );
+      wxString temp = Language->Error_DLLNotFound;
+      temp << "\n" << OTM_d3d9_Hook_dll;
+      temp << "\n" << error_msg << "Code: " << error;
+      wxMessageBox(temp, "ERROR", wxOK|wxICON_ERROR);
+    }
+  }
+}
+
+void OTM_Frame::RemoveHook(void)
+{
+  if (H_DX9_DLL!=NULL)
+  {
+    typedef void (*fkt_typ)(void);
+    fkt_typ remove_hook = (fkt_typ) GetProcAddress( H_DX9_DLL, "RemoveHook");
+    if (remove_hook!=NULL) remove_hook();
+    FreeLibrary(H_DX9_DLL);
+  }
+  H_DX9_DLL = NULL;
 }

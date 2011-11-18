@@ -33,11 +33,19 @@ DWORD WINAPI ServerThread( LPVOID lpParam);
 
 void *DetourFunc(BYTE *src, const BYTE *dst, const int len);
 bool RetourFunc(BYTE *src, BYTE *restore, const int len);
-IDirect3D9 *APIENTRY MyDirect3DCreate9(UINT SDKVersion);
+IDirect3D9 *APIENTRY OTM_Direct3DCreate9(UINT SDKVersion);
+HRESULT APIENTRY OTM_Direct3DCreate9Ex( UINT SDKVersion, IDirect3D9Ex **ppD3D);
 
+#ifdef HOOK_INJECTION
 LRESULT CALLBACK HookProc(int nCode, WPARAM wParam, LPARAM lParam);
 void InstallHook(void);
 void RemoveHook(void);
+#endif
+
+
+#ifdef DIRECT_INJECTION
+void Nothing(void);
+#endif
 
 #endif
 

@@ -18,8 +18,6 @@ this is a comment
 
 |
 
-Example:
-
 Keyword:
 
 Message1 line1
@@ -37,11 +35,16 @@ English itself is compiled into the OTM_GUI.exe, thus there exists no OTM_Langua
 
 The following list is an example of how an English package would look like (maybe not all keywords are present).
 
+
+
 MenuHelp:
 Help|
 MenuAbout:
 About|
 MenuAcknowledgement:Acknowledgement|
+MenuStartGame:Start game through OTM|
+MenuStartGameCMD :Start game through OTM (with command line)|
+MenuUseHook:Use global hook|
 MenuAddGame:
 Add game|
 MenuDeleteGame:
@@ -55,6 +58,8 @@ MenuExit:Exit|
 MainMenuMain:Main|
 MainMenuHelp:
 Help|
+
+
 ButtonOpen:
 Open texture|
 ButtonDirectory:
@@ -62,6 +67,8 @@ save directory|
 ButtonUpdate:
 Update|
 ButtonReload:Update (reload)|
+
+
 ChooseFile:Choose a file|
 ChooseDir:
 Choose a directory|
@@ -74,6 +81,8 @@ TextCtrlSavePath:
 Save path: |
 SelectLanguage:
 Select a language|
+StartGame:Select the game to start.|
+CommandLine:Set command line arguments.|
 ChooseGame:
 Select a game binary.
 DeleteGame:
@@ -87,6 +96,11 @@ NoComment:
 No comment.|
 Author:
 Author: |
+
+
+Error_GameIsHooked:The global hook is active and this game will be injected! Please delete the game from the list or disable the hook.|
+Error_ProcessNotStarted:The game could not be started.|
+Error_RemoveHook:Removing the Hook while a game is running might lead to crash.|
 Error_FileNotSupported:
 This file type is not supported:|
 Error_DLLNotFound:

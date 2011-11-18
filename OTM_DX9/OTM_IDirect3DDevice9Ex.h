@@ -17,16 +17,8 @@ along with OpenTexMod.  If not, see <http://www.gnu.org/licenses/>.
 */
 
 
-/*
- *
- * BIG THANKS TO Michael Koch
- * (proxydll_9.zip)
- *
- */
-
-
-#ifndef OTM_IDirect3DDevice9_H_
-#define OTM_IDirect3DDevice9_H_
+#ifndef OTM_IDirect3DDevice9Ex_H_
+#define OTM_IDirect3DDevice9Ex_H_
 
 #include <d3d9.h>
 #include <d3dx9.h>
@@ -35,11 +27,11 @@ along with OpenTexMod.  If not, see <http://www.gnu.org/licenses/>.
 #include "OTM_IDirect3DCubeTexture9.h"
 
 
-class OTM_IDirect3DDevice9 : public IDirect3DDevice9
+class OTM_IDirect3DDevice9Ex : public IDirect3DDevice9Ex
 {
 public:
-	OTM_IDirect3DDevice9(IDirect3DDevice9* pOriginal, OTM_TextureServer* server);
-	virtual ~OTM_IDirect3DDevice9(void);
+	OTM_IDirect3DDevice9Ex( IDirect3DDevice9Ex* pOriginal, OTM_TextureServer* server);
+	virtual ~OTM_IDirect3DDevice9Ex(void);
 
 	// START: The original DX9 function definitions
 	HRESULT __stdcall QueryInterface (REFIID riid, void** ppvObj);
@@ -161,8 +153,28 @@ public:
 	HRESULT __stdcall DrawTriPatch(UINT Handle,CONST float* pNumSegs,CONST D3DTRIPATCH_INFO* pTriPatchInfo);
 	HRESULT __stdcall DeletePatch(UINT Handle);
 	HRESULT __stdcall CreateQuery(D3DQUERYTYPE Type,IDirect3DQuery9** ppQuery);
-	// END: The original DX9 function definitions
 
+
+
+	HRESULT __stdcall CheckDeviceState( HWND hWindow);
+	HRESULT __stdcall CheckResourceResidency( IDirect3DResource9 **pResourceArray, UINT32 NumResources);
+	HRESULT __stdcall ComposeRects( IDirect3DSurface9 *pSource, IDirect3DSurface9 *pDestination, IDirect3DVertexBuffer9 *pSrcRectDescriptors, UINT NumRects, IDirect3DVertexBuffer9 *pDstRectDescriptors, D3DCOMPOSERECTSOP Operation, INT XOffset, INT YOffset);
+	HRESULT __stdcall CreateDepthStencilSurfaceEx( UINT Width, UINT Height, D3DFORMAT Format, D3DMULTISAMPLE_TYPE MultiSample, DWORD MultisampleQuality, BOOL Discard, IDirect3DSurface9 **ppSurface, HANDLE *pSharedHandle, DWORD Usage);
+	HRESULT __stdcall CreateOffscreenPlainSurfaceEx( UINT Width, UINT Height, D3DFORMAT Format, D3DPOOL Pool, IDirect3DSurface9 **ppSurface, HANDLE *pSharedHandle, DWORD Usage);
+ 	HRESULT __stdcall CreateRenderTargetEx( UINT Width, UINT Height, D3DFORMAT Format, D3DMULTISAMPLE_TYPE MultiSample, DWORD MultisampleQuality, BOOL Lockable, IDirect3DSurface9 **ppSurface, HANDLE *pSharedHandle, DWORD Usage);
+ 	HRESULT __stdcall GetDisplayModeEx( UINT  iSwapChain, D3DDISPLAYMODEEX *pMode, D3DDISPLAYROTATION *pRotation);
+ 	HRESULT __stdcall GetGPUThreadPriority( INT *pPriority);
+ 	HRESULT __stdcall GetMaximumFrameLatency( UINT *pMaxLatency);
+ 	HRESULT __stdcall PresentEx( const RECT *pSourceRect, const RECT *pDestRect, HWND hDestWindowOverride, const RGNDATA *pDirtyRegion, DWORD dwFlags);
+ 	HRESULT __stdcall ResetEx( D3DPRESENT_PARAMETERS *pPresentationParameters, D3DDISPLAYMODEEX *pFullscreenDisplayMode);
+ 	HRESULT __stdcall SetConvolutionMonoKernel( UINT Width, UINT Height, float *RowWeights, float *ColumnWeights);
+ 	HRESULT __stdcall SetGPUThreadPriority( INT pPriority);
+ 	HRESULT __stdcall SetMaximumFrameLatency( UINT pMaxLatency);
+ 	//HRESULT __stdcall TestCooperativeLevel();
+ 	HRESULT __stdcall WaitForVBlank( UINT SwapChainIndex);
+
+
+	// END: The original DX9 function definitions
 
 
   OTM_TextureClient* GetOTM_Client(void) {return (OTM_Client);}
@@ -182,9 +194,10 @@ public:
   OTM_IDirect3DCubeTexture9* GetSingleCubeTexture(void) {return (SingleCubeTexture);}
 
 
+
  private:
-	int CreateSingleTexture(void);
-  IDirect3DDevice9* m_pIDirect3DDevice9;
+  int CreateSingleTexture(void);
+  IDirect3DDevice9Ex* m_pIDirect3DDevice9Ex;
 
   int CounterSaveSingleTexture;
   OTM_IDirect3DTexture9* SingleTexture;

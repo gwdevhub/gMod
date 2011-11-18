@@ -45,11 +45,17 @@ along with OpenTexMod.  If not, see <http://www.gnu.org/licenses/>.
 #include "OTM_Defines.h"
 #include "OTM_DX9_dll.h"
 #include "OTM_TextureFunction.h"
+
 #include "OTM_IDirect3D9.h"
+#include "OTM_IDirect3D9Ex.h"
+
 #include "OTM_IDirect3DDevice9.h"
+#include "OTM_IDirect3DDevice9Ex.h"
+
 #include "OTM_IDirect3DCubeTexture9.h"
 #include "OTM_IDirect3DTexture9.h"
 #include "OTM_IDirect3DVolumeTexture9.h"
+
 #include "OTM_ArrayHandler.h"
 #include "OTM_TextureServer.h"
 #include "OTM_TextureClient.h"

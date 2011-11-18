@@ -37,6 +37,9 @@ public:
   wxString MenuHelp;
   wxString MenuAbout;
   wxString MenuAcknowledgement;
+  wxString MenuStartGame;
+  wxString MenuStartGameCMD;
+  wxString MenuUseHook;
   wxString MenuAddGame;
   wxString MenuDeleteGame;
   wxString MenuLoadTemplate;
@@ -63,12 +66,19 @@ public:
 
   wxString SelectLanguage;
 
+  wxString StartGame;
+  wxString CommandLine;
+
   wxString ChooseGame;
   wxString DeleteGame;
   wxString GameAlreadyAdded;
   wxString ExitGameAnyway;
   wxString NoComment;
   wxString Author;
+
+  wxString Error_GameIsHooked;
+  wxString Error_ProcessNotStarted;
+  wxString Error_RemoveHook;
 
   wxString Error_FileNotSupported;
   wxString Error_FktNotFound;

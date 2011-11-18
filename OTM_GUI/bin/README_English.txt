@@ -55,19 +55,28 @@ was started more than once).
 
 How to get OpenTexMod work?
 
-There are two ways how OpenTexMod can intercept the DirectX connection:
+There are three ways how OpenTexMod can intercept the DirectX connection:
+(Do NOT use more than one method simultaneously!)
 
-1) (recommended) Add the games-binary through the menu Games->"Add game"
+1) Add the games-binary through the menu "Main->Add game"
     For Steam see below.
+    
+    known problems: Guild Wars (Win XP)
+    
+2) Start the game directly through OTM though the menu
+    "Main->Start game through OTM" or
+    "Main->Start game through OTM (with command line)".
+    The game start immediately.
 
-2) Copy the d3d9.dll (from the OpenTexMod directory) into the game directory.
+3) Copy the d3d9.dll (from the OpenTexMod directory) into the game directory.
     Some games load a dll first from their own directory before they look up the system directory.
     Only for these games this method will work.
     WARNING: never copy this dll into your system directory!!
+    
+    known problems: Guild Wars
 
-If you have chosen one of the two methods, you simply start OpenTexMod
-and afterwards the game. There is no need to (and either you can't) start
-the game through OpenTexMod.
+If you have chosen the first or third method, you simply start OpenTexMod
+and afterwards the game. Do NOT start the game through OpenTexMod.
 
 If the game starts and all works fine, a new tab opens immediately in OpenTexMod.
 In this tab you can now mod the game. Press the "update" button to commit

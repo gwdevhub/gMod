@@ -35,42 +35,6 @@ OTM_Language::OTM_Language(const wxString &name)
   LastError.Empty();
 }
 
-//#define LAST_USED_LANGUAGE_FILE "OTM_LastUsedLanguage.txt"
-/*
-int OTM_Language::LoadCurrentLanguage(void)
-{
-  wxFile file;
-  if (!file.Access( LAST_USED_LANGUAGE_FILE, wxFile::read)) return -1;
-  file.Open( LAST_USED_LANGUAGE_FILE, wxFile::read);
-  if (!file.IsOpened()) return -1;
-  unsigned len = file.Length();
-
-  char* buffer;
-  try {buffer = new char [len+1];}
-  catch (...) {return -1;}
-
-  unsigned int result = file.Read( buffer, len);
-  file.Close();
-  if (result != len) return -1;
-  buffer[len]=0;
-
-  wxString lang = buffer;
-  delete [] buffer;
-  return LoadLanguage( lang, false);
-}
-
-
-int OTM_Language::SaveCurrentLanguage(void)
-{
-  wxFile file;
-  //if (!file.Access( LAST_USED_LANGUAGE_FILE, wxFile::write)) return -1;
-  file.Open( LAST_USED_LANGUAGE_FILE, wxFile::write);
-  if (!file.IsOpened()) return -1;
-
-  file.Write( CurrentLanguage.char_str(), CurrentLanguage.Len());
-  return 0;
-}
-*/
 
 int OTM_Language::GetLanguages(wxArrayString &lang)
 {
@@ -222,6 +186,9 @@ int OTM_Language::LoadLanguage(const wxString &name)
     CheckEntry( command, msg, MenuHelp)
     CheckEntry( command, msg, MenuAbout)
     CheckEntry( command, msg, MenuAcknowledgement)
+    CheckEntry( command, msg, MenuStartGame)
+    CheckEntry( command, msg, MenuStartGameCMD)
+    CheckEntry( command, msg, MenuUseHook)
     CheckEntry( command, msg, MenuAddGame)
     CheckEntry( command, msg, MenuDeleteGame)
     CheckEntry( command, msg, MenuLoadTemplate)
@@ -242,12 +209,17 @@ int OTM_Language::LoadLanguage(const wxString &name)
     CheckEntry( command, msg, CheckBoxSaveAllTextures)
     CheckEntry( command, msg, TextCtrlSavePath)
     CheckEntry( command, msg, SelectLanguage)
+    CheckEntry( command, msg, StartGame)
+    CheckEntry( command, msg, CommandLine)
     CheckEntry( command, msg, ChooseGame)
     CheckEntry( command, msg, DeleteGame)
     CheckEntry( command, msg, GameAlreadyAdded)
     CheckEntry( command, msg, ExitGameAnyway)
     CheckEntry( command, msg, NoComment)
     CheckEntry( command, msg, Author)
+    CheckEntry( command, msg, Error_GameIsHooked)
+    CheckEntry( command, msg, Error_ProcessNotStarted)
+    CheckEntry( command, msg, Error_RemoveHook)
     CheckEntry( command, msg, Error_FileNotSupported)
     CheckEntry( command, msg, Error_FktNotFound)
     CheckEntry( command, msg, Error_DLLNotFound)
@@ -288,6 +260,11 @@ int OTM_Language::LoadDefault(void)
   MenuHelp  = "Help";
   MenuAbout  = "About";
   MenuAcknowledgement = "Acknowledgement";
+
+  MenuStartGame = "Start game through OTM";
+  MenuStartGameCMD = "Start game through OTM (with command line)";
+
+  MenuUseHook = "Use global hook";
   MenuAddGame = "Add game";
   MenuDeleteGame = "Delete game";
   MenuLoadTemplate = "Load template";
@@ -314,12 +291,19 @@ int OTM_Language::LoadDefault(void)
 
   SelectLanguage = "Select a language.";
 
+  StartGame = "Select the game to start.";
+  CommandLine = "Set command line arguments.";
+
   ChooseGame = "Select a game binary.";
   DeleteGame = "Select the games to be deleted.";
   GameAlreadyAdded = "Game has been already added.";
   ExitGameAnyway = "Closing OpenTexMod while a game is running might lead to a crash of the game.\nExit anyway?";
   NoComment = "No comment.";
   Author = "Author: ";
+
+  Error_GameIsHooked = "The global hook is active and this game will be injected! Please delete the game from the list or disable the hook.";
+  Error_ProcessNotStarted = "The game could not be started.";
+  Error_RemoveHook = "Removing the Hook while a game is running might lead to crash.";
 
   Error_FileNotSupported = "This file type is not supported:\n";
   Error_DLLNotFound = "Could not load the dll.\nThe dll injection won't work.\nThis might happen if D3DX9_43.dll (32bit) is not installed on your system.\nPlease install the newest DirectX End-User Runtime Web Installer.";

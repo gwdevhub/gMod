@@ -20,6 +20,13 @@ along with OpenTexMod.  If not, see <http://www.gnu.org/licenses/>.
 
 #include "OTM_Main.h"
 
+#ifndef RETURN_QueryInterface
+#define RETURN_QueryInterface 0x01000000L
+#endif
+
+#ifndef PRE_MESSAGE
+#define PRE_MESSAGE "OTM_IDirect3DDevice9"
+#endif
 
 
 int OTM_IDirect3DDevice9::CreateSingleTexture(void)
@@ -30,7 +37,7 @@ int OTM_IDirect3DDevice9::CreateSingleTexture(void)
   {
     if( D3D_OK != CreateTexture(8, 8, 1, 0, D3DFMT_A8R8G8B8, D3DPOOL_MANAGED, (IDirect3DTexture9**) &SingleTexture, NULL))
     {
-      Message("OTM_IDirect3DDevice9::CreateSingleTexture(): CreateTexture Failed\n");
+      Message( PRE_MESSAGE "::CreateSingleTexture(): CreateTexture Failed\n");
       SingleTexture = NULL;
       return (RETURN_TEXTURE_NOT_LOADED);
     }
@@ -45,7 +52,7 @@ int OTM_IDirect3DDevice9::CreateSingleTexture(void)
 
     if (D3D_OK!=pD3Dtex->LockRect(0, &d3dlr, 0, 0))
     {
-      Message("OTM_IDirect3DDevice9::CreateSingleTexture(): LockRect Failed\n");
+      Message( PRE_MESSAGE "::CreateSingleTexture(): LockRect Failed\n");
       SingleTexture->Release();
       SingleTexture=NULL;
       return (RETURN_TEXTURE_NOT_LOADED);
@@ -60,7 +67,7 @@ int OTM_IDirect3DDevice9::CreateSingleTexture(void)
   {
     if( D3D_OK != CreateVolumeTexture(8, 8, 8, 1, 0, D3DFMT_A8R8G8B8, D3DPOOL_MANAGED, (IDirect3DVolumeTexture9**) &SingleVolumeTexture, NULL))
     {
-      Message("OTM_IDirect3DDevice9::CreateSingleTexture(): CreateVolumeTexture Failed\n");
+      Message( PRE_MESSAGE "::CreateSingleTexture(): CreateVolumeTexture Failed\n");
       SingleVolumeTexture = NULL;
       return (RETURN_TEXTURE_NOT_LOADED);
     }
@@ -75,7 +82,7 @@ int OTM_IDirect3DDevice9::CreateSingleTexture(void)
     //LockBox)(UINT Level, D3DLOCKED_BOX *pLockedVolume, CONST D3DBOX *pBox,
     if (D3D_OK!=pD3Dtex->LockBox(0, &d3dlr, 0, 0))
     {
-      Message("OTM_IDirect3DDevice9::CreateSingleTexture(): LockBox Failed\n");
+      Message( PRE_MESSAGE "::CreateSingleTexture(): LockBox Failed\n");
       SingleVolumeTexture->Release();
       SingleVolumeTexture=NULL;
       return (RETURN_TEXTURE_NOT_LOADED);
@@ -89,7 +96,7 @@ int OTM_IDirect3DDevice9::CreateSingleTexture(void)
   {
     if( D3D_OK != CreateCubeTexture(8, 1, 0, D3DFMT_A8R8G8B8, D3DPOOL_MANAGED, (IDirect3DCubeTexture9**) &SingleCubeTexture, NULL))
     {
-      Message("OTM_IDirect3DDevice9::CreateSingleTexture(): CreateCubeTexture Failed\n");
+      Message( PRE_MESSAGE "::CreateSingleTexture(): CreateCubeTexture Failed\n");
       SingleCubeTexture = NULL;
       return (RETURN_TEXTURE_NOT_LOADED);
     }
@@ -106,7 +113,7 @@ int OTM_IDirect3DDevice9::CreateSingleTexture(void)
     {
       if (D3D_OK!=pD3Dtex->LockRect( (D3DCUBEMAP_FACES) c, 0, &d3dlr, 0, 0))
       {
-        Message("OTM_IDirect3DDevice9::CreateSingleTexture(): LockRect (Cube) Failed\n");
+        Message( PRE_MESSAGE "::CreateSingleTexture(): LockRect (Cube) Failed\n");
         SingleCubeTexture->Release();
         SingleCubeTexture=NULL;
         return (RETURN_TEXTURE_NOT_LOADED);
@@ -121,9 +128,9 @@ int OTM_IDirect3DDevice9::CreateSingleTexture(void)
   return (RETURN_OK);
 }
 
-OTM_IDirect3DDevice9::OTM_IDirect3DDevice9(IDirect3DDevice9* pOriginal, OTM_TextureServer* server)
+OTM_IDirect3DDevice9::OTM_IDirect3DDevice9( IDirect3DDevice9* pOriginal, OTM_TextureServer* server)
 {
-  Message("OTM_IDirect3DDevice9( %lu, %lu): %lu\n", pOriginal, server, this);
+  Message( PRE_MESSAGE "::" PRE_MESSAGE  "( %lu, %lu): %lu\n", pOriginal, server, this);
 
   OTM_Server = server;
   OTM_Client = new OTM_TextureClient(  OTM_Server, this); //get a new texture client for this device
@@ -146,14 +153,21 @@ OTM_IDirect3DDevice9::OTM_IDirect3DDevice9(IDirect3DDevice9* pOriginal, OTM_Text
 
 OTM_IDirect3DDevice9::~OTM_IDirect3DDevice9(void)
 {
+  Message( PRE_MESSAGE "::~" PRE_MESSAGE "(): %lu\n", this);
 }
 
 HRESULT OTM_IDirect3DDevice9::QueryInterface(REFIID riid, void** ppvObj)
 {
-	 // check if original dll can provide interface. then send *our* address
-	*ppvObj = NULL;
+  // check if original dll can provide interface. then send *our* address
+	if (riid==IID_IDirect3DTexture9)
+	{
+	  // This function should never be called with IDirect3DTexture9 by the game
+    *ppvObj = this;
+	  return (RETURN_QueryInterface);
+	}
 
-  Message("IDirect3DDevice9::QueryInterface(): %lu\n", this);
+	*ppvObj = NULL;
+  Message( PRE_MESSAGE "::QueryInterface(): %lu\n", this);
 	HRESULT hRes = m_pIDirect3DDevice9->QueryInterface(riid, ppvObj); 
 
 	if (*ppvObj == m_pIDirect3DDevice9)
@@ -168,7 +182,7 @@ HRESULT OTM_IDirect3DDevice9::QueryInterface(REFIID riid, void** ppvObj)
 ULONG OTM_IDirect3DDevice9::AddRef(void)
 {
   OTM_Reference++; //increasing our counter
-  Message("%lu = IDirect3DDevice9::AddRef(): %lu\n", OTM_Reference, this);
+  Message("%lu = " PRE_MESSAGE "::AddRef(): %lu\n", OTM_Reference, this);
   return (m_pIDirect3DDevice9->AddRef());
 }
 
@@ -192,10 +206,10 @@ ULONG OTM_IDirect3DDevice9::Release(void)
   }
 
 	ULONG count = m_pIDirect3DDevice9->Release();
-  Message("%lu = IDirect3DDevice9::Release(): %lu\n", count, this);
+  Message("%lu = " PRE_MESSAGE "::Release(): %lu\n", count, this);
   if (OTM_Reference!=count) //bug
   {
-    Message("Error in IDirect3DDevice9::Release(): %lu!=%lu\n", OTM_Reference, count);
+    Message("Error in " PRE_MESSAGE "::Release(): %lu!=%lu\n", OTM_Reference, count);
   }
 
 	if (count==0u)  delete(this);
@@ -311,7 +325,7 @@ HRESULT OTM_IDirect3DDevice9::CreateTexture(UINT Width,UINT Height,UINT Levels,D
 	if(ret != D3D_OK) return (ret);
 
 	//create fake texture
-	OTM_IDirect3DTexture9 *texture  = new OTM_IDirect3DTexture9(ppTexture, this);
+	OTM_IDirect3DTexture9 *texture  = new OTM_IDirect3DTexture9( ppTexture, this);
 	if (texture) *ppTexture = texture;
 	
 	if (LastCreatedTexture!=NULL) //if a texture was loaded before, hopefully this texture contains now the data, so we can add it
@@ -330,7 +344,7 @@ HRESULT OTM_IDirect3DDevice9::CreateVolumeTexture(UINT Width,UINT Height,UINT De
   if(ret != D3D_OK) return (ret);
 
   //create fake texture
-  OTM_IDirect3DVolumeTexture9 *texture  = new OTM_IDirect3DVolumeTexture9(ppVolumeTexture, this);
+  OTM_IDirect3DVolumeTexture9 *texture  = new OTM_IDirect3DVolumeTexture9( ppVolumeTexture, this);
   if (texture) *ppVolumeTexture = texture;
 
   if (LastCreatedVolumeTexture!=NULL) //if a texture was loaded before, hopefully this texture contains now the data, so we can add it
@@ -387,7 +401,7 @@ HRESULT OTM_IDirect3DDevice9::UpdateSurface(IDirect3DSurface9* pSourceSurface,CO
 
 HRESULT OTM_IDirect3DDevice9::UpdateTexture(IDirect3DBaseTexture9* pSourceTexture,IDirect3DBaseTexture9* pDestinationTexture)
 {
-  Message("OTM_IDirect3DDevice9::UpdateTexture( %lu, %lu): %lu\n", pSourceTexture, pDestinationTexture, this);
+  Message( PRE_MESSAGE "::UpdateTexture( %lu, %lu): %lu\n", pSourceTexture, pDestinationTexture, this);
   // we must pass the real texture objects
 
 
