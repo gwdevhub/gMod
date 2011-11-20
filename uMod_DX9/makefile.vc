@@ -32,8 +32,8 @@ precompiler_flag =  /D "HOOK_INJECTION"
 !ENDIF
 
 def_file = /DEF:"uMod_DX9_dll_HOOK_INJECTION.def"
-obj_suff = HOOK.obj
-dll = uMod_d3d9_Hook.dll
+obj_suff = HI.obj
+dll = uMod_d3d9_HI.dll
 
 !ENDIF
 

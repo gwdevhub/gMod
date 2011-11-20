@@ -33,7 +33,7 @@ endif
 
 def_file = /DEF:"uMod_DX9_dll_HOOK_INJECTION.def"
 obj_suff = HI.obj
-dll = uMod_d3d9_HIdll
+dll = uMod_d3d9_HI.dll
 endif
 endif
 
