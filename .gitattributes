@@ -1,4 +1,5 @@
 * text=auto !eol
+/README.txt -text
 uMod_DX9/makefile.gcc -text
 uMod_DX9/makefile.vc -text
 uMod_DX9/uMod_ArrayHandler.cpp -text

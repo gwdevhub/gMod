@@ -176,6 +176,7 @@ uMod_Frame::uMod_Frame(const wxString& title, uMod_Settings &set)
   }
 
   if (Settings.UseHook) InstallHook();
+  DeactivateGamesControl();
 }
 
 uMod_Frame::~uMod_Frame(void)
@@ -266,6 +267,7 @@ void uMod_Frame::OnAddGame( wxCommandEvent &event)
 
   Clients[NumberOfGames] = client;
   NumberOfGames++;
+  if (NumberOfGames==1) ActivateGamesControl();
 }
 
 void uMod_Frame::OnDeleteGame( wxCommandEvent &event)
@@ -278,6 +280,8 @@ void uMod_Frame::OnDeleteGame( wxCommandEvent &event)
     delete Clients[i];
     NumberOfGames--;
     for (int j=i; j<NumberOfGames; j++) Clients[j] = Clients[j+1];
+
+    if (NumberOfGames==0) DeactivateGamesControl();
     return;
   }
 }
@@ -690,6 +694,36 @@ void uMod_Frame::OnMenuDeleteGame(wxCommandEvent& WXUNUSED(event))
 }
 
 
+int uMod_Frame::ActivateGamesControl(void)
+{
+  MenuMain->Enable( ID_Menu_LoadTemplate, true);
+  MenuMain->Enable( ID_Menu_SaveTemplate, true);
+  MenuMain->Enable( ID_Menu_SaveTemplateAs, true);
+  MenuMain->Enable( ID_Menu_SetDefaultTemplate, true);
+
+
+  OpenButton->Enable( true);
+  DirectoryButton->Enable( true);
+  UpdateButton->Enable( true);
+  ReloadButton->Enable( true);
+
+  return 0;
+}
+
+int uMod_Frame::DeactivateGamesControl(void)
+{
+  MenuMain->Enable( ID_Menu_LoadTemplate, false);
+  MenuMain->Enable( ID_Menu_SaveTemplate, false);
+  MenuMain->Enable( ID_Menu_SaveTemplateAs, false);
+  MenuMain->Enable( ID_Menu_SetDefaultTemplate, false);
+
+
+  OpenButton->Enable( false);
+  DirectoryButton->Enable( false);
+  UpdateButton->Enable( false);
+  ReloadButton->Enable( false);
+  return 0;
+}
 
 int uMod_Frame::GetHookedGames( wxArrayString &array)
 {

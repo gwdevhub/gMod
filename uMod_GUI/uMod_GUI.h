@@ -63,6 +63,8 @@ public:
 
 private:
 
+  int ActivateGamesControl(void);
+  int DeactivateGamesControl(void);
 
   uMod_Settings Settings;
   int KillServer(void);
