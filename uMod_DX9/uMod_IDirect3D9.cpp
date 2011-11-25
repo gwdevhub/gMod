@@ -145,7 +145,9 @@ HRESULT __stdcall uMod_IDirect3D9::CreateDevice(UINT Adapter,D3DDEVTYPE DeviceTy
 	// we intercept this call and provide our own "fake" Device Object
 	HRESULT hres = m_pIDirect3D9->CreateDevice( Adapter, DeviceType, hFocusWindow, BehaviorFlags, pPresentationParameters, ppReturnedDeviceInterface);
 
-	uMod_IDirect3DDevice9 *pIDirect3DDevice9 =  new uMod_IDirect3DDevice9(*ppReturnedDeviceInterface,  uMod_Server);
+	int count = 1;
+	if (pPresentationParameters!=NULL) count  = pPresentationParameters->BackBufferCount;
+	uMod_IDirect3DDevice9 *pIDirect3DDevice9 =  new uMod_IDirect3DDevice9(*ppReturnedDeviceInterface,  uMod_Server, count);
 	
 	// store our pointer (the fake one) for returning it to the calling program
 	*ppReturnedDeviceInterface = pIDirect3DDevice9;

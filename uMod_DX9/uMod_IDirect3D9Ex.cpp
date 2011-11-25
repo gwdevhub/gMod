@@ -38,7 +38,9 @@ HRESULT __stdcall uMod_IDirect3D9Ex::CreateDeviceEx( UINT Adapter, D3DDEVTYPE De
   // we intercept this call and provide our own "fake" Device Object
   HRESULT hres = m_pIDirect3D9Ex->CreateDeviceEx( Adapter, DeviceType, hFocusWindow, BehaviorFlags, pPresentationParameters, pFullscreenDisplayMode, ppReturnedDeviceInterface);
 
-  uMod_IDirect3DDevice9Ex *pIDirect3DDevice9Ex = new uMod_IDirect3DDevice9Ex(*ppReturnedDeviceInterface,  uMod_Server);
+  int count = 1;
+  if (pPresentationParameters!=NULL) count  = pPresentationParameters->BackBufferCount;
+  uMod_IDirect3DDevice9Ex *pIDirect3DDevice9Ex = new uMod_IDirect3DDevice9Ex(*ppReturnedDeviceInterface,  uMod_Server, count);
 
   // store our pointer (the fake one) for returning it to the calling program
   *ppReturnedDeviceInterface = pIDirect3DDevice9Ex;

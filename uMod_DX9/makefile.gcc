@@ -1,20 +1,20 @@
 ifdef NI
 
-ifdef ALPHA
-precompiler_flag = /D "ALPHA" /D "NO_INJECTION"
+ifdef LOG_MESSAGE
+precompiler_flag = /D "LOG_MESSAGE" /D "NO_INJECTION"
 else
 precompiler_flag = /D "NO_INJECTION"
 endif
 
 def_file = /DEF:"uMod_DX9_dll_NO_INJECTION.def"
-obj_suff = NO_INJECTION.obj
+obj_suff = NI.obj
 dll = d3d9.dll
 
 else
 
 ifdef DI
-ifdef ALPHA
-precompiler_flag = /D "ALPHA" /D "DIRECT_INJECTION"
+ifdef LOG_MESSAGE
+precompiler_flag = /D "LOG_MESSAGE" /D "DIRECT_INJECTION"
 else
 precompiler_flag =  /D "DIRECT_INJECTION"
 endif
@@ -25,8 +25,8 @@ dll = uMod_d3d9_DI.dll
 
 else
 
-ifdef ALPHA
-precompiler_flag = /D "ALPHA" /D "HOOK_INJECTION"
+ifdef LOG_MESSAGE
+precompiler_flag = /D "LOG_MESSAGE" /D "HOOK_INJECTION"
 else
 precompiler_flag =  /D "HOOK_INJECTION"
 endif

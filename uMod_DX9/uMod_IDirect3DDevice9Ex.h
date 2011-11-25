@@ -30,7 +30,7 @@ along with Universal Modding Engine.  If not, see <http://www.gnu.org/licenses/>
 class uMod_IDirect3DDevice9Ex : public IDirect3DDevice9Ex
 {
 public:
-	uMod_IDirect3DDevice9Ex( IDirect3DDevice9Ex* pOriginal, uMod_TextureServer* server);
+	uMod_IDirect3DDevice9Ex( IDirect3DDevice9Ex* pOriginal, uMod_TextureServer* server, int back_buffer_count);
 	virtual ~uMod_IDirect3DDevice9Ex(void);
 
 	// START: The original DX9 function definitions
@@ -208,6 +208,8 @@ public:
   D3DCOLOR TextureColour;
   ID3DXFont *OSD_Font;
   //D3DCOLOR FontColour;
+  int BackBufferCount;
+  bool NormalRendering;
 
   int uMod_Reference;
 

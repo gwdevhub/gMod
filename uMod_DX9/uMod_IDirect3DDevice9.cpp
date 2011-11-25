@@ -128,9 +128,12 @@ int uMod_IDirect3DDevice9::CreateSingleTexture(void)
   return (RETURN_OK);
 }
 
-uMod_IDirect3DDevice9::uMod_IDirect3DDevice9( IDirect3DDevice9* pOriginal, uMod_TextureServer* server)
+uMod_IDirect3DDevice9::uMod_IDirect3DDevice9( IDirect3DDevice9* pOriginal, uMod_TextureServer* server, int back_buffer_count)
 {
   Message( PRE_MESSAGE "::" PRE_MESSAGE  "( %lu, %lu): %lu\n", pOriginal, server, this);
+
+  BackBufferCount = back_buffer_count;
+  NormalRendering = true;
 
   uMod_Server = server;
   uMod_Client = new uMod_TextureClient(  uMod_Server, this); //get a new texture client for this device
@@ -574,12 +577,22 @@ HRESULT uMod_IDirect3DDevice9::CreateOffscreenPlainSurface(UINT Width,UINT Heigh
 
 HRESULT uMod_IDirect3DDevice9::SetRenderTarget(DWORD RenderTargetIndex,IDirect3DSurface9* pRenderTarget)
 {
-  return(m_pIDirect3DDevice9->SetRenderTarget(RenderTargetIndex,pRenderTarget));
+  {
+    IDirect3DSurface9 *back_buffer;
+    NormalRendering = false;
+    for (int i=0; !NormalRendering && i<BackBufferCount; i++)
+    {
+      m_pIDirect3DDevice9->GetBackBuffer( 0, i, D3DBACKBUFFER_TYPE_MONO, &back_buffer);
+      if (back_buffer == pRenderTarget) NormalRendering = true;
+      back_buffer->Release();
+    }
+  }
+  return (m_pIDirect3DDevice9->SetRenderTarget(RenderTargetIndex,pRenderTarget));
 }
 
 HRESULT uMod_IDirect3DDevice9::GetRenderTarget(DWORD RenderTargetIndex,IDirect3DSurface9** ppRenderTarget)
 {
-  return(m_pIDirect3DDevice9->GetRenderTarget(RenderTargetIndex,ppRenderTarget));
+  return (m_pIDirect3DDevice9->GetRenderTarget(RenderTargetIndex,ppRenderTarget));
 }
 
 HRESULT uMod_IDirect3DDevice9::SetDepthStencilSurface(IDirect3DSurface9* pNewZStencil)
@@ -594,7 +607,7 @@ HRESULT uMod_IDirect3DDevice9::GetDepthStencilSurface(IDirect3DSurface9** ppZSte
 
 HRESULT uMod_IDirect3DDevice9::BeginScene(void)
 {
-  //if ( uMod_Client!=NULL) // this if condition is senseless, since an exception is raised if the client could not be created
+  if ( NormalRendering )
   {
     if (LastCreatedTexture!=NULL) // add the last created texture
     {
@@ -742,7 +755,7 @@ HRESULT uMod_IDirect3DDevice9::BeginScene(void)
 
 HRESULT uMod_IDirect3DDevice9::EndScene(void)
 {
-  if ( /*uMod_Client!=NULL &&*/ uMod_Client->BoolSaveSingleTexture && SingleTexture!=NULL && SingleVolumeTexture!=NULL && SingleCubeTexture!=NULL)
+  if ( NormalRendering && uMod_Client->BoolSaveSingleTexture && SingleTexture!=NULL && SingleVolumeTexture!=NULL && SingleCubeTexture!=NULL)
   {
     if (OSD_Font==NULL) // create the font
     {

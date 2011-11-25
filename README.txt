@@ -38,6 +38,9 @@ There exist two makefiles, one for the mingw32-make.exe (makefile.gcc) which cal
 
 You have to compile the 3 dll's separately (one for each injection method). The dll will be copied after successful compilation in the uMod_GUI/bin directory.
 
+If you want to use the logging mode of the dll you have to parse LOG_MESSAGE=1
+
+
 2.2) Using gcc (BUT you need the vc compiler!):
 change in the uMod_DX9 Directory and type:
 mingw32-make -f makefile.gcc 

@@ -22,22 +22,21 @@ along with Universal Modding Engine.  If not, see <http://www.gnu.org/licenses/>
 #define uMod_DEFINES_H_
 
 
-#ifdef ALPHA
 
-#define LOG_MESSAGE
+#ifdef LOG_MESSAGE
 extern FILE *gl_File;
 
 #define Message(...) {if (gl_File!=NULL) {fprintf( gl_File, __VA_ARGS__); fflush(gl_File);}}
 #ifdef HOOK_INJECTION
-#define OpenMessage(...) {if (fopen_s( &gl_File, "uMod_log.txt", "wt")) gl_File=NULL; else fprintf( gl_File, "HI R23: 0000000\n");}
+#define OpenMessage(...) {if (fopen_s( &gl_File, "uMod_log.txt", "wt")) gl_File=NULL; else fprintf( gl_File, "HI R25: 0000000\n");}
 #endif
 
 #ifdef DIRECT_INJECTION
-#define OpenMessage(...) {if (fopen_s( &gl_File, "uMod_log.txt", "wt")) gl_File=NULL; else fprintf( gl_File, "DI R23: 0000000\n");}
+#define OpenMessage(...) {if (fopen_s( &gl_File, "uMod_log.txt", "wt")) gl_File=NULL; else fprintf( gl_File, "DI R25: 0000000\n");}
 #endif
 
 #ifdef NO_INJECTION
-#define OpenMessage(...) {if (fopen_s( &gl_File, "uMod_log.txt", "wt")) gl_File=NULL; else fprintf( gl_File, "NI R23: 0000000\n");}
+#define OpenMessage(...) {if (fopen_s( &gl_File, "uMod_log.txt", "wt")) gl_File=NULL; else fprintf( gl_File, "NI R25: 0000000\n");}
 #endif
 
 #define CloseMessage(...) {if (gl_File!=NULL) fclose(gl_File);}
