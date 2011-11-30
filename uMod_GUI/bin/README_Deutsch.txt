@@ -16,7 +16,7 @@ diese dll nicht mit Universal Modding Engine mit geliefert werden. Wenn diese dl
 deinem System nicht installiert ist, wird dich Universal Modding Engine darauf hinweisen.
 
 
-Was kann Universal Modding Engine (uMod) beta V1.0?
+Was kann Universal Modding Engine (uMod) V1.0?
 
 -einzelne Texturen aus einem Spiel extrahieren und speichern (Die Zieltextur kann im Spiel geändert werden.)
 -alle Texturen aus einem Spiel extrahieren und speichern

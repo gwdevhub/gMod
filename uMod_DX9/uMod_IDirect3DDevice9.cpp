@@ -607,7 +607,7 @@ HRESULT uMod_IDirect3DDevice9::GetDepthStencilSurface(IDirect3DSurface9** ppZSte
 
 HRESULT uMod_IDirect3DDevice9::BeginScene(void)
 {
-  if ( NormalRendering )
+  //if ( NormalRendering )
   {
     if (LastCreatedTexture!=NULL) // add the last created texture
     {

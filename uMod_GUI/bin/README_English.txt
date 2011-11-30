@@ -13,7 +13,7 @@ cannot be delivered together with Universal Modding Engine . If D3DX9_43.dll is 
 installed on your system, Universal Modding Engine will give you a hint at program start.
 
 
-What can Universal Modding Engine (uMod) beta V1.0?
+What can Universal Modding Engine (uMod) V1.0?
 
 -extract and save single textures from a DX9 game (the target texture can be toggled in the game)
 -extract and save all textures from a DX9 game

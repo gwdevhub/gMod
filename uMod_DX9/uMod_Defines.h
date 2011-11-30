@@ -28,15 +28,15 @@ extern FILE *gl_File;
 
 #define Message(...) {if (gl_File!=NULL) {fprintf( gl_File, __VA_ARGS__); fflush(gl_File);}}
 #ifdef HOOK_INJECTION
-#define OpenMessage(...) {if (fopen_s( &gl_File, "uMod_log.txt", "wt")) gl_File=NULL; else fprintf( gl_File, "HI R25: 0000000\n");}
+#define OpenMessage(...) {if (fopen_s( &gl_File, "uMod_log.txt", "wt")) gl_File=NULL; else fprintf( gl_File, "HI R40: 0000000\n");}
 #endif
 
 #ifdef DIRECT_INJECTION
-#define OpenMessage(...) {if (fopen_s( &gl_File, "uMod_log.txt", "wt")) gl_File=NULL; else fprintf( gl_File, "DI R25: 0000000\n");}
+#define OpenMessage(...) {if (fopen_s( &gl_File, "uMod_log.txt", "wt")) gl_File=NULL; else fprintf( gl_File, "DI 40: 0000000\n");}
 #endif
 
 #ifdef NO_INJECTION
-#define OpenMessage(...) {if (fopen_s( &gl_File, "uMod_log.txt", "wt")) gl_File=NULL; else fprintf( gl_File, "NI R25: 0000000\n");}
+#define OpenMessage(...) {if (fopen_s( &gl_File, "uMod_log.txt", "wt")) gl_File=NULL; else fprintf( gl_File, "NI R40: 0000000\n");}
 #endif
 
 #define CloseMessage(...) {if (gl_File!=NULL) fclose(gl_File);}
