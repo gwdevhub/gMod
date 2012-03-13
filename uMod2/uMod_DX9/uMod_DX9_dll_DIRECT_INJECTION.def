@@ -1,0 +1,5 @@
+LIBRARY	"uMod_d3d9_DI"
+EXPORTS
+  uMod_Direct3DCreate9 @1
+  uMod_Direct3DCreate9Ex @2
+  Nothing @3

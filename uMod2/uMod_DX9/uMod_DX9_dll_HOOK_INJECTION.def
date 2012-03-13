@@ -1,0 +1,6 @@
+LIBRARY	"uMod_d3d9_Hook"
+EXPORTS
+  uMod_Direct3DCreate9 @1
+  uMod_Direct3DCreate9Ex @2
+  InstallHook @3
+  RemoveHook @4
