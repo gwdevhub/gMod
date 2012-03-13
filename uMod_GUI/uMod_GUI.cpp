@@ -531,8 +531,11 @@ void uMod_Frame::OnMenuAcknowledgement(wxCommandEvent& WXUNUSED(event))
   wxString msg;
   msg << "King Brace Blane and ROTA thank:\n\n";
   msg << "RS for coding the original TexMod and for information about the used hashing algorithm\n\n";
-  msg << "EvilAlex for translation into Russian and bug fixing";
-  //msg << "King Brace Blane for a tutorial video on YouTube and bug fixing";
+  msg << "EvilAlex for translation into Russian and bug fixing\n";
+  msg << "ReRRemi for translation into French\n";
+  msg << "mirHL for translation into Italian\n";
+  msg << "Vergil for help with German ;)";
+
   wxMessageBox( msg, Language->MenuAcknowledgement, wxOK);
 }
 
