@@ -18,12 +18,12 @@ along with Universal Modding Engine.  If not, see <http://www.gnu.org/licenses/>
 
 
 
-#ifndef uMod_TEXTUREHANDLER_HPP
-#define uMod_TEXTUREHANDLER_HPP
+#ifndef uMod_TEXTURECLIENT_HPP
+#define uMod_TEXTURECLIENT_HPP
 
 #include <d3d9.h>
 #include <d3d10.h>
-#include "../uMod_GlobalDefines.h"
+#include "..\uMod_GlobalDefines.h"
 #include "..\uMod_Error.h"
 
 
@@ -38,22 +38,28 @@ class uMod_TextureServer;
 class uMod_TextureClient
 {
 public:
-  uMod_TextureClient(uMod_TextureServer* server);
-  ~uMod_TextureClient(void);
+  uMod_TextureClient(const int version);
+  virtual ~uMod_TextureClient(void);
+
+  /**
+   * Connect to the server. (called from the instance, which creates the client, e.g. uMod_IDirect3DDevice9::uMod_IDirect3DDevice9)
+   * @return RETURN_OK on success
+   */
+  int ConnectToServer(uMod_TextureServer* server);
 
   /**
    * Enable/Disable the "save all texture" mode. (called from the server)
    * @param val
    * @return RETURN_OK on success
    */
-  int SaveAllTextures(bool val);
+  virtual int SaveAllTextures(bool val) = 0;
 
   /**
    * Enable/Disable the "save all texture" mode. (called from the server)
    * @param val
    * @return RETURN_OK on success
    */
-  int SaveSingleTexture(bool val);
+  virtual int SaveSingleTexture(bool val) = 0;
 
   /**
    * Set the directory, wher the texture should be stored (called from the server)
@@ -113,11 +119,13 @@ public:
    * @return RETURN_OK on success
    */
   int AddUpdate(TextureFileStruct* update, int number);
+
+
   /**
    * Merge the latest update (called from client -> e.g. uMod_IDirect3DDevice9::BeginScene())
    * @return RETURN_OK on success
    */
-  int MergeUpdate(void);
+  virtual int MergeUpdate(void) = 0;
 
 
   bool BoolSaveAllTextures; //< true if all textures should be saved
@@ -129,7 +137,8 @@ public:
   D3DCOLOR FontColour; //< color of the message ("save single texture" mode)
   D3DCOLOR TextureColour; //< color of the texture ("save single texture" mode)
 
-private:
+
+  const int Version;
   uMod_TextureServer* Server; //< Pointer to the server
   wchar_t SavePath[MAX_PATH]; //< saving directory
   wchar_t GameName[MAX_PATH]; //< game name
@@ -152,8 +161,7 @@ private:
   int NumberToMod; //< number of texture to be modded
   TextureFileStruct* FileToMod; //< array which stores the file in memory and the hash of each texture to be modded
 
-
-  int LookUpToMod( MyTypeHash hash, int num_index_list, int *index_list); // called from LookUpToMod(...);
+  int GetIndex( MyTypeHash hash, int num_index_list=0, int *index_list=(int*)0); // called from LookUpToMod(...);
 
 
 };

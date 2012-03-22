@@ -43,9 +43,10 @@ along with Universal Modding Engine.  If not, see <http://www.gnu.org/licenses/>
 #include "../uMod_GlobalDefines.h"
 #include "../uMod_Error.h"
 #include "uMod_Defines.h"
-#include "uMod_DX9_dll.h"
-#include "uMod_TextureFunction.h"
+#include "uMod_DXMain_dll.h"
+//#include "uMod_TextureFunction.h"
 
+/*
 #include "uMod_IDirect3D9.h"
 #include "uMod_IDirect3D9Ex.h"
 
@@ -55,12 +56,16 @@ along with Universal Modding Engine.  If not, see <http://www.gnu.org/licenses/>
 #include "uMod_IDirect3DCubeTexture9.h"
 #include "uMod_IDirect3DTexture9.h"
 #include "uMod_IDirect3DVolumeTexture9.h"
+*/
 
 #include "uMod_ArrayHandler.h"
 #include "uMod_TextureServer.h"
 #include "uMod_TextureClient.h"
 
 
+extern HINSTANCE             gl_hThisInstance;
+extern uMod_TextureServer*    gl_TextureServer;
+extern HANDLE                gl_ServerThread;
 extern unsigned int gl_ErrorState;
 
 #endif

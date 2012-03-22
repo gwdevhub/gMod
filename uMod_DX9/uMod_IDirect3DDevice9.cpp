@@ -18,7 +18,8 @@ along with Universal Modding Engine.  If not, see <http://www.gnu.org/licenses/>
 
 
 
-#include "uMod_Main.h"
+#include "..\uMod_DXMain\uMod_Main.h"
+#include "uMod_IDirect3DDevice9.h"
 
 #ifndef RETURN_QueryInterface
 #define RETURN_QueryInterface 0x01000000L
@@ -26,6 +27,10 @@ along with Universal Modding Engine.  If not, see <http://www.gnu.org/licenses/>
 
 #ifndef PRE_MESSAGE
 #define PRE_MESSAGE "uMod_IDirect3DDevice9"
+#endif
+
+#ifndef DEF_DX_VERSION
+#define DEF_DX_VERSION VERSION_DX9
 #endif
 
 
@@ -136,7 +141,8 @@ uMod_IDirect3DDevice9::uMod_IDirect3DDevice9( IDirect3DDevice9* pOriginal, uMod_
   NormalRendering = true;
 
   uMod_Server = server;
-  uMod_Client = new uMod_TextureClient(  uMod_Server, this); //get a new texture client for this device
+  uMod_Client = new uMod_TextureClient_DX9( this, DEF_DX_VERSION); //get a new texture client for this device
+  uMod_Client->ConnectToServer( uMod_Server);
 
   LastCreatedTexture = NULL;
   LastCreatedVolumeTexture = NULL;

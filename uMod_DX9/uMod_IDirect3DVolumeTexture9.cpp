@@ -22,7 +22,10 @@ along with Universal Modding Engine.  If not, see <http://www.gnu.org/licenses/>
  */
 
 
-#include "uMod_Main.h"
+#include "../uMod_DXMain/uMod_Main.h"
+#include "../uMod_DXMain/uMod_TextureFunction.h"
+#include "uMod_IDirect3DDevice9.h"
+#include "uMod_IDirect3DVolumeTexture9.h"
 
 HRESULT APIENTRY uMod_IDirect3DVolumeTexture9::QueryInterface(REFIID riid, void** ppvObj)
 {

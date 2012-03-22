@@ -1,0 +1,153 @@
+
+
+ifdef DX10
+ifdef DX9
+DX_XX_Flag = /D DEF_USE_DX9 /D DEF_USE_DX10
+DX_XX_File = 9_10
+else
+DX_XX_Flag = /D DEF_USE_DX10
+DX_XX_File = 10
+endif
+
+else
+DX_XX_Flag = /D DEF_USE_DX9
+DX_XX_File = 9
+endif
+
+
+
+ifdef NI
+
+ifdef LOG_MESSAGE
+precompiler_flag = /D "LOG_MESSAGE" /D "NO_INJECTION"
+else
+precompiler_flag = /D "NO_INJECTION"
+endif
+
+def_file = /DEF:"uMod_DX$(DX_XX_File)_dll_NO_INJECTION.def"
+obj_suff = NI.obj
+dll = d3d$(DX_XX_File).dll
+
+else
+
+ifdef DI
+ifdef LOG_MESSAGE
+precompiler_flag = /D "LOG_MESSAGE" /D "DIRECT_INJECTION"
+else
+precompiler_flag =  /D "DIRECT_INJECTION"
+endif
+
+def_file = /DEF:"uMod_DX$(DX_XX_File)_dll_DIRECT_INJECTION.def"
+obj_suff = DI.obj
+dll = uMod_d3d$(DX_XX_File)_DI.dll
+
+else
+
+ifdef LOG_MESSAGE
+precompiler_flag = /D "LOG_MESSAGE" /D "HOOK_INJECTION"
+else
+precompiler_flag =  /D "HOOK_INJECTION"
+endif
+
+def_file = /DEF:"uMod_DX$(DX_XX_File)_dll_HOOK_INJECTION.def"
+obj_suff = HI.obj
+dll = uMod_d3d$(DX_XX_File)_HI.dll
+endif
+endif
+
+
+CXX = cl
+CLINK = link.exe
+DEFINES = /D "WIN32" /D "_WINDOWS" /D "_USRDLL" /D "_WINDLL" /D "_MBCS"  $(DX_XX_Flag)
+CFLAGS = /I "C:\Program Files (x86)\Microsoft DirectX SDK (June 2010)\Include" /nologo /W3 /WX- /O2 ${DEFINES} ${precompiler_flag} /Gm- /EHsc /MT /GS /fp:precise /Zc:wchar_t
+LFLAGS = /INCREMENTAL:NO /NOLOGO /LIBPATH:"C:\Program Files (x86)\Microsoft DirectX SDK (June 2010)\Lib\x86" /DLL "Winmm.lib" "d3dx9.lib" "d3dx10.lib" "dxguid.lib" "user32.lib" "Kernel32.lib" ${def_file} /SUBSYSTEM:WINDOWS /OPT:REF /OPT:ICF  /TLBID:1 /DYNAMICBASE:NO /NXCOMPAT:NO  /MACHINE:X86
+
+obj = obj
+bin = bin
+
+objects = \
+  ${obj}\uMod_TextureFunction.$(DX_XX_File).${obj_suff} \
+  ${obj}\uMod_ArrayHandler.$(DX_XX_File).${obj_suff} \
+  ${obj}\uMod_TextureClient.$(DX_XX_File).${obj_suff} \
+  ${obj}\uMod_TextureServer.$(DX_XX_File).${obj_suff} \
+  ${obj}\uMod_DXMain_dll.$(DX_XX_File).${obj_suff} \
+  \
+  ${obj}\uMod_DX9_dll.${obj_suff} \
+  ${obj}\uMod_TextureClient_DX9.${obj_suff} \
+	${obj}\uMod_IDirect3D9.${obj_suff} \
+  ${obj}\uMod_IDirect3D9Ex.${obj_suff} \
+  ${obj}\uMod_IDirect3DDevice9.${obj_suff} \
+  ${obj}\uMod_IDirect3DDevice9Ex.${obj_suff} \
+  ${obj}\uMod_IDirect3DTexture9.${obj_suff} \
+  ${obj}\uMod_IDirect3DVolumeTexture9.${obj_suff} \
+  ${obj}\uMod_IDirect3DCubeTexture9.${obj_suff}
+
+headers = uMod_Main.h \
+ uMod_DXMain_dll.h \
+ uMod_Defines.h \
+ uMod_TextureFunction.h \
+ uMod_ArrayHandler.h \
+ uMod_TextureClient.h \
+ uMod_TextureServer.h
+ 
+DX9_headers = \
+ ..\uMod_DX9\uMod_DX9_dll.h \
+ ..\uMod_DX9\uMod_TextureClient_DX9.h \
+ ..\uMod_DX9\uMod_IDirect3D9.h \
+ ..\uMod_DX9\uMod_IDirect3DDevice9.h \
+ ..\uMod_DX9\uMod_IDirect3DTexture9.h \
+ ..\uMod_DX9\uMod_IDirect3DVolumeTexture9.h \
+ ..\uMod_DX9\uMod_IDirect3DCubeTexture9.h
+ 
+
+${bin}\d3d9.dll: ${objects}
+	${CLINK} ${LFLAGS} ${objects} /OUT:${bin}\${dll}
+	copy ${bin}\${dll} ..\uMod_GUI\bin\${dll}
+
+
+${obj}\uMod_DXMain_dll.$(DX_XX_File).${obj_suff}: uMod_DXMain_dll.cpp  ${headers}
+	${CXX} ${CFLAGS} /c $< /Fo$@
+
+${obj}\uMod_ArrayHandler.$(DX_XX_File).${obj_suff}: uMod_ArrayHandler.cpp  ${headers}
+	${CXX} ${CFLAGS} /c $< /Fo$@
+
+${obj}\uMod_TextureClient.$(DX_XX_File).${obj_suff}: uMod_TextureClient.cpp  ${headers}
+	${CXX} ${CFLAGS} /c $< /Fo$@
+
+${obj}\uMod_TextureServer.$(DX_XX_File).${obj_suff}: uMod_TextureServer.cpp  ${headers}
+	${CXX} ${CFLAGS} /c $< /Fo$@
+
+${obj}\uMod_TextureFunction.$(DX_XX_File).${obj_suff}: uMod_TextureFunction.cpp  ${headers} ${DX9_headers}
+	${CXX} ${CFLAGS} /c $< /Fo$@
+
+
+${obj}\uMod_DX9_dll.${obj_suff}: ..\uMod_DX9\uMod_DX9_dll.cpp  ${headers} ${DX9_headers}
+	${CXX} ${CFLAGS} /c $< /Fo$@
+
+${obj}\uMod_TextureClient_DX9.${obj_suff}: ..\uMod_DX9\uMod_TextureClient_DX9.cpp  ${headers} ${DX9_headers}
+	${CXX} ${CFLAGS} /c $< /Fo$@
+
+${obj}\uMod_IDirect3D9.${obj_suff}: ..\uMod_DX9\uMod_IDirect3D9.cpp ${headers} ${DX9_headers}
+	${CXX} ${CFLAGS} /c $< /Fo$@
+
+${obj}\uMod_IDirect3D9Ex.${obj_suff}: ..\uMod_DX9\uMod_IDirect3D9Ex.cpp ${headers} ${DX9_headers}
+	${CXX} ${CFLAGS} /c $< /Fo$@
+
+${obj}\uMod_IDirect3DDevice9.${obj_suff}: ..\uMod_DX9\uMod_IDirect3DDevice9.cpp  ${headers} ${DX9_headers}
+	${CXX} ${CFLAGS} /c $< /Fo$@
+
+${obj}\uMod_IDirect3DDevice9Ex.${obj_suff}: ..\uMod_DX9\uMod_IDirect3DDevice9Ex.cpp  ${headers} ${DX9_headers}
+	${CXX} ${CFLAGS} /c $< /Fo$@
+
+${obj}\uMod_IDirect3DTexture9.${obj_suff}: ..\uMod_DX9\uMod_IDirect3DTexture9.cpp  ${headers} ${DX9_headers}
+	${CXX} ${CFLAGS} /c $< /Fo$@
+
+${obj}\uMod_IDirect3DVolumeTexture9.${obj_suff}: ..\uMod_DX9\uMod_IDirect3DVolumeTexture9.cpp  ${headers} ${DX9_headers}
+	${CXX} ${CFLAGS} /c $< /Fo$@
+
+${obj}\uMod_IDirect3DCubeTexture9.${obj_suff}: ..\uMod_DX9\uMod_IDirect3DCubeTexture9.cpp  ${headers}
+	${CXX} ${CFLAGS} /c $< /Fo$@
+
+
+clean:
+	del ${objects} ${bin}\${dll}

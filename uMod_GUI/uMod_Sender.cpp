@@ -32,6 +32,7 @@ uMod_Sender::uMod_Sender(PipeStruct &pipe) : Pipe(pipe)
 uMod_Sender::~uMod_Sender(void)
 {
   if (Buffer!=NULL) delete [] Buffer;
+  if (OldTextures!=NULL) delete [] OldTextures;
 }
 
 

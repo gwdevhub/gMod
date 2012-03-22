@@ -20,12 +20,13 @@ along with Universal Modding Engine.  If not, see <http://www.gnu.org/licenses/>
 #ifndef uMod_IDirect3DDevice9Ex_H_
 #define uMod_IDirect3DDevice9Ex_H_
 
-#include <d3d9.h>
-#include <d3dx9.h>
+#include "..\uMod_DXMain\uMod_Main.h"
+#include "uMod_TextureClient_DX9.h"
 #include "uMod_IDirect3DTexture9.h"
 #include "uMod_IDirect3DVolumeTexture9.h"
 #include "uMod_IDirect3DCubeTexture9.h"
 
+class uMod_TextureClient_DX9;
 
 class uMod_IDirect3DDevice9Ex : public IDirect3DDevice9Ex
 {
@@ -177,7 +178,7 @@ public:
 	// END: The original DX9 function definitions
 
 
-  uMod_TextureClient* GetuMod_Client(void) {return (uMod_Client);}
+  uMod_TextureClient_DX9* GetuMod_Client(void) {return (uMod_Client);}
 
   uMod_IDirect3DTexture9* GetLastCreatedTexture(void) {return (LastCreatedTexture);}
   int SetLastCreatedTexture(uMod_IDirect3DTexture9* pTexture) {LastCreatedTexture=pTexture; return (RETURN_OK);}
@@ -218,7 +219,7 @@ public:
   uMod_IDirect3DCubeTexture9* LastCreatedCubeTexture;
 
   uMod_TextureServer* uMod_Server;
-  uMod_TextureClient* uMod_Client;
+  uMod_TextureClient_DX9* uMod_Client;
 };
 
 #endif

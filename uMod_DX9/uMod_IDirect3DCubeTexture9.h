@@ -31,7 +31,7 @@ along with Universal Modding Engine.  If not, see <http://www.gnu.org/licenses/>
 #include <d3d9.h>
 #include <d3dx9.h>
 
-#include "uMod_Defines.h"
+#include "..\uMod_DXMain\uMod_Defines.h"
 
 
 

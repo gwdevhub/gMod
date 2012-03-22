@@ -38,7 +38,13 @@ public:
 
   // You *must* copy here the data to be transported
   uMod_Event( const uMod_Event &event )
-  :  wxCommandEvent(event) { this->SetText( event.GetText()); PipeIn=((uMod_Event&)event).GetPipeIn(); PipeOut=((uMod_Event&)event).GetPipeOut(); Name=((uMod_Event&)event).GetName(); Client=((uMod_Event&)event).GetClient();}
+  :  wxCommandEvent(event)
+  { this->SetText( event.GetText());
+    Value=((uMod_Event&)event).GetValue();
+    PipeIn=((uMod_Event&)event).GetPipeIn(); PipeOut=((uMod_Event&)event).GetPipeOut();
+    Name=((uMod_Event&)event).GetName();
+    Client=((uMod_Event&)event).GetClient();
+    }
 
   // Required for sending with wxPostEvent()
   wxEvent* Clone() const { return new uMod_Event(*this); }
@@ -46,11 +52,13 @@ public:
   wxString GetText() const { return m_Text; }
   void SetText( const wxString& text ) { m_Text = text; }
 
+  int GetValue(void) {return Value;}
   wxString GetName(void) {return Name;}
   HANDLE GetPipeIn(void) {return PipeIn;}
   HANDLE GetPipeOut(void) {return PipeOut;}
   uMod_Client * GetClient(void) {return Client;}
 
+  void SetValue(int value) {Value=value;}
   void SetName( wxString name) {Name=name;}
   void SetPipeIn( HANDLE pipe) {PipeIn=pipe;}
   void SetPipeOut( HANDLE pipe) {PipeOut=pipe;}
@@ -58,6 +66,7 @@ public:
 
 private:
 
+  int Value;
   wxString Name;
   HANDLE PipeIn;
   HANDLE PipeOut;

@@ -60,6 +60,8 @@ BEGIN_EVENT_TABLE(uMod_Frame, wxFrame)
 
   EVT_COMMAND  (ID_Add_Game, uMod_EVENT_TYPE, uMod_Frame::OnAddGame)
   EVT_COMMAND  (ID_Delete_Game, uMod_EVENT_TYPE, uMod_Frame::OnDeleteGame)
+  EVT_COMMAND  (ID_Add_Device, uMod_EVENT_TYPE, uMod_Frame::OnAddDevice)
+  EVT_COMMAND  (ID_Delete_Device, uMod_EVENT_TYPE, uMod_Frame::OnRemoveDevice)
 END_EVENT_TABLE()
 
 IMPLEMENT_APP(MyApp)
@@ -260,10 +262,7 @@ void uMod_Frame::OnAddGame( wxCommandEvent &event)
     delete page;
     return;
   }
-  name = name.AfterLast('\\');
-  name = name.AfterLast('/');
-  name = name.BeforeLast('.');
-  Notebook->AddPage( page, name, true);
+  Notebook->AddPage( page, page->GetPageName(), true);
 
   Clients[NumberOfGames] = client;
   NumberOfGames++;
@@ -286,6 +285,29 @@ void uMod_Frame::OnDeleteGame( wxCommandEvent &event)
   }
 }
 
+void uMod_Frame::OnAddDevice( wxCommandEvent &event)
+{
+  uMod_Client *client = ((uMod_Event&)event).GetClient();
+  for (int i=0; i<NumberOfGames; i++) if (Clients[i]==client)
+  {
+    uMod_GamePage *page = (uMod_GamePage*) Notebook->GetPage(i);
+    page->AddDXDevice(((uMod_Event&)event).GetValue());
+    Notebook->SetPageText( i, page->GetPageName());
+    return;
+  }
+}
+
+void uMod_Frame::OnRemoveDevice( wxCommandEvent &event)
+{
+  uMod_Client *client = ((uMod_Event&)event).GetClient();
+  for (int i=0; i<NumberOfGames; i++) if (Clients[i]==client)
+  {
+    uMod_GamePage *page = (uMod_GamePage*) Notebook->GetPage(i);
+    page->RemoveDXDevice(((uMod_Event&)event).GetValue());
+    Notebook->SetPageText( i, page->GetPageName());
+    return;
+  }
+}
 
 void uMod_Frame::OnClose(wxCloseEvent& event)
 {

@@ -53,9 +53,17 @@ public:
 
   int UpdateLanguage(void);
 
+  wxString GetPageName(void);
+  int AddDXDevice(int version);
+  int RemoveDXDevice(int version);
+
+
   wxString LastError;
 
 private:
+
+  int CounterDX9, CounterDX9EX;
+  int CounterDX10, CounterDX10EX;
 
   int GetSettings(void);
   int SetColour( wxTextCtrl** txt, int *colour);

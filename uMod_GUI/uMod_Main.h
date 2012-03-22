@@ -98,6 +98,8 @@ enum
   ID_Menu_SetDefaultTemplate,
   ID_Add_Game,
   ID_Delete_Game,
+  ID_Add_Device,
+  ID_Delete_Device,
   ID_Button_Texture, //this entry must be the last!!
 };
 

@@ -20,7 +20,10 @@ along with Universal Modding Engine.  If not, see <http://www.gnu.org/licenses/>
 
 
 
-#include "uMod_Main.h"
+#include "../uMod_DXMain/uMod_Main.h"
+#include "uMod_IDirect3D9Ex.h"
+#include "uMod_IDirect3DDevice9.h"
+#include "uMod_IDirect3DDevice9Ex.h"
 
 
 
@@ -28,6 +31,8 @@ along with Universal Modding Engine.  If not, see <http://www.gnu.org/licenses/>
 #define uMod_IDirect3D9 uMod_IDirect3D9Ex
 #define m_pIDirect3D9 m_pIDirect3D9Ex
 #define PRE_MESSAGE "uMod_IDirect3D9Ex"
+
+#define uMod_IDirect3D9_H_
 
 #include "uMod_IDirect3D9.cpp"
 

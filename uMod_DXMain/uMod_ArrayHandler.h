@@ -22,7 +22,7 @@ along with Universal Modding Engine.  If not, see <http://www.gnu.org/licenses/>
 #define uMod_FIELDHANDLER_H_
 
 #include "..\uMod_GlobalDefines.h"
-#include "uMod_IDirect3DTexture9.h"
+
 
 typedef struct
 {
@@ -31,11 +31,11 @@ typedef struct
   unsigned int Size; // size of file
   int NumberOfTextures;
   int Reference; // for a fast delete in the FileHandler
-  IDirect3DBaseTexture9 **Textures; // pointer to the fake textures
+  void **Textures; // pointer to the fake textures
   MyTypeHash Hash; // hash value
 } TextureFileStruct;
 
-
+/*
 
 class uMod_FileHandler  // array to store TextureFileStruct
 {
@@ -56,6 +56,7 @@ protected:
   int FieldCounter;
   TextureFileStruct*** Files;
 };
+*/
 
 
 
@@ -81,6 +82,7 @@ private:
 
 
 
+typedef uMod_TextureHandler<TextureFileStruct> uMod_FileHandler;
 
 
 

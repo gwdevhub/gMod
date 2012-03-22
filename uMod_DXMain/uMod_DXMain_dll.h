@@ -18,19 +18,37 @@ along with Universal Modding Engine.  If not, see <http://www.gnu.org/licenses/>
 
 
 
-#ifndef uMod_DX9_DLL_H_
-#define uMod_DX9_DLL_H_
+#ifndef uMod_DXMAIN_DLL_H_
+#define uMod_DXMAIN_DLL_H_
 
-#include "../uMod_DXMain/uMod_Main.h"
+#ifdef DEF_USE_DX9
+#include "../uMod_DX9/uMod_DX9_dll.h"
+#endif
 
-void LoadOriginal_DX9_Dll(void);
-void InitDX9();
-void ExitDX9();
+void InitInstance(HINSTANCE hModule);
+void ExitInstance(void);
+
+bool HookThisProgram( wchar_t *ret);
+DWORD WINAPI ServerThread( LPVOID lpParam);
+
+
 
 #ifndef NO_INJECTION
 
-IDirect3D9 *APIENTRY uMod_Direct3DCreate9(UINT SDKVersion);
-HRESULT APIENTRY uMod_Direct3DCreate9Ex( UINT SDKVersion, IDirect3D9Ex **ppD3D);
+void *DetourFunc(BYTE *src, const BYTE *dst, const int len);
+bool RetourFunc(BYTE *src, BYTE *restore, const int len);
+
+
+#ifdef HOOK_INJECTION
+LRESULT CALLBACK HookProc(int nCode, WPARAM wParam, LPARAM lParam);
+void InstallHook(void);
+void RemoveHook(void);
+#endif
+
+
+#ifdef DIRECT_INJECTION
+void Nothing(void);
+#endif
 
 #endif
 

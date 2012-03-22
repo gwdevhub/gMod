@@ -22,7 +22,6 @@ along with Universal Modding Engine.  If not, see <http://www.gnu.org/licenses/>
 #define uMod_DEFINES_H_
 
 
-
 #ifdef LOG_MESSAGE
 extern FILE *gl_File;
 
@@ -56,11 +55,14 @@ typedef unsigned long DWORD32;
 #define STDMETHOD(method)     virtual HRESULT method
 #define STDMETHOD_(ret, method)  virtual ret method
 #define sprintf_s(...)
+#define swprintf_s(...)
+#define strcat_s(...)
 #define fprintf(...)
 #define fclose(...)
 #define fseek(...)
 #define ftell(...) 0
 #define fflush(...)
+#define qsort(...)
 typedef LONG HRESULT;
 
 #define UNREFERENCED_PARAMETER(...)

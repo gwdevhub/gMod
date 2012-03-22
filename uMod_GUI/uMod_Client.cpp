@@ -46,7 +46,8 @@ uMod_Client::~uMod_Client(void)
 void* uMod_Client::Entry(void)
 {
   char buffer[SMALL_BUFSIZE];
-  while (1)
+  bool run = true;
+  while (run)
   {
     unsigned long size;
     bool ret = ReadFile(
@@ -56,28 +57,48 @@ void* uMod_Client::Entry(void)
              &size, // number of bytes read
              NULL);        // not overlapped I/O
 
-    if (ret || GetLastError()==ERROR_MORE_DATA)
+    if (ret)// || GetLastError()==ERROR_MORE_DATA)
     {
       unsigned int pos=0;
       MsgStruct *commands;
       bool update_textures = false;
-      while (pos<size-sizeof(MsgStruct))
+
+      while (pos<=size-sizeof(MsgStruct))
       {
         commands = (MsgStruct*) &buffer[pos];
         //unsigned int add_length = 0;
-        /*
+
         switch (commands->Control)
         {
+        case CONTROL_ADD_CLIENT:
+        {
+          uMod_Event event( uMod_EVENT_TYPE, ID_Add_Device);
+          event.SetValue(commands->Value);
+          event.SetClient(this);
+          wxPostEvent( MainFrame, event);
+          break;
+        }
+        case CONTROL_REMOVE_CLIENT:
+        {
+          uMod_Event event( uMod_EVENT_TYPE, ID_Delete_Device);
+          event.SetValue(commands->Value);
+          event.SetClient(this);
+          wxPostEvent( MainFrame, event);
+          break;
+        }
+        case CONTROL_GAME_EXIT:
+        {
+          run = false;
+          pos=size;
+          break;
+        }
 
         }
-        */
+
         pos+=sizeof(MsgStruct);// + add_length;
       }
     }
-    else
-    {
-      break;
-    }
+    else if (GetLastError()!=ERROR_MORE_DATA) run = false;
   }
   CloseHandle(Pipe.In);
   Pipe.In = INVALID_HANDLE_VALUE;

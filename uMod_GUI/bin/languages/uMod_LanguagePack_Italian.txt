@@ -1,0 +1,75 @@
+# by mirHL|
+
+MenuHelp:Aiuto|
+MenuAbout:Informazioni|
+MenuAcknowledgement:Riconoscimenti|
+MenuStartGame:Avvia il gioco da uMod|
+MenuStartGameCMD:Avvia il gioco da uMod (con riga di comando)|
+MenuUseHook:Usa hook globale|
+MenuAddGame:Aggiungi gioco|
+MenuDeleteGame:Rimuovi gioco|
+MenuLoadTemplate:Carica template|
+MenuSaveTemplate:Salva template|
+MenuSaveTemplateAs:Salva template come...|
+MenuSetDefaultTemplate:Imposta template come predefinito|
+MenuLanguage:Cambia lingua (Change language)|
+MenuExit:Esci|
+MainMenuMain:Comandi|
+MainMenuHelp:Aiuto|
+
+
+ButtonOpen:Apri texture/archivio|
+ButtonDirectory:Imposta cartella lavoro|
+ButtonUpdate:Aggiorna|
+ButtonReload:Aggiorna (ricarica)|
+
+
+ChooseFile:Seleziona un file|
+ChooseDir:Seleziona una cartella|
+CheckBoxSaveSingleTexture:Salva singole texture|
+TextCtrlTemplate:Template: |
+CheckBoxSaveAllTextures:Salva tutte le texture|
+TextCtrlSavePath:Percorso lavori: |
+SelectLanguage:Seleziona una lingua|
+StartGame:Seleziona il gioco da far partire.|
+CommandLine:Imposta opzioni da riga di comando.|
+ChooseGame:Seleziona un eseguibile di un gioco.|
+DeleteGame:Seleziona i giochi da rimuovere.|
+GameAlreadyAdded:Il gioco è già stato aggiunto.|
+ExitGameAnyway:Chiudere uMod mentre il gioco è in esecuzione potrebbe farlo crashare.
+Uscire comunque?|
+NoComment:Nessun commento.|
+Author:Autore: |
+
+
+Error_GameIsHooked:L'hook globale è attivo e questo è in conflitto col lancio! Per favore rimuovi il gioco dalla lista o spegni l'hook.|
+Error_ProcessNotStarted:Il gioco non è potuto essere avviato.|
+Error_RemoveHook:Rimuovere l'Hook mentre il gioco è in esecuzione potrebbe farlo crashare.|
+Error_FileNotSupported:Questo tipo di file non è supportato:|
+Error_DLLNotFound:
+Impossibile caricare la dll.
+La dll injection non funzionerà.
+Questo accade perchè D3DX9_43.dll non è installato nel sistema. 
+Installa DirectX End-User Runtime Web Installer.|
+Error_FktNotFound:Impossibile caricare una funzione fuori della dll.
+La dll injection non funzionerà.|
+Error_AlreadyRunning:Un altro processo di uMod è in esecuzione.|
+Error_Send:Impossibile arrivare al gioco.|
+Error_KeyTwice:Hai assegnato due volte lo stesso tasto.|
+Error_NoSavePath:Non hai selezionato un percorso di salvataggio.|
+Error_KeyNotSet:Qualche tasto non è assegnato.|
+Error_SaveFile:Impossibile salvare il file.|
+Error_NoPipe:Pipe non è aperto.|
+Error_WritePipe:impossibile scrivere in pipe.|
+Error_FlushPipe:Impossibile ripulire pipe buffer.|
+Error_Hash:Impossibile trovare l'hash, forse il file non è chiamato *_HASH.dds|
+Error_FileOpen:Impossibile aprire il file.|
+Error_FileRead:Impossibile leggere il file.|
+Error_Memory:Impossibile allocare abbastanza memoria|
+Error_Unzip:Impossibile scomprimere.|
+Error_ZipEntry:Impossibile trovare Zip entry.|
+KeyBack:Precedente|
+KeySave:Salva|
+KeyNext:Successivo|
+FontColour:Colore caratteri (RGB):|
+TextureColour:Colore texture (RGB):|

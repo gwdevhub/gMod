@@ -25,6 +25,9 @@ uMod_GamePage::uMod_GamePage( wxNotebook *parent, const wxString &exe, const wxS
   ExeName = exe;
   TemplateName = save;
 
+
+  CounterDX9 = 0; CounterDX9EX = 0;
+  CounterDX10 = 0; CounterDX10EX = 0;
   //SetBackgroundColour( *wxLIGHT_GREY);
   //SetBackgroundColour( wxColour( "LIGHT GREY"));
 
@@ -183,6 +186,79 @@ int uMod_GamePage::AddTexture( const wxString &file_name)
   MainSizer->FitInside(this);
 
   return UpdateGame();
+}
+
+
+wxString uMod_GamePage::GetPageName(void)
+{
+  wxString ret;
+  ret = ExeName;
+
+  ret = ret.AfterLast('\\');
+  ret = ret.AfterLast('/');
+  ret = ret.BeforeLast('.');
+  if (CounterDX9 || CounterDX9EX || CounterDX10 || CounterDX10EX)
+  {
+    wxString temp;
+    ret.append(" (");
+    if (CounterDX9)
+    {
+      temp.Printf("DX9: %d", CounterDX9);
+      ret.append(temp);
+    }
+    if (CounterDX9EX)
+    {
+      if (!temp.IsEmpty()) ret.append(",");
+      temp.Printf("DX9EX: %d", CounterDX9EX);
+      ret.append(temp);
+    }
+    if (CounterDX10)
+    {
+      if (!temp.IsEmpty()) ret.append(",");
+      temp.Printf("DX10: %d", CounterDX10);
+      ret.append(temp);
+    }
+    if (CounterDX10EX)
+    {
+      if (!temp.IsEmpty()) ret.append(",");
+      temp.Printf("DX10EX: %d", CounterDX10EX);
+      ret.append(temp);
+    }
+    ret.append(")");
+  }
+  return ret;
+}
+
+int uMod_GamePage::AddDXDevice(int version)
+{
+  switch (version)
+  {
+  case VERSION_DX9:
+    CounterDX9++; break;
+  case VERSION_DX9EX:
+    CounterDX9EX++; break;
+  case VERSION_DX10:
+    CounterDX10++; break;
+  case VERSION_DX10EX:
+    CounterDX10EX++; break;
+  }
+  return 0;
+}
+
+int uMod_GamePage::RemoveDXDevice(int version)
+{
+  switch (version)
+  {
+  case VERSION_DX9:
+    if (CounterDX9>0) CounterDX9--; break;
+  case VERSION_DX9EX:
+    if (CounterDX9EX>0) CounterDX9EX--; break;
+  case VERSION_DX10:
+    if (CounterDX10>0) CounterDX10--; break;
+  case VERSION_DX10EX:
+    if (CounterDX10EX>0) CounterDX10EX--; break;
+  }
+  return 0;
 }
 
 int uMod_GamePage::GetSettings(void)

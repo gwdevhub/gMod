@@ -31,10 +31,33 @@ public:
   ~uMod_Frame(void);
 
 
-
+  /**
+   * A game has started and opend a pipe to the GUI. The Server thus create an event and send it to the main frame.
+   * @param event
+   */
   void OnAddGame( wxCommandEvent &event);
+  /**
+   * A game has quite and closed it pipe to the GUI. The Server thus create an event and send it to the main frame.
+   * @param event
+   */
   void OnDeleteGame( wxCommandEvent &event);
 
+  /**
+   * A game has created a DX device. The Server thus create an event and send it to the main frame.
+   * @param event
+   */
+  void OnAddDevice( wxCommandEvent &event);
+  /**
+   * A game has deleted a DX device. The Server thus create an event and send it to the main frame.
+   * @param event
+   */
+  void OnRemoveDevice( wxCommandEvent &event);
+
+
+  /**
+   * The user tries to close the GUI.
+   * @param WXUNUSED
+   */
   void OnClose(wxCloseEvent& WXUNUSED(event));
 
 

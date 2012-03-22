@@ -39,45 +39,153 @@ class uMod_TextureClient;
 class uMod_TextureServer
 {
 public:
+  /**
+   * The server is created from the dll entry routine.
+   * @param name Name of the game executable (without the extension)
+   */
   uMod_TextureServer(wchar_t *name);
   ~uMod_TextureServer(void);
 
-  int AddClient(uMod_TextureClient *client, TextureFileStruct** update, int* number); // called from a Client
-  int RemoveClient(uMod_TextureClient *client); // called from a Client
+  /**
+   * Each client connect itself to the server via this function.
+   * @param client This-pointer of the client
+   * @param update Current texture to be modded
+   * @param number Number of modded textures
+   * @param Version Version of DirectX.
+   * @return RETURN_OK on success
+   */
+  int AddClient(uMod_TextureClient *client, TextureFileStruct* &update, int &number, const int version); // called from a Client
 
+  /**
+   * On destruction of client, it disconnect from the server.
+   * @param client This-pointer of the client
+   * @return RETURN_OK on success
+   */
+  int RemoveClient(uMod_TextureClient *client, const int version); // called from a Client
+
+  /**
+   * Opens the pipe to the GUI (called from the dll entry routine)
+   * @param name Name of the game
+   * @return RETURN_OK on success
+   */
   int OpenPipe(wchar_t *name); // called on initialization of our d3d9 fake dll
+
+  /**
+   * Close the Pipe to the GUI (called if dll entry is called to attach from the game)
+   * @return RETURN_OK on success
+   */
   int ClosePipe(void); // called on exit of our d3d9 fake dll
+
+  /**
+   * The mainloop reads from the pipe (blocking reading). It is running in a separate server thread.
+   * @return RETURN_OK on success
+   */
   int MainLoop(void); // is executed in a server thread
 
 
-  // following functions are only public for testing purpose !!
-  // they should be private and only be called from the Mainloop
-
-  int AddFile( char* buffer, unsigned int size,  MyTypeHash hash, bool force); // called from Mainloop(), if the content of the texture is sent
-  int AddFile( wchar_t* file_name, MyTypeHash hash, bool force); // called from Mainloop(), if the name and the path to the file is sent
-  int RemoveFile( MyTypeHash hash); // called from Mainloop()
-
-  int SaveAllTextures(bool val); // called from Mainloop()
-  int SaveSingleTexture(bool val); // called from Mainloop()
-
-  int SetSaveDirectory( wchar_t *dir); // called from Mainloop()
-
-
-  int SetKeyBack( int key); // called from Mainloop()
-  int SetKeySave( int key); // called from Mainloop()
-  int SetKeyNext( int key); // called from Mainloop()
-
-  int SetFontColour(DWORD colour); // called from Mainloop()
-  int SetTextureColour(DWORD colour); // called from Mainloop()
 
 private:
+  /**
+   * Add a file to the list of texture to be modded (called from the mainloop).
+   * @param buffer hold the file content of the texture
+   * @param size size of the file content
+   * @param hash hash of the texture to be replaced
+   * @param force set to TRUE to force a reload of the texture
+   * @return RETURN_OK on success
+   */
+  int AddFile( char* buffer, unsigned int size,  MyTypeHash hash, bool force); // called from Mainloop(), if the content of the texture is sent
+
+  /**
+   * Add a file to the list of texture to be modded (called from the mainloop).
+   * @param file_name Name and path to the file to be loaded.
+   * @param hash hash of the texture to be replaced
+   * @param force set to TRUE to force a reload of the texture
+   * @return RETURN_OK on success
+   */
+  int AddFile( wchar_t* file_name, MyTypeHash hash, bool force); // called from Mainloop(), if the name and the path to the file is sent
+
+  /**
+   * Remove a texture (called from the mainloop).
+   * @param hash Hash of the target texture.
+   * @return RETURN_OK on success
+   */
+  int RemoveFile( MyTypeHash hash); // called from Mainloop()
+
+  /**
+   * Save all texture, which are loade by the game (called from the mainloop).
+   * @param val Set TRUE to enable the mode.
+   * @return
+   */
+  int SaveAllTextures(bool val); // called from Mainloop()
+
+  /**
+   *  (called from the mainloop).
+   * @param val
+   * @return
+   */
+  int SaveSingleTexture(bool val); // called from Mainloop()
+
+  /**
+   *  (called from the mainloop).
+   * @param dir
+   * @return
+   */
+  int SetSaveDirectory( wchar_t *dir); // called from Mainloop()
+
+  /**
+   *  (called from the mainloop).
+   * @param key
+   * @return
+   */
+  int SetKeyBack( int key); // called from Mainloop()
+
+  /**
+   *  (called from the mainloop).
+   * @param key
+   * @return
+   */
+  int SetKeySave( int key); // called from Mainloop()
+
+  /**
+   *  (called from the mainloop).
+   * @param key
+   * @return
+   */
+  int SetKeyNext( int key); // called from Mainloop()
+
+  /**
+   *  (called from the mainloop).
+   * @param colour
+   * @return
+   */
+  int SetFontColour(DWORD colour); // called from Mainloop()
+
+  /**
+   *  (called from the mainloop).
+   * @param colour
+   * @return
+   */
+  int SetTextureColour(DWORD colour); // called from Mainloop()
+
   bool BoolSaveAllTextures;
   bool BoolSaveSingleTexture;
   wchar_t SavePath[MAX_PATH];
   wchar_t GameName[MAX_PATH];
 
+  /**
+   * Send the files to be modded (Update) to a client (called from the mainloop).
+   * @param client Pointer to a client (if NULL is passed, the data is send to all clients)
+   * @return
+   */
   int PropagateUpdate(uMod_TextureClient* client=NULL); // called from Mainloop() if texture are loaded or removed
-  int PrepareUpdate(TextureFileStruct** update, int* number); // called from PropagateUpdate() and AddClient()
+
+  /**
+   * Prepare the texture data for the clients (e.g. Load the texture from disk, sort the texture according the hash values) (called from the mainloop).
+   * @param update
+   * @param number
+   * @return
+   */
+  int PrepareUpdate(TextureFileStruct* &update, int &number); // called from PropagateUpdate() and AddClient()
   // generate a copy of the current texture to be modded
   // the file content of the textures are not copied, the clients get the pointer to the file content
   // but the arrays allocate by this function, must be deleted by the client

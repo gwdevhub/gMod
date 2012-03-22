@@ -79,7 +79,7 @@ uMod_TextureServer::~uMod_TextureServer(void)
   Pipe.Out = INVALID_HANDLE_VALUE;
 }
 
-int uMod_TextureServer::AddClient(uMod_TextureClient *client, TextureFileStruct** update, int* number) // called from a client
+int uMod_TextureServer::AddClient(uMod_TextureClient *client, TextureFileStruct* &update, int &number, const int version) // called from a client
 {
   Message("AddClient(%lu): %lu\n", client, this);
   if (int ret = LockMutex())
@@ -95,6 +95,7 @@ int uMod_TextureServer::AddClient(uMod_TextureClient *client, TextureFileStruct*
   client->SaveAllTextures(BoolSaveAllTextures);
   client->SaveSingleTexture(BoolSaveSingleTexture);
   client->SetSaveDirectory(SavePath);
+
   if (KeyBack > 0) client->SetKeyBack(KeyBack);
   if (KeySave > 0) client->SetKeySave(KeySave);
   if (KeyNext > 0) client->SetKeyNext(KeyNext);
@@ -135,10 +136,23 @@ int uMod_TextureServer::AddClient(uMod_TextureClient *client, TextureFileStruct*
   }
   Clients[NumberOfClients++] = client;
 
-  return (UnlockMutex());
+  if (int ret = UnlockMutex())  return (ret);
+
+  if (Pipe.Out != INVALID_HANDLE_VALUE)
+  {
+    MsgStruct msg;
+    msg.Control = CONTROL_ADD_CLIENT;
+    msg.Value = version;
+
+    unsigned long num;
+    bool ret2 = WriteFile( Pipe.Out, (const void*) &msg, sizeof(msg), &num, NULL);
+    if (!ret2 || sizeof(msg)!=num) {return (RETURN_PIPE_ERROR);}
+    if (!FlushFileBuffers(Pipe.Out)) {return (RETURN_PIPE_ERROR);}
+  }
+  return (RETURN_OK);
 }
 
-int uMod_TextureServer::RemoveClient(uMod_TextureClient *client) // called from a client
+int uMod_TextureServer::RemoveClient(uMod_TextureClient *client, const int version) // called from a client
 {
   Message("RemoveClient(%lu): %lu\n", client);
   if (int ret = LockMutex())
@@ -153,7 +167,24 @@ int uMod_TextureServer::RemoveClient(uMod_TextureClient *client) // called from 
     Clients[i] = Clients[NumberOfClients];
     break;
   }
-  return (UnlockMutex());
+
+  int ret = UnlockMutex();
+  if (ret!=RETURN_OK) return (ret);
+
+
+  if (Pipe.Out != INVALID_HANDLE_VALUE)
+  {
+    MsgStruct msg;
+    msg.Control = CONTROL_REMOVE_CLIENT;
+    msg.Value = version;
+
+    unsigned long num;
+    bool ret2 = WriteFile( Pipe.Out, (const void*) &msg, sizeof(msg), &num, NULL);
+    if (!ret2 || sizeof(msg)!=num) {return (RETURN_PIPE_ERROR);}
+    if (!FlushFileBuffers(Pipe.Out)) {return (RETURN_PIPE_ERROR);}
+  }
+
+  return (RETURN_OK);
 }
 
 int uMod_TextureServer::AddFile( char* buffer, unsigned int size,  MyTypeHash hash, bool force) // called from Mainloop()
@@ -493,7 +524,7 @@ int uMod_TextureServer::PropagateUpdate(uMod_TextureClient* client) // called fr
   {
     TextureFileStruct* update;
     int number;
-    if (int ret = PrepareUpdate( &update, &number)) return (ret);
+    if (int ret = PrepareUpdate( update, number)) return (ret);
     client->AddUpdate(update, number);
   }
   else
@@ -502,7 +533,7 @@ int uMod_TextureServer::PropagateUpdate(uMod_TextureClient* client) // called fr
     {
       TextureFileStruct* update;
       int number;
-      if (int ret = PrepareUpdate( &update, &number)) return (ret);
+      if (int ret = PrepareUpdate( update, number)) return (ret);
       Clients[i]->AddUpdate(update, number);
     }
   }
@@ -528,7 +559,7 @@ int TextureFileStruct_Compare( const void * elem1, const void * elem2 )
   return (0);
 }
 
-int uMod_TextureServer::PrepareUpdate(TextureFileStruct** update, int* number) // called from the PropagateUpdate() and AddClient.
+int uMod_TextureServer::PrepareUpdate(TextureFileStruct* &update, int &number) // called from the PropagateUpdate() and AddClient.
 // Prepare an update for one client. The allocated memory must deleted by the client.
 {
   Message("PrepareUpdate(%lu, %d): %lu\n", update, number, this);
@@ -549,8 +580,8 @@ int uMod_TextureServer::PrepareUpdate(TextureFileStruct** update, int* number) /
   }
 
 
-  *update = temp;
-  *number = num;
+  update = temp;
+  number = num;
   return (RETURN_OK);
 }
 #undef cpy_file_struct
@@ -806,12 +837,23 @@ int uMod_TextureServer::ClosePipe(void) //called from ExitInstance, this must be
 {
   Message("ClosePipe:\n");
 
+
+
   // We close the outgoing pipe first.
   // The GUI will notice that the opposite side of it incoming pipe is closed
   // and closes it outgoing (our incoming) pipe and thus cancel the ReadFile() in the Mainloop()
 
   if (Pipe.Out != INVALID_HANDLE_VALUE)
   {
+
+    MsgStruct msg;
+    msg.Control = CONTROL_GAME_EXIT;
+
+    unsigned long num;
+    bool ret2 = WriteFile( Pipe.Out, (const void*) &msg, sizeof(msg), &num, NULL);
+    if (!ret2 || sizeof(msg)!=num) {return (RETURN_PIPE_ERROR);}
+    if (!FlushFileBuffers(Pipe.Out)) {return (RETURN_PIPE_ERROR);}
+
     DisconnectNamedPipe(Pipe.Out);
     CloseHandle(Pipe.Out);
     Pipe.Out = INVALID_HANDLE_VALUE;
