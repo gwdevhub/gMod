@@ -1,0 +1,6 @@
+LIBRARY	"uMod_d3d10_Hook"
+EXPORTS
+  uMod_D3D10CreateDeviceAndSwapChain @1
+  uMod_D3D10CreateDeviceAndSwapChain1 @2
+  InstallHook @3
+  RemoveHook @4

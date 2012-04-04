@@ -69,6 +69,7 @@ along with Universal Modding Engine.  If not, see <http://www.gnu.org/licenses/>
 
 #include "../uMod_GlobalDefines.h"
 #include "../uMod_Error.h"
+#include "../uMod_Utils.h"
 
 
 class uMod_Frame;
@@ -119,41 +120,5 @@ enum
 #include "uMod_GamePage.h"
 #include "uMod_DirectInjection.h"
 #include "uMod_GUI.h"
-
-
-template <class T>
-int GetMemory(T* &array, int num)
-{
-  if (array!=(T*)0) delete [] array;
-  try {array = new T[num];}
-  catch (...) {array = (T*) 0; return -1;}
-  return 0;
-}
-
-template <class T>
-int GetMemory(T* &array, int num, T init)
-{
-  if (array!=(T*)0) delete [] array;
-  try {array = new T[num];}
-  catch (...) {array = (T*) 0; return -1;}
-  for (int i=0; i<num; i++) array[i]=init;
-  return 0;
-}
-
-template <class T>
-int GetMoreMemory(T* &old_array, int old_num, int new_num)
-{
-  if (new_num<=old_num) return 0;
-  T* new_array;
-  try {new_array = new T[new_num];}
-  catch (...) {return -1;}
-  if (old_array!=(T*)0)
-  {
-    for (int i=0; i<old_num; i++) new_array[i]=old_array[i];
-    delete [] old_array;
-  }
-  old_array = new_array;
-  return 0;
-}
 
 #endif

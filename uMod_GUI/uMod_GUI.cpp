@@ -636,7 +636,8 @@ void uMod_Frame::OnMenuStartGame(wxCommandEvent& event)
 
 
   wxString dll = wxGetCwd();
-  dll.Append( L"\\" uMod_d3d9_DI_dll);
+  //dll.Append( L"\\" uMod_d3d9_DI_dll);
+  dll.Append( L"\\uMod_d3d10_DI.dll");
 
   Inject(pi.hProcess, dll.wc_str(), "Nothing");
   ResumeThread(pi.hThread);
@@ -962,7 +963,8 @@ void uMod_Frame::InstallHook(void)
 {
   if (H_DX9_DLL==NULL)
   {
-    H_DX9_DLL = LoadLibraryW(uMod_d3d9_Hook_dll);
+    //H_DX9_DLL = LoadLibraryW(uMod_d3d9_Hook_dll);
+    H_DX9_DLL = LoadLibraryW(L"uMod_d3d10_HI.dll");
     if (H_DX9_DLL!=NULL)
     {
       typedef void (*fkt_typ)(void);

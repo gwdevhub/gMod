@@ -18,41 +18,39 @@ along with Universal Modding Engine.  If not, see <http://www.gnu.org/licenses/>
 
 
 
-#ifndef uMod_DXMAIN_DLL_H_
-#define uMod_DXMAIN_DLL_H_
+#ifndef uMod_DX10_DLL_H_
+#define uMod_DX10_DLL_H_
 
-#ifdef DEF_USE_DX9
-#include "../uMod_DX9/uMod_DX9_dll.h"
-#endif
+#include "../uMod_DXMain/uMod_Main.h"
 
-#ifdef DEF_USE_DX10
-#include "../uMod_DX10/uMod_DX10_dll.h"
-#endif
-
-void InitInstance(HINSTANCE hModule);
-void ExitInstance(void);
-
-bool HookThisProgram( wchar_t *ret, const int max_len);
-DWORD WINAPI ServerThread( LPVOID lpParam);
-
-
+void LoadOriginal_DX10_Dll(void);
+void InitDX10();
+void ExitDX10();
 
 #ifndef NO_INJECTION
 
-void *DetourFunc(BYTE *src, const BYTE *dst, const int len);
-bool RetourFunc(BYTE *src, BYTE *restore, const int len);
+HRESULT uMod_D3D10CreateDeviceAndSwapChain(
+  IDXGIAdapter *pAdapter,
+  D3D10_DRIVER_TYPE DriverType,
+  HMODULE Software,
+  UINT Flags,
+  UINT SDKVersion,
+  DXGI_SWAP_CHAIN_DESC *pSwapChainDesc,
+  IDXGISwapChain **ppSwapChain,
+  ID3D10Device **ppDevice
+);
 
-
-#ifdef HOOK_INJECTION
-LRESULT CALLBACK HookProc(int nCode, WPARAM wParam, LPARAM lParam);
-void InstallHook(void);
-void RemoveHook(void);
-#endif
-
-
-#ifdef DIRECT_INJECTION
-void Nothing(void);
-#endif
+HRESULT uMod_D3D10CreateDeviceAndSwapChain1(
+  IDXGIAdapter *pAdapter,
+  D3D10_DRIVER_TYPE DriverType,
+  HMODULE Software,
+  UINT Flags,
+  D3D10_FEATURE_LEVEL1 HardwareLevel,
+  UINT SDKVersion,
+  DXGI_SWAP_CHAIN_DESC *pSwapChainDesc,
+  IDXGISwapChain **ppSwapChain,
+  ID3D10Device1 **ppDevice
+);
 
 #endif
 

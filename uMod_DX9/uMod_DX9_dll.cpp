@@ -44,8 +44,8 @@ typedef IDirect3D9 *(APIENTRY *Direct3DCreate9_type)(UINT);
 typedef HRESULT (APIENTRY *Direct3DCreate9Ex_type)(UINT SDKVersion, IDirect3D9Ex **ppD3D);
 
 #ifndef NO_INJECTION
-Direct3DCreate9_type Direct3DCreate9_fn; // we need to store the pointer to the original Direct3DCreate9 function after we have done a detour
-Direct3DCreate9Ex_type Direct3DCreate9Ex_fn; // we need to store the pointer to the original Direct3DCreate9 function after we have done a detour
+Direct3DCreate9_type Direct3DCreate9_fn = NULL; // we need to store the pointer to the original Direct3DCreate9 function after we have done a detour
+Direct3DCreate9Ex_type Direct3DCreate9Ex_fn = NULL; // we need to store the pointer to the original Direct3DCreate9 function after we have done a detour
 #endif
 
 
@@ -61,18 +61,21 @@ void InitDX9(void)
 
 #ifndef NO_INJECTION
   // we detour the original Direct3DCreate9 to our MyDirect3DCreate9
-  Direct3DCreate9_fn = (Direct3DCreate9_type) GetProcAddress(gl_hOriginal_DX9_Dll, "Direct3DCreate9");
-  if (Direct3DCreate9_fn!=NULL)
+  if (gl_hOriginal_DX9_Dll!=NULL)
   {
-    Message("Detour: Direct3DCreate9\n");
-    Direct3DCreate9_fn = (Direct3DCreate9_type)DetourFunc( (BYTE*)Direct3DCreate9_fn, (BYTE*)uMod_Direct3DCreate9, 5);
-  }
+    Direct3DCreate9_fn = (Direct3DCreate9_type) GetProcAddress(gl_hOriginal_DX9_Dll, "Direct3DCreate9");
+    if (Direct3DCreate9_fn!=NULL)
+    {
+      Message("Detour: Direct3DCreate9\n");
+      Direct3DCreate9_fn = (Direct3DCreate9_type)DetourFunc( (BYTE*)Direct3DCreate9_fn, (BYTE*)uMod_Direct3DCreate9, 5);
+    }
 
-  Direct3DCreate9Ex_fn = (Direct3DCreate9Ex_type) GetProcAddress(gl_hOriginal_DX9_Dll, "Direct3DCreate9Ex");
-  if (Direct3DCreate9Ex_fn!=NULL)
-  {
-    Message("Detour: Direct3DCreate9Ex\n");
-    Direct3DCreate9Ex_fn = (Direct3DCreate9Ex_type)DetourFunc( (BYTE*)Direct3DCreate9Ex_fn, (BYTE*)uMod_Direct3DCreate9Ex, 7);
+    Direct3DCreate9Ex_fn = (Direct3DCreate9Ex_type) GetProcAddress(gl_hOriginal_DX9_Dll, "Direct3DCreate9Ex");
+    if (Direct3DCreate9Ex_fn!=NULL)
+    {
+      Message("Detour: Direct3DCreate9Ex\n");
+      Direct3DCreate9Ex_fn = (Direct3DCreate9Ex_type)DetourFunc( (BYTE*)Direct3DCreate9Ex_fn, (BYTE*)uMod_Direct3DCreate9Ex, 7);
+    }
   }
 #endif
 }
@@ -89,17 +92,15 @@ void ExitDX9(void)
 void LoadOriginal_DX9_Dll(void)
 {
   char buffer[MAX_PATH];
-  GetSystemDirectory(buffer,MAX_PATH); //get the system directory, we need to open the original d3d9.dll
-
-  // Append dll name
-  strcat_s( buffer, MAX_PATH,"\\d3d9.dll");
-
-  // try to load the system's d3d9.dll, if pointer empty
-  if (!gl_hOriginal_DX9_Dll) gl_hOriginal_DX9_Dll = LoadLibrary(buffer);
-
-  if (!gl_hOriginal_DX9_Dll)
+  if (gl_hOriginal_DX9_Dll==NULL)
   {
-    ExitProcess(0); // exit the hard way
+    GetSystemDirectory(buffer,MAX_PATH); //get the system directory, we need to open the original d3d9.dll
+
+    // Append dll name
+    strcat_s( buffer, MAX_PATH,"\\d3d9.dll");
+
+    // try to load the system's d3d9.dll
+    gl_hOriginal_DX9_Dll = LoadLibrary(buffer);
   }
 }
 
@@ -113,7 +114,8 @@ IDirect3D9* WINAPI  Direct3DCreate9(UINT SDKVersion)
 {
   Message("WINAPI  Direct3DCreate9\n");
 
-	if (!gl_hOriginal_DX9_Dll) LoadOriginal_DX9_Dll(); // looking for the "right d3d9.dll"
+	if (gl_hOriginal_DX9_Dll==NULL) LoadOriginal_DX9_Dll(); // looking for the "original d3d9.dll"
+	if (gl_hOriginal_DX9_Dll==NULL) return (NULL);
 	
 	// find original function in original d3d9.dll
 	Direct3DCreate9_type D3DCreate9_fn = (Direct3DCreate9_type) GetProcAddress( gl_hOriginal_DX9_Dll, "Direct3DCreate9");
@@ -140,7 +142,8 @@ HRESULT WINAPI  Direct3DCreate9Ex(UINT SDKVersion, IDirect3D9Ex **ppD3D)
 {
   Message("WINAPI  Direct3DCreate9Ex\n");
 
-  if (!gl_hOriginal_DX9_Dll) LoadOriginal_DX9_Dll(); // looking for the "right d3d9.dll"
+  if (gl_hOriginal_DX9_Dll==NULL) LoadOriginal_DX9_Dll(); // looking for the "original d3d9.dll"
+  if (gl_hOriginal_DX9_Dll==NULL) return (NULL);
 
   // find original function in original d3d9.dll
   Direct3DCreate9Ex_type D3DCreate9Ex_fn = (Direct3DCreate9Ex_type) GetProcAddress( gl_hOriginal_DX9_Dll, "Direct3DCreate9Ex");

@@ -97,7 +97,7 @@ void InitInstance(HINSTANCE hModule)
   gl_hThisInstance = (HINSTANCE)  hModule;
 
   wchar_t game[MAX_PATH];
-  if (HookThisProgram( game)) //ask if we need to hook this program
+  if (HookThisProgram( game, MAX_PATH)) //ask if we need to hook this program
   {
     OpenMessage();
     Message("InitInstance: %lu\n", hModule);
@@ -106,6 +106,9 @@ void InitInstance(HINSTANCE hModule)
 
 #ifdef DEF_USE_DX9
     InitDX9();
+#endif
+#ifdef DEF_USE_DX10
+    InitDX10();
 #endif
 
 
@@ -141,25 +144,47 @@ void ExitInstance()
 #ifdef DEF_USE_DX9
   ExitDX9();
 #endif
+#ifdef DEF_USE_DX10
+  ExitDX10();
+#endif
 
   CloseMessage();
 }
 
 
 
-bool HookThisProgram( wchar_t *ret)
+bool HookThisProgram( wchar_t *ret, const int ret_len)
 {
-  wchar_t Executable[MAX_PATH];
-  wchar_t Game[MAX_PATH];
-  GetModuleFileNameW( GetModuleHandle( NULL ), Executable, MAX_PATH ); //ask for name and path of this executable
+  const unsigned int max_len = ret_len < MAX_PATH ? MAX_PATH : ret_len;
+  wchar_t *Executable = NULL;
+  wchar_t *Game = NULL;
+  if (GetMemory( Executable, max_len))
+  {
+    ret[0]=0;
+    return false;
+  }
+  if (GetMemory( Game, max_len))
+  {
+    delete [] Executable;
+    ret[0]=0;
+    return false;
+  }
+  GetModuleFileNameW( GetModuleHandle( NULL ), Executable, max_len ); //ask for name and path of this executable
 
 #ifdef HOOK_INJECTION
   //we use the gloabal hook
 
   FILE* file;
   wchar_t *app_path = _wgetenv( L"APPDATA"); //asc for the user application directory
-  wchar_t file_name[MAX_PATH];
-  swprintf_s( file_name, MAX_PATH, L"%ls\\%ls\\%ls", app_path, uMod_APP_DIR, uMod_APP_DX9);
+  wchar_t *file_name = NULL;
+  if (GetMemory( file_name, max_len))
+  {
+    delete [] Executable;
+    delete [] Game;
+    ret[0]=0;
+    return false;
+  }
+  swprintf_s( file_name, max_len, L"%ls\\%ls\\%ls", app_path, uMod_APP_DIR, uMod_APP_DX9);
   if (_wfopen_s( &file, file_name, L"rt,ccs=UTF-16LE")) return (false); // open the file in utf-16 LE mode
 
 
@@ -170,48 +195,97 @@ bool HookThisProgram( wchar_t *ret)
     {
       //MessageBoxW( NULL, Game, L"test", 0);
       int len = 0;
-      while (Game[len])
+      while (len<max_len-1 &&Game[len])
       {
         if (Game[len]==L'\r' || Game[len]==L'\n') {Game[len]=0; break;} //removing the new line symbols
         len++;
       }
       if ( _wcsicmp( Executable, Game ) == 0 ) //compare both strings
       {
-        for (int i=0; i<len; i++) ret[i] = Game[i];
+        for (int i=0; i<len && i<ret_len-1; i++) ret[i] = Game[i];
         ret[len] = 0;
         fclose(file);
+        delete [] Executable;
+        delete [] Game;
         return (true);
       }
     }
   }
+  delete [] Executable;
+  delete [] Game;
   fclose(file);
   return (false);
 #else
   // we inject directly
   int i=0;
-  while ( Game[i]) {ret[i]=Game[i]; i++;}
+  while (i<max_len && i<ret_len-1 && Game[i]) {ret[i]=Game[i]; i++;}
   ret[i]=0;
+  delete [] Executable;
+  delete [] Game;
   return true;
 #endif
 }
 
 #ifndef NO_INJECTION
+
+
+/*
 void *DetourFunc(BYTE *src, const BYTE *dst, const int len)
 {
   BYTE *jmp = (BYTE*)malloc(len+5);
-  DWORD dwback = 0;
-  VirtualProtect(jmp, len+5, PAGE_EXECUTE_READWRITE, &dwback); //This is the addition needed for Windows 7 RC
+  DWORD dwback;
   VirtualProtect(src, len, PAGE_READWRITE, &dwback);
-  memcpy(jmp, src, len);    jmp += len;
+  memcpy(jmp, src, len);  jmp += len;
   jmp[0] = 0xE9;
   *(DWORD*)(jmp+1) = (DWORD)(src+len - jmp) - 5;
-  memset(src, 0x90, len);
   src[0] = 0xE9;
   *(DWORD*)(src+1) = (DWORD)(dst - src) - 5;
   VirtualProtect(src, len, dwback, &dwback);
   return (jmp-len);
 }
+void *DetourFunc(BYTE *src, const BYTE *dst, const int len)
+{
+  BYTE *jmp = (BYTE*)malloc(len+5);
+  DWORD dwback;
+  VirtualProtect(src, len, PAGE_READWRITE, &dwback);
+  memcpy(jmp, src, len);  jmp += len;
+  jmp[0] = 0xE9;
+  *(DWORD*)(jmp+1) = (DWORD)(src+len - jmp) - 5;
+  src[0] = 0xE9;
+  *(DWORD*)(src+1) = (DWORD)(dst - src) - 5;
+  VirtualProtect(src, len, dwback, &dwback);
+  return (jmp-len);
+}
+*/
 
+
+void *DetourFunc(BYTE *src, const BYTE *dst, const int len)
+{
+  BYTE *jmp = (BYTE*)malloc(len+5);
+  DWORD dwback = 0;
+  //VirtualProtect(jmp, len+5, PAGE_EXECUTE_READWRITE, &dwback); //This is the addition needed for Windows 7 RC
+  VirtualProtect(src, len, PAGE_READWRITE, &dwback);
+  memcpy(jmp, src, len);    jmp += len;
+  jmp[0] = 0xE9;
+  *(DWORD*)(jmp+1) = (DWORD)(src+len - jmp) - 5;
+  //memset(src, 0x90, len);
+  src[0] = 0xE9;
+  *(DWORD*)(src+1) = (DWORD)(dst - src) - 5;
+  VirtualProtect(src, len, dwback, &dwback);
+  return (jmp-len);
+}
+/*
+bool RetourFunc( BYTE *src, BYTE *restore, const int len )
+{
+  DWORD dwback;
+  if(!VirtualProtect(src, len, PAGE_READWRITE, &dwback))  { return false; }
+  if(!memcpy(src, restore, len))              { return false; }
+  restore[0] = 0xE9;
+  *(DWORD*)(restore+1) = (DWORD)(src - restore) - 5;
+  if(!VirtualProtect(src, len, dwback, &dwback))      { return false; }
+  return true;
+}
+*/
 bool RetourFunc(BYTE *src, BYTE *restore, const int len)
 {
   DWORD dwback;

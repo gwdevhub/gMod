@@ -37,11 +37,17 @@ along with Universal Modding Engine.  If not, see <http://www.gnu.org/licenses/>
 #include <d3d9.h>
 #include <d3dx9.h>
 
-
+#include <d3d10_1.h>
+#include <d3d10.h>
+#include <D3D10Misc.h>
+#include <d3dx10.h>
+//#include "detours.h"
 
 
 #include "../uMod_GlobalDefines.h"
 #include "../uMod_Error.h"
+#include "../uMod_Utils.h"
+
 #include "uMod_Defines.h"
 #include "uMod_DXMain_dll.h"
 //#include "uMod_TextureFunction.h"
