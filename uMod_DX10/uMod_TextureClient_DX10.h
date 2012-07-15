@@ -18,100 +18,41 @@ along with Universal Modding Engine.  If not, see <http://www.gnu.org/licenses/>
 
 
 
-#ifndef uMod_TEXTURECLIENT_DX9_HPP
-#define uMod_TEXTURECLIENT_DX9_HPP
+#ifndef uMod_TEXTURECLIENT_DX10_HPP
+#define uMod_TEXTURECLIENT_DX10_HPP
 
 #include "..\uMod_Error.h"
 #include "..\uMod_DXMain\uMod_TextureClient.h"
-#include "uMod_IDirect3DTexture9.h"
-#include "uMod_IDirect3DVolumeTexture9.h"
-#include "uMod_IDirect3DCubeTexture9.h"
-#include "uMod_IDirect3DDevice9.h"
-#include "uMod_IDirect3DDevice9Ex.h"
-
 
 class uMod_TextureServer;
+class uMod_ID3D10Device;
 
 /*
- *  An object of this class is owned by each d3d9 device.
+ *  An object of this class is owned by each d3d10 device.
  *  functions called by the Server are called from the server thread instance.
  *  All other functions are called from the render thread instance of the game itself.
  */
 
-class uMod_TextureClient_DX9 : public uMod_TextureClient
+class uMod_TextureClient_DX10 : public uMod_TextureClient
 {
 public:
-  uMod_TextureClient_DX9( IDirect3DDevice9* device, const int version);
-  virtual ~uMod_TextureClient_DX9(void);
+  uMod_TextureClient_DX10( uMod_ID3D10Device* device, const int version);
+  virtual ~uMod_TextureClient_DX10(void);
+/*
+  int AddTexture( uMod_IDirect3DTexture9* tex); //called from uMod_IDirect3DDevice9::CreateTexture(...) or uMod_IDirect3DDevice9::BeginScene()
+  int AddTexture( uMod_IDirect3DVolumeTexture9* tex); //called from uMod_IDirect3DVolumeTexture9::CreateTexture(...) or uMod_IDirect3DDevice9::BeginScene()
+  int AddTexture( uMod_IDirect3DCubeTexture9* tex); //called from uMod_IDirect3DCubeTexture9::CreateTexture(...) or uMod_IDirect3DDevice9::BeginScene()
 
-  /**
-   * called from uMod_IDirect3DDevice9::CreateTexture(...) or uMod_IDirect3DDevice9::BeginScene()
-   * @param[in] tex texture to be added
-   * @return
-   */
-  int AddTexture( uMod_IDirect3DTexture9* tex);
-
-  /**
-   * called from uMod_IDirect3DVolumeTexture9::CreateTexture(...) or uMod_IDirect3DDevice9::BeginScene()
-   * @param[in] tex texture to be added
-   * @return
-   */
-  int AddTexture( uMod_IDirect3DVolumeTexture9* tex);
-
-  /**
-   * called from uMod_IDirect3DCubeTexture9::CreateTexture(...) or uMod_IDirect3DDevice9::BeginScene()
-   * @param[in] tex texture to be added
-   * @return
-   */
-  int AddTexture( uMod_IDirect3DCubeTexture9* tex);
-
-  /**
-   * called from  uMod_IDirect3DTexture9::Release()
-   * @param[in] tex
-   * @return
-   */
-  int RemoveTexture( uMod_IDirect3DTexture9* tex);
-
-  /**
-   * called from  uMod_IDirect3DVolumeTexture9::Release()
-   * @param[in] tex
-   * @return
-   */
-  int RemoveTexture( uMod_IDirect3DVolumeTexture9* tex);
-
-  /**
-   * called from  uMod_IDirect3DCubeTexture9::Release()
-   * @param[in] tex
-   * @return
-   */
-  int RemoveTexture( uMod_IDirect3DCubeTexture9* tex);
+  int RemoveTexture( uMod_IDirect3DTexture9* tex); //called from  uMod_IDirect3DTexture9::Release()
+  int RemoveTexture( uMod_IDirect3DVolumeTexture9* tex); //called from  uMod_IDirect3DVolumeTexture9::Release()
+  int RemoveTexture( uMod_IDirect3DCubeTexture9* tex); //called from  uMod_IDirect3DCubeTexture9::Release()
 
   int SaveAllTextures(bool val); //called from the Server
   int SaveSingleTexture(bool val); //called from the Server
 
-  /**
-   * called from uMod_IDirect3DDevice9::BeginScene() (save button) or from AddTexture(...) (SaveAllTextures)
-   * @param[in] pTexture
-   * @param[in] save_all true if called from AddTexture(...) -> (SaveAllTextures is true)
-   * @return
-   */
-  int SaveTexture(uMod_IDirect3DTexture9* pTexture, bool save_all=false); //
-
-  /**
-   * called from uMod_IDirect3DDevice9::BeginScene() (save button) or from AddTexture(...) (SaveAllTextures)
-   * @param[in] pTexture
-   * @param[in] save_all true if called from AddTexture(...) -> (SaveAllTextures is true)
-   * @return
-   */
-  int SaveTexture(uMod_IDirect3DVolumeTexture9* pTexture, bool save_all=false);
-
-  /**
-   * called from uMod_IDirect3DDevice9::BeginScene() (save button) or from AddTexture(...) (SaveAllTextures)
-   * @param[in] pTexture
-   * @param[in] save_all true if called from AddTexture(...) -> (SaveAllTextures is true)
-   * @return
-   */
-  int SaveTexture(uMod_IDirect3DCubeTexture9* pTexture, bool save_all=false);
+  int SaveTexture(uMod_IDirect3DTexture9* pTexture); //called from uMod_IDirect3DDevice9::BeginScene() (save button) or from AddTexture(...) (SaveAllTextures)
+  int SaveTexture(uMod_IDirect3DVolumeTexture9* pTexture); //called from uMod_IDirect3DDevice9::BeginScene() (save button) or from AddTexture(...) (SaveAllTextures)
+  int SaveTexture(uMod_IDirect3DCubeTexture9* pTexture); //called from uMod_IDirect3DDevice9::BeginScene() (save button) or from AddTexture(...) (SaveAllTextures)
 
   int MergeUpdate(void); //called from uMod_IDirect3DDevice9::BeginScene()
 
@@ -139,22 +80,6 @@ public:
 private:
   IDirect3DDevice9* D3D9Device;
 
-
-  /**
-   * Save the texture into a file (reagrding the various file formats.
-   * @param[in] pTexture
-   * @param[inout] file name without trailing format extension
-   * @return
-   */
-  int SaveTexture(IDirect3DBaseTexture9* pTexture, wchar_t *file);
-
-  /**
-   * Return true if this texture has the right format to pass the FormatFilter and thus it is saved
-   * @param format
-   * @return
-   */
-  bool SaveTextureFilterFormat(D3DFORMAT format);
-
   int LoadTexture( TextureFileStruct* file_in_memory, uMod_IDirect3DTexture9 **ppTexture); // called if a target texture is found
   int LoadTexture( TextureFileStruct* file_in_memory, uMod_IDirect3DVolumeTexture9 **ppTexture); // called if a target texture is found
   int LoadTexture( TextureFileStruct* file_in_memory, uMod_IDirect3DCubeTexture9 **ppTexture); // called if a target texture is found
@@ -163,6 +88,9 @@ private:
 
   //MyTypeHash GetHash(unsigned char *str, int len);
   //unsigned int GetCRC32(char *pcDatabuf, unsigned int ulDatalen);
+   *
+   */
+
 };
 
 

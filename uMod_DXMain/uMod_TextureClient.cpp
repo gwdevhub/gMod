@@ -27,6 +27,9 @@ uMod_TextureClient::uMod_TextureClient(const int version) : Version(version)
   Server = NULL;
   BoolSaveAllTextures = false;
   BoolSaveSingleTexture = false;
+  BoolShowTextureString = false;
+  BoolComputeCRC = false;
+
   KeyBack = 0;
   KeySave = 0;
   KeyNext = 0;
@@ -42,6 +45,14 @@ uMod_TextureClient::uMod_TextureClient(const int version) : Version(version)
   NumberOfUpdate = -1;
   FontColour = D3DCOLOR_ARGB(255,255,0,0);
   TextureColour = D3DCOLOR_ARGB(255,0,255,0);
+
+  WidthFilter = 0u;
+  HeightFilter = 0u;
+  DepthFilter = 0u;
+
+  FormatFilter = 0u;
+
+  FileFormat = uMod_D3DXIFF_DDS;
 }
 
 uMod_TextureClient::~uMod_TextureClient(void)
@@ -135,7 +146,7 @@ int uMod_TextureClient::UnlockMutex(void)
 }
 
 
-int uMod_TextureClient::GetIndex( MyTypeHash hash, int num_index_list, int *index_list)
+int uMod_TextureClient::GetIndex( DWORD64 hash, int num_index_list, int *index_list)
 {
   if(NumberToMod>0)
   {

@@ -62,9 +62,15 @@ int uMod_IDirect3DDevice9::CreateSingleTexture(void)
       SingleTexture=NULL;
       return (RETURN_TEXTURE_NOT_LOADED);
     }
-    DWORD *pDst = (DWORD*)d3dlr.pBits;
 
-    for (int i=0; i<8*8; i++) pDst[i] = TextureColour;
+    Message( PRE_MESSAGE "::CreateSingleTexture(): Set IDirect3DTexture9 Colour to %#X\n", TextureColour);
+    BYTE *pImage = (BYTE*)d3dlr.pBits;
+    for (int i=0; i<8; i++)
+    {
+      DWORD *pDst = (DWORD*)pImage;
+      for (int j=0;j<8; j++) pDst[j] = TextureColour;
+      pImage += d3dlr.Pitch;
+    }
     pD3Dtex->UnlockRect(0);
   }
 
@@ -92,9 +98,14 @@ int uMod_IDirect3DDevice9::CreateSingleTexture(void)
       SingleVolumeTexture=NULL;
       return (RETURN_TEXTURE_NOT_LOADED);
     }
-    DWORD *pDst = (DWORD*)d3dlr.pBits;
 
-    for (int i=0; i<8*8*8; i++) pDst[i] = TextureColour;
+    Message( PRE_MESSAGE "::CreateSingleTexture(): Set IDirect3DVolumeTexture9 Colour to %#X\n", TextureColour);
+    DWORD *pDst = (DWORD*)d3dlr.pBits;
+    for (int i=0; i<8; i++) for (int ii=0; ii<8; ii++)
+    {
+      DWORD *pDst = (DWORD*) ((char*) d3dlr.pBits)[  i*d3dlr.SlicePitch + ii*d3dlr.RowPitch];
+      //for (int j=0;j<8; j++) pDst[j] = TextureColour;
+    }
     pD3Dtex->UnlockBox(0);
   }
   if (SingleCubeTexture==NULL) //create texture
@@ -114,6 +125,7 @@ int uMod_IDirect3DDevice9::CreateSingleTexture(void)
     D3DLOCKED_RECT d3dlr;
     IDirect3DCubeTexture9 *pD3Dtex = SingleCubeTexture->m_D3Dtex;
 
+    Message( PRE_MESSAGE "::CreateSingleTexture(): Set IDirect3DCubeTexture9 Colour to %#X\n", TextureColour);
     for (int c=0; c<6; c++)
     {
       if (D3D_OK!=pD3Dtex->LockRect( (D3DCUBEMAP_FACES) c, 0, &d3dlr, 0, 0))
@@ -123,9 +135,14 @@ int uMod_IDirect3DDevice9::CreateSingleTexture(void)
         SingleCubeTexture=NULL;
         return (RETURN_TEXTURE_NOT_LOADED);
       }
-      DWORD *pDst = (DWORD*)d3dlr.pBits;
 
-      for (int i=0; i<8*8; i++) pDst[i] = TextureColour;
+      BYTE *pImage = (BYTE*)d3dlr.pBits;
+      for (int i=0; i<8; i++)
+      {
+        DWORD *pDst = (DWORD*)pImage;
+        for (int j=0;j<8; j++) pDst[j] = TextureColour;
+        pImage += d3dlr.Pitch;
+      }
       pD3Dtex->UnlockRect((D3DCUBEMAP_FACES)c, 0);
     }
   }
@@ -148,7 +165,6 @@ uMod_IDirect3DDevice9::uMod_IDirect3DDevice9( IDirect3DDevice9* pOriginal, uMod_
   LastCreatedVolumeTexture = NULL;
   LastCreatedCubeTexture = NULL;
 	m_pIDirect3DDevice9 = pOriginal; // store the pointer to original object
-  TextureColour = D3DCOLOR_ARGB(255,0,255,0);
 
   CounterSaveSingleTexture = -20;
 
@@ -425,13 +441,13 @@ HRESULT uMod_IDirect3DDevice9::UpdateTexture(IDirect3DBaseTexture9* pSourceTextu
     {
       case 0x01000000L:
       {
-        MyTypeHash hash;
         pSource = (uMod_IDirect3DTexture9*)(pSourceTexture);
-        if (pSource->GetHash( hash) == RETURN_OK)
+        DWORD64 hash = pSource->Hash;
+        DWORD32 crc = pSource->CRC;
+        if (pSource->ComputetHash( crc>0 ) == RETURN_OK)
         {
-          if (hash != pSource->Hash) // this hash has changed !!
+          if (hash != pSource->Hash || (crc>0 && crc != pSource->CRC) ) // this hash has changed !!
           {
-            pSource->Hash = hash;
             if (pSource->CrossRef_D3Dtex!=NULL) UnswitchTextures(pSource);
             uMod_Client->LookUpToMod( pSource);
           }
@@ -445,11 +461,12 @@ HRESULT uMod_IDirect3DDevice9::UpdateTexture(IDirect3DBaseTexture9* pSourceTextu
       }
       case 0x01000001L:
       {
-        MyTypeHash hash;
         pSourceVolume = (uMod_IDirect3DVolumeTexture9*)(pSourceTexture);
-        if (pSourceVolume->GetHash( hash) == RETURN_OK)
+        DWORD64 hash = pSourceVolume->Hash;
+        DWORD32 crc = pSourceVolume->CRC;
+        if (pSourceVolume->ComputetHash( crc>0 ) == RETURN_OK)
         {
-          if (hash != pSourceVolume->Hash) // this hash has changed !!
+          if (hash != pSourceVolume->Hash || (crc>0 && crc != pSource->CRC) ) // this hash has changed !!
           {
             pSourceVolume->Hash = hash;
             if (pSourceVolume->CrossRef_D3Dtex!=NULL) UnswitchTextures(pSourceVolume);
@@ -465,11 +482,12 @@ HRESULT uMod_IDirect3DDevice9::UpdateTexture(IDirect3DBaseTexture9* pSourceTextu
       }
       case 0x01000002L:
       {
-        MyTypeHash hash;
         pSourceCube = (uMod_IDirect3DCubeTexture9*)(pSourceTexture);
-        if (pSourceCube->GetHash( hash) == RETURN_OK)
+        DWORD64 hash = pSourceCube->Hash;
+        DWORD32 crc = pSourceCube->CRC;
+        if (pSourceCube->ComputetHash( crc>0 ) == RETURN_OK)
         {
-          if (hash != pSourceCube->Hash) // this hash has changed !!
+          if (hash != pSourceCube->Hash || (crc>0 && crc != pSource->CRC) ) // this hash has changed !!
           {
             pSourceCube->Hash = hash;
             if (pSourceCube->CrossRef_D3Dtex!=NULL) UnswitchTextures(pSourceCube);
@@ -491,7 +509,7 @@ HRESULT uMod_IDirect3DDevice9::UpdateTexture(IDirect3DBaseTexture9* pSourceTextu
 
   if (pDestinationTexture != NULL)
   {
-    long int ret = pSourceTexture->QueryInterface( IID_IDirect3D9, (void**) &cpy);
+    long int ret = pDestinationTexture->QueryInterface( IID_IDirect3D9, (void**) &cpy);
     switch (ret)
     {
       case 0x01000000L:
@@ -763,7 +781,7 @@ HRESULT uMod_IDirect3DDevice9::BeginScene(void)
 
 HRESULT uMod_IDirect3DDevice9::EndScene(void)
 {
-  if ( NormalRendering && uMod_Client->BoolSaveSingleTexture && SingleTexture!=NULL && SingleVolumeTexture!=NULL && SingleCubeTexture!=NULL)
+  if ( NormalRendering && uMod_Client->BoolShowTextureString && uMod_Client->BoolSaveSingleTexture && SingleTexture!=NULL && SingleVolumeTexture!=NULL && SingleCubeTexture!=NULL)
   {
     if (OSD_Font==NULL) // create the font
     {
@@ -780,7 +798,7 @@ HRESULT uMod_IDirect3DDevice9::EndScene(void)
     {
       case 0:
       {
-        if (SingleTexture->CrossRef_D3Dtex!=NULL) sprintf_s( buffer, 100, "normal texture: %4d (1..%d): %#lX", CounterSaveSingleTexture+1, uMod_Client->OriginalTextures.GetNumber(), SingleTexture->Hash);
+        if (SingleTexture->CrossRef_D3Dtex!=NULL) sprintf_s( buffer, 100, "normal texture: %4d (1..%d): %#llX", CounterSaveSingleTexture+1, uMod_Client->OriginalTextures.GetNumber(), SingleTexture->Hash);
         else
         {
           if (uMod_Client->OriginalTextures.GetNumber()>0) sprintf_s( buffer, 100, "normal texture: nothing selected (1..%d)", uMod_Client->OriginalTextures.GetNumber());
@@ -790,7 +808,7 @@ HRESULT uMod_IDirect3DDevice9::EndScene(void)
       }
       case 1:
       {
-        if (SingleVolumeTexture->CrossRef_D3Dtex!=NULL) sprintf_s( buffer, 100, "volume texture: %4d (1..%d): %#lX", CounterSaveSingleTexture+1, uMod_Client->OriginalVolumeTextures.GetNumber(), SingleVolumeTexture->Hash);
+        if (SingleVolumeTexture->CrossRef_D3Dtex!=NULL) sprintf_s( buffer, 100, "volume texture: %4d (1..%d): %#llX", CounterSaveSingleTexture+1, uMod_Client->OriginalVolumeTextures.GetNumber(), SingleVolumeTexture->Hash);
         else
         {
           if (uMod_Client->OriginalVolumeTextures.GetNumber()>0) sprintf_s( buffer, 100, "volume texture: nothing selected (1..%d)", uMod_Client->OriginalVolumeTextures.GetNumber());
@@ -800,7 +818,7 @@ HRESULT uMod_IDirect3DDevice9::EndScene(void)
       }
       case 2:
       {
-        if (SingleCubeTexture->CrossRef_D3Dtex!=NULL) sprintf_s( buffer, 100, "cube texture: %4d (1..%d): %#lX", CounterSaveSingleTexture+1, uMod_Client->OriginalCubeTextures.GetNumber(), SingleCubeTexture->Hash);
+        if (SingleCubeTexture->CrossRef_D3Dtex!=NULL) sprintf_s( buffer, 100, "cube texture: %4d (1..%d): %#llX", CounterSaveSingleTexture+1, uMod_Client->OriginalCubeTextures.GetNumber(), SingleCubeTexture->Hash);
         else
         {
           if (uMod_Client->OriginalCubeTextures.GetNumber()>0) sprintf_s( buffer, 100, "cube texture: nothing selected (1..%d)", uMod_Client->OriginalCubeTextures.GetNumber());

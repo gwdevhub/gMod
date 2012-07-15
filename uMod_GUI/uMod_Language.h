@@ -51,16 +51,29 @@ public:
   wxString MainMenuMain;
   wxString MainMenuHelp;
 
-  wxString ButtonOpen;
-  wxString ButtonDirectory;
+  wxString MenuOpenPackage;
+  wxString MenuRemovePackage;
+  wxString MenuRemoveSelectedPackages;
+  wxString MenuUpdate;
+  wxString MenuReload;
+  wxString MenuSupportTPF;
   wxString ButtonUpdate;
-  wxString ButtonReload;
+  wxString ButtonDirectory;
 
   wxString ChooseFile;
   wxString ChooseDir;
 
+  wxString MultipleSingleFiles;
+
+  wxString HookInjection;
+  wxString DirectInjection;
+  wxString NoInjection;
+  wxString InvalidGamePage;
   wxString TextCtrlTemplate;
+
+  wxString CollapseTextureCapture;
   wxString CheckBoxSaveSingleTexture;
+  wxString CheckBoxShowStringSaveSingleTexture;
   wxString CheckBoxSaveAllTextures;
   wxString TextCtrlSavePath;
 
@@ -73,14 +86,17 @@ public:
   wxString DeleteGame;
   wxString GameAlreadyAdded;
   wxString ExitGameAnyway;
-  wxString NoComment;
+  wxString Title;
   wxString Author;
+  wxString Comment;
+  wxString SingleTextureNode;
 
   wxString Error_GameIsHooked;
   wxString Error_ProcessNotStarted;
   wxString Error_RemoveHook;
 
   wxString Error_FileNotSupported;
+  wxString Error_FileIsEmpty;
   wxString Error_FktNotFound;
   wxString Error_D3DX9NotFound;
   wxString Error_DLLNotFound;
@@ -101,9 +117,20 @@ public:
   wxString Error_Unzip;
   wxString Error_ZipEntry;
 
+  wxString CheckBoxUseSizeFilter;
+  wxString CheckBoxUseFormatFilter;
+  wxString SetFormatFilter;
+  wxString WidthSpin;
+  wxString HeightSpin;
+  wxString DepthSpin;
+
   wxString KeyBack;
   wxString KeySave;
   wxString KeyNext;
+  wxString AskForKey;
+  wxString KeyNotSet;
+  wxString UnknownKey;
+
   wxArrayString KeyStrings;
   wxArrayInt KeyValues;
 

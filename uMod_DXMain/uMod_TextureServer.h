@@ -24,7 +24,7 @@ along with Universal Modding Engine.  If not, see <http://www.gnu.org/licenses/>
 #include "uMod_ArrayHandler.h"
 
 
-/*
+/**
  *  An object of this class is created only once.
  *  The Mainloop functions is executed by a server thread,
  *  which listen on a pipe.
@@ -41,34 +41,36 @@ class uMod_TextureServer
 public:
   /**
    * The server is created from the dll entry routine.
-   * @param name Name of the game executable (without the extension)
+   * @param[in] name Name of the game executable (without the extension)
    */
   uMod_TextureServer(wchar_t *name);
   ~uMod_TextureServer(void);
 
   /**
    * Each client connect itself to the server via this function.
-   * @param client This-pointer of the client
-   * @param update Current texture to be modded
-   * @param number Number of modded textures
-   * @param Version Version of DirectX.
+   * @param[in] client This-pointer of the client
+   * @param[out] update Current texture to be modded
+   * @param[out] number Number of modded textures
+   * @param[in] version The device version (DX9, DX9EX, DX10, or DX101)
    * @return RETURN_OK on success
    */
   int AddClient(uMod_TextureClient *client, TextureFileStruct* &update, int &number, const int version); // called from a Client
 
   /**
    * On destruction of client, it disconnect from the server.
-   * @param client This-pointer of the client
+   * @param[in] client This-pointer of the client
+   * @param[in] version The device version (DX9, DX9EX, DX10, or DX101)
    * @return RETURN_OK on success
    */
   int RemoveClient(uMod_TextureClient *client, const int version); // called from a Client
 
   /**
    * Opens the pipe to the GUI (called from the dll entry routine)
-   * @param name Name of the game
+   * @param[in] name Name of the game
+   * @param[in] injection_method global hook=1, direct injection=2, no injection=3
    * @return RETURN_OK on success
    */
-  int OpenPipe(wchar_t *name); // called on initialization of our d3d9 fake dll
+  int OpenPipe(wchar_t *name, int injection_method); // called on initialization of our d3d9 fake dll
 
   /**
    * Close the Pipe to the GUI (called if dll entry is called to attach from the game)
@@ -87,121 +89,184 @@ public:
 private:
   /**
    * Add a file to the list of texture to be modded (called from the mainloop).
-   * @param buffer hold the file content of the texture
-   * @param size size of the file content
-   * @param hash hash of the texture to be replaced
-   * @param force set to TRUE to force a reload of the texture
+   * @param[in] buffer hold the file content of the texture
+   * @param[in] size size of the file content
+   * @param[in] hash hash of the texture to be replaced
+   * @param[in] force set to TRUE to force a reload of the texture
    * @return RETURN_OK on success
    */
-  int AddFile( char* buffer, unsigned int size,  MyTypeHash hash, bool force); // called from Mainloop(), if the content of the texture is sent
+  int AddFile( char* buffer, DWORD64 size,  DWORD64 hash, bool force); // called from Mainloop(), if the content of the texture is sent
 
   /**
-   * Add a file to the list of texture to be modded (called from the mainloop).
-   * @param file_name Name and path to the file to be loaded.
-   * @param hash hash of the texture to be replaced
-   * @param force set to TRUE to force a reload of the texture
+   * Add a file to the list of texture to be modded (called from the mainloop). Not supported anymore!
+   * @param[in] file_name Name and path to the file to be loaded.
+   * @param[in] hash hash of the texture to be replaced
+   * @param[in] force set to TRUE to force a reload of the texture
    * @return RETURN_OK on success
    */
-  int AddFile( wchar_t* file_name, MyTypeHash hash, bool force); // called from Mainloop(), if the name and the path to the file is sent
+  int AddFile( wchar_t* file_name, DWORD64 hash, bool force); // called from Mainloop(), if the name and the path to the file is sent
 
   /**
    * Remove a texture (called from the mainloop).
-   * @param hash Hash of the target texture.
+   * @param[in] hash Hash of the target texture.
    * @return RETURN_OK on success
    */
-  int RemoveFile( MyTypeHash hash); // called from Mainloop()
+  int RemoveFile( DWORD64 hash); // called from Mainloop()
 
   /**
    * Save all texture, which are loade by the game (called from the mainloop).
-   * @param val Set TRUE to enable the mode.
+   * @param[in] val Set TRUE to enable the mode.
    * @return
    */
   int SaveAllTextures(bool val); // called from Mainloop()
 
   /**
-   *  (called from the mainloop).
-   * @param val
+   * Enable/Disable the save single texture mode (called from the mainloop).
+   * @param[in] val
    * @return
    */
   int SaveSingleTexture(bool val); // called from Mainloop()
 
   /**
-   *  (called from the mainloop).
-   * @param dir
+   * Enable/Disable the string in the left upper corner during save single texture mode (called from the mainloop).
+   * @param[in] val
+   * @return
+   */
+  int ShowTextureString(bool val); // called from Mainloop()
+
+  /**
+   * Enable/Disable the hashing with CRC32, which is needed to support tpf mods (called from the mainloop).
+   * @param[in] val
+   * @return
+   */
+  int SupportTPF(bool val); // called from Mainloop()
+
+  /**
+   * Set saving directory (called from the mainloop).
+   * @param[in] dir
    * @return
    */
   int SetSaveDirectory( wchar_t *dir); // called from Mainloop()
 
   /**
    *  (called from the mainloop).
-   * @param key
+   * @param[in] key
    * @return
    */
   int SetKeyBack( int key); // called from Mainloop()
 
   /**
    *  (called from the mainloop).
-   * @param key
+   * @param[in] key
    * @return
    */
   int SetKeySave( int key); // called from Mainloop()
 
   /**
    *  (called from the mainloop).
-   * @param key
+   * @param[in] key
    * @return
    */
   int SetKeyNext( int key); // called from Mainloop()
 
   /**
    *  (called from the mainloop).
-   * @param colour
+   * @param[in] colour
    * @return
    */
-  int SetFontColour(DWORD colour); // called from Mainloop()
+  int SetFontColour(DWORD64 colour); // called from Mainloop()
 
   /**
    *  (called from the mainloop).
-   * @param colour
+   * @param[in] colour
    * @return
    */
-  int SetTextureColour(DWORD colour); // called from Mainloop()
+  int SetTextureColour(DWORD64 colour); // called from Mainloop()
 
-  bool BoolSaveAllTextures;
-  bool BoolSaveSingleTexture;
-  wchar_t SavePath[MAX_PATH];
-  wchar_t GameName[MAX_PATH];
+  /**
+   *  (called from the mainloop).
+   * @param[in] format
+   * @return
+   */
+  int SetFileFormat(DWORD64 format);
+
+  /**
+   *  (called from the mainloop).
+   * @param[in] format
+   * @return
+   */
+  int SetFormatFilter(DWORD64 format);
+
+  /**
+   *  (called from the mainloop).
+   * @param[in] size
+   * @return
+   */
+  int SetWidthFilter(DWORD64 size);
+
+  /**
+   *  (called from the mainloop).
+   * @param[in] size
+   * @return
+   */
+  int SetHeightFilter(DWORD64 size);
+
+  /**
+   *  (called from the mainloop).
+   * @param[in] size
+   * @return
+   */
+  int SetDepthFilter(DWORD64 size);
 
   /**
    * Send the files to be modded (Update) to a client (called from the mainloop).
-   * @param client Pointer to a client (if NULL is passed, the data is send to all clients)
+   * @param[in] client Pointer to a client (if NULL is passed, the data is send to all clients)
    * @return
    */
   int PropagateUpdate(uMod_TextureClient* client=NULL); // called from Mainloop() if texture are loaded or removed
 
   /**
    * Prepare the texture data for the clients (e.g. Load the texture from disk, sort the texture according the hash values) (called from the mainloop).
-   * @param update
-   * @param number
+   * @param[out] update
+   * @param[out] number
    * @return
    */
-  int PrepareUpdate(TextureFileStruct* &update, int &number); // called from PropagateUpdate() and AddClient()
-  // generate a copy of the current texture to be modded
-  // the file content of the textures are not copied, the clients get the pointer to the file content
-  // but the arrays allocate by this function, must be deleted by the client
+  int PrepareUpdate(TextureFileStruct* &update, int &number);
 
+  /**
+   * Locks the mutex.
+   * @return
+   */
   int LockMutex();
+  /**
+   * Locks the mutex.
+   * @return
+   */
   int UnlockMutex();
-  HANDLE Mutex;
+  HANDLE Mutex; //!< Mutex protects the simultaneously add or remove of multiple clients.
+
+
+  bool BoolSaveAllTextures;
+  bool BoolSaveSingleTexture;
+  bool BoolShowTextureString;
+  bool BoolSupportTPF;
+
+  wchar_t SavePath[MAX_PATH];
+  wchar_t GameName[MAX_PATH];
 
 
   int KeyBack;
   int KeySave;
   int KeyNext;
 
-  DWORD FontColour;
-  DWORD TextureColour;
+  DWORD64 FontColour;
+  DWORD64 TextureColour;
 
+  DWORD64 FileFormat;
+  DWORD64 FormatFilter;
+  DWORD64 WidthFilter;
+  DWORD64 HeightFilter;
+  DWORD64 DepthFilter;
 
   PipeStruct Pipe;
 

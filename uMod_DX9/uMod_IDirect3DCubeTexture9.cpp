@@ -239,15 +239,12 @@ HRESULT APIENTRY uMod_IDirect3DCubeTexture9::UnlockRect( D3DCUBEMAP_FACES FaceTy
 
 
 
-int uMod_IDirect3DCubeTexture9::GetHash(MyTypeHash &hash)
+int uMod_IDirect3DCubeTexture9::ComputetHash( bool compute_crc)
 {
-  hash=0u;
   if (FAKE) return (RETURN_BAD_ARGUMENT);
   IDirect3DCubeTexture9 *pTexture = m_D3Dtex;
   if (CrossRef_D3Dtex!=NULL) pTexture = CrossRef_D3Dtex->m_D3Dtex;
 
-  //IDirect3DSurface9 *pOffscreenSurface = NULL;
-  //IDirect3DCubeTexture9 *pOffscreenTexture = NULL;
   IDirect3DSurface9 *pResolvedSurface = NULL;
   D3DLOCKED_RECT d3dlr;
   D3DSURFACE_DESC desc;
@@ -257,110 +254,72 @@ int uMod_IDirect3DCubeTexture9::GetHash(MyTypeHash &hash)
     Message("uMod_IDirect3DCubeTexture9::GetHash() Failed: GetLevelDesc \n");
     return (RETURN_GetLevelDesc_FAILED);
   }
+  int bits_per_pixel = GetBitsFromFormat( desc.Format);
+  unsigned int size;
+  unsigned int h_max = desc.Height;
+  if (desc.Format == D3DFMT_DXT1) // 8 bytes per block
+  {
+    h_max /= 4; // divided by block size
+    size = desc.Width*2; // desc.Width/4 * 8
+  }
+  else if ( desc.Format==D3DFMT_DXT2 || desc.Format==D3DFMT_DXT3 || desc.Format==D3DFMT_DXT4 || desc.Format==D3DFMT_DXT5 ) // 16 bytes per block
+  {
+    h_max /= 4; // divided by block size
+    size = desc.Width*4; // desc.Width/4 * 16
+  }
+  else size = (bits_per_pixel * desc.Width)/8;
+
+  Hash = HASH_INIT_VALUE;
 
   Message("uMod_IDirect3DCubeTexture9::GetHash() (%d %d) %d\n", desc.Width, desc.Height, desc.Format);
 
-/*
-  if (desc.Pool==D3DPOOL_DEFAULT) //get the raw data of the texture
+  for (int site = 0; site<6; site++)
   {
-    //Message("uMod_IDirect3DCubeTexture9::GetHash() (D3DPOOL_DEFAULT)\n");
-
-    IDirect3DSurface9 *pSurfaceLevel_orig = NULL;
-    if (pTexture->GetSurfaceLevel( 0, &pSurfaceLevel_orig)!=D3D_OK)
+    if (pTexture->LockRect( ( _D3DCUBEMAP_FACES) site, 0, &d3dlr, NULL, D3DLOCK_READONLY)!=D3D_OK)
     {
-      Message("uMod_IDirect3DCubeTexture9::GetHash() Failed: GetSurfaceLevel 1  (D3DPOOL_DEFAULT)\n");
-      return (RETURN_LockRect_FAILED);
-    }
-
-    if (desc.MultiSampleType != D3DMULTISAMPLE_NONE)
-    {
-      //Message("uMod_IDirect3DCubeTexture9::GetHash() MultiSampleType\n");
-      if (D3D_OK!=m_D3Ddev->CreateRenderTarget( desc.Width, desc.Height, desc.Format, D3DMULTISAMPLE_NONE, 0, FALSE, &pResolvedSurface, NULL ))
+      Message("uMod_IDirect3DCubeTexture9::GetHash() Failed: LockRect 1\n");
+      if (pTexture->GetCubeMapSurface( ( _D3DCUBEMAP_FACES) site, 0, &pResolvedSurface)!=D3D_OK)
       {
-        pSurfaceLevel_orig->Release();
-        Message("uMod_IDirect3DCubeTexture9::GetHash() Failed: CreateRenderTarget  (D3DPOOL_DEFAULT)\n");
+        Message("uMod_IDirect3DCubeTexture9::GetHash() Failed: GetSurfaceLevel\n");
         return (RETURN_LockRect_FAILED);
       }
-      if (D3D_OK!=m_D3Ddev->StretchRect( pSurfaceLevel_orig, NULL, pResolvedSurface, NULL, D3DTEXF_NONE ))
+      if (pResolvedSurface->LockRect( &d3dlr, NULL, D3DLOCK_READONLY)!=D3D_OK)
       {
-        pSurfaceLevel_orig->Release();
-        Message("uMod_IDirect3DCubeTexture9::GetHash() Failed: StretchRect  (D3DPOOL_DEFAULT)\n");
+        pResolvedSurface->Release();
+        Message("uMod_IDirect3DCubeTexture9::GetHash() Failed: LockRect 2\n");
         return (RETURN_LockRect_FAILED);
       }
-
-      pSurfaceLevel_orig = pResolvedSurface;
     }
 
+    {
+      unsigned char *data = (unsigned char*) d3dlr.pBits;
 
-    if (D3D_OK!=m_D3Ddev->CreateOffscreenPlainSurface( desc.Width, desc.Height, desc.Format, D3DPOOL_SYSTEMMEM, &pOffscreenSurface, NULL))
-    {
-      pSurfaceLevel_orig->Release();
-      if (pResolvedSurface!=NULL) pResolvedSurface->Release();
-      Message("uMod_IDirect3DCubeTexture9::GetHash() Failed: CreateOffscreenPlainSurface (D3DPOOL_DEFAULT)\n");
-      return (RETURN_TEXTURE_NOT_LOADED);
+      for (unsigned int h=0; h<h_max; h++)
+      {
+        GetHash( data, size, Hash);
+        data += d3dlr.Pitch;
+      }
     }
 
-    if (D3D_OK!=m_D3Ddev->GetRenderTargetData( pSurfaceLevel_orig, pOffscreenSurface))
+    if (compute_crc && site==0)
     {
-      pSurfaceLevel_orig->Release();
-      if (pResolvedSurface!=NULL) pResolvedSurface->Release();
-      pOffscreenSurface->Release();
-      Message("uMod_IDirect3DCubeTexture9::GetHash() Failed: GetRenderTargetData (D3DPOOL_DEFAULT)\n");
-      return (RETURN_LockRect_FAILED);
+      int size = (bits_per_pixel * desc.Width*desc.Height)/8;
+      CRC = GetCRC32( (char*) d3dlr.pBits, size); //calculate the crc32 of the texture
     }
-    pSurfaceLevel_orig->Release();
 
-    if (pOffscreenSurface->LockRect( &d3dlr, NULL, D3DLOCK_READONLY)!=D3D_OK)
+    if (pResolvedSurface!=NULL)
     {
-      if (pResolvedSurface!=NULL) pResolvedSurface->Release();
-      pOffscreenSurface->Release();
-      Message("uMod_IDirect3DCubeTexture9::GetHash() Failed: LockRect (D3DPOOL_DEFAULT)\n");
-      return (RETURN_LockRect_FAILED);
-    }
-  }
-  else
-    */
-  if (pTexture->LockRect( D3DCUBEMAP_FACE_POSITIVE_X, 0, &d3dlr, NULL, D3DLOCK_READONLY)!=D3D_OK)
-  {
-    Message("uMod_IDirect3DCubeTexture9::GetHash() Failed: LockRect 1\n");
-    if (pTexture->GetCubeMapSurface( D3DCUBEMAP_FACE_POSITIVE_X, 0, &pResolvedSurface)!=D3D_OK)
-    {
-      Message("uMod_IDirect3DCubeTexture9::GetHash() Failed: GetSurfaceLevel\n");
-      return (RETURN_LockRect_FAILED);
-    }
-    if (pResolvedSurface->LockRect( &d3dlr, NULL, D3DLOCK_READONLY)!=D3D_OK)
-    {
+      pResolvedSurface->UnlockRect();
       pResolvedSurface->Release();
-      Message("uMod_IDirect3DCubeTexture9::GetHash() Failed: LockRect 2\n");
-      return (RETURN_LockRect_FAILED);
+      pResolvedSurface=NULL;
+    }
+    else
+    {
+      pTexture->UnlockRect( ( _D3DCUBEMAP_FACES) site, 0); //unlock the raw data
     }
   }
 
-
-  int size = (GetBitsFromFormat( desc.Format) * desc.Width*desc.Height)/8;
-
-  hash = GetCRC32( (char*) d3dlr.pBits, size); //calculate the crc32 of the texture
-/*
-  if (pOffscreenSurface!=NULL)
-  {
-    pOffscreenSurface->UnlockRect();
-    pOffscreenSurface->Release();
-    //pOffscreenTexture->Release();
-    if (pResolvedSurface!=NULL) pResolvedSurface->Release();
-  }
-  else
-    */
-  if (pResolvedSurface!=NULL)
-  {
-    pResolvedSurface->UnlockRect();
-    pResolvedSurface->Release();
-  }
-  else
-  {
-    pTexture->UnlockRect( D3DCUBEMAP_FACE_POSITIVE_X, 0); //unlock the raw data
-  }
-
-  Message("uMod_IDirect3DCubeTexture9::GetHash() %#lX (%d %d) %d = %d\n", hash, desc.Width, desc.Height, desc.Format, size);
+  Message("uMod_IDirect3DCubeTexture9::GetHash() %#llX %#LX (%d %d) %d\n", Hash, CRC, desc.Width, desc.Height, desc.Format);
   return (RETURN_OK);
 }
 

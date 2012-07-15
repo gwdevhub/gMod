@@ -19,9 +19,9 @@ endif
 ifdef NI
 
 ifdef LOG_MESSAGE
-precompiler_flag = /D "LOG_MESSAGE" /D "NO_INJECTION"
+precompiler_flag = /D "LOG_MESSAGE" /D "INJECTION_METHOD=3"
 else
-precompiler_flag = /D "NO_INJECTION"
+precompiler_flag = /D "INJECTION_METHOD=3"
 endif
 
 def_file = /DEF:"uMod_DX$(DX_XX_File)_dll_NO_INJECTION.def"
@@ -32,9 +32,9 @@ else
 
 ifdef DI
 ifdef LOG_MESSAGE
-precompiler_flag = /D "LOG_MESSAGE" /D "DIRECT_INJECTION"
+precompiler_flag = /D "LOG_MESSAGE" /D "INJECTION_METHOD=2"
 else
-precompiler_flag =  /D "DIRECT_INJECTION"
+precompiler_flag =  /D "INJECTION_METHOD=2"
 endif
 
 def_file = /DEF:"uMod_DX$(DX_XX_File)_dll_DIRECT_INJECTION.def"
@@ -44,9 +44,9 @@ dll = uMod_d3d$(DX_XX_File)_DI.dll
 else
 
 ifdef LOG_MESSAGE
-precompiler_flag = /D "LOG_MESSAGE" /D "HOOK_INJECTION"
+precompiler_flag = /D "LOG_MESSAGE" /D "INJECTION_METHOD=1"
 else
-precompiler_flag =  /D "HOOK_INJECTION"
+precompiler_flag =  /D "INJECTION_METHOD=1"
 endif
 
 def_file = /DEF:"uMod_DX$(DX_XX_File)_dll_HOOK_INJECTION.def"
@@ -58,11 +58,19 @@ endif
 
 CXX = cl
 CLINK = link.exe
-DEFINES = /D "WIN32" /D "_WINDOWS" /D "_USRDLL" /D "_WINDLL" /D "_MBCS"  $(DX_XX_Flag)
+DEFINES = /D "WIN32" /D "NDEBUG" /D "_WINDOWS" /D "_USRDLL" /D "_WINDLL" /D "_MBCS"  /D "_UNICODE" "/D UNICODE" $(DX_XX_Flag)
 #CFLAGS = /I "C:\Program Files (x86)\Microsoft DirectX SDK (June 2010)\Include" /nologo /W3 /WX- /O2 ${DEFINES} ${precompiler_flag} /Gm- /EHsc /MT /GS /fp:precise /Zc:wchar_t
-CFLAGS = /I "C:\Program Files (x86)\Microsoft DirectX SDK (June 2010)\Include" /nologo /W3 /WX- /O2 /Oi /Oy- /GL ${DEFINES} ${precompiler_flag} /Gm- /EHsc /MT /Gy- /fp:precise /Zc:wchar_t /Zc:forScope /Gd /TP /analyze-
-LFLAGS = /INCREMENTAL:NO /NOLOGO /LIBPATH:"C:\Program Files (x86)\Microsoft DirectX SDK (June 2010)\Lib\x86" /DLL "Winmm.lib" "d3dx9.lib" "d3dx10.lib" "dxguid.lib" "user32.lib" "Kernel32.lib" ${def_file} /SUBSYSTEM:WINDOWS /OPT:REF /OPT:ICF  /TLBID:1 /DYNAMICBASE:NO /NXCOMPAT:NO  /MACHINE:X86
+
+CFLAGS = /I "C:\Program Files (x86)\Microsoft DirectX SDK (June 2010)\Include" /nologo /W3 /WX- /O2 /Oi /Oy- /GL \
+ ${DEFINES} ${precompiler_flag} /Gm- /EHsc /MT /GS- /Gy- /fp:precise /Zc:wchar_t /Zc:forScope /Gd /TP /analyze-
+
+LFLAGS = /INCREMENTAL:NO /NOLOGO /LIBPATH:"C:\Program Files (x86)\Microsoft DirectX SDK (June 2010)\Lib\x86" \
+  /DLL "Winmm.lib" "d3dx9.lib" "d3dx10.lib" "dxguid.lib" "user32.lib" "Kernel32.lib" ${def_file} /MANIFEST:NO \
+  /SUBSYSTEM:WINDOWS /OPT:REF /OPT:ICF /LTCG /TLBID:1 /DYNAMICBASE /NXCOMPAT  /MACHINE:X86 
+
+ 
  #/nologo /W3 /WX- /O2 /Oi /Oy- /GL /D WIN32 /D NDEBUG /D _WINDOWS /D _USRDLL /D D3DSTARTERKIT_EXPORTS /D _WINDLL /D _UNICODE /D UNICODE /Gm- /EHsc /MT /GS- /Gy- /fp:precise /Zc:wchar_t /Zc:forScope /Fo"Release\\" /Fd"Release\vc100.pdb" /Gd /TP /analyze-
+
 obj = obj
 bin = bin
 
@@ -83,13 +91,13 @@ objects = \
   ${obj}\uMod_IDirect3DVolumeTexture9.${obj_suff} \
   ${obj}\uMod_IDirect3DCubeTexture9.${obj_suff} \
   \
-  ${obj}\uMod_DX10_dll.${obj_suff}
-  #\
-  #${obj}\cpu.obj \
-  #${obj}\disasm.obj \
-  #${obj}\disasm_x86.obj \
-  #${obj}\mhook.obj \
-  #${obj}\misc.obj 
+  ${obj}\uMod_DX10_dll.${obj_suff} \
+  ${obj}\uMod_ID3D10Device.${obj_suff} \
+  ${obj}\uMod_ID3D10Device1.${obj_suff} \
+  ${obj}\uMod_ID3D10Texture1D.${obj_suff} \
+  ${obj}\uMod_ID3D10Texture2D.${obj_suff} \
+  ${obj}\uMod_ID3D10Texture3D.${obj_suff} \
+  ${obj}\uMod_IDXGISwapChain.${obj_suff}
   
 
 headers = uMod_Main.h \
@@ -110,7 +118,13 @@ DX9_headers = \
  ..\uMod_DX9\uMod_IDirect3DCubeTexture9.h
 
 DX10_headers = \
- ..\uMod_DX10\uMod_DX10_dll.h
+ ..\uMod_DX10\uMod_DX10_dll.h \
+  ..\uMod_DX10\uMod_ID3D10Device.h \
+  ..\uMod_DX10\uMod_ID3D10Device1.h \
+  ..\uMod_DX10\uMod_ID3D10Texture1D.h \
+  ..\uMod_DX10\uMod_ID3D10Texture2D.h \
+  ..\uMod_DX10\uMod_ID3D10Texture3D.h \
+  ..\uMod_DX10\uMod_IDXGISwapChain.h
 
 ${bin}\d3d9.dll: ${objects}
 	${CLINK} ${LFLAGS} ${objects} /OUT:${bin}\${dll}
@@ -162,6 +176,24 @@ ${obj}\uMod_IDirect3DCubeTexture9.${obj_suff}: ..\uMod_DX9\uMod_IDirect3DCubeTex
 
 
 ${obj}\uMod_DX10_dll.${obj_suff}: ..\uMod_DX10\uMod_DX10_dll.cpp  ${headers} ${DX10_headers}
+	${CXX} ${CFLAGS} /c $< /Fo$@
+
+${obj}\uMod_ID3D10Device.${obj_suff}: ..\uMod_DX10\uMod_ID3D10Device.cpp  ${headers} ${DX10_headers}
+	${CXX} ${CFLAGS} /c $< /Fo$@
+
+${obj}\uMod_ID3D10Device1.${obj_suff}: ..\uMod_DX10\uMod_ID3D10Device1.cpp  ${headers} ${DX10_headers} ..\uMod_DX10\uMod_ID3D10Device.cpp
+	${CXX} ${CFLAGS} /c $< /Fo$@
+
+${obj}\uMod_ID3D10Texture1D.${obj_suff}: ..\uMod_DX10\uMod_ID3D10Texture1D.cpp  ${headers} ${DX10_headers}
+	${CXX} ${CFLAGS} /c $< /Fo$@
+
+${obj}\uMod_ID3D10Texture2D.${obj_suff}: ..\uMod_DX10\uMod_ID3D10Texture2D.cpp  ${headers} ${DX10_headers}
+	${CXX} ${CFLAGS} /c $< /Fo$@
+
+${obj}\uMod_ID3D10Texture3D.${obj_suff}: ..\uMod_DX10\uMod_ID3D10Texture3D.cpp  ${headers} ${DX10_headers}
+	${CXX} ${CFLAGS} /c $< /Fo$@
+
+${obj}\uMod_IDXGISwapChain.${obj_suff}: ..\uMod_DX10\uMod_IDXGISwapChain.cpp  ${headers} ${DX10_headers}
 	${CXX} ${CFLAGS} /c $< /Fo$@
 
 clean:

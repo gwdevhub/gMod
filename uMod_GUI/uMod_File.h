@@ -29,9 +29,15 @@ public:
   ~uMod_File(void);
 
   bool FileSupported(void);
+  bool SingleFile(void);
+  //int AddSingleFileToNode( uMod_TreeViewNode* node);
+  int GetContentTemplate(const wxString &content, uMod_TreeViewNode* node);
 
+  /*
   int GetComment( wxString &tool_tip);
   int GetContent( AddTextureClass &tex, bool add);
+*/
+  int GetContent( uMod_TreeViewNode* node);
 
   int SetFile(const wxString &file) {FileName=file;Loaded=false; return 0;}
   wxString GetFile(void) {return FileName;}
@@ -43,12 +49,18 @@ private:
   int ReadFile(void);
 
   int UnXOR(void);
+  /*
   int GetCommentZip( wxString &tool_tip);
   int GetCommentTpf( wxString &tool_tip);
+*/
+  int AddFile( uMod_TreeViewNode* node);
+  int AddZip( uMod_TreeViewNode* node);
+  int AddTpf( uMod_TreeViewNode* node);
 
-  int AddFile( AddTextureClass &tex, bool add);
-  int AddZip( AddTextureClass &tex, bool add, bool tpf);
-  int AddContent( const char* pw, AddTextureClass &tex, bool add);
+  int AddContent( const char* pw, uMod_TreeViewNode* node);
+
+  int GetContentTemplate_ZIP( const uMod_TreeViewNode_ArrayPtr &list_node, uMod_TreeViewNode* node);
+  int GetContentTemplate_SF( const uMod_TreeViewNode_ArrayPtr &list_node, uMod_TreeViewNode* node);
 
   wxString FileName;
   bool Loaded;

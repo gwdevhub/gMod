@@ -24,16 +24,13 @@ along with Universal Modding Engine.  If not, see <http://www.gnu.org/licenses/>
 
 */
 
+#ifdef __CDT_PARSER__
+#define INJECTION_METHOD 0
+#endif
+
+
 
 #include "uMod_Main.h"
-
-//#include "detours.h"
-//#include "detourxs/detourxs/detourxs.h"
-
-/*
-#include "detourxs/detourxs/ADE32.cpp"
-#include "detourxs/detourxs/detourxs.cpp"
-*/
 /*
  * global variable which are not linked external
  */
@@ -52,10 +49,11 @@ unsigned int          gl_ErrorState = 0u;
 FILE*                 gl_File = NULL;
 #endif
 
-
-#ifdef DIRECT_INJECTION
+#if INJECTION_METHOD == DIRECT_INJECTION
 void Nothing(void) {(void)NULL;}
 #endif
+
+
 /*
  * dll entry routine, here we initialize or clean up
  */
@@ -96,11 +94,11 @@ void InitInstance(HINSTANCE hModule)
 
   gl_hThisInstance = (HINSTANCE)  hModule;
 
-  wchar_t game[MAX_PATH];
-  if (HookThisProgram( game, MAX_PATH)) //ask if we need to hook this program
+  wchar_t game[10*MAX_PATH];
+  if (HookThisProgram( game, 10*MAX_PATH)) //ask if we need to hook this program
   {
     OpenMessage();
-    Message("InitInstance: %lu\n", hModule);
+    Message("InitInstance: %lu (%ls)\n", hModule, game);
 
     gl_TextureServer = new uMod_TextureServer(game); //create the server which listen on the pipe and prepare the update for the texture clients
 
@@ -112,7 +110,7 @@ void InitInstance(HINSTANCE hModule)
 #endif
 
 
-    if (gl_TextureServer->OpenPipe(game)) //open the pipe and send the name+path of this executable
+    if (gl_TextureServer->OpenPipe(game, INJECTION_METHOD)) //open the pipe and send the name+path of this executable
     {
       Message("InitInstance: Pipe not opened\n");
       return;
@@ -152,27 +150,35 @@ void ExitInstance()
 }
 
 
-
 bool HookThisProgram( wchar_t *ret, const int ret_len)
 {
-  const unsigned int max_len = ret_len < MAX_PATH ? MAX_PATH : ret_len;
+  const int max_len = ret_len < MAX_PATH ? MAX_PATH : ret_len;
   wchar_t *Executable = NULL;
-  wchar_t *Game = NULL;
   if (GetMemory( Executable, max_len))
   {
     ret[0]=0;
     return false;
   }
+  GetModuleFileNameW( GetModuleHandle( NULL ), Executable, max_len ); //ask for name and path of this executable
+
+#if INJECTION_METHOD==DIRECT_INJECTION || INJECTION_METHOD==NO_INJECTION
+  // we inject directly
+  int i=0;
+  while (i<max_len && i<ret_len-1 && Executable[i]) {ret[i]=Executable[i]; i++;}
+  ret[i]=0;
+  delete [] Executable;
+  return true;
+
+#elif INJECTION_METHOD==HOOK_INJECTION
+  //we use the gloabal hook
+
+  wchar_t *Game = NULL;
   if (GetMemory( Game, max_len))
   {
     delete [] Executable;
     ret[0]=0;
     return false;
   }
-  GetModuleFileNameW( GetModuleHandle( NULL ), Executable, max_len ); //ask for name and path of this executable
-
-#ifdef HOOK_INJECTION
-  //we use the gloabal hook
 
   FILE* file;
   wchar_t *app_path = _wgetenv( L"APPDATA"); //asc for the user application directory
@@ -186,14 +192,12 @@ bool HookThisProgram( wchar_t *ret, const int ret_len)
   }
   swprintf_s( file_name, max_len, L"%ls\\%ls\\%ls", app_path, uMod_APP_DIR, uMod_APP_DX9);
   if (_wfopen_s( &file, file_name, L"rt,ccs=UTF-16LE")) return (false); // open the file in utf-16 LE mode
+  delete [] file_name;
 
-
-  //MessageBoxW( NULL, Executable, L"test", 0);
   while (!feof(file))
   {
     if ( fgetws( Game, MAX_PATH, file) != NULL ) //get each line of the file
     {
-      //MessageBoxW( NULL, Game, L"test", 0);
       int len = 0;
       while (len<max_len-1 &&Game[len])
       {
@@ -216,54 +220,18 @@ bool HookThisProgram( wchar_t *ret, const int ret_len)
   fclose(file);
   return (false);
 #else
-  // we inject directly
-  int i=0;
-  while (i<max_len && i<ret_len-1 && Game[i]) {ret[i]=Game[i]; i++;}
-  ret[i]=0;
-  delete [] Executable;
-  delete [] Game;
-  return true;
+#error No injection method was set.
+  return false;
 #endif
 }
 
-#ifndef NO_INJECTION
-
-
-/*
-void *DetourFunc(BYTE *src, const BYTE *dst, const int len)
-{
-  BYTE *jmp = (BYTE*)malloc(len+5);
-  DWORD dwback;
-  VirtualProtect(src, len, PAGE_READWRITE, &dwback);
-  memcpy(jmp, src, len);  jmp += len;
-  jmp[0] = 0xE9;
-  *(DWORD*)(jmp+1) = (DWORD)(src+len - jmp) - 5;
-  src[0] = 0xE9;
-  *(DWORD*)(src+1) = (DWORD)(dst - src) - 5;
-  VirtualProtect(src, len, dwback, &dwback);
-  return (jmp-len);
-}
-void *DetourFunc(BYTE *src, const BYTE *dst, const int len)
-{
-  BYTE *jmp = (BYTE*)malloc(len+5);
-  DWORD dwback;
-  VirtualProtect(src, len, PAGE_READWRITE, &dwback);
-  memcpy(jmp, src, len);  jmp += len;
-  jmp[0] = 0xE9;
-  *(DWORD*)(jmp+1) = (DWORD)(src+len - jmp) - 5;
-  src[0] = 0xE9;
-  *(DWORD*)(src+1) = (DWORD)(dst - src) - 5;
-  VirtualProtect(src, len, dwback, &dwback);
-  return (jmp-len);
-}
-*/
-
+#if INJECTION_METHOD==DIRECT_INJECTION || INJECTION_METHOD==HOOK_INJECTION
 
 void *DetourFunc(BYTE *src, const BYTE *dst, const int len)
 {
   BYTE *jmp = (BYTE*)malloc(len+5);
   DWORD dwback = 0;
-  //VirtualProtect(jmp, len+5, PAGE_EXECUTE_READWRITE, &dwback); //This is the addition needed for Windows 7 RC
+  //(jmp, len+5, PAGE_EXECUTE_READWRITE, &dwback); //This is the addition needed for Windows 7 RC
   VirtualProtect(src, len, PAGE_READWRITE, &dwback);
   memcpy(jmp, src, len);    jmp += len;
   jmp[0] = 0xE9;
@@ -274,18 +242,7 @@ void *DetourFunc(BYTE *src, const BYTE *dst, const int len)
   VirtualProtect(src, len, dwback, &dwback);
   return (jmp-len);
 }
-/*
-bool RetourFunc( BYTE *src, BYTE *restore, const int len )
-{
-  DWORD dwback;
-  if(!VirtualProtect(src, len, PAGE_READWRITE, &dwback))  { return false; }
-  if(!memcpy(src, restore, len))              { return false; }
-  restore[0] = 0xE9;
-  *(DWORD*)(restore+1) = (DWORD)(src - restore) - 5;
-  if(!VirtualProtect(src, len, dwback, &dwback))      { return false; }
-  return true;
-}
-*/
+
 bool RetourFunc(BYTE *src, BYTE *restore, const int len)
 {
   DWORD dwback;
@@ -296,8 +253,10 @@ bool RetourFunc(BYTE *src, BYTE *restore, const int len)
   if(!VirtualProtect(src, len, dwback, &dwback))      { return (false); }
   return (true);
 }
+#endif
 
-#ifdef HOOK_INJECTION
+
+#if INJECTION_METHOD==HOOK_INJECTION
 /*
  * We do not change something, if our hook function is called.
  * We need this hook only to get our dll loaded into a starting program.
@@ -319,4 +278,4 @@ void RemoveHook(void)
   UnhookWindowsHookEx( gl_hHook );
 }
 #endif
-#endif
+

@@ -118,6 +118,19 @@ int uMod_Settings::Load(void)
     }
   }
 
+  int width, height;
+  wxDisplaySize( &width, &height);
+
+  if (XSize>width) XSize = width;
+  if (YSize>height) YSize = height;
+  if (XSize<50) XSize = 50;
+  if (YSize<50) YSize = 50;
+
+  if (XPos>width-XSize) XPos = width-XSize;
+  if (YPos>height-YSize) YPos = height-YSize;
+  if (XPos<0) XPos = 0;
+  if (YPos<0) YPos = 0;
+
   return 0;
 }
 
@@ -133,17 +146,29 @@ int uMod_Settings::Save(void)
   content << Language << "\n";
   file.Write( content.wc_str(), content.Len()*2);
 
-  content.Printf("x_size:%d\n", XSize);
-  file.Write( content.wc_str(), content.Len()*2);
+  if (XSize>0 && XSize<50000)
+  {
+    content.Printf("x_size:%d\n", XSize);
+    file.Write( content.wc_str(), content.Len()*2);
+  }
 
-  content.Printf("y_size:%d\n", YSize);
-  file.Write( content.wc_str(), content.Len()*2);
+  if (YSize>0 && YSize<50000)
+  {
+    content.Printf("y_size:%d\n", YSize);
+    file.Write( content.wc_str(), content.Len()*2);
+  }
 
-  content.Printf("x_pos:%d\n", XPos);
-  file.Write( content.wc_str(), content.Len()*2);
+  if (XPos>0 && XPos<50000)
+  {
+    content.Printf("x_pos:%d\n", XPos);
+    file.Write( content.wc_str(), content.Len()*2);
+  }
 
-  content.Printf("y_pos:%d\n", YPos);
-  file.Write( content.wc_str(), content.Len()*2);
+  if (YPos>0 && YPos<50000)
+  {
+    content.Printf("y_pos:%d\n", YPos);
+    file.Write( content.wc_str(), content.Len()*2);
+  }
 
   if (UseHook) content = "UseHook:1\n";
   else content = "UseHook:0\n";

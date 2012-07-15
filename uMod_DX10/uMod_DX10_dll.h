@@ -27,9 +27,9 @@ void LoadOriginal_DX10_Dll(void);
 void InitDX10();
 void ExitDX10();
 
-#ifndef NO_INJECTION
+#if INJECTION_METHOD==DIRECT_INJECTION || INJECTION_METHOD==HOOK_INJECTION
 
-HRESULT uMod_D3D10CreateDeviceAndSwapChain(
+HRESULT APIENTRY uMod_D3D10CreateDeviceAndSwapChain(
   IDXGIAdapter *pAdapter,
   D3D10_DRIVER_TYPE DriverType,
   HMODULE Software,
@@ -40,7 +40,7 @@ HRESULT uMod_D3D10CreateDeviceAndSwapChain(
   ID3D10Device **ppDevice
 );
 
-HRESULT uMod_D3D10CreateDeviceAndSwapChain1(
+HRESULT APIENTRY uMod_D3D10CreateDeviceAndSwapChain1(
   IDXGIAdapter *pAdapter,
   D3D10_DRIVER_TYPE DriverType,
   HMODULE Software,

@@ -61,7 +61,7 @@ void* uMod_Client::Entry(void)
     {
       unsigned int pos=0;
       MsgStruct *commands;
-      bool update_textures = false;
+      //bool update_textures = false;
 
       while (pos<=size-sizeof(MsgStruct))
       {
@@ -72,18 +72,20 @@ void* uMod_Client::Entry(void)
         {
         case CONTROL_ADD_CLIENT:
         {
-          uMod_Event event( uMod_EVENT_TYPE, ID_Add_Device);
-          event.SetValue(commands->Value);
-          event.SetClient(this);
-          wxPostEvent( MainFrame, event);
+          uMod_Event *event = new uMod_Event( uMod_EVENT_TYPE, ID_Add_Device);
+          event->SetValue(commands->Value);
+          event->SetClient(this);
+          wxQueueEvent( MainFrame, (wxEvent*) event);
+          //wxPostEvent( MainFrame, event);
           break;
         }
         case CONTROL_REMOVE_CLIENT:
         {
-          uMod_Event event( uMod_EVENT_TYPE, ID_Delete_Device);
-          event.SetValue(commands->Value);
-          event.SetClient(this);
-          wxPostEvent( MainFrame, event);
+          uMod_Event *event = new uMod_Event( uMod_EVENT_TYPE, ID_Delete_Device);
+          event->SetValue(commands->Value);
+          event->SetClient(this);
+          wxQueueEvent( MainFrame, (wxEvent*) event);
+          //wxPostEvent( MainFrame, event);
           break;
         }
         case CONTROL_GAME_EXIT:
@@ -105,9 +107,10 @@ void* uMod_Client::Entry(void)
   CloseHandle(Pipe.Out);
   Pipe.Out = INVALID_HANDLE_VALUE;
 
-  uMod_Event event( uMod_EVENT_TYPE, ID_Delete_Game);
-  event.SetClient(this);
-  wxPostEvent( MainFrame, event);
+  uMod_Event *event = new uMod_Event( uMod_EVENT_TYPE, ID_Delete_Game);
+  event->SetClient(this);
+  wxQueueEvent( MainFrame, (wxEvent*) event);
+  //wxPostEvent( MainFrame, event);
 
   return NULL;
 }

@@ -26,15 +26,15 @@ along with Universal Modding Engine.  If not, see <http://www.gnu.org/licenses/>
 extern FILE *gl_File;
 
 #define Message(...) {if (gl_File!=NULL) {fprintf( gl_File, __VA_ARGS__); fflush(gl_File);}}
-#ifdef HOOK_INJECTION
+#if INJECTION_METHOD == HOOK_INJECTION
 #define OpenMessage(...) {if (fopen_s( &gl_File, "uMod_log.txt", "wt")) gl_File=NULL; else fprintf( gl_File, "HI R40: 0000002\n");}
 #endif
 
-#ifdef DIRECT_INJECTION
+#if INJECTION_METHOD == DIRECT_INJECTION
 #define OpenMessage(...) {if (fopen_s( &gl_File, "uMod_log.txt", "wt")) gl_File=NULL; else fprintf( gl_File, "DI R40: 0000002\n");}
 #endif
 
-#ifdef NO_INJECTION
+#if INJECTION_METHOD == NO_INJECTION
 #define OpenMessage(...) {if (fopen_s( &gl_File, "uMod_log.txt", "wt")) gl_File=NULL; else fprintf( gl_File, "NI R40: 0000002\n");}
 #endif
 
@@ -42,8 +42,17 @@ extern FILE *gl_File;
 
 
 #else
+/**
+ * Open the file for logging (if LOG_MESSAGE=1 was passed during compilation)
+ */
 #define OpenMessage(...)
+/**
+ * Print a message (like printf) into the file ant flush the content to disk (if LOG_MESSAGE=1 was passed during compilation)
+ */
 #define Message(...)
+/**
+ * Close the file for logging (if LOG_MESSAGE=1 was passed during compilation)
+ */
 #define CloseMessage(...)
 #endif
 

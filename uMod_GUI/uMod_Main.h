@@ -41,7 +41,11 @@ along with Universal Modding Engine.  If not, see <http://www.gnu.org/licenses/>
 #define wxUSE_TEXTCTRL 1
 #define wxUSE_CHOICEDLG 1
 #define wxUSE_TOOLTIPS 1
+#define wxUSE_DATAVIEWCTRL 1
+#define wxUSE_COLLPANE 1
+#define wxUSE_COLOURDLG 1
 #endif
+#define wxUSE_SPINCTRL 1
 
 #define WINVER _WIN32_WINNT_WINXP
 #define _WIN32_WINNT _WIN32_WINNT_WINXP
@@ -49,22 +53,26 @@ along with Universal Modding Engine.  If not, see <http://www.gnu.org/licenses/>
 #define WIN32_LEAN_AND_MEAN
 
 
-#include "wx\wx.h"
-#include "wx\notebook.h"
+#include <wx\wx.h>
+#include <wx\notebook.h>
 #include <wx/file.h>
 #include <wx/dir.h>
 #include <wx/tokenzr.h>
 #include <wx/dynlib.h>
-//#include <wx/thread.h>
-//#include "wx/checkbox.h"
-//#include <wx/msgdlg.h>
-//#include <wx/menu.h>
-//#include <wx/button.h>
-//#include  <wx/filedlg.h>
-//#include <wx/choice.h>
-//#include <wx/textctrl.h>
-//#include <wx/choicdlg.h>
-
+#include <wx/dataview.h>
+#include <wx/thread.h>
+#include <wx/checkbox.h>
+#include <wx/msgdlg.h>
+#include <wx/menu.h>
+#include <wx/button.h>
+#include <wx/filedlg.h>
+#include <wx/choice.h>
+#include <wx/textctrl.h>
+#include <wx/choicdlg.h>
+#include <wx/collpane.h>
+#include <wx/colourdata.h>
+#include <wx/colordlg.h>
+#include <wx/spinctrl.h>
 //#include <windows.h>
 
 #include "../uMod_GlobalDefines.h"
@@ -77,13 +85,7 @@ class uMod_Frame;
 #define MAX_TEXTURES 1024
 enum
 {
-  ID_Button_Open = wxID_HIGHEST,
-  ID_Button_Path,
-  ID_Button_Update,
-  ID_Button_Reload,
-  //ID_Button_Save,
-  //ID_Menu_Pref,
-  ID_Menu_Exit,
+  ID_Menu_Exit = wxID_HIGHEST,
   ID_Menu_Lang,
   ID_Menu_Help,
   ID_Menu_About,
@@ -101,15 +103,42 @@ enum
   ID_Delete_Game,
   ID_Add_Device,
   ID_Delete_Device,
-  ID_Button_Texture, //this entry must be the last!!
+
+  ID_OpenPackage,
+  ID_RemovePackage,
+  ID_RemoveSelectedPackages,
+  ID_Update,
+  ID_Reload,
+  ID_SupportTPF,
+  ID_Button_Update,
+
+  ID_CollPane,
+  ID_SaveSingleTexture,
+  ID_SaveAllTexture,
+  ID_ShowSingleTextureString,
+  ID_FontColour,
+  ID_TextureColour,
+
+  ID_KeyPress,
+
+  ID_UseSizeFilter,
+  ID_SpinMin, ID_SpinMax,
+  ID_UseFormatFilter,
+  ID_SetFormatFilter,
+  ID_Button_SavePath,
+
+  ID_DataViewCtrl,
+  ID_ContextMenu,
 };
 
 #define ABORT_SERVER L"uMod_Abort_Server"
 #define uMod_d3d9_Hook_dll L"uMod_d3d9_HI.dll"
 #define uMod_d3d9_DI_dll L"uMod_d3d9_DI.dll"
 
-#include "uMod_AddTexture.h"
 #include "uMod_Settings.h"
+#include "uMod_ModElement.h"
+#include "uMod_TreeView.h"
+#include "uMod_AddTexture.h"
 #include "uMod_Language.h"
 #include "uMod_Event.h"
 #include "uMod_Client.h"
@@ -117,6 +146,7 @@ enum
 #include "uMod_File.h"
 #include "uMod_Sender.h"
 #include "uMod_Server.h"
+#include "uMod_MiniPanels.h"
 #include "uMod_GamePage.h"
 #include "uMod_DirectInjection.h"
 #include "uMod_GUI.h"

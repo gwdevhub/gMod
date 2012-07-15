@@ -18,7 +18,7 @@ OBJS = \
 	obj
 OBJS_exe = \
   bin
-WX_DIR = D:\Programme\wxWidgets-2.9.2
+WX_DIR = D:\Programme\wxWidgets-2.9.3
 LIBDIRNAME = \
 	$(WX_DIR)\lib\$(COMPILER_PREFIX)$(DIR_SUFFIX_CPU)_$(LIBTYPE_SUFFIX)$(CFG)
 SETUPHDIR = \
@@ -37,6 +37,7 @@ MINIMAL_OBJECTS =  \
   $(OBJS)\uMod_DirectInjection.obj \
   $(OBJS)\uMod_GUI.obj \
   $(OBJS)\uMod_GameInfo.obj \
+  $(OBJS)\uMod_MiniPanels.obj \
   $(OBJS)\uMod_GamePage.obj \
   $(OBJS)\uMod_Server.obj \
   $(OBJS)\uMod_Client.obj \
@@ -44,10 +45,30 @@ MINIMAL_OBJECTS =  \
   $(OBJS)\uMod_Sender.obj \
   $(OBJS)\uMod_Settings.obj \
   $(OBJS)\uMod_AddTexture.obj \
+  $(OBJS)\uMod_TreeView.obj \
+  $(OBJS)\uMod_ModElement.obj \
   $(OBJS)\uMod_Language.obj
 MINIMAL_RESOURCES =  \
 	$(OBJS)\uMod_GUI.res
 
+HEADERS = \
+ uMod_AddTexture.h \
+ uMod_Client.h \
+ uMod_DirectInjection.h \
+ uMod_Event.h \
+ uMod_File.h \
+ uMod_GameInfo.h \
+ uMod_MiniPanels.h \
+ uMod_GamePage.h \
+ uMod_GUI.h \
+ uMod_Language.h \
+ uMod_Main.h \
+ uMod_ModElement.h \
+ uMod_Sender.h \
+ uMod_Server.h \
+ uMod_Settings.h \
+ uMod_TreeView.h
+  
 ### Conditionally set variables: ###
 
 !if "$(USE_GUI)" == "0"
@@ -306,6 +327,10 @@ __DLLFLAG_p = /DWXUSINGDLL
 __DLLFLAG_p_1 = /d WXUSINGDLL
 !endif
 !if "$(MONOLITHIC)" == "0"
+__WXLIB_ADV_p = \
+	wx$(PORTNAME)$(WXUNIVNAME)$(WX_RELEASE_NODOT)$(WXUNICODEFLAG)$(WXDEBUGFLAG)$(WX_LIB_FLAVOUR)_adv.lib
+!endif
+!if "$(MONOLITHIC)" == "0"
 __WXLIB_CORE_p = \
 	wx$(PORTNAME)$(WXUNIVNAME)$(WX_RELEASE_NODOT)$(WXUNICODEFLAG)$(WXDEBUGFLAG)$(WX_LIB_FLAVOUR)_core.lib
 !endif
@@ -355,47 +380,54 @@ clean:
 
 $(OBJS_exe)\uMod.exe: $(MINIMAL_OBJECTS) $(OBJS)\uMod_GUI.res
 	link /NOLOGO /OUT:$@  $(__DEBUGINFO_1) /pdb:"$(OBJS)\uMod_GUI.pdb" $(__DEBUGINFO_2)  $(LINK_TARGET_CPU) /LIBPATH:$(LIBDIRNAME) /SUBSYSTEM:WINDOWS $(____CAIRO_LIBDIR_FILENAMES_p) $(LDFLAGS) @<<
-	$(MINIMAL_OBJECTS) $(MINIMAL_RESOURCES)  $(__WXLIB_CORE_p)  $(__WXLIB_BASE_p)  $(__WXLIB_MONO_p) $(__LIB_TIFF_p) $(__LIB_JPEG_p) $(__LIB_PNG_p)  wxzlib$(WXDEBUGFLAG).lib wxregex$(WXUNICODEFLAG)$(WXDEBUGFLAG).lib wxexpat$(WXDEBUGFLAG).lib $(EXTRALIBS_FOR_BASE) $(__UNICOWS_LIB_p) $(__CAIRO_LIB_p) kernel32.lib user32.lib gdi32.lib comdlg32.lib winspool.lib winmm.lib shell32.lib comctl32.lib ole32.lib oleaut32.lib uuid.lib rpcrt4.lib advapi32.lib wsock32.lib wininet.lib
+	$(MINIMAL_OBJECTS) $(MINIMAL_RESOURCES)  $(__WXLIB_ADV_p)  $(__WXLIB_CORE_p)  $(__WXLIB_BASE_p)  $(__WXLIB_MONO_p) $(__LIB_TIFF_p) $(__LIB_JPEG_p) $(__LIB_PNG_p)  wxzlib$(WXDEBUGFLAG).lib wxregex$(WXUNICODEFLAG)$(WXDEBUGFLAG).lib wxexpat$(WXDEBUGFLAG).lib $(EXTRALIBS_FOR_BASE) $(__UNICOWS_LIB_p) $(__CAIRO_LIB_p) kernel32.lib user32.lib gdi32.lib comdlg32.lib winspool.lib winmm.lib shell32.lib comctl32.lib ole32.lib oleaut32.lib uuid.lib rpcrt4.lib advapi32.lib wsock32.lib wininet.lib
 <<
 
 $(OBJS)\uMod_GUI.res: uMod.rc
 	rc /fo$@  /d WIN32 $(____DEBUGRUNTIME_3_p_1) $(__NO_VC_CRTDBG_p_1)  /d __WXMSW__ $(__WXUNIV_DEFINE_p_1) $(__DEBUG_DEFINE_p_1) $(__NDEBUG_DEFINE_p_1) $(__EXCEPTIONS_DEFINE_p_1) $(__RTTI_DEFINE_p_1) $(__THREAD_DEFINE_p_1) $(__UNICODE_DEFINE_p_1) $(__MSLU_DEFINE_p_1) /i $(SETUPHDIR) /i . $(__DLLFLAG_p_1) /d _WINDOWS  /d NOPCH uMod.rc
 
-#$(OBJS)\display_display.obj: .\display.cpp
-#	$(CXX) /c /nologo /TP /Fo$@ $(DISPLAY_CXXFLAGS) .\display.cpp
 	
 $(OBJS)\unzip.obj: .\unzip.cpp
   $(CXX) /c /nologo /TP /Fo$@ $(MINIMAL_CXXFLAGS) .\unzip.cpp
 
-$(OBJS)\uMod_DirectInjection.obj: .\uMod_DirectInjection.cpp
+$(OBJS)\uMod_DirectInjection.obj: .\uMod_DirectInjection.cpp $(HEADERS)
   $(CXX) /c /nologo /TP /Fo$@ $(MINIMAL_CXXFLAGS) .\uMod_DirectInjection.cpp
 
-$(OBJS)\uMod_GUI.obj: .\uMod_GUI.cpp
+$(OBJS)\uMod_GUI.obj: .\uMod_GUI.cpp $(HEADERS)
   $(CXX) /c /nologo /TP /Fo$@ $(MINIMAL_CXXFLAGS) .\uMod_GUI.cpp
 
-$(OBJS)\uMod_GameInfo.obj: .\uMod_GameInfo.cpp
+$(OBJS)\uMod_GameInfo.obj: .\uMod_GameInfo.cpp $(HEADERS)
   $(CXX) /c /nologo /TP /Fo$@ $(MINIMAL_CXXFLAGS) .\uMod_GameInfo.cpp
 
-$(OBJS)\uMod_GamePage.obj: .\uMod_GamePage.cpp
+$(OBJS)\uMod_MiniPanels.obj: .\uMod_MiniPanels.cpp $(HEADERS)
+  $(CXX) /c /nologo /TP /Fo$@ $(MINIMAL_CXXFLAGS) .\uMod_MiniPanels.cpp
+
+$(OBJS)\uMod_GamePage.obj: .\uMod_GamePage.cpp $(HEADERS)
   $(CXX) /c /nologo /TP /Fo$@ $(MINIMAL_CXXFLAGS) .\uMod_GamePage.cpp
 
-$(OBJS)\uMod_Server.obj: .\uMod_Server.cpp
+$(OBJS)\uMod_Server.obj: .\uMod_Server.cpp $(HEADERS)
   $(CXX) /c /nologo /TP /Fo$@ $(MINIMAL_CXXFLAGS) .\uMod_Server.cpp
 
-$(OBJS)\uMod_Client.obj: .\uMod_Client.cpp
+$(OBJS)\uMod_Client.obj: .\uMod_Client.cpp $(HEADERS)
   $(CXX) /c /nologo /TP /Fo$@ $(MINIMAL_CXXFLAGS) .\uMod_Client.cpp
 
-$(OBJS)\uMod_File.obj: .\uMod_File.cpp
+$(OBJS)\uMod_File.obj: .\uMod_File.cpp $(HEADERS)
   $(CXX) /c /nologo /TP /Fo$@ $(MINIMAL_CXXFLAGS) .\uMod_File.cpp
 
-$(OBJS)\uMod_Sender.obj: .\uMod_Sender.cpp
+$(OBJS)\uMod_Sender.obj: .\uMod_Sender.cpp $(HEADERS)
   $(CXX) /c /nologo /TP /Fo$@ $(MINIMAL_CXXFLAGS) .\uMod_Sender.cpp
 
-$(OBJS)\uMod_Settings.obj: .\uMod_Settings.cpp
+$(OBJS)\uMod_Settings.obj: .\uMod_Settings.cpp $(HEADERS)
   $(CXX) /c /nologo /TP /Fo$@ $(MINIMAL_CXXFLAGS) .\uMod_Settings.cpp
 
-$(OBJS)\uMod_AddTexture.obj: .\uMod_AddTexture.cpp
+$(OBJS)\uMod_AddTexture.obj: .\uMod_AddTexture.cpp $(HEADERS)
   $(CXX) /c /nologo /TP /Fo$@ $(MINIMAL_CXXFLAGS) .\uMod_AddTexture.cpp
 
-$(OBJS)\uMod_Language.obj: .\uMod_Language.cpp
+$(OBJS)\uMod_TreeView.obj: .\uMod_TreeView.cpp $(HEADERS)
+  $(CXX) /c /nologo /TP /Fo$@ $(MINIMAL_CXXFLAGS) .\uMod_TreeView.cpp
+
+$(OBJS)\uMod_ModElement.obj: .\uMod_ModElement.cpp $(HEADERS)
+  $(CXX) /c /nologo /TP /Fo$@ $(MINIMAL_CXXFLAGS) .\uMod_ModElement.cpp
+ 
+$(OBJS)\uMod_Language.obj: .\uMod_Language.cpp $(HEADERS)
   $(CXX) /c /nologo /TP /Fo$@ $(MINIMAL_CXXFLAGS) .\uMod_Language.cpp

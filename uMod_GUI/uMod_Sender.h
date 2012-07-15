@@ -31,7 +31,7 @@ public:
   uMod_Sender(PipeStruct &pipe);
   ~uMod_Sender(void);
 
-  int Send( const uMod_GameInfo &game, const uMod_GameInfo &game_old, bool force=false, wxArrayString *comments=NULL);
+  int Send( const uMod_GameInfo &game, const uMod_GameInfo &game_old, uMod_TextureElement_SortedArrayPtr* current_textures, bool force=false);
 
   wxString LastError;
 
@@ -39,13 +39,22 @@ private:
   int SendSaveAllTextures(bool val);
   int SendSaveSingleTexture(bool val);
 
-  int SendTextures(unsigned int num, AddTextureClass *tex);
+  int SendTextures(const uMod_TextureElement_SortedArrayPtr &old_tex, const uMod_TextureElement_SortedArrayPtr &new_tex, bool force);
+
+  int AddTexture( uMod_TextureElement *tex, int &buffer_pos);
+  int RemoveTexture( uMod_TextureElement *tex, int &buffer_pos);
 
   int SendKey(int key, int ctr);
 
   int SendPath( const wxString &path);
 
-  int SendColour( int* colour, int ctr);
+  int SendColour( unsigned char* colour, int ctr);
+
+
+  int SendBool( bool val, int ctr);
+  int SendDWORD64( DWORD64 val, int ctr);
+
+  int SendMinMax( unsigned long min, unsigned long max, int ctr);
 
   char *Buffer;
   int SendToGame( void* msg, unsigned long len);
@@ -55,8 +64,7 @@ private:
   int AddContent( char* buffer, unsigned int len, const char* pw, AddTextureClass *tex, bool add, bool force);
 
   PipeStruct &Pipe;
-  AddTextureClass *OldTextures;
-  int OldTexturesNum;
+  uMod_TextureElement_SortedArrayPtr *OldTextures;
 };
 
 

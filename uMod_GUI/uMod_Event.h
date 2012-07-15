@@ -29,20 +29,20 @@ BEGIN_DECLARE_EVENT_TYPES()
 DECLARE_EVENT_TYPE( uMod_EVENT_TYPE, -1)
 END_DECLARE_EVENT_TYPES()
 
-class uMod_Event : public wxCommandEvent
+class uMod_Event : public wxThreadEvent
 {
 public:
   uMod_Event( wxEventType commandType = uMod_EVENT_TYPE, int id = 0 )
-  :  wxCommandEvent(commandType, id) { }
+  :  wxThreadEvent(commandType, id) { }
   virtual ~uMod_Event(void) {}
 
   // You *must* copy here the data to be transported
   uMod_Event( const uMod_Event &event )
-  :  wxCommandEvent(event)
-  { this->SetText( event.GetText());
+  :  wxThreadEvent(event)
+  { this->SetText( event.GetText().c_str());
     Value=((uMod_Event&)event).GetValue();
     PipeIn=((uMod_Event&)event).GetPipeIn(); PipeOut=((uMod_Event&)event).GetPipeOut();
-    Name=((uMod_Event&)event).GetName();
+    Name=((uMod_Event&)event).GetName().c_str();
     Client=((uMod_Event&)event).GetClient();
     }
 
@@ -59,7 +59,7 @@ public:
   uMod_Client * GetClient(void) {return Client;}
 
   void SetValue(int value) {Value=value;}
-  void SetName( wxString name) {Name=name;}
+  void SetName( wxString name) {Name=name.c_str();}
   void SetPipeIn( HANDLE pipe) {PipeIn=pipe;}
   void SetPipeOut( HANDLE pipe) {PipeOut=pipe;}
   void SetClient( uMod_Client *client) {Client=client;}

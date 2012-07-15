@@ -23,45 +23,45 @@ along with Universal Modding Engine.  If not, see <http://www.gnu.org/licenses/>
 
 uMod_Sender::uMod_Sender(PipeStruct &pipe) : Pipe(pipe)
 {
-  OldTextures = NULL;
-  OldTexturesNum = 0;
   try {Buffer = new char[BIG_BUFSIZE];}
-  catch (...) {Buffer=NULL;}
+  catch (...) {Buffer=(char*)0;}
+  OldTextures = (uMod_TextureElement_SortedArrayPtr*)0;
 }
 
 uMod_Sender::~uMod_Sender(void)
 {
-  if (Buffer!=NULL) delete [] Buffer;
-  if (OldTextures!=NULL) delete [] OldTextures;
+  if (Buffer!=(char*)0) delete [] Buffer;
+  if (OldTextures != (uMod_TextureElement_SortedArrayPtr*)0)
+  {
+    for (unsigned int t=0; t<OldTextures->GetCount(); t++)
+    {
+      OldTextures->Item(t)->Release();
+    }
+    delete OldTextures;
+  }
 }
 
 
-int uMod_Sender::Send( const uMod_GameInfo &game, const uMod_GameInfo &game_old, bool force, wxArrayString *comments)
+int uMod_Sender::Send( const uMod_GameInfo &game, const uMod_GameInfo &game_old, uMod_TextureElement_SortedArrayPtr* current_textures, bool force)
 {
   LastError.Empty();
+
   int key = game.GetKeyBack();
   if (key>=0 && key!=game_old.GetKeyBack())
-  {
-    key = Language->KeyValues[key];
     SendKey( key, CONTROL_KEY_BACK);
-  }
+
   key = game.GetKeySave();
   if (key>=0 && key!=game_old.GetKeySave())
-  {
-    key = Language->KeyValues[key];
     SendKey( key, CONTROL_KEY_SAVE);
-  }
+
   key = game.GetKeyNext();
   if (key>=0 && key!=game_old.GetKeyNext())
-  {
-    key = Language->KeyValues[key];
     SendKey( key, CONTROL_KEY_NEXT);
-  }
 
-  int colour[3], colour_old[3];
+  unsigned char colour[4], colour_old[4];
   game.GetFontColour( colour);
   game_old.GetFontColour( colour_old);
-  for (int i=0; i<3; i++) if (colour[i]!=colour_old[i])
+  for (int i=0; i<4; i++) if (colour[i]!=colour_old[i])
   {
     SendColour( colour, CONTROL_FONT_COLOUR);
     break;
@@ -69,182 +69,57 @@ int uMod_Sender::Send( const uMod_GameInfo &game, const uMod_GameInfo &game_old,
 
   game.GetTextureColour( colour);
   game_old.GetTextureColour( colour_old);
-  for (int i=0; i<3; i++) if (colour[i]!=colour_old[i])
+  for (int i=0; i<4; i++) if (colour[i]!=colour_old[i])
   {
     SendColour( colour, CONTROL_TEXTURE_COLOUR);
     break;
   }
 
+  SendDWORD64( game.FileFormat(), CONTROL_SAVE_FORMAT);
 
-  if ( game.GetSaveSingleTexture() != game_old.GetSaveSingleTexture() ) SendSaveSingleTexture( game.GetSaveSingleTexture());
-  if ( game.GetSaveAllTextures() != game_old.GetSaveAllTextures() ) SendSaveAllTextures(game.GetSaveAllTextures());
+  if (game.UseFormatFilter())
+    SendDWORD64( game.FormatFilter(), CONTROL_FORMAT_FILTER);
+  else
+    SendDWORD64( 0u, CONTROL_FORMAT_FILTER);
+
+  if (game.UseSizeFilter())
+  {
+    SendMinMax( game.WidthMin(), game.WidthMax(), CONTROL_WIDTH_FILTER);
+    SendMinMax( game.HeightMin(), game.HeightMax(), CONTROL_HEIGHT_FILTER);
+    SendMinMax( game.DepthMin(), game.DepthMax(), CONTROL_DEPTH_FILTER);
+  }
+  else
+  {
+    SendMinMax( 0, 0, CONTROL_HEIGHT_FILTER);
+    SendMinMax( 0, 0, CONTROL_HEIGHT_FILTER);
+    SendMinMax( 0, 0, CONTROL_HEIGHT_FILTER);
+  }
+
+  SendBool( game.ShowSingleTextureString(), CONTROL_SHOW_STRING);
+  SendBool( game.GetSaveSingleTexture(), CONTROL_SAVE_SINGLE);
+  SendBool(game.GetSaveAllTextures(), CONTROL_SAVE_ALL);
+
+  SendBool(game.SupportTPF(), CONTROL_SUPPORT_TPF);
 
   wxString path;
   path = game.GetSavePath();
   if (path!=game_old.GetSavePath()) SendPath(path);
 
 
-  if (game.GetNumberOfFiles()<=0 && OldTexturesNum==0 && OldTextures==NULL)
+
+
+  if ( OldTextures== (uMod_TextureElement_SortedArrayPtr*)0) OldTextures = new uMod_TextureElement_SortedArrayPtr( Compare_uMod_TextureElement );
+
+  //uMod_TextureElement_SortedArrayPtr* current_textures = new uMod_TextureElement_SortedArrayPtr( Compare_uMod_TextureElement );
+
+  SendTextures( *OldTextures, *current_textures,  force);
+
+  for (unsigned int t=0; t<OldTextures->GetCount(); t++)
   {
-    if (LastError.Len()>0) return 1;
-    else return 0;
+    OldTextures->Item(t)->Release();
   }
-
-  wxArrayString files;
-
-  game.GetFiles( files);
-  int num = files.GetCount();
-  bool *checked = NULL;
-  if (num>0)
-  {
-    if (GetMemory(checked, num)) {LastError << Language->Error_Memory; return -1;}
-    game.GetChecked( checked, num);
-  }
-
-  AddTextureClass *tex = NULL;//new AddTextureClass[num+OldTexturesNum];
-  if (GetMemory( tex, num+OldTexturesNum)) {LastError << Language->Error_Memory; return -1;}
-  wxString comment;
-
-  if (force || OldTexturesNum==0 || OldTextures==NULL)
-  {
-    //reload everything
-    for (int i=0; i<num; i++)
-    {
-      uMod_File file( files[i]);
-      if (file.GetComment(comment))
-      {
-        LastError << file.LastError;
-        file.LastError.Empty();
-      }
-      tex[i].Comment = comment;
-
-      tex[i].Add = checked[i];
-      tex[i].Force = true;
-      tex[i].File = files[i];
-      if (file.GetContent( tex[i], checked[i]))
-      {
-        LastError << file.LastError;
-        file.LastError.Empty();
-      }
-    }
-
-    // append all packages, which was added but (maybe) are no longer in the list
-    int append = 0;
-    if (OldTexturesNum>0 && OldTextures!=NULL)
-    {
-      for (int i=0; i<OldTexturesNum; i++)
-      {
-        if (OldTextures[i].Add)
-        {
-          bool del = true;
-          for (int j=0; j<num; j++) if (OldTextures[i].File==tex[j].File) {del=false; break;}
-          if (del)
-          {
-            tex[num+append].InheriteMemory(OldTextures[i]);
-            tex[num+append].Add = false;
-            tex[num+append].Force = true;
-            append++;
-          }
-        }
-      }
-    }
-    SendTextures( num+append, tex);
-  }
-  else
-  {
-    //search for same packages to avoid reload from disk
-
-    //first step: maybe the order did not change
-    int pos = 0;
-    bool *hit=NULL;
-    if (GetMemory( hit, OldTexturesNum, false)) {LastError << Language->Error_Memory; return -1;}
-    for (pos=0; pos<num && pos<OldTexturesNum; pos++)
-    {
-      if (OldTextures[pos].File == files[pos])
-      {
-        tex[pos].InheriteMemory(OldTextures[pos]);
-        tex[pos].Force = false;
-        hit[pos] = true;
-      }
-      else
-      {
-        break;
-      }
-    }
-
-    //second step: if the order changed -> looking brute force
-    for (int i=pos; i<num; i++) for (int j=pos; j<OldTexturesNum; j++)
-    {
-      if (!hit[j] && OldTextures[j].File == files[i])
-      {
-        tex[i].InheriteMemory(OldTextures[j]);
-        tex[i].Force = false;
-        hit[j] = true;
-      }
-    }
-
-    //next step, set Add to true or false and load packages, which are not loaded
-    for (int i=0; i<num; i++)
-    {
-      tex[i].Add = checked[i];
-
-      if (tex[i].Len==0 || (tex[i].Add && !tex[i].Loaded) )
-      {
-        uMod_File file( files[i]);
-        if (file.GetComment(comment))
-        {
-          LastError << file.LastError;
-          file.LastError.Empty();
-        }
-        tex[i].Comment = comment;
-
-        tex[i].Add = checked[i];
-        tex[i].Force = true;
-        tex[i].File = files[i];
-        if (file.GetContent( tex[i], checked[i]))
-        {
-          LastError << file.LastError;
-          file.LastError.Empty();
-        }
-      }
-    }
-
-    // append all packages, which was added but are no longer in the list
-    int append = 0;
-    if (OldTexturesNum!=0 && OldTextures!=NULL)
-    {
-      for (int j=pos; j<OldTexturesNum; j++)
-      {
-        if (!hit[j] && OldTextures[j].Add)
-        {
-          bool del = true;
-          for (int i=pos; i<num; i++) if (OldTextures[j].File==tex[i].File) {del=false; break;}
-          if (del)
-          {
-            tex[num+append].InheriteMemory(OldTextures[j]);
-            tex[num+append].Add = false;
-            tex[num+append].Force = true;
-            append++;
-          }
-        }
-      }
-    }
-    SendTextures( num+append, tex);
-    if (hit!=NULL) delete [] hit;
-  }
-  if (checked!=NULL) delete [] checked;
-
-  if (comments!=NULL && num>0)
-  {
-    comments->Empty();
-    comments->Alloc(num);
-    for (int i=0; i<num; i++) comments->Add(tex[i].Comment);
-  }
-
-  if (OldTextures!=NULL) delete [] OldTextures;
-
-  OldTexturesNum = num;
-  OldTextures = tex;
+  delete OldTextures;
+  OldTextures = current_textures;
 
   if (LastError.Len()>0) return 1;
   else return 0;
@@ -275,101 +150,132 @@ int uMod_Sender::SendSaveSingleTexture(bool val)
 }
 
 
-int uMod_Sender::SendTextures(unsigned int num, AddTextureClass *tex)
+int uMod_Sender::SendTextures(const uMod_TextureElement_SortedArrayPtr &old_tex, const uMod_TextureElement_SortedArrayPtr &new_tex, bool force)
 {
-  if (Buffer==NULL) return (RETURN_NO_MEMORY);
+  if (Buffer==(char*)0) return (RETURN_NO_MEMORY);
 
+  unsigned int old_pos=0;
+  unsigned int new_pos=0;
   MsgStruct *msg;
-  int pos = 0;
-  for (unsigned int i=0u; i<num; i++) for (unsigned int j=0u; j<tex[i].Num; j++)
+  int buffer_pos = 0;
+
+  // both arrays are sorted
+  // we go through both arrays in parallel
+  while (old_pos<old_tex.GetCount() && new_pos<new_tex.GetCount())
   {
-    if (tex[i].Force || !tex[i].Add || !tex[i].WasAdded[j])
-    // if force==true we must update
-    // tex[i].Add!=true we can always remove, cause removing does cost time in the render thread
-    // if tex[i].Add==true and WasAdded[j]!=true this texture was not loaded but should be loaded, so maybe we can load it now
+    if (old_tex[old_pos]->Hash() < new_tex[new_pos]->Hash())
     {
-      bool hit = false; //we send only if this has was not send before
-      unsigned long temp_hash = tex[i].Hash[j];
-      for (unsigned int ii=0u; ii<i && !hit; ii++) for (unsigned int jj=0u; jj<tex[ii].Num && !hit; jj++) if (temp_hash==tex[ii].Hash[jj]) hit=true;
-      for (unsigned int jj=0u; jj<j && !hit; jj++) if (temp_hash==tex[i].Hash[jj]) hit=true;
-      if (hit)
-      {
-        tex[i].WasAdded[j]=false; //no matter what is done for this hash before, this texture is not added!
-        continue;
-      }
-
-      unsigned int size = tex[i].Size[j];
-      if ((sizeof(MsgStruct) + pos) >=BIG_BUFSIZE) //the buffer is full
-      {
-        if (int ret = SendToGame( Buffer, pos)) return ret;
-        pos = 0;
-      }
-
-      msg = (MsgStruct*) &Buffer[pos];
-      msg->Hash = temp_hash;
-      msg->Value = size;
-      pos += sizeof(MsgStruct);
-
-      if (tex[i].Add)
-      {
-        msg->Control = CONTROL_FORCE_RELOAD_TEXTURE_DATA; //we always force because whether force is true or not
-        //if (Add==true && WasAdded[j]!=true) the texture is loaded the first time, or in previous loads it could not be loaded
-        //because an other texture was send with the same hash, in all cases forcing is the best choice (atm)
-        char* temp = tex[i].Textures[j];
-        if (temp!=NULL)
-        {
-          unsigned int l = 0u;
-          while (l<size)
-          {
-            while (pos<BIG_BUFSIZE && l<size) Buffer[pos++] = temp[l++];
-            if (pos==BIG_BUFSIZE)
-            {
-              if (int ret = SendToGame( Buffer, pos)) return ret;
-              pos = 0;
-            }
-          }
-        }
-        tex[i].WasAdded[j] = true;
-      }
-      else
-      {
-        msg->Control = CONTROL_REMOVE_TEXTURE;
-        tex[i].WasAdded[j] = false;
-      }
+      RemoveTexture(old_tex[old_pos], buffer_pos);
+      old_pos++;
     }
-    else if (tex[i].Add && tex[i].WasAdded[j]) // this texture could be removed, due to a rearranging of the list
+    else if (old_tex[old_pos]->Hash() < new_tex[new_pos]->Hash())
     {
-      bool hit = false; //we send only if this has was not send before
-      unsigned long temp_hash = tex[i].Hash[j];
-      for (unsigned int ii=0u; ii<i && !hit; ii++) for (unsigned int jj=0u; jj<tex[ii].Num && !hit; jj++) if (temp_hash==tex[ii].Hash[jj]) hit=true;
-      for (unsigned int jj=0u; jj<j && !hit; jj++) if (temp_hash==tex[i].Hash[jj]) hit=true;
-      if (hit)
-      {
-        tex[i].WasAdded[j]=false; // due to rearranging this texture is replaced by an other texture
-      }
+      AddTexture(new_tex[new_pos], buffer_pos);
+      new_pos++;
+    }
+    else
+    {
+      //add if forced or if pointer are not the same, which means that two different textures modify the same target texture
+      if (force || old_tex[old_pos]!=new_tex[new_pos]) AddTexture( new_tex[new_pos], buffer_pos);
+      new_pos++;
+      old_pos++;
     }
   }
 
-  if ((sizeof(MsgStruct) + pos) >=BIG_BUFSIZE) //the buffer is full
+  // add remaining texture in new_tex
+  while (new_pos<new_tex.GetCount())
   {
-    if (int ret = SendToGame( Buffer, pos)) return ret;
-    pos = 0;
+    AddTexture(new_tex[new_pos], buffer_pos);
+    new_pos++;
   }
 
-  msg = (MsgStruct*) &Buffer[pos];
+
+  // delete remaining texture in old_tex
+  while (old_pos<old_tex.GetCount())
+  {
+    RemoveTexture(old_tex[old_pos], buffer_pos);
+    old_pos++;
+  }
+
+
+  //empty the buffer if it can't hold 1 MsgStruct anymore
+  if ((sizeof(MsgStruct) + buffer_pos) >=BIG_BUFSIZE) //the buffer is full
+  {
+    if (int ret = SendToGame( Buffer, buffer_pos)) return ret;
+    buffer_pos = 0;
+  }
+
+  msg = (MsgStruct*) &Buffer[buffer_pos];
   msg->Control = CONTROL_END_TEXTURES; //End of texture sending
   msg->Hash = 0u;
   msg->Value = 0;
-  pos += sizeof(MsgStruct);
-  if (int ret = SendToGame( Buffer, pos)) return ret;
+  buffer_pos += sizeof(MsgStruct);
+  if (int ret = SendToGame( Buffer, buffer_pos)) return ret;
 
   if (LastError.Len()>0) return 1;
   else return 0;
 }
 
+int uMod_Sender::AddTexture( uMod_TextureElement *tex, int &buffer_pos)
+{
+  MsgStruct *msg;
+  unsigned int size = tex->Content().Len();
+  if ((sizeof(MsgStruct) + buffer_pos) >=BIG_BUFSIZE) //the buffer is full
+  {
+    if (int ret = SendToGame( Buffer, buffer_pos)) return ret;
+    buffer_pos = 0;
+  }
+
+  msg = (MsgStruct*) &Buffer[buffer_pos];
+  msg->Hash = tex->Hash();
+  msg->Value = size;
+  msg->Control = CONTROL_FORCE_RELOAD_TEXTURE_DATA;
+
+
+  buffer_pos += sizeof(MsgStruct);
+
+  const char* temp = tex->Content().Data();
+  if (temp!=(char*)0)
+  {
+    unsigned int l = 0u;
+    while (l<size)
+    {
+      while (buffer_pos<BIG_BUFSIZE && l<size) Buffer[buffer_pos++] = temp[l++];
+      if (buffer_pos==BIG_BUFSIZE)
+      {
+        if (int ret = SendToGame( Buffer, buffer_pos)) return ret;
+        buffer_pos = 0;
+      }
+    }
+  }
+
+  if (LastError.Len()>0) return 1;
+  else return 0;
+}
+
+int uMod_Sender::RemoveTexture( uMod_TextureElement *tex, int &buffer_pos)
+{
+  MsgStruct *msg;
+  //empty the buffer if it can't hold 1 MsgStruct anymore
+  if ((sizeof(MsgStruct) + buffer_pos) >=BIG_BUFSIZE) //the buffer is full
+  {
+    if (int ret = SendToGame( Buffer, buffer_pos)) return ret;
+    buffer_pos = 0;
+  }
+
+  msg = (MsgStruct*) &Buffer[buffer_pos];
+  msg->Hash = tex->Hash();
+  msg->Control = CONTROL_REMOVE_TEXTURE;
+  buffer_pos += sizeof(MsgStruct);
+
+
+  if (LastError.Len()>0) return 1;
+  else return 0;
+}
 
 int uMod_Sender::SendKey(int key, int ctr)
 {
+  if (key<0) key=0;
   MsgStruct msg;
   msg.Control = ctr;
   msg.Value = key;
@@ -380,11 +286,11 @@ int uMod_Sender::SendKey(int key, int ctr)
 
 #define D3DCOLOR_ARGB(a,r,g,b) ((DWORD)((((a)&0xff)<<24)|(((r)&0xff)<<16)|(((g)&0xff)<<8)|((b)&0xff)))
 
-int uMod_Sender::SendColour( int* colour, int ctr)
+int uMod_Sender::SendColour( unsigned char* colour, int ctr)
 {
   MsgStruct msg;
   msg.Control = ctr;
-  msg.Value = D3DCOLOR_ARGB( 255, colour[0], colour[1], colour[2]);
+  msg.Value = D3DCOLOR_ARGB( colour[3], colour[0], colour[1], colour[2]);
   msg.Hash = 0u;
 
   return SendToGame( (void*)  &msg, sizeof(MsgStruct));
@@ -409,6 +315,39 @@ int uMod_Sender::SendPath( const wxString &path)
   msg->Value = len*sizeof(wchar_t);
   return SendToGame( Buffer, sizeof(MsgStruct)+len*sizeof(wchar_t));
 }
+
+
+int uMod_Sender::SendBool( bool val, int ctr)
+{
+  MsgStruct msg;
+  msg.Control = ctr;
+  if (val) msg.Value = 1;
+  else msg.Value = 0;
+  msg.Hash = 0u;
+
+  return SendToGame( (void*)  &msg, sizeof(MsgStruct));
+}
+int uMod_Sender::SendDWORD64( DWORD64 val, int ctr)
+{
+  MsgStruct msg;
+  msg.Control = ctr;
+  msg.Value = val;
+  msg.Hash = 0u;
+
+  return SendToGame( (void*)  &msg, sizeof(MsgStruct));
+}
+
+int uMod_Sender::SendMinMax( unsigned long min, unsigned long  max, int ctr)
+{
+  DWORD64 u_min = min, u_max = max;
+  MsgStruct msg;
+  msg.Control = ctr;
+  msg.Value = u_min<<32 | u_max;
+  msg.Hash = 0u;
+
+  return SendToGame( (void*)  &msg, sizeof(MsgStruct));
+}
+
 
 
 int uMod_Sender::SendToGame( void *msg, unsigned long len)

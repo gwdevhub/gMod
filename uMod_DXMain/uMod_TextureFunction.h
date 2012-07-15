@@ -19,11 +19,43 @@ along with Universal Modding Engine.  If not, see <http://www.gnu.org/licenses/>
 #define uMod_TEXTUREFUNCTION_H_
 
 
-unsigned int GetCRC32( char *pcDatabuf, unsigned int ulDatalen);
+
+// this value is simply the init value for the D.J. Bernsteins algorithm (djb2)
+#define HASH_INIT_VALUE 5381
+
+/**
+ * This hash function combines the djb2 and sdbm algorithm. Both are designed for hashing strings,
+ * but compared to many others they don't include a  Hash*data[i] operation, which would reset the hash
+ * if data[i]==0. This is never the case while hashing text, but it is very often the case when hashing
+ * textures. Therefore many good algorithm cannot be used at this point.
+ *
+ * Here are two algorithm used to reduce the number of collision (collision == two different textures have
+ * the same hash value)
+ *
+ * @param[in] data pointer to the buffer
+ * @param[in] len length of buffer in bytes
+ * @param[in,out] hash in = initial value of the hash; out = returned hash
+ */
+void GetHash( unsigned char *str, unsigned int len, DWORD64 &hash); // estimate the hash
+
+
+/**
+ * Caluclate the CRC32 value over a buffer. This function is used in texmod. Thanks to RS for given me this information!
+ * @param[in] data pointer to the buffer
+ * @param[in] len length of buffer in bytes
+ * @return CRC32 value
+ */
+DWORD32 GetCRC32( char *data, unsigned int len);
 /*
     case D3DFMT_MULTI2_ARGB8:
     case D3DFMT_VERTEXDATA:
     */
+
+/**
+ * Returns the number of bits used per pixel.
+ * @param[in] format DX format.
+ * @return
+ */
 inline int GetBitsFromFormat(D3DFORMAT format)
 {
   switch(format) //switch trough the formats to calculate the size of the raw data

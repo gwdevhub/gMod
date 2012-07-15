@@ -28,13 +28,8 @@ along with Universal Modding Engine.  If not, see <http://www.gnu.org/licenses/>
 #include "uMod_DX9_dll.h"
 #include "uMod_IDirect3D9.h"
 #include "uMod_IDirect3D9Ex.h"
-//#include "detours.h"
-//#include "detourxs/detourxs/detourxs.h"
 
-/*
-#include "detourxs/detourxs/ADE32.cpp"
-#include "detourxs/detourxs/detourxs.cpp"
-*/
+
 /*
  * global variable which are not linked external
  */
@@ -43,7 +38,7 @@ HINSTANCE             gl_hOriginal_DX9_Dll = NULL;
 typedef IDirect3D9 *(APIENTRY *Direct3DCreate9_type)(UINT);
 typedef HRESULT (APIENTRY *Direct3DCreate9Ex_type)(UINT SDKVersion, IDirect3D9Ex **ppD3D);
 
-#ifndef NO_INJECTION
+#if INJECTION_METHOD==DIRECT_INJECTION || INJECTION_METHOD==HOOK_INJECTION
 Direct3DCreate9_type Direct3DCreate9_fn = NULL; // we need to store the pointer to the original Direct3DCreate9 function after we have done a detour
 Direct3DCreate9Ex_type Direct3DCreate9Ex_fn = NULL; // we need to store the pointer to the original Direct3DCreate9 function after we have done a detour
 #endif
@@ -59,7 +54,7 @@ void InitDX9(void)
 {
   LoadOriginal_DX9_Dll();
 
-#ifndef NO_INJECTION
+#if INJECTION_METHOD==DIRECT_INJECTION || INJECTION_METHOD==HOOK_INJECTION
   // we detour the original Direct3DCreate9 to our MyDirect3DCreate9
   if (gl_hOriginal_DX9_Dll!=NULL)
   {
@@ -89,6 +84,7 @@ void ExitDX9(void)
     gl_hOriginal_DX9_Dll = NULL;
   }
 }
+
 void LoadOriginal_DX9_Dll(void)
 {
   char buffer[MAX_PATH];
@@ -105,7 +101,7 @@ void LoadOriginal_DX9_Dll(void)
 }
 
 
-#ifdef NO_INJECTION
+#if INJECTION_METHOD==NO_INJECTION
 /*
  * We do not inject, the game loads this dll by itself thus we must include the Direct3DCreate9 function
  */
@@ -220,8 +216,9 @@ DWORD WINAPI D3DPERF_GetStatus( void )
   return fn( );
 }
 
+#endif
 
-#else
+#if INJECTION_METHOD==DIRECT_INJECTION || INJECTION_METHOD==HOOK_INJECTION
 
 /*
  * We inject the dll into the game, thus we retour the original Direct3DCreate9 function to our MyDirect3DCreate9 function

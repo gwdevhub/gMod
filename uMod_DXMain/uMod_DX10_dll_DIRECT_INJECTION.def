@@ -1,0 +1,5 @@
+LIBRARY	"uMod_d3d10_DI"
+EXPORTS
+  uMod_D3D10CreateDeviceAndSwapChain @1
+  uMod_D3D10CreateDeviceAndSwapChain1 @2
+  Nothing @3

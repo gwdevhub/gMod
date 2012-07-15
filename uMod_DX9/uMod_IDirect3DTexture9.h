@@ -35,8 +35,9 @@ along with Universal Modding Engine.  If not, see <http://www.gnu.org/licenses/>
 
 
 
-interface uMod_IDirect3DTexture9 : public IDirect3DTexture9
+class uMod_IDirect3DTexture9 : public IDirect3DTexture9
 {
+public:
 	uMod_IDirect3DTexture9(IDirect3DTexture9 **ppTex, IDirect3DDevice9 *pIDirect3DDevice9)
 	{
 		m_D3Dtex = *ppTex; //Texture which will be displayed and will be passed to the game
@@ -47,16 +48,17 @@ interface uMod_IDirect3DTexture9 : public IDirect3DTexture9
 		// thus the fake texture can also be deleted
 		Reference = -1; //need for fast deleting
     Hash = 0u;
+    CRC = 0u;
     FAKE = false;
 	}
 
-	// callback interface
-	IDirect3DTexture9 *m_D3Dtex;
-	uMod_IDirect3DTexture9 *CrossRef_D3Dtex;
-	IDirect3DDevice9 *m_D3Ddev;
-	int Reference;
-	MyTypeHash Hash;
-  bool FAKE;
+  IDirect3DTexture9 *m_D3Dtex; //!< pointer to the real IDirect3DCubeTexture9 object
+  uMod_IDirect3DTexture9 *CrossRef_D3Dtex; //!< cross reference from the fake texture to the game texture and vice versa
+  IDirect3DDevice9 *m_D3Ddev; //!< pointer to the device
+  int Reference; //!< Index in the vector (needed for a fast delete).
+  DWORD64 Hash; //!< computed hash value for this game texture.
+  DWORD32 CRC; //!< computed crc32 value for this game texture.
+  bool FAKE; //!< True if this texture is was loaded by uMod (fake texture)
 
 	// original interface
     STDMETHOD(QueryInterface) (REFIID riid, void** ppvObj);
@@ -82,7 +84,7 @@ interface uMod_IDirect3DTexture9 : public IDirect3DTexture9
     STDMETHOD(UnlockRect)(UINT Level);
     STDMETHOD(AddDirtyRect)(CONST RECT* pDirtyRect);
 
-    int GetHash(MyTypeHash &hash);
+    int ComputetHash( bool compute_crc);
 };
 
 

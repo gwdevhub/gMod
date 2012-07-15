@@ -19,14 +19,23 @@ along with Universal Modding Engine.  If not, see <http://www.gnu.org/licenses/>
 
 #include "uMod_Main.h"
 
-/*
-MyTypeHash GetHash(unsigned char *str, int len) // estimate the hash
+
+void GetHash( unsigned char *str, unsigned int len, DWORD64 &hash) // estimate the hash
 {
-  MyTypeHash hash = 0;
-  for (int i=0; i<len; i++) hash = str[i] + (hash << 6) + (hash << 16) - hash;
-  return (hash);
+  DWORD32 hash1 = hash & 0xFFFFFFFF;
+  DWORD32 hash2 = hash>>32 & 0xFFFFFFFF;
+
+  for (int i=0; i<len; i++)
+  {
+    hash1 = ((hash1 << 5) + hash1) + *str; // D.J. Bernsteins algorithm (djb2)
+    hash2 = *str + (hash2<< 6) + (hash2 << 16) - hash2; // SDBM algorithm
+    str++;
+  }
+  hash = hash2;
+  hash<<=32;
+  hash |= hash1;
 }
-*/
+
 
 
 
@@ -43,10 +52,13 @@ The problem is that it doesn't take the pitch into account and BytesPerPixel may
 */
 
 
+
+
+
 #define CRC32POLY 0xEDB88320u /* CRC-32 Polynom */
 #define ulCrc_in 0xffffffff
 
-unsigned int GetCRC32( char *pcDatabuf, unsigned int ulDatalen)
+DWORD32 GetCRC32( char *pcDatabuf, unsigned int ulDatalen)
 {
   unsigned int crc = ulCrc_in;
   for (unsigned int idx = 0u; idx<ulDatalen; idx++)

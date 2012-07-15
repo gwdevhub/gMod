@@ -240,9 +240,8 @@ HRESULT APIENTRY uMod_IDirect3DTexture9::AddDirtyRect(CONST RECT* pDirtyRect)
 }
 
 
-int uMod_IDirect3DTexture9::GetHash(MyTypeHash &hash)
+int uMod_IDirect3DTexture9::ComputetHash( bool compute_crc)
 {
-  hash=0u;
   if (FAKE) return (RETURN_BAD_ARGUMENT);
   IDirect3DTexture9 *pTexture = m_D3Dtex;
   if (CrossRef_D3Dtex!=NULL) pTexture = CrossRef_D3Dtex->m_D3Dtex;
@@ -342,9 +341,37 @@ int uMod_IDirect3DTexture9::GetHash(MyTypeHash &hash)
     }
   }
 
-  int size = (GetBitsFromFormat( desc.Format) * desc.Width*desc.Height)/8;
+  int bits_per_pixel = GetBitsFromFormat( desc.Format);
 
-  hash = GetCRC32( (char*) d3dlr.pBits, size); //calculate the crc32 of the texture
+  {
+    Hash = HASH_INIT_VALUE;
+    unsigned char *data = (unsigned char*) d3dlr.pBits;
+    unsigned int size;
+    unsigned int h_max = desc.Height;
+    if (desc.Format == D3DFMT_DXT1) // 8 bytes per block
+    {
+      h_max /= 4; // divided by block size
+      size = desc.Width*2; // desc.Width/4 * 8
+    }
+    else if ( desc.Format==D3DFMT_DXT2 || desc.Format==D3DFMT_DXT3 || desc.Format==D3DFMT_DXT4 || desc.Format==D3DFMT_DXT5 ) // 16 bytes per block
+    {
+      h_max /= 4; // divided by block size
+      size = desc.Width*4; // desc.Width/4 * 16
+    }
+    else size = (bits_per_pixel * desc.Width)/8;
+
+    for (unsigned int h=0; h<h_max; h++)
+    {
+      GetHash( data, size, Hash);
+      data += d3dlr.Pitch;
+    }
+  }
+
+  if (compute_crc)
+  {
+    int size = (bits_per_pixel * desc.Width*desc.Height)/8;
+    CRC = GetCRC32( (char*) d3dlr.pBits, size); //calculate the crc32 of the texture
+  }
 
   if (pOffscreenSurface!=NULL)
   {
@@ -359,6 +386,6 @@ int uMod_IDirect3DTexture9::GetHash(MyTypeHash &hash)
   }
   else pTexture->UnlockRect(0);
 
-  Message("uMod_IDirect3DTexture9::GetHash() %#lX (%d %d) %d = %d\n", hash, desc.Width, desc.Height, desc.Format, size);
+  Message("uMod_IDirect3DTexture9::GetHash() %#llX %#LX (%d %d) %d\n", Hash, CRC, desc.Width, desc.Height, desc.Format);
   return (RETURN_OK);
 }

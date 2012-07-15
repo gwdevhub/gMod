@@ -20,7 +20,7 @@
 							<tool id="org.eclipse.cdt.msvc.cl.dll.debug.971252395" name="C/C++ Compiler (cl)" superClass="org.eclipse.cdt.msvc.cl.dll.debug">
 								<option id="org.eclipse.cdt.msvc.cl.option.includes.1468714055" name="Include Path (/I)" superClass="org.eclipse.cdt.msvc.cl.option.includes" valueType="includePath">
 									<listOptionValue builtIn="false" value="&quot;C:\Program Files (x86)\Microsoft DirectX SDK (June 2010)\Include&quot;"/>
-									<listOptionValue builtIn="false" value="&quot;D:\Programme\wxWidgets-2.9.2\include&quot;"/>
+									<listOptionValue builtIn="false" value="&quot;D:\Programme\wxWidgets-2.9.3\include&quot;"/>
 									<listOptionValue builtIn="false" value="&quot;C:\Program Files (x86)\Microsoft SDKs\Windows\v7.0A\Include&quot;"/>
 								</option>
 								<inputType id="org.eclipse.cdt.msvc.cl.inputType.370712665" superClass="org.eclipse.cdt.msvc.cl.inputType"/>

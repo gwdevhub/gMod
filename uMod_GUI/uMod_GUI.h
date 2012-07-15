@@ -60,12 +60,12 @@ public:
    */
   void OnClose(wxCloseEvent& WXUNUSED(event));
 
-
+/*
   void OnButtonOpen(wxCommandEvent& WXUNUSED(event));
   void OnButtonPath(wxCommandEvent& WXUNUSED(event));
   void OnButtonUpdate(wxCommandEvent& WXUNUSED(event));
   void OnButtonReload(wxCommandEvent& WXUNUSED(event));
-
+*/
   void OnMenuStartGame( wxCommandEvent &event);
 
   void OnMenuUseHook( wxCommandEvent &event);
@@ -101,19 +101,19 @@ private:
 
   wxNotebook *Notebook;
 
-
+/*
   wxButton *OpenButton;
   wxButton *DirectoryButton;
   wxButton *UpdateButton;
   wxButton *ReloadButton;
-
+*/
 
   wxMenuBar *MenuBar;
   wxMenu *MenuMain;
   wxMenu *MenuHelp;
 
   wxBoxSizer *MainSizer;
-  wxBoxSizer *ButtonSizer;
+  //wxBoxSizer *ButtonSizer;
 
 
   int NumberOfGames;

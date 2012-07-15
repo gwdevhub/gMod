@@ -42,10 +42,6 @@ void* uMod_Server::Entry(void)
 
   while(1)
   {
-/*
-    Beep(300,100);
-    Beep(600,100);
-*/
     pipe_in = CreateNamedPipeW(
        PIPE_Game2uMod,             // pipe name
        PIPE_ACCESS_INBOUND,       // read access
@@ -74,11 +70,7 @@ void* uMod_Server::Entry(void)
     // at first connect to the incoming pipe !!!
     fConnected = ConnectNamedPipe(pipe_in, NULL) ?
       true : (GetLastError() == ERROR_PIPE_CONNECTED);
-    /*
-    Beep(900,100);
-    Beep(600,100);
-    Beep(300,100);
-    */
+
     if (fConnected)
     {
       unsigned long num = 0;
@@ -92,15 +84,15 @@ void* uMod_Server::Entry(void)
 
       if (fSuccess)
       {
-        if (num>2)
+        if (num>4)
         {
           buffer[num]=0;
           buffer[num-1]=0;
-          wxString name = (wchar_t*) buffer;
+          int injection_method = * ((int*)buffer);
+          wxString name = (wchar_t*) &buffer[sizeof(int)];
 
           if (name==abort) // kill this server thread
           {
-            //Beep(1200,300);
             CloseHandle(pipe_in);
             return NULL;
           }
@@ -110,11 +102,13 @@ void* uMod_Server::Entry(void)
             true : (GetLastError() == ERROR_PIPE_CONNECTED);
           if (fConnected)
           {
-            uMod_Event event( uMod_EVENT_TYPE, ID_Add_Game);
-            event.SetName(name);
-            event.SetPipeIn(pipe_in);
-            event.SetPipeOut(pipe_out);
-            wxPostEvent( MainFrame, event);
+            uMod_Event *event = new uMod_Event( uMod_EVENT_TYPE, ID_Add_Game);
+            event->SetName(name.c_str());
+            event->SetValue(injection_method);
+            event->SetPipeIn(pipe_in);
+            event->SetPipeOut(pipe_out);
+            wxQueueEvent( MainFrame, (wxEvent*) event);
+            //wxPostEvent( MainFrame, event);
           }
           else
           {
@@ -123,6 +117,14 @@ void* uMod_Server::Entry(void)
             return NULL;
           }
         }
+        else
+        {
+          wxMessageBox("less than 4 bytes");
+        }
+      }
+      else
+      {
+        wxMessageBox("no success");
       }
    }
    else CloseHandle(pipe_in);

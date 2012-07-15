@@ -33,10 +33,10 @@ DEFINE_EVENT_TYPE(uMod_EVENT_TYPE)
 BEGIN_EVENT_TABLE(uMod_Frame, wxFrame)
   EVT_CLOSE(uMod_Frame::OnClose)
 
-  EVT_BUTTON(ID_Button_Open, uMod_Frame::OnButtonOpen)
-  EVT_BUTTON(ID_Button_Path, uMod_Frame::OnButtonPath)
-  EVT_BUTTON(ID_Button_Update, uMod_Frame::OnButtonUpdate)
-  EVT_BUTTON(ID_Button_Reload, uMod_Frame::OnButtonReload)
+  //EVT_BUTTON(ID_Button_Open, uMod_Frame::OnButtonOpen)
+  //EVT_BUTTON(ID_Button_Path, uMod_Frame::OnButtonPath)
+  //EVT_BUTTON(ID_Button_Update, uMod_Frame::OnButtonUpdate)
+  //EVT_BUTTON(ID_Button_Reload, uMod_Frame::OnButtonReload)
 
   EVT_MENU(ID_Menu_Help, uMod_Frame::OnMenuHelp)
   EVT_MENU(ID_Menu_About, uMod_Frame::OnMenuAbout)
@@ -137,23 +137,18 @@ uMod_Frame::uMod_Frame(const wxString& title, uMod_Settings &set)
 
   MainSizer = new wxBoxSizer(wxVERTICAL);
 
-  Notebook = new wxNotebook( this, wxID_ANY);
+  Notebook = new wxNotebook( this, wxID_ANY, wxDefaultPosition, wxDefaultSize, wxFULL_REPAINT_ON_RESIZE);
   Notebook->SetBackgroundColour(wxSystemSettings::GetColour(wxSYS_COLOUR_MENU));
   MainSizer->Add( (wxWindow*) Notebook, 1, wxEXPAND , 0 );
 
-  ButtonSizer = new wxBoxSizer(wxHORIZONTAL);
-
-  OpenButton = new wxButton( this, ID_Button_Open, Language->ButtonOpen, wxDefaultPosition, wxSize(100,24));
-  DirectoryButton = new wxButton( this, ID_Button_Path, Language->ButtonDirectory, wxDefaultPosition, wxSize(100,24));
-  UpdateButton = new wxButton( this, ID_Button_Update, Language->ButtonUpdate, wxDefaultPosition, wxSize(100,24));
-  ReloadButton = new wxButton( this, ID_Button_Reload, Language->ButtonReload, wxDefaultPosition, wxSize(100,24));
-
-  ButtonSizer->Add( (wxWindow*) OpenButton, 1, wxEXPAND, 0);
-  ButtonSizer->Add( (wxWindow*) DirectoryButton, 1, wxEXPAND, 0);
-  ButtonSizer->Add( (wxWindow*) UpdateButton, 1, wxEXPAND, 0);
-  ButtonSizer->Add( (wxWindow*) ReloadButton, 1, wxEXPAND, 0);
-  MainSizer->Add( ButtonSizer, 0, wxEXPAND , 0 );
-
+  PipeStruct pipe = {INVALID_HANDLE_VALUE,INVALID_HANDLE_VALUE};
+  uMod_GamePage *page = new uMod_GamePage( Notebook, "uMod", INVALID_GAME_PAGE, "templates/uMod.txt", pipe);
+  if (page->LastError.Len()>0)
+  {
+    wxMessageBox(page->LastError, "ERROR", wxOK|wxICON_ERROR);
+    delete page;
+  }
+  else Notebook->AddPage( page, page->GetPageName(), true);
 
   SetSizer( MainSizer);
 
@@ -213,12 +208,22 @@ int uMod_Frame::KillServer(void)
 
   if (pipe == INVALID_HANDLE_VALUE) return -1;
 
+  // prepend a zero int value as dummy injection method
   const wchar_t *str = ABORT_SERVER;
   unsigned int len=0u;
   while (str[len]) len++;
   len++; //to send also the zero
+
+  char *buffer=(char*)0;
+  GetMemory(buffer, sizeof(int) + len * sizeof(wchar_t));
+  *((int*) buffer) = 0;
+  char *p_game = (char*) str;
+
+  for (unsigned int i=0; i<len*sizeof(wchar_t); i++) buffer[i+sizeof(int)] = p_game[i];
   unsigned long num;
-  WriteFile( pipe, (const void*) str, len*sizeof(wchar_t), &num, NULL);
+  //WriteFile( pipe, (const void*) &len, sizeof(int), &num, NULL); //dummy injection method
+  WriteFile( pipe, (const void*) buffer, len*sizeof(wchar_t)+sizeof(int), &num, NULL);
+  delete [] buffer;
   CloseHandle(pipe);
   return 0;
 }
@@ -242,6 +247,7 @@ void uMod_Frame::OnAddGame( wxCommandEvent &event)
 
   pipe.In = ((uMod_Event&)event).GetPipeIn();
   pipe.Out = ((uMod_Event&)event).GetPipeOut();
+  int injection_method = ((uMod_Event&)event).GetValue();
 
   uMod_Client *client = new uMod_Client( pipe, this);
   client->Create();
@@ -255,7 +261,7 @@ void uMod_Frame::OnAddGame( wxCommandEvent &event)
     break;
   }
 
-  uMod_GamePage *page = new uMod_GamePage( Notebook, name, save_file, client->Pipe);
+  uMod_GamePage *page = new uMod_GamePage( Notebook, name, injection_method, save_file, client->Pipe);
   if (page->LastError.Len()>0)
   {
     wxMessageBox(page->LastError, "ERROR", wxOK|wxICON_ERROR);
@@ -274,7 +280,7 @@ void uMod_Frame::OnDeleteGame( wxCommandEvent &event)
   uMod_Client *client = ((uMod_Event&)event).GetClient();
   for (int i=0; i<NumberOfGames; i++) if (Clients[i]==client)
   {
-    Notebook->DeletePage(i);
+    Notebook->DeletePage(i+1);
     Clients[i]->Wait();
     delete Clients[i];
     NumberOfGames--;
@@ -287,45 +293,60 @@ void uMod_Frame::OnDeleteGame( wxCommandEvent &event)
 
 void uMod_Frame::OnAddDevice( wxCommandEvent &event)
 {
+
   uMod_Client *client = ((uMod_Event&)event).GetClient();
   for (int i=0; i<NumberOfGames; i++) if (Clients[i]==client)
   {
-    uMod_GamePage *page = (uMod_GamePage*) Notebook->GetPage(i);
+    uMod_GamePage *page = (uMod_GamePage*) Notebook->GetPage(i+1);
     page->AddDXDevice(((uMod_Event&)event).GetValue());
-    Notebook->SetPageText( i, page->GetPageName());
     return;
   }
 }
 
 void uMod_Frame::OnRemoveDevice( wxCommandEvent &event)
 {
+  /*
   uMod_Client *client = ((uMod_Event&)event).GetClient();
   for (int i=0; i<NumberOfGames; i++) if (Clients[i]==client)
   {
-    uMod_GamePage *page = (uMod_GamePage*) Notebook->GetPage(i);
+    wxMessageBox("removed");
+    uMod_GamePage *page = (uMod_GamePage*) Notebook->GetPage(i+1);
     page->RemoveDXDevice(((uMod_Event&)event).GetValue());
-    Notebook->SetPageText( i, page->GetPageName());
     return;
   }
+  */
 }
 
 void uMod_Frame::OnClose(wxCloseEvent& event)
 {
   if (event.CanVeto() && NumberOfGames>0)
   {
-    if (wxMessageBox(Language->ExitGameAnyway, "ERROR", wxYES_NO|wxICON_ERROR)!=wxYES) {event.Veto(); return;}
+    if (wxMessageBox(Language->ExitGameAnyway, "ERROR", wxYES_NO|wxICON_ERROR)!=wxYES)
+    {
+      event.Veto();
+      return;
+    }
   }
-  event.Skip();
+  //event.Skip();
   Destroy();
 }
-
+/*
 void uMod_Frame::OnButtonOpen(wxCommandEvent& WXUNUSED(event))
 {
   if (Notebook->GetPageCount()==0) return;
   uMod_GamePage *page = (uMod_GamePage*) Notebook->GetCurrentPage();
   if (page==NULL) return;
 
+  wxString temp = "D:\\Code\\uMod\\temp\\bf.tpf";
+  if (page->AddTexture( temp)) wxMessageBox(page->LastError);
 
+  temp = "D:\\Code\\uMod\\temp\\tex.zip";
+  if (page->AddTexture( temp)) wxMessageBox(page->LastError);
+
+  temp = "D:\\Code\\uMod\\temp\\test.zip";
+  if (page->AddTexture( temp)) wxMessageBox(page->LastError);
+
+   return;
   //wxString file_name = wxFileSelector( Language->ChooseFile, page->GetOpenPath(), "", "*.*",  "textures (*.dds)|*.dds|zip (*.zip)|*.zip|tpf (*.tpf)|*.tpf", wxFD_OPEN | wxFD_FILE_MUST_EXIST, this);
   wxString file_name = wxFileSelector( Language->ChooseFile, page->GetOpenPath(), "", "",  "", wxFD_OPEN | wxFD_FILE_MUST_EXIST, this);
   if ( !file_name.empty() )
@@ -375,7 +396,7 @@ void uMod_Frame::OnButtonReload(wxCommandEvent& WXUNUSED(event))
     page->LastError.Empty();
   }
 }
-
+*/
 
 
 
@@ -431,7 +452,6 @@ void uMod_Frame::OnMenuSaveTemplateAs(wxCommandEvent& WXUNUSED(event))
   uMod_GamePage *page = (uMod_GamePage*) Notebook->GetCurrentPage();
   if (page==NULL) return;
 
-
   wxString dir = wxGetCwd();
   dir << "/templates";
   wxString file_name = wxFileSelector( Language->ChooseFile, dir, "", "*.txt",  "text (*.txt)|*.txt", wxFD_SAVE | wxFD_OVERWRITE_PROMPT, this);
@@ -450,6 +470,7 @@ void uMod_Frame::OnMenuSetDefaultTemplate(wxCommandEvent& WXUNUSED(event))
   if (Notebook->GetPageCount()==0) return;
   uMod_GamePage *page = (uMod_GamePage*) Notebook->GetCurrentPage();
   if (page==NULL) return;
+  if (page == (uMod_GamePage*) Notebook->GetPage(0)) return;
 
   wxString exe = page->GetExeName();
   wxString file = page->GetTemplateName();
@@ -508,12 +529,12 @@ void uMod_Frame::OnMenuLanguage(wxCommandEvent& WXUNUSED(event))
     MenuHelp->SetLabel( ID_Menu_About, Language->MenuAbout);
     MenuHelp->SetLabel( ID_Menu_Acknowledgement, Language->MenuAcknowledgement);
 
-
+/*
     OpenButton->SetLabel( Language->ButtonOpen);
     DirectoryButton->SetLabel( Language->ButtonDirectory);
     UpdateButton->SetLabel( Language->ButtonUpdate);
     ReloadButton->SetLabel( Language->ButtonReload);
-
+*/
     int num = Notebook->GetPageCount();
     for (int i=0; i<num; i++)
     {
@@ -544,23 +565,25 @@ void uMod_Frame::OnMenuHelp(wxCommandEvent& WXUNUSED(event))
 void uMod_Frame::OnMenuAbout(wxCommandEvent& WXUNUSED(event))
 {
   wxString msg;
-  msg << uMod_VERSION << "\n\nProject members:\n\nROTA (developer)\nKing Brace Blane (PR)\n\nhttp://code.google.com/p/texmod/";
+  msg << uMod_VERSION << "\n\nProject members:\n\nROTA (developer)\n\nKing Brace Blane (PR)\n\nhttp://code.google.com/p/texmod/";
   wxMessageBox( msg, "Info", wxOK);
 }
 
 void uMod_Frame::OnMenuAcknowledgement(wxCommandEvent& WXUNUSED(event))
 {
   wxString msg;
-  msg << "King Brace Blane and ROTA thank:\n\n";
+  msg << "ROTA thanks:\n\n";
   msg << "RS for coding the original TexMod and for information about the used hashing algorithm\n\n";
   msg << "EvilAlex for translation into Russian and bug fixing\n";
   msg << "ReRRemi for translation into French";
+  msg << "\n\n";
   //msg << "King Brace Blane for a tutorial video on YouTube and bug fixing";
   wxMessageBox( msg, Language->MenuAcknowledgement, wxOK);
 }
 
 void uMod_Frame::OnMenuStartGame(wxCommandEvent& event)
 {
+
   bool use_cmd = false;
   if (event.GetId() ==  ID_Menu_StartGameCMD) use_cmd = true;
 
@@ -636,8 +659,8 @@ void uMod_Frame::OnMenuStartGame(wxCommandEvent& event)
 
 
   wxString dll = wxGetCwd();
-  //dll.Append( L"\\" uMod_d3d9_DI_dll);
-  dll.Append( L"\\uMod_d3d10_DI.dll");
+  dll.Append( L"\\" uMod_d3d9_DI_dll);
+  //dll.Append( L"\\uMod_d3d10_DI.dll");
 
   Inject(pi.hProcess, dll.wc_str(), "Nothing");
   ResumeThread(pi.hThread);
@@ -720,32 +743,23 @@ void uMod_Frame::OnMenuDeleteGame(wxCommandEvent& WXUNUSED(event))
 
 int uMod_Frame::ActivateGamesControl(void)
 {
+  /*
   MenuMain->Enable( ID_Menu_LoadTemplate, true);
   MenuMain->Enable( ID_Menu_SaveTemplate, true);
   MenuMain->Enable( ID_Menu_SaveTemplateAs, true);
+  */
   MenuMain->Enable( ID_Menu_SetDefaultTemplate, true);
-
-
-  OpenButton->Enable( true);
-  DirectoryButton->Enable( true);
-  UpdateButton->Enable( true);
-  ReloadButton->Enable( true);
-
   return 0;
 }
 
 int uMod_Frame::DeactivateGamesControl(void)
 {
+  /*
   MenuMain->Enable( ID_Menu_LoadTemplate, false);
   MenuMain->Enable( ID_Menu_SaveTemplate, false);
   MenuMain->Enable( ID_Menu_SaveTemplateAs, false);
+*/
   MenuMain->Enable( ID_Menu_SetDefaultTemplate, false);
-
-
-  OpenButton->Enable( false);
-  DirectoryButton->Enable( false);
-  UpdateButton->Enable( false);
-  ReloadButton->Enable( false);
   return 0;
 }
 
@@ -963,8 +977,7 @@ void uMod_Frame::InstallHook(void)
 {
   if (H_DX9_DLL==NULL)
   {
-    //H_DX9_DLL = LoadLibraryW(uMod_d3d9_Hook_dll);
-    H_DX9_DLL = LoadLibraryW(L"uMod_d3d10_HI.dll");
+    H_DX9_DLL = LoadLibraryW(uMod_d3d9_Hook_dll);
     if (H_DX9_DLL!=NULL)
     {
       typedef void (*fkt_typ)(void);

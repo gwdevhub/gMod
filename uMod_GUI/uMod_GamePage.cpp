@@ -19,114 +19,299 @@ along with Universal Modding Engine.  If not, see <http://www.gnu.org/licenses/>
 #include "uMod_Main.h"
 
 
-uMod_GamePage::uMod_GamePage( wxNotebook *parent, const wxString &exe, const wxString &save, PipeStruct &pipe)
-  : wxScrolledWindow(parent, wxID_ANY, wxDefaultPosition, wxDefaultSize, wxVSCROLL), Sender(pipe)
+
+#ifndef __CDT_PARSER__
+
+
+BEGIN_EVENT_TABLE(uMod_GamePage, wxPanel)
+
+EVT_COLLAPSIBLEPANE_CHANGED(ID_CollPane, uMod_GamePage::OnCollPane)
+
+EVT_CHECKBOX( ID_SaveSingleTexture, uMod_GamePage::OnCheckBox)
+EVT_CHECKBOX( ID_SaveAllTexture, uMod_GamePage::OnCheckBox)
+
+EVT_CHECKBOX( ID_ShowSingleTextureString, uMod_GamePage::OnCheckBox)
+EVT_CHECKBOX( ID_UseSizeFilter, uMod_GamePage::OnCheckBox)
+EVT_CHECKBOX( ID_UseFormatFilter, uMod_GamePage::OnCheckBox)
+EVT_BUTTON(ID_SetFormatFilter, uMod_GamePage::OnButtonFormatFilter)
+
+EVT_BUTTON(ID_Button_SavePath, uMod_GamePage::OnButtonSavePath)
+
+
+EVT_BUTTON(ID_FontColour, uMod_GamePage::OnButtonColour)
+EVT_BUTTON(ID_TextureColour, uMod_GamePage::OnButtonColour)
+
+EVT_DATAVIEW_ITEM_CONTEXT_MENU(ID_DataViewCtrl, uMod_GamePage::OnContextMenu)
+//EVT_MENU(ID_RemovePackage, uMod_GamePage::OnRemovePackage)
+
+
+EVT_DATAVIEW_ITEM_BEGIN_DRAG( ID_DataViewCtrl, uMod_GamePage::OnBeginDrag )
+EVT_DATAVIEW_ITEM_DROP_POSSIBLE( ID_DataViewCtrl, uMod_GamePage::OnDropPossible )
+EVT_DATAVIEW_ITEM_DROP( ID_DataViewCtrl, uMod_GamePage::OnDrop )
+
+EVT_DROP_FILES(uMod_GamePage::OnDropFile)
+
+END_EVENT_TABLE()
+
+#endif
+
+uMod_GamePage::uMod_GamePage( wxNotebook *parent, const wxString &exe, int injection_method, const wxString &save, PipeStruct &pipe)
+  : wxPanel(parent, wxID_ANY)//, wxDefaultPosition, wxDefaultSize, wxVSCROLL)
+    , InjectionMethod(injection_method), Sender(pipe)
 {
   ExeName = exe;
   TemplateName = save;
-
+  ViewCtrl = (wxDataViewCtrl*)0;
 
   CounterDX9 = 0; CounterDX9EX = 0;
-  CounterDX10 = 0; CounterDX10EX = 0;
+  CounterDX10 = 0; CounterDX101 = 0;
   //SetBackgroundColour( *wxLIGHT_GREY);
   //SetBackgroundColour( wxColour( "LIGHT GREY"));
 
-  CheckBoxHSizers = NULL;
-  CheckButtonUp = NULL;
-  CheckButtonDown = NULL;
-  CheckButtonDelete = NULL;
-  CheckBoxes = NULL;
 
   MainSizer = new wxBoxSizer(wxVERTICAL);
 
+  //initialize injection string
+  switch (InjectionMethod)
+  {
+  case HOOK_INJECTION:
+    DX_DLL_Info = new wxTextCtrl(this, wxID_ANY, Language->HookInjection, wxDefaultPosition, wxDefaultSize, wxTE_READONLY);
+    break;
+  case DIRECT_INJECTION:
+    DX_DLL_Info = new wxTextCtrl(this, wxID_ANY,  Language->DirectInjection, wxDefaultPosition, wxDefaultSize, wxTE_READONLY);
+    break;
+  case NO_INJECTION:
+    DX_DLL_Info = new wxTextCtrl(this, wxID_ANY,  Language->NoInjection, wxDefaultPosition, wxDefaultSize, wxTE_READONLY);
+    break;
+  case INVALID_GAME_PAGE:
+    DX_DLL_Info = new wxTextCtrl(this, wxID_ANY,  Language->InvalidGamePage, wxDefaultPosition, wxDefaultSize, wxTE_READONLY);
+    break;
+  default:
+    DX_DLL_Info = new wxTextCtrl(this, wxID_ANY, "BUG^^ injection:", wxDefaultPosition, wxDefaultSize, wxTE_READONLY);
+    break;
+  }
+  MainSizer->Add( (wxWindow*) DX_DLL_Info, 0, wxEXPAND, 0);
 
+  // initialize template string
   TemplateFile = new wxTextCtrl(this, wxID_ANY, Language->TextCtrlTemplate, wxDefaultPosition, wxDefaultSize, wxTE_READONLY);
   MainSizer->Add( (wxWindow*) TemplateFile, 0, wxEXPAND, 0);
   MainSizer->AddSpacer(10);
 
-  SizerKeys[0] = new wxBoxSizer(wxHORIZONTAL);
-  SizerKeys[1] = new wxBoxSizer(wxHORIZONTAL);
+  //
+  // capture texture part
+  //
 
-  TextKeyBack = new wxTextCtrl(this, wxID_ANY, Language->KeyBack, wxDefaultPosition, wxDefaultSize, wxTE_READONLY);
-  SizerKeys[0]->Add( (wxWindow*) TextKeyBack, 1, wxEXPAND, 0);
-  ChoiceKeyBack = new wxChoice( this, wxID_ANY, wxDefaultPosition, wxDefaultSize, Language->KeyStrings);
-  SizerKeys[1]->Add( (wxWindow*) ChoiceKeyBack, 1, wxEXPAND, 0);
-
-  TextKeySave = new wxTextCtrl(this, wxID_ANY, Language->KeySave, wxDefaultPosition, wxDefaultSize, wxTE_READONLY);
-  SizerKeys[0]->Add( (wxWindow*) TextKeySave, 1, wxEXPAND, 0);
-  ChoiceKeySave = new wxChoice( this, wxID_ANY, wxDefaultPosition, wxDefaultSize, Language->KeyStrings);
-  SizerKeys[1]->Add( (wxWindow*) ChoiceKeySave, 1, wxEXPAND, 0);
-
-  TextKeyNext = new wxTextCtrl(this, wxID_ANY, Language->KeyNext, wxDefaultPosition, wxDefaultSize, wxTE_READONLY);
-  SizerKeys[0]->Add( (wxWindow*) TextKeyNext, 1, wxEXPAND, 0);
-  ChoiceKeyNext = new wxChoice( this, wxID_ANY, wxDefaultPosition, wxDefaultSize, Language->KeyStrings);
-  SizerKeys[1]->Add( (wxWindow*) ChoiceKeyNext, 1, wxEXPAND, 0);
-
-  MainSizer->Add( SizerKeys[0], 0, wxEXPAND, 0);
-  MainSizer->Add( SizerKeys[1], 0, wxEXPAND, 0);
+  // create collapsible pane
+  CollPane = new  wxCollapsiblePane(this, ID_CollPane, Language->CollapseTextureCapture,wxDefaultPosition,wxDefaultSize,wxCP_NO_TLW_RESIZE);
 
 
-  FontColourSizer = new wxBoxSizer(wxHORIZONTAL);
-  FontColour[0] = new wxTextCtrl(this, wxID_ANY, Language->FontColour, wxDefaultPosition, wxDefaultSize, wxTE_READONLY);
-  FontColour[1] = new wxTextCtrl(this, wxID_ANY, "255", wxDefaultPosition, wxDefaultSize);
-  FontColour[2] = new wxTextCtrl(this, wxID_ANY, "0", wxDefaultPosition, wxDefaultSize);
-  FontColour[3] = new wxTextCtrl(this, wxID_ANY, "0", wxDefaultPosition, wxDefaultSize);
-  for (int i=0; i<4; i++) FontColourSizer->Add( (wxWindow*) FontColour[i], 1, wxEXPAND, 0);
+  CollSizer = new wxBoxSizer(wxVERTICAL);
 
-  TextureColourSizer = new wxBoxSizer(wxHORIZONTAL);
-  TextureColour[0] = new wxTextCtrl(this, wxID_ANY, Language->TextureColour, wxDefaultPosition, wxDefaultSize, wxTE_READONLY);
-  TextureColour[1] = new wxTextCtrl(this, wxID_ANY, "0", wxDefaultPosition, wxDefaultSize);
-  TextureColour[2] = new wxTextCtrl(this, wxID_ANY, "255", wxDefaultPosition, wxDefaultSize);
-  TextureColour[3] = new wxTextCtrl(this, wxID_ANY, "0", wxDefaultPosition, wxDefaultSize);
-  for (int i=0; i<4; i++) TextureColourSizer->Add( (wxWindow*) TextureColour[i], 1, wxEXPAND, 0);
+  // get window inside the collapsible pane
+  wxWindow *win = CollPane->GetPane();
+
+  // this sizer contains the left save-single-texture part and the right save-all-texture part
+  TextureSizer = new wxBoxSizer(wxHORIZONTAL);
 
 
-  MainSizer->Add( FontColourSizer, 0, wxEXPAND, 0);
-  MainSizer->Add( TextureColourSizer, 0, wxEXPAND, 0);
+  // this sizer contains the left save-single-texture part
+  SingleTexturePanel = new wxPanel(win);
+  SingleTextureSizer = new wxBoxSizer(wxVERTICAL);
 
-  SaveSingleTexture = new wxCheckBox( this, -1, Language->CheckBoxSaveSingleTexture);
-  MainSizer->Add( (wxWindow*) SaveSingleTexture, 0, wxEXPAND, 0);
+  // check box for save-single-texture mode
+  SaveSingleTexture = new wxCheckBox( SingleTexturePanel, ID_SaveSingleTexture, Language->CheckBoxSaveSingleTexture);
+  SingleTextureSizer->Add( (wxWindow*) SaveSingleTexture, 0, wxEXPAND, 0);
 
-  SaveAllTextures = new wxCheckBox( this, -1, Language->CheckBoxSaveAllTextures);
-  MainSizer->Add( (wxWindow*) SaveAllTextures, 0, wxEXPAND, 0);
+  // check box for showing the string
+  ShowSingleTextureString = new wxCheckBox( SingleTexturePanel, ID_ShowSingleTextureString, Language->CheckBoxShowStringSaveSingleTexture);
+  SingleTextureSizer->Add( (wxWindow*) ShowSingleTextureString, 0, wxEXPAND|wxALL, 5);
 
-  SavePath = new wxTextCtrl(this, wxID_ANY, Language->TextCtrlSavePath, wxDefaultPosition, wxDefaultSize, wxTE_READONLY);
-  MainSizer->Add( (wxWindow*) SavePath, 0, wxEXPAND, 0);
 
+  //set the two colour buttons into one horizontal sizer
+  wxBoxSizer *temp_sizer = new wxBoxSizer(wxHORIZONTAL);
+  FontColour = new wxButton( SingleTexturePanel, ID_FontColour, Language->FontColour, wxDefaultPosition, wxSize(100,24));
+  FontColour->Enable(false); //siable the font color, per default ShowSingleTextureString is not checked
+  temp_sizer->Add( FontColour, 0, wxEXPAND, 0);
+
+  temp_sizer->AddSpacer(10);
+  TextureColour = new wxButton( SingleTexturePanel, ID_TextureColour, Language->TextureColour, wxDefaultPosition, wxSize(100,24));
+  temp_sizer->Add( TextureColour, 0, wxEXPAND, 0);
+
+  temp_sizer->AddStretchSpacer();
+  SingleTextureSizer->Add( temp_sizer, 0, wxEXPAND | wxBOTTOM | wxLEFT | wxRIGHT, 10);
+
+  // set the key selector
+  KeyBack = new uMod_KeyPanel(SingleTexturePanel, Language->KeyBack, -1);
+  SingleTextureSizer->Add( KeyBack, 0, wxEXPAND | wxLEFT | wxRIGHT, 10);
+  KeySave = new uMod_KeyPanel(SingleTexturePanel, Language->KeySave, -1);
+  SingleTextureSizer->Add( KeySave, 0, wxEXPAND | wxLEFT | wxRIGHT, 10);
+  KeyNext = new uMod_KeyPanel(SingleTexturePanel, Language->KeyNext, -1);
+  SingleTextureSizer->Add( KeyNext, 0, wxEXPAND | wxBOTTOM | wxLEFT | wxRIGHT, 10);
+
+  // append an empty strechable sizer at the end
+  SingleTextureSizer->AddStretchSpacer();
+  SingleTexturePanel->SetSizer(SingleTextureSizer);
+
+
+
+  // this sizer contains the right save-all-texture part
+  AllTexturePanel = new wxPanel(win);
+  AllTextureSizer = new wxBoxSizer(wxVERTICAL);
+
+  SaveAllTextures = new wxCheckBox( AllTexturePanel, ID_SaveAllTexture, Language->CheckBoxSaveAllTextures);
+  AllTextureSizer->Add( (wxWindow*) SaveAllTextures, 0, wxEXPAND, 0);
+
+
+  UseSizeFilter = new wxCheckBox( AllTexturePanel, ID_UseSizeFilter, Language->CheckBoxUseSizeFilter);
+  AllTextureSizer->Add( (wxWindow*) UseSizeFilter, 0, wxEXPAND|wxALL, 5);
+
+
+  //temp_sizer = new wxBoxSizer(wxVERTICAL);
+  SpinWidth = new uMod_SpinPanel(AllTexturePanel);
+  SpinWidth->SetLabel( Language->WidthSpin);
+  SpinWidth->SetValue( Game.WidthMin(), Game.WidthMax());
+  SpinWidth->Enable(false);
+  //temp_sizer->Add( (wxWindow*) SpinWidth, 0, wxEXPAND, 0);
+  AllTextureSizer->Add( SpinWidth, 0, wxEXPAND | wxLEFT | wxRIGHT, 10);
+
+  SpinHeight = new uMod_SpinPanel(AllTexturePanel);
+  SpinHeight->SetLabel( Language->HeightSpin);
+  SpinHeight->SetValue( Game.HeightMin(), Game.HeightMax());
+  SpinHeight->Enable(false);
+  //temp_sizer->Add( (wxWindow*) SpinHeight, 0, wxEXPAND, 0);
+  AllTextureSizer->Add( SpinHeight, 0, wxEXPAND | wxLEFT | wxRIGHT, 10);
+
+  SpinDepth = new uMod_SpinPanel(AllTexturePanel);
+  SpinDepth->SetLabel( Language->DepthSpin);
+  SpinDepth->SetValue( Game.DepthMin(), Game.DepthMax());
+  SpinDepth->Enable(false);
+  //temp_sizer->Add( (wxWindow*) SpinDepth, 0, wxEXPAND, 0);
+  AllTextureSizer->Add( SpinDepth, 0, wxEXPAND | wxBOTTOM | wxLEFT | wxRIGHT, 10);
+  //AllTextureSizer->Add( temp_sizer, 0, wxEXPAND | wxBOTTOM | wxLEFT | wxRIGHT, 10);
+
+
+
+  //wxCheckBox *UseFormatFilter;
+  UseFormatFilter = new wxCheckBox( AllTexturePanel, ID_UseFormatFilter, Language->CheckBoxUseFormatFilter);
+  AllTextureSizer->Add( (wxWindow*) UseFormatFilter, 0, wxEXPAND, 0);
+
+  temp_sizer = new wxBoxSizer(wxHORIZONTAL);
+  FormatFilter = new wxButton( AllTexturePanel, ID_SetFormatFilter, Language->SetFormatFilter, wxDefaultPosition, wxSize(100,24));
+  FormatFilter->Enable(false);
+  temp_sizer->Add( (wxWindow*) FormatFilter, 0, wxEXPAND|wxALL, 5);
+  temp_sizer->AddStretchSpacer();
+  AllTextureSizer->Add( temp_sizer, 0, wxEXPAND | wxBOTTOM | wxLEFT | wxRIGHT, 10);
+
+
+
+  AllTextureSizer->AddStretchSpacer();
+  AllTexturePanel->SetSizer(AllTextureSizer);
+
+
+
+
+  //combine both texture sizer
+  TextureSizer->Add( SingleTexturePanel, 1, wxEXPAND | wxBOTTOM | wxLEFT | wxRIGHT, 10);
+  TextureSizer->Add( AllTexturePanel, 1, wxEXPAND | wxBOTTOM | wxLEFT | wxRIGHT, 10);
+
+  CollSizer->Add( TextureSizer, 1, wxEXPAND, 0);
+
+  wxArrayString choices;
+  choices.Add("BMP");
+  choices.Add("JPG");
+  choices.Add("TGA");
+  choices.Add("PNG");
+  choices.Add("DDS");
+  choices.Add("PPM");
+  FileFormats = new uMod_CheckBoxArray( win, choices, -1);
+  FileFormats->SetValue( Game.FileFormat());
+  CollSizer->Add( (wxWindow*) FileFormats, 0, wxEXPAND | wxBOTTOM | wxLEFT | wxRIGHT, 10);
+
+
+
+  // add save path string
+  temp_sizer = new wxBoxSizer(wxHORIZONTAL);
+  SavePathButton = new wxButton( win, ID_Button_SavePath, Language->ButtonDirectory, wxDefaultPosition, wxSize(100,24));
+  temp_sizer->Add( (wxWindow*) SavePathButton, 0, wxEXPAND|wxALL, 0);
+
+  temp_sizer->AddSpacer(10);
+  SavePath = new wxTextCtrl(win, wxID_ANY, Language->TextCtrlSavePath, wxDefaultPosition, wxDefaultSize, wxTE_READONLY);
+  temp_sizer->Add( (wxWindow*) SavePath, 1, wxEXPAND, 0);
+  CollSizer->Add( temp_sizer, 0, wxEXPAND | wxBOTTOM | wxLEFT | wxRIGHT, 10);
+
+
+  win->SetSizer(CollSizer);
+  CollSizer->SetSizeHints(win);
+
+  MainSizer->Add(CollPane, 0, wxEXPAND, 5);
   MainSizer->AddSpacer(10);
 
-  NumberOfEntry = 0;
-  MaxNumberOfEntry = 1024;
-  if (GetMemory( CheckBoxes, MaxNumberOfEntry)) {LastError = Language->Error_Memory; return;}
-  if (GetMemory( CheckBoxHSizers, MaxNumberOfEntry)) {LastError = Language->Error_Memory; return ;}
-  if (GetMemory( CheckButtonUp, MaxNumberOfEntry)) {LastError = Language->Error_Memory; return;}
-  if (GetMemory( CheckButtonDown, MaxNumberOfEntry)) {LastError = Language->Error_Memory; return;}
-  if (GetMemory( CheckButtonDelete, MaxNumberOfEntry)) {LastError = Language->Error_Memory; return;}
-  SavePath->SetValue(Language->TextCtrlSavePath);
 
+
+
+  //
+  // initialize the treeview for the mod packages
+  //
+
+  ViewCtrl = new wxDataViewCtrl( (wxWindow*) this, ID_DataViewCtrl, wxDefaultPosition, wxDefaultSize, wxDV_MULTIPLE);
+  ViewModel = new uMod_TreeViewModel();
+  ViewCtrl->AssociateModel(ViewModel);
+  ViewModel->DecRef();
+
+
+  //first row
+  wxDataViewTextRenderer *tr =
+      new wxDataViewTextRenderer( "string", wxDATAVIEW_CELL_INERT );
+  wxDataViewColumn *column =
+      new wxDataViewColumn( Language->Title, tr, 0, 200, wxALIGN_LEFT, wxDATAVIEW_COL_RESIZABLE );
+  ViewCtrl->AppendColumn( column );
+
+
+  //second row
+  wxDataViewToggleRenderer *toglle =
+      new wxDataViewToggleRenderer( "bool", wxDATAVIEW_CELL_ACTIVATABLE);
+  column = new wxDataViewColumn( "A", toglle, 1, 20, wxALIGN_LEFT, wxDATAVIEW_COL_RESIZABLE );
+  ViewCtrl->AppendColumn( column );
+
+
+  //third row
+  toglle = new wxDataViewToggleRenderer("bool", wxDATAVIEW_CELL_ACTIVATABLE);
+  column = new wxDataViewColumn( "D", toglle, 2, 20, wxALIGN_LEFT, wxDATAVIEW_COL_RESIZABLE );
+  ViewCtrl->AppendColumn( column );
+
+
+  //4-th row
+  tr = new wxDataViewTextRenderer( "string", wxDATAVIEW_CELL_INERT );
+  column = new wxDataViewColumn( Language->Author, tr, 3, 80, wxALIGN_LEFT, wxDATAVIEW_COL_RESIZABLE );
+  ViewCtrl->AppendColumn( column );
+
+
+  //5-th row
+  tr = new wxDataViewTextRenderer( "string", wxDATAVIEW_CELL_INERT );
+  column = new wxDataViewColumn( Language->Comment, tr, 4, 400, wxALIGN_LEFT, wxDATAVIEW_COL_RESIZABLE );
+  ViewCtrl->AppendColumn( column );
+
+
+  //enable drag and drop inside the ViewCtrl (for the items of the ViewCtrl)
+  ViewCtrl->EnableDragSource( wxDF_UNICODETEXT);
+  ViewCtrl->EnableDropTarget(wxDF_UNICODETEXT );
+
+  //enables drag and drop for files
+  DragAcceptFiles(true);
+  MainSizer->Add(ViewCtrl, 1, wxEXPAND, 0);
 
   SetSizer(MainSizer);
 
-  SetScrollRate(0, 20);
-  MainSizer->FitInside(this);
-
-  if (TemplateName.Len()>0) LoadTemplate(TemplateName);
+  if (LastError.IsEmpty())
+  {
+    if (TemplateName.Len()>0) LoadTemplate(TemplateName);
+    LastError.Empty();
+  }
 }
 
 uMod_GamePage::~uMod_GamePage(void)
 {
-  for (int i=0; i<NumberOfEntry; i++)
-  {
-    Unbind( wxEVT_COMMAND_BUTTON_CLICKED, &uMod_GamePage::OnButtonUp, this, ID_Button_Texture+3*i);
-    Unbind( wxEVT_COMMAND_BUTTON_CLICKED, &uMod_GamePage::OnButtonDown, this, ID_Button_Texture+3*i+1);
-    Unbind( wxEVT_COMMAND_BUTTON_CLICKED, &uMod_GamePage::OnButtonDelete, this, ID_Button_Texture+3*i+2);
-  }
 
-  delete [] CheckBoxHSizers;
-  delete [] CheckButtonUp;
-  delete [] CheckButtonDown;
-  delete [] CheckButtonDelete;
-  delete [] CheckBoxes;
 }
 
 int uMod_GamePage::SetSavePath( const wxString &path)
@@ -138,94 +323,47 @@ int uMod_GamePage::SetSavePath( const wxString &path)
   return 0;
 }
 
-
-int uMod_GamePage::AddTexture( const wxString &file_name)
+int uMod_GamePage::AddPackage( const wxString &file_name)
 {
-  if (NumberOfEntry>=MaxNumberOfEntry)
+  if (ViewModel->AddPackage(file_name))
   {
-    if (GetMoreMemory( CheckBoxes, MaxNumberOfEntry, MaxNumberOfEntry+1024)) {LastError = Language->Error_Memory; return -1;}
-    if (GetMoreMemory( CheckBoxHSizers, MaxNumberOfEntry, MaxNumberOfEntry+1024)) {LastError = Language->Error_Memory; return -1;}
-    if (GetMoreMemory( CheckButtonUp, MaxNumberOfEntry, MaxNumberOfEntry+1024)) {LastError = Language->Error_Memory; return -1;}
-    if (GetMoreMemory( CheckButtonDown, MaxNumberOfEntry, MaxNumberOfEntry+1024)) {LastError = Language->Error_Memory; return -1;}
-    if (GetMoreMemory( CheckButtonDelete, MaxNumberOfEntry, MaxNumberOfEntry+1024)) {LastError = Language->Error_Memory; return -1;}
-    MaxNumberOfEntry+=1024;
+    LastError << ViewModel->LastError;
+    return -1;
   }
-  uMod_File file( file_name);
-  if (!file.FileSupported()) {LastError << Language->Error_FileNotSupported << "\n" << file_name; return -1;}
-
-  wxString tool_tip;
-  file.GetComment( tool_tip);
-
-  CheckBoxHSizers[NumberOfEntry] = new wxBoxSizer(wxHORIZONTAL);
-  CheckBoxes[NumberOfEntry] = new wxCheckBox( this, -1, file_name);
-  CheckBoxes[NumberOfEntry]->SetValue( true);
-  CheckBoxes[NumberOfEntry]->SetToolTip( tool_tip);
-
-  wchar_t button_txt[2];
-  button_txt[0] = 8657;
-  button_txt[1] = 0;
-  CheckButtonUp[NumberOfEntry] = new wxButton( this, ID_Button_Texture+3*NumberOfEntry, button_txt, wxDefaultPosition, wxSize(24,24));
-  Bind( wxEVT_COMMAND_BUTTON_CLICKED, &uMod_GamePage::OnButtonUp, this, ID_Button_Texture+3*NumberOfEntry);
-
-  button_txt[0] = 8659;
-  CheckButtonDown[NumberOfEntry] = new wxButton( this, ID_Button_Texture+3*NumberOfEntry+1, button_txt, wxDefaultPosition, wxSize(24,24));
-  Bind( wxEVT_COMMAND_BUTTON_CLICKED, &uMod_GamePage::OnButtonDown, this, ID_Button_Texture+3*NumberOfEntry+1);
-
-  CheckButtonDelete[NumberOfEntry] = new wxButton( this, ID_Button_Texture+3*NumberOfEntry+2, L"X", wxDefaultPosition, wxSize(24,24));
-  Bind( wxEVT_COMMAND_BUTTON_CLICKED, &uMod_GamePage::OnButtonDelete, this, ID_Button_Texture+3*NumberOfEntry+2);
-
-  CheckBoxHSizers[NumberOfEntry]->Add( (wxWindow*) CheckBoxes[NumberOfEntry], 1, wxEXPAND, 0);
-  CheckBoxHSizers[NumberOfEntry]->Add( (wxWindow*) CheckButtonUp[NumberOfEntry], 0, wxEXPAND, 0);
-  CheckBoxHSizers[NumberOfEntry]->Add( (wxWindow*) CheckButtonDown[NumberOfEntry], 0, wxEXPAND, 0);
-  CheckBoxHSizers[NumberOfEntry]->Add( (wxWindow*) CheckButtonDelete[NumberOfEntry], 0, wxEXPAND, 0);
-
-  MainSizer->Add( CheckBoxHSizers[NumberOfEntry], 0, wxEXPAND, 0);
-  Files.Add( file_name);
-  NumberOfEntry++;
-  MainSizer->Layout();
-  MainSizer->FitInside(this);
-
-  return UpdateGame();
+  return 0;
 }
 
+int uMod_GamePage::AddPackages(const wxString *files, int num)
+{
+  wxArrayString strings( num, files);
+  if (ViewModel->AddPackages( strings))
+  {
+    LastError << ViewModel->LastError;
+    return -1;
+  }
+  return 0;
+}
+
+int uMod_GamePage::AddPackages(const wxArrayString &files)
+{
+  if (ViewModel->AddPackages( files))
+  {
+    LastError << ViewModel->LastError;
+    return -1;
+  }
+  return 0;
+}
 
 wxString uMod_GamePage::GetPageName(void)
 {
+  if (InjectionMethod == INVALID_GAME_PAGE) return "uMod";
+
   wxString ret;
   ret = ExeName;
 
   ret = ret.AfterLast('\\');
   ret = ret.AfterLast('/');
   ret = ret.BeforeLast('.');
-  if (CounterDX9 || CounterDX9EX || CounterDX10 || CounterDX10EX)
-  {
-    wxString temp;
-    ret.append(" (");
-    if (CounterDX9)
-    {
-      temp.Printf("DX9: %d", CounterDX9);
-      ret.append(temp);
-    }
-    if (CounterDX9EX)
-    {
-      if (!temp.IsEmpty()) ret.append(",");
-      temp.Printf("DX9EX: %d", CounterDX9EX);
-      ret.append(temp);
-    }
-    if (CounterDX10)
-    {
-      if (!temp.IsEmpty()) ret.append(",");
-      temp.Printf("DX10: %d", CounterDX10);
-      ret.append(temp);
-    }
-    if (CounterDX10EX)
-    {
-      if (!temp.IsEmpty()) ret.append(",");
-      temp.Printf("DX10EX: %d", CounterDX10EX);
-      ret.append(temp);
-    }
-    ret.append(")");
-  }
   return ret;
 }
 
@@ -239,10 +377,10 @@ int uMod_GamePage::AddDXDevice(int version)
     CounterDX9EX++; break;
   case VERSION_DX10:
     CounterDX10++; break;
-  case VERSION_DX10EX:
-    CounterDX10EX++; break;
+  case VERSION_DX101:
+    CounterDX101++; break;
   }
-  return 0;
+  return SetInfo();
 }
 
 int uMod_GamePage::RemoveDXDevice(int version)
@@ -255,21 +393,80 @@ int uMod_GamePage::RemoveDXDevice(int version)
     if (CounterDX9EX>0) CounterDX9EX--; break;
   case VERSION_DX10:
     if (CounterDX10>0) CounterDX10--; break;
-  case VERSION_DX10EX:
-    if (CounterDX10EX>0) CounterDX10EX--; break;
+  case VERSION_DX101:
+    if (CounterDX101>0) CounterDX101--; break;
   }
+  return SetInfo();
+}
+
+int uMod_GamePage::SetInfo(void)
+{
+  wxString info;
+  switch (InjectionMethod)
+  {
+  case HOOK_INJECTION:
+    info = Language->HookInjection;
+    break;
+  case DIRECT_INJECTION:
+    info = Language->DirectInjection;
+    break;
+  case NO_INJECTION:
+    info = Language->NoInjection;
+    break;
+  default:
+    info = "BUG^^ injection:";
+    break;
+  }
+
+  if (CounterDX9 || CounterDX9EX || CounterDX10 || CounterDX101)
+  {
+    wxString temp;
+    info.append(" (");
+    if (CounterDX9)
+    {
+      if (CounterDX9==1) temp.Printf("DX9");
+      else temp.Printf("DX9: %d", CounterDX9);
+      info.append(temp);
+    }
+    if (CounterDX9EX)
+    {
+      if (!temp.IsEmpty()) info.append(",");
+      if (CounterDX9EX==1) temp.Printf("DX9EX");
+      else temp.Printf("DX9EX: %d", CounterDX9EX);
+      info.append(temp);
+    }
+    if (CounterDX10)
+    {
+      if (!temp.IsEmpty()) info.append(",");
+      if (CounterDX10==1) temp.Printf("DX10");
+      else temp.Printf("DX10: %d", CounterDX10);
+      info.append(temp);
+    }
+    if (CounterDX101)
+    {
+      if (!temp.IsEmpty()) info.append(",");
+      if (CounterDX101==1) temp.Printf("DX10.1");
+      else temp.Printf("DX10.1: %d", CounterDX101);
+      info.append(temp);
+    }
+    info.append(")");
+  }
+  DX_DLL_Info->SetValue(info);
   return 0;
 }
 
 int uMod_GamePage::GetSettings(void)
 {
-  int key_back = ChoiceKeyBack->GetSelection();
-  int key_save = ChoiceKeySave->GetSelection();
-  int key_next = ChoiceKeyNext->GetSelection();
+  Game.ShowCollPane() = CollPane->IsExpanded();
 
-  if (key_back==key_save && key_back!=wxNOT_FOUND) {LastError << Language->Error_KeyTwice; return 1;}
-  if (key_back==key_next && key_back!=wxNOT_FOUND) {LastError << Language->Error_KeyTwice; return 1;}
-  if (key_save==key_next && key_save!=wxNOT_FOUND) {LastError << Language->Error_KeyTwice; return 1;}
+  int key_back = KeyBack->GetKey();
+  int key_save = KeySave->GetKey();
+  int key_next = KeyNext->GetKey();
+
+  if (key_back==key_save && key_back>=0) {LastError << Language->Error_KeyTwice; return 1;}
+  if (key_back==key_next && key_back>=0) {LastError << Language->Error_KeyTwice; return 1;}
+  if (key_save==key_next && key_save>=0) {LastError << Language->Error_KeyTwice; return 1;}
+
 
   bool save_single = SaveSingleTexture->GetValue();
   bool save_all = SaveAllTextures->GetValue();
@@ -278,42 +475,34 @@ int uMod_GamePage::GetSettings(void)
 
   if ( save_single && ( key_back==wxNOT_FOUND || key_save==wxNOT_FOUND || key_next==wxNOT_FOUND) ) {LastError << Language->Error_KeyNotSet; return 1;}
 
-  if (key_back!=wxNOT_FOUND) Game.SetKeyBack(key_back);
-  if (key_save!=wxNOT_FOUND) Game.SetKeySave(key_save);
-  if (key_next!=wxNOT_FOUND) Game.SetKeyNext(key_next);
+  Game.SetKeyBack(key_back);
+  Game.SetKeySave(key_save);
+  Game.SetKeyNext(key_next);
 
   Game.SetSaveSingleTexture( save_single);
   Game.SetSaveAllTextures( save_all);
 
-  int colour[3];
-  colour[0] = GetColour( FontColour[1], 255);
-  colour[1] = GetColour( FontColour[2], 0);
-  colour[2] = GetColour( FontColour[3], 0);
-  SetColour( &FontColour[1], colour);
-  Game.SetFontColour(colour);
+  Game.ShowSingleTextureString() = ShowSingleTextureString->GetValue();
 
-  colour[0] = GetColour( TextureColour[1], 0);
-  colour[1] = GetColour( TextureColour[2], 255);
-  colour[2] = GetColour( TextureColour[3], 0);
-  SetColour( &TextureColour[1], colour);
-  Game.SetTextureColour(colour);
+  Game.UseSizeFilter() = UseSizeFilter->GetValue();
+  SpinHeight->GetValue( Game.HeightMin(), Game.HeightMax());
+  SpinWidth->GetValue( Game.WidthMin(), Game.WidthMax());
+  SpinDepth->GetValue( Game.DepthMin(), Game.DepthMax());
 
-  Game.SetFiles( Files);
-
-  bool *checked = NULL;
-  if (GetMemory( checked, NumberOfEntry)) {LastError = Language->Error_Memory; return -1;}
-  for (int i=0; i<NumberOfEntry; i++) checked[i] = CheckBoxes[i]->GetValue();
-  Game.SetChecked( checked, NumberOfEntry);
-  delete [] checked;
-
+  Game.UseFormatFilter() = UseFormatFilter->GetValue();
+  FileFormats->GetValue(Game.FileFormat());
   return 0;
 }
 
 int uMod_GamePage::UpdateGame(void)
 {
+  if (InjectionMethod==INVALID_GAME_PAGE) return 0;
   if (int ret = GetSettings()) return ret;
 
-  if (int ret = Sender.Send( Game, GameOld, false))
+  uMod_TextureElement_SortedArrayPtr* current_textures = new uMod_TextureElement_SortedArrayPtr(Compare_uMod_TextureElement);
+
+  ViewModel->GetActiveTexture( *current_textures);
+  if (int ret = Sender.Send( Game, GameOld, current_textures, false))
   {
     LastError = Language->Error_Send;
     LastError << "\n" << Sender.LastError;
@@ -328,271 +517,806 @@ int uMod_GamePage::UpdateGame(void)
 
 int uMod_GamePage::ReloadGame(void)
 {
+  if (InjectionMethod==INVALID_GAME_PAGE) return 0;
   if (int ret = GetSettings()) return ret;
 
-  if (int ret = Sender.Send( Game, GameOld, true))
-  {
-    LastError = Language->Error_Send;
-    LastError << "\n" << Sender.LastError;
-    Sender.LastError.Empty();
-    return ret;
-  }
-
-  GameOld = Game;
-  return 0;
+  wxString content;
+  SaveTemplateToString(content);
+  return LoadTemplateFromString(content);
 }
 
 int uMod_GamePage::SaveTemplate( const wxString &file_name)
 {
-  if (int ret = GetSettings()) return ret;
-  if (int ret = Game.SaveToFile( file_name))
+  wxFile file;
+
+  file.Open(file_name, wxFile::write);
+  if (!file.IsOpened())
   {
-    LastError = Language->Error_SaveFile;
-    LastError <<"\n" << file_name;
-    return ret;
+    LastError = Language->Error_FileOpen << "\n" << file_name;
+    return -1;
   }
+
+  wxString content;
+  if (int ret = SaveTemplateToString(content)) return ret;
+
+  file.Write( content.char_str(), content.Len());
+  file.Close();
+
   TemplateName = file_name;
   wxString path;
   path = Language->TextCtrlTemplate;
   path << TemplateName;
   TemplateFile->SetValue( path);
 
+  return 0;
+}
+
+int uMod_GamePage::SaveTemplateToString( wxString &content)
+{
+  if (int ret = GetSettings()) return ret;
+
+  Game.SaveToString( content );
+
+  content << "\n\n";
+
+  wxString temp;
+  for (unsigned int i=0; i<ViewModel->myPackages.GetCount(); i++)
+  {
+    temp.Empty();
+    ViewModel->Node2String( temp, ViewModel->myPackages[i]);
+    content << temp << "\n\n";
+  }
   return 0;
 }
 
 int uMod_GamePage::LoadTemplate( const wxString &file_name)
 {
-  if (Game.LoadFromFile(file_name)) return -1;
+  LastError.Empty();
+
+  if (file_name.Len()==0) return -1;
+
+  wxFile file;
+  if (!file.Access(file_name, wxFile::read))
+  {
+    LastError = Language->Error_FileOpen << "\n" << file_name;
+    return -1;
+  }
+  file.Open(file_name, wxFile::read);
+  if (!file.IsOpened())
+  {
+    LastError = Language->Error_FileOpen << "\n" << file_name;
+    return -1;
+  }
+
+  unsigned len = file.Length();
+
+  unsigned char* buffer = (unsigned char*)0;
+  if (GetMemory( buffer, len+1))
+  {
+    LastError = Language->Error_Memory;
+    return -1;
+  }
+  unsigned int result = file.Read( buffer, len);
+  file.Close();
+
+  if (result != len)
+  {
+    LastError = Language->Error_FileRead << "\n" << file_name;
+    delete [] buffer;
+    return -1;
+  }
+
+  buffer[len]=0;
+
+  wxString content;
+  content = buffer;
+  delete [] buffer;
+
+  if (int ret = LoadTemplateFromString(content)) return ret;
+
   TemplateName = file_name;
-  wxArrayString comments;
-
-  if (Sender.Send( Game, GameOld, true, &comments)==0) GameOld = Game;
-
   wxString path;
   path = Language->TextCtrlTemplate;
   path << TemplateName;
   TemplateFile->SetValue( path);
 
-  int key = Game.GetKeyBack();
-  if (key>=0) ChoiceKeyBack->SetSelection( key);
-  key = Game.GetKeySave();
-  if (key>=0) ChoiceKeySave->SetSelection( key);
-  key = Game.GetKeyNext();
-  if (key>=0) ChoiceKeyNext->SetSelection( key);
+  return 0;
+}
 
-  int colour[3];
-  Game.GetFontColour( colour);
-  SetColour( &FontColour[1], colour);
-  Game.GetTextureColour( colour);
-  SetColour( &TextureColour[1], colour);
+int uMod_GamePage::LoadTemplateFromString( const wxString &content_orig)
+{
+  wxString content = content_orig;
+  wxArrayString packages;
+  int index = content.find("\nPACKAGE|");
+  if (index!=wxNOT_FOUND)
+  {
+    Game.LoadFromString( content.Mid(0,index));
+    content = content.Mid(index);
+    while (1)
+    {
+      index = content.find("\nPACKAGE|",10);
+      if (index==wxNOT_FOUND)
+      {
+        packages.Add(content);
+        break;
+      }
+      else
+      {
+        packages.Add(content.Mid(0,index));
+        content = content.Mid(index);
+      }
+    }
+  }
+  else
+  {
+    Game.LoadFromString(content);
+  }
 
-  SaveSingleTexture->SetValue( Game.GetSaveSingleTexture());
-  SaveAllTextures->SetValue( Game.GetSaveAllTextures());
+  if (ViewModel->AddPackagesFromTemplate( packages))
+  {
+    LastError << ViewModel->LastError;
+  }
 
-  path = Language->TextCtrlSavePath;
+
+  //if (Sender.Send( Game, GameOld, true)==0) GameOld = Game;
+
+  CollPane->Collapse( !Game.ShowCollPane());
+
+
+  if (Game.ShowSingleTextureString())
+  {
+    ShowSingleTextureString->SetValue(true);
+    FontColour->Enable();
+  }
+  else
+  {
+    ShowSingleTextureString->SetValue(false);
+    FontColour->Enable(false);
+  }
+
+  KeyBack->SetKey(Game.GetKeyBack());
+  KeySave->SetKey(Game.GetKeySave());
+  KeyNext->SetKey(Game.GetKeyNext());
+
+  SpinWidth->SetValue( Game.WidthMin(), Game.WidthMax());
+  SpinHeight->SetValue( Game.HeightMin(), Game.HeightMax());
+  SpinDepth->SetValue( Game.DepthMin(), Game.DepthMax());
+
+  if (Game.UseSizeFilter())
+  {
+    UseSizeFilter->SetValue(true);
+    SpinWidth->Enable();
+    SpinHeight->Enable();
+    SpinDepth->Enable();
+  }
+  else
+  {
+    UseSizeFilter->SetValue(false);
+    SpinWidth->Enable(false);
+    SpinHeight->Enable(false);
+    SpinDepth->Enable(false);
+  }
+
+  if (Game.UseFormatFilter())
+  {
+    UseFormatFilter->SetValue(true);
+    FormatFilter->Enable();
+  }
+  else
+  {
+    UseFormatFilter->SetValue(false);
+    FormatFilter->Enable(false);
+  }
+
+
+  if (Game.GetSaveSingleTexture())
+  {
+    SaveSingleTexture->SetValue( true);
+    SaveAllTextures->SetValue(false);
+    SingleTexturePanel->Enable();
+    AllTexturePanel->Disable();
+  }
+  else if (Game.GetSaveAllTextures())
+  {
+    SaveSingleTexture->SetValue( false);
+    SaveAllTextures->SetValue( true);
+    SingleTexturePanel->Disable();
+    AllTexturePanel->Enable();
+  }
+  else
+  {
+    SaveSingleTexture->SetValue( false);
+    SaveAllTextures->SetValue(false);
+    SingleTexturePanel->Enable();
+    AllTexturePanel->Enable();
+  }
+
+  FileFormats->SetValue(Game.FileFormat());
+
+  wxString path = Language->TextCtrlSavePath;
   path << Game.GetSavePath();
   SavePath->SetValue( path);
 
-  int new_NumberOfEntry = Game.GetNumberOfFiles();
 
-  Game.GetFiles( Files);
-
-  if (new_NumberOfEntry>=MaxNumberOfEntry)
-  {
-    MaxNumberOfEntry = ((NumberOfEntry/1024)+1)*1024;
-    if (GetMoreMemory( CheckBoxes, NumberOfEntry, MaxNumberOfEntry)) {LastError = Language->Error_Memory; return -1;}
-    if (GetMoreMemory( CheckBoxHSizers, NumberOfEntry, MaxNumberOfEntry)) {LastError = Language->Error_Memory; return -1;}
-    if (GetMoreMemory( CheckButtonUp, NumberOfEntry, MaxNumberOfEntry)) {LastError = Language->Error_Memory; return -1;}
-    if (GetMoreMemory( CheckButtonDown, NumberOfEntry, MaxNumberOfEntry)) {LastError = Language->Error_Memory; return -1;}
-    if (GetMoreMemory( CheckButtonDelete, NumberOfEntry, MaxNumberOfEntry)) {LastError = Language->Error_Memory; return -1;}
-  }
-
-  bool *checked = NULL;
-  if (GetMemory( checked, new_NumberOfEntry)) {LastError = Language->Error_Memory; return -1;}
-  Game.GetChecked( checked, new_NumberOfEntry);
-
-
-  for (int i=0; i<NumberOfEntry && i<new_NumberOfEntry; i++)
-  {
-    CheckBoxes[i]->SetLabel( Files[i]);
-    CheckBoxes[i]->SetValue( checked[i]);
-    CheckBoxes[i]->SetToolTip( comments[i]);
-  }
-
-  for (int i=new_NumberOfEntry; i<NumberOfEntry; i++)
-  {
-    Unbind( wxEVT_COMMAND_BUTTON_CLICKED, &uMod_GamePage::OnButtonUp, this, ID_Button_Texture+3*i);
-    Unbind( wxEVT_COMMAND_BUTTON_CLICKED, &uMod_GamePage::OnButtonDown, this, ID_Button_Texture+3*i+1);
-    Unbind( wxEVT_COMMAND_BUTTON_CLICKED, &uMod_GamePage::OnButtonDelete, this, ID_Button_Texture+3*i+2);
-
-
-    CheckBoxHSizers[i]->Detach( (wxWindow*) CheckBoxes[i]);
-    CheckBoxHSizers[i]->Detach( (wxWindow*) CheckButtonUp[i]);
-    CheckBoxHSizers[i]->Detach( (wxWindow*) CheckButtonDown[i]);
-    CheckBoxHSizers[i]->Detach( (wxWindow*) CheckButtonDelete[i]);
-
-    MainSizer->Detach( CheckBoxHSizers[i]);
-
-    delete CheckBoxes[i];
-    delete CheckButtonUp[i];
-    delete CheckButtonDown[i];
-    delete CheckButtonDelete[i];
-    delete CheckBoxHSizers[i];
-  }
-  for (int i=NumberOfEntry; i<new_NumberOfEntry; i++)
-  {
-    CheckBoxHSizers[i] = new wxBoxSizer(wxHORIZONTAL);
-    CheckBoxes[i] = new wxCheckBox( this, -1, Files[i]);
-    CheckBoxes[i]->SetValue( checked[i]);
-    CheckBoxes[i]->SetToolTip( comments[i]);
-
-    wchar_t button_txt[2];
-    button_txt[0] = 8657;
-    button_txt[1] = 0;
-
-    CheckButtonUp[i] = new wxButton( this, ID_Button_Texture+3*i, button_txt, wxDefaultPosition, wxSize(24,24));
-    Bind( wxEVT_COMMAND_BUTTON_CLICKED, &uMod_GamePage::OnButtonUp, this, ID_Button_Texture+3*i);
-
-    button_txt[0] = 8659;
-    CheckButtonDown[i] = new wxButton( this, ID_Button_Texture+3*i+1, button_txt, wxDefaultPosition, wxSize(24,24));
-    Bind( wxEVT_COMMAND_BUTTON_CLICKED, &uMod_GamePage::OnButtonDown, this, ID_Button_Texture+3*i+1);
-
-    CheckButtonDelete[i] = new wxButton( this, ID_Button_Texture+3*i+2, L"X", wxDefaultPosition, wxSize(24,24));
-    Bind( wxEVT_COMMAND_BUTTON_CLICKED, &uMod_GamePage::OnButtonDelete, this, ID_Button_Texture+3*i+2);
-
-    CheckBoxHSizers[i]->Add( (wxWindow*) CheckBoxes[i], 1, wxEXPAND, 0);
-    CheckBoxHSizers[i]->Add( (wxWindow*) CheckButtonUp[i], 0, wxEXPAND, 0);
-    CheckBoxHSizers[i]->Add( (wxWindow*) CheckButtonDown[i], 0, wxEXPAND, 0);
-    CheckBoxHSizers[i]->Add( (wxWindow*) CheckButtonDelete[i], 0, wxEXPAND, 0);
-
-    MainSizer->Add( CheckBoxHSizers[i], 0, wxEXPAND, 0);
-  }
-  delete [] checked;
-  NumberOfEntry = new_NumberOfEntry;
-
+  // The wxCollapsiblePane could be hide/shown thus we must manually layout and refresh the sizer and the window
+  // let the main sizer refresh its content
   MainSizer->Layout();
-  MainSizer->FitInside(this);
-  return 0;
+
+  // VieCtrl must repaint otherwise some graphical glitches ocure
+  ViewCtrl->Refresh();
+
+  if (LastError.IsEmpty())
+  {
+    return UpdateGame();
+  }
+  else return -1;
 }
 
-int uMod_GamePage::SetColour( wxTextCtrl** txt, int *colour)
+void uMod_GamePage::OnCollPane(wxCollapsiblePaneEvent& WXUNUSED(event))
 {
+  // let the main sizer refresh its content
+  MainSizer->Layout();
+
+  // VieCtrl must repaint otherwise some graphical glitches ocure
+  ViewCtrl->Refresh();
+}
+
+void uMod_GamePage::OnButtonColour(wxCommandEvent& event)
+{
+  int id = event.GetId();
+
+  unsigned char colour[4];
+  if (id==ID_FontColour)
+    Game.GetFontColour(colour);
+  else if (id==ID_TextureColour)
+    Game.GetTextureColour(colour);
+  else return;
+
+  wxColourData data;
+  data.SetColour(wxColour(colour[0],colour[1],colour[2],colour[3]));
+
+  wxColourDialog *dialog = new wxColourDialog( this, &data);
+  if (dialog->ShowModal() == wxID_OK)
+  {
+    data = dialog->GetColourData();
+    colour[0] = data.GetColour().Red();
+    colour[1] = data.GetColour().Green();
+    colour[2] = data.GetColour().Blue();
+    colour[3] = data.GetColour().Alpha();
+
+    if (id==ID_FontColour)
+      Game.SetFontColour(colour);
+    else if (id==ID_TextureColour)
+      Game.SetTextureColour(colour);
+  }
+}
+
+void uMod_GamePage::OnCheckBox(wxCommandEvent& event)
+{
+  int id = event.GetId();
+  switch (id)
+  {
+  case ID_SaveSingleTexture:
+  {
+    if (SaveSingleTexture->GetValue())
+      AllTexturePanel->Disable();
+    else
+      AllTexturePanel->Enable();
+    break;
+  }
+  case ID_SaveAllTexture:
+  {
+    if (SaveAllTextures->GetValue())
+      SingleTexturePanel->Disable();
+    else
+      SingleTexturePanel->Enable();
+    break;
+  }
+  case ID_UseSizeFilter:
+  {
+    if (UseSizeFilter->GetValue())
+    {
+      SpinWidth->Enable();
+      SpinHeight->Enable();
+      SpinDepth->Enable();
+    }
+    else
+    {
+      SpinWidth->Enable(false);
+      SpinHeight->Enable(false);
+      SpinDepth->Enable(false);
+    }
+    break;
+  }
+  case ID_UseFormatFilter:
+  {
+    if (UseFormatFilter->GetValue())
+      FormatFilter->Enable();
+    else
+      FormatFilter->Enable(false);
+    break;
+  }
+  case ID_ShowSingleTextureString:
+  {
+    if (ShowSingleTextureString->GetValue())
+      FontColour->Enable();
+    else
+      FontColour->Enable(false);
+    break;
+  }
+  default:
+    break;
+  }
+}
+
+void uMod_GamePage::OnButtonFormatFilter(wxCommandEvent& WXUNUSED(event))
+{
+  wxArrayString choices;
+  choices.Add("D3DFMT_R8G8B8 (20)");
+  choices.Add("D3DFMT_A8R8G8B8 (21)");
+  choices.Add("D3DFMT_X8R8G8B8 (22)");
+  choices.Add("D3DFMT_R5G6B5 (23)");
+  choices.Add("D3DFMT_X1R5G5B5 (24)");
+  choices.Add("D3DFMT_A1R5G5B5 (25)");
+  choices.Add("D3DFMT_A4R4G4B4 (26)");
+  choices.Add("D3DFMT_R3G3B2 (27)");
+  choices.Add("D3DFMT_A8 (28)");
+  choices.Add("D3DFMT_A8R3G3B2 (29)");
+  choices.Add("D3DFMT_X4R4G4B4 (30)");
+  choices.Add("D3DFMT_A2B10G10R10 (31)");
+  choices.Add("D3DFMT_A8B8G8R8 (32)");
+  choices.Add("D3DFMT_X8B8G8R8 (33)");
+  choices.Add("D3DFMT_G16R16 (34)");
+  choices.Add("D3DFMT_A2R10G10B10 (35)");
+  choices.Add("D3DFMT_A16B16G16R16 (36)");
+
+  choices.Add("D3DFMT_A8P8 (40)");
+  choices.Add("D3DFMT_P8 (41)");
+
+  choices.Add("D3DFMT_L8 (50)");
+  choices.Add("D3DFMT_A8L8 (51)");
+  choices.Add("D3DFMT_A4L4 (52)");
+
+  choices.Add("D3DFMT_V8U8 (60)");
+  choices.Add("D3DFMT_L6V5U5 (61)");
+  choices.Add("D3DFMT_X8L8V8U8 (62)");
+  choices.Add("D3DFMT_Q8W8V8U8 (63)");
+  choices.Add("D3DFMT_V16U16 (64)");
+  choices.Add("D3DFMT_A2W10V10U10 (67)");
+
+  choices.Add("D3DFMT_D16_LOCKABLE (70)");
+  choices.Add("D3DFMT_D32 (71)");
+  choices.Add("D3DFMT_D15S1 (73)");
+  choices.Add("D3DFMT_D24S8 (75)");
+  choices.Add("D3DFMT_D24X8 (77)");
+  choices.Add("D3DFMT_D24X4S4 (79)");
+  choices.Add("D3DFMT_D16 (80)");
+
+  choices.Add("D3DFMT_D32F_LOCKABLE (82)");
+  choices.Add("D3DFMT_D24FS8 (83)");
+
+  choices.Add("D3DFMT_D32_LOCKABLE (84)");
+  choices.Add("D3DFMT_S8_LOCKABLE (85)");
+
+  choices.Add("D3DFMT_L16 (81)");
+
+  choices.Add("D3DFMT_VERTEXDATA (100)");
+  choices.Add("D3DFMT_INDEX16 (101)");
+  choices.Add("D3DFMT_INDEX32 (102)");
+
+  choices.Add("D3DFMT_Q16W16V16U16 (110)");
+
+
+  choices.Add("D3DFMT_R16F (111)");
+  choices.Add("D3DFMT_G16R16F (112)");
+  choices.Add("D3DFMT_A16B16G16R16F (113)");
+
+  choices.Add("D3DFMT_R32F (114)");
+  choices.Add("D3DFMT_G32R32F (115)");
+  choices.Add("D3DFMT_A32B32G32R32F (116)");
+
+  choices.Add("D3DFMT_CxV8U8 (117)");
+
+  choices.Add("D3DFMT_A1 (118)");
+  choices.Add("D3DFMT_A2B10G10R10_XR_BIAS (119)");
+  choices.Add("D3DFMT_BINARYBUFFER (199)");
+
+#define MAKEFOURCC(ch0, ch1, ch2, ch3)                              \
+                ((DWORD)(BYTE)(ch0) | ((DWORD)(BYTE)(ch1) << 8) |   \
+                ((DWORD)(BYTE)(ch2) << 16) | ((DWORD)(BYTE)(ch3) << 24 ))
+
   wxString temp;
-  for (int i=0; i<3; i++)
+  temp << "D3DFMT_DXT1 (" << MAKEFOURCC('D', 'X', 'T', '1') << ")";
+  choices.Add(temp);
+  temp.Empty();
+
+  temp << "D3DFMT_DXT2 (" << MAKEFOURCC('D', 'X', 'T', '2') << ")";
+  choices.Add(temp);
+  temp.Empty();
+
+  temp << "D3DFMT_DXT3 (" << MAKEFOURCC('D', 'X', 'T', '3') << ")";
+  choices.Add(temp);
+  temp.Empty();
+
+  temp << "D3DFMT_DXT4 (" << MAKEFOURCC('D', 'X', 'T', '4') << ")";
+  choices.Add(temp);
+  temp.Empty();
+
+  temp << "D3DFMT_DXT5 (" << MAKEFOURCC('D', 'X', 'T', '5') << ")";
+  choices.Add(temp);
+  temp.Empty();
+
+  temp << "D3DFMT_G8R8_G8B8 (" << MAKEFOURCC('G', 'R', 'G', 'B') << ")";
+  choices.Add(temp);
+  temp.Empty();
+
+  temp << "D3DFMT_R8G8_B8G8 (" << MAKEFOURCC('R', 'G', 'B', 'G') << ")";
+  choices.Add(temp);
+  temp.Empty();
+
+  temp << "D3DFMT_MULTI2_ARGB8 (" << MAKEFOURCC('M','E','T','1') << ")";
+  choices.Add(temp);
+  temp.Empty();
+
+  temp << "D3DFMT_UYVY (" << MAKEFOURCC('U', 'Y', 'V', 'Y') << ")";
+  choices.Add(temp);
+  temp.Empty();
+
+  temp << "D3DFMT_YUY2 (" << MAKEFOURCC('Y', 'U', 'Y', '2') << ")";
+  choices.Add(temp);
+  temp.Empty();
+  /*
+  choices.Add("D3DFMT_DXT1 (827611204)"); 31545844
+  choices.Add("D3DFMT_DXT2 (844388420)"); 32545844
+  choices.Add("D3DFMT_DXT3 (861165636"); 33545844
+  choices.Add("D3DFMT_DXT4 (877942852)"); 34545844
+  choices.Add("D3DFMT_DXT5 (894720068)"); 35545844
+  choices.Add("D3DFMT_G8R8_G8B8 (MAKEFOURCC('G', 'R', 'G', 'B')");
+  choices.Add("D3DFMT_MULTI2_ARGB8 (MAKEFOURCC('M','E','T','1')"); 31
+  choices.Add("D3DFMT_R8G8_B8G8 (MAKEFOURCC('R', 'G', 'B', 'G')");
+  choices.Add("D3DFMT_UYVY (MAKEFOURCC('U', 'Y', 'V', 'Y')");
+  choices.Add("D3DFMT_YUY2 (MAKEFOURCC('Y', 'U', 'Y', '2')");
+*/
+/*
+  choices.Add("R8G8B8");
+  choices.Add("A8R8G8B8");
+  choices.Add("X8R8G8B8");
+  choices.Add("R5G6B");
+  choices.Add("X1R5G5B5");
+  choices.Add("A1R5G5B5");
+  choices.Add("A4R4G4B4");
+  choices.Add("R3G3B2");
+  choices.Add("A8");
+  choices.Add("A8R3G3B2");
+  choices.Add("X4R4G4B4");
+  choices.Add("A2B10G10R10");
+  choices.Add("A8B8G8R8");
+  choices.Add("X8B8G8R8");
+  choices.Add("G16R16");
+  choices.Add("A2R10G10B10");
+  choices.Add("A16B16G16R16");
+
+  choices.Add("A8P8");
+  choices.Add("P8");
+
+  choices.Add("L8");
+  choices.Add("A8L8");
+  choices.Add("A4L4");
+
+  choices.Add("V8U8");
+  choices.Add("L6V5U5");
+  choices.Add("X8L8V8U8");
+  choices.Add("Q8W8V8U8");
+  choices.Add("V16U16");
+  choices.Add("A2W10V10U10");
+
+  choices.Add("UYVY");
+  choices.Add("R8G8_B8G8");
+  choices.Add("YUY2");
+  choices.Add("G8R8_G8B8");
+  choices.Add("DXT1");
+  choices.Add("DXT2");
+  choices.Add("DXT3");
+  choices.Add("DXT4");
+  choices.Add("DXT5");
+
+  choices.Add("D16_LOCKABLE");
+  choices.Add("D32");
+  choices.Add("D15S1");
+  choices.Add("D24S8");
+  choices.Add("D24X8");
+  choices.Add("D24X4S4");
+  choices.Add("D16");
+
+  choices.Add("D32F_LOCKABLE");
+  choices.Add("D24FS8");
+
+  choices.Add("D32_LOCKABLE");
+  choices.Add("S8_LOCKABLE");
+
+  choices.Add("L16");
+
+  choices.Add("VERTEXDATA");
+  choices.Add("INDEX16");
+  choices.Add("INDEX32");
+
+  choices.Add("Q16W16V16U16");
+
+  choices.Add("MULTI2_ARGB8");
+
+  choices.Add("R16F");
+  choices.Add("G16R16F");
+  choices.Add("A16B16G16R16F");
+
+  choices.Add("R32F");
+  choices.Add("G32R32F");
+  choices.Add("A32B32G32R32F");
+
+  choices.Add("CxV8U8");
+
+  choices.Add("A1");
+  choices.Add("A2B10G10R10_XR_BIAS");
+  choices.Add("BINARYBUFFER");
+*/
+  wxArrayInt selections;
+  unsigned long selected = Game.FormatFilter();
+
+  for (unsigned int i=0; i<choices.GetCount(); i++)
   {
-    temp.Empty();
-    temp << colour[i];
-    txt[i]->SetValue( temp);
+    if (selected & 1ull<<i) selections.Add(i);
+  }
+  if (wxGetSelectedChoices( selections, Language->DeleteGame, Language->DeleteGame, choices)!=-1)
+  {
+    selected = 0u;
+    for (unsigned int i=0; i<selections.GetCount(); i++)
+    {
+      selected |= 1ull << selections[i];
+    }
+    Game.FormatFilter() = selected;
+  }
+
+}
+
+void uMod_GamePage::OnButtonSavePath(wxCommandEvent& WXUNUSED(event))
+{
+  wxString dir = wxDirSelector( Language->ChooseDir, Game.GetSavePath());
+  if ( !dir.empty() )
+  {
+    Game.SetSavePath(dir);
+
+    wxString path;
+    path = Language->TextCtrlSavePath;
+    path << dir;
+    SavePath->SetValue( path);
+  }
+}
+
+void uMod_GamePage::OnBeginDrag( wxDataViewEvent &event)
+{
+  uMod_TreeViewNode *node = (uMod_TreeViewNode*) event.GetItem().GetID();
+  // no item -> no drag and drop
+  if (node == (uMod_TreeViewNode*)0)
+  {
+    event.Veto();
+    return;
+  }
+  // drag and drop only for root nodes
+  else if (node->GetParent() != (uMod_TreeViewNode*) 0 )
+  {
+    event.Veto();
+    return;
+  }
+
+  wxString index;
+  index << ViewModel->myPackages.Index(node);
+  wxTextDataObject *obj = new wxTextDataObject;
+  obj->SetText( index );
+  event.SetDataObject( obj );
+}
+
+void uMod_GamePage::OnDropPossible( wxDataViewEvent &event)
+{
+  // not our data format
+  if (event.GetDataFormat()!=wxDF_UNICODETEXT)
+  {
+    event.Veto();
+    return;
+  }
+
+  uMod_TreeViewNode *node = (uMod_TreeViewNode*) event.GetItem().GetID();
+  // drag and drop only on root nodes
+  if (node!=(uMod_TreeViewNode*)0 && node->GetParent() != (uMod_TreeViewNode*) 0 )
+  {
+    event.Veto();
+    return;
+  }
+}
+
+void uMod_GamePage::OnDrop( wxDataViewEvent &event)
+{
+  // not our data format
+  if (event.GetDataFormat()!=wxDF_UNICODETEXT)
+  {
+    event.Veto();
+    return;
+  }
+
+  uMod_TreeViewNode *node = (uMod_TreeViewNode*) event.GetItem().GetID();
+  // drag and drop only on root nodes
+  if (node!=(uMod_TreeViewNode*)0 && node->GetParent() != (uMod_TreeViewNode*) 0 )
+  {
+    event.Veto();
+    return;
+  }
+
+  wxTextDataObject obj;
+  obj.SetData( wxDF_UNICODETEXT, event.GetDataSize(), event.GetDataBuffer() );
+  wxString msg = obj.GetText();
+
+  //if we cannot convert the message into a number
+  long int drag_index;
+  if (!msg.ToLong( &drag_index))
+  {
+    wxMessageBox("ToLong");
+    event.Veto();
+    return;
+  }
+
+  // wrong index !!
+  if (drag_index<0 || drag_index>=(int) ViewModel->myPackages.GetCount())
+  {
+    wxMessageBox("outside range");
+    event.Veto();
+    return;
+  }
+
+  long int drop_index = ViewModel->myPackages.Index( node);
+
+  // if this happens somehting went terrible wrong
+  if (drop_index==wxNOT_FOUND)
+  {
+    event.Veto();
+    return;
+  }
+
+  // get the draged node
+  uMod_TreeViewNode *draged_node =  ViewModel->myPackages.Item(drag_index);
+
+  //remove the draged node
+  ViewModel->myPackages.RemoveAt(drag_index);
+
+  //no insert again at the drop index
+  ViewModel->myPackages.Insert(draged_node,drop_index);
+
+  // set the model to cleared -> it rereads all data -> changes become effect
+  ViewModel->Cleared();
+}
+
+
+void uMod_GamePage::OnDropFile(wxDropFilesEvent& event)
+{
+  wxString *files = event.GetFiles();
+  int num = event.GetNumberOfFiles();
+
+  LastError.Empty();
+
+  AddPackages(files, num);
+
+  if (!LastError.IsEmpty())
+  {
+    wxMessageBox(LastError, "ERROR", wxOK|wxICON_ERROR);
+    LastError.Empty();
+  }
+  if (num>0) UpdateGame();
+}
+
+void uMod_GamePage::OnContextMenu( wxDataViewEvent &event )
+{
+  LastError.Empty();
+  uMod_TreeViewNode *node = (uMod_TreeViewNode*) event.GetItem().GetID();
+
+  wxMenu menu;
+  menu.Append( ID_OpenPackage, Language->MenuOpenPackage);
+  menu.Append( ID_RemovePackage, Language->MenuRemovePackage);
+  menu.Append( ID_RemoveSelectedPackages, Language->MenuRemoveSelectedPackages);
+  menu.Append( ID_Update, Language->MenuUpdate);
+  menu.Append( ID_Reload, Language->MenuReload);
+  menu.AppendCheckItem( ID_SupportTPF, Language->MenuSupportTPF);
+  menu.Check(ID_SupportTPF, Game.SupportTPF());
+
+  // if no node is selected, there is nothing to delete ^^
+  if (node ==  (uMod_TreeViewNode*) 0)
+    menu.Enable(ID_RemovePackage, false);
+  // only allow root-nodes to be deleted
+  else if (node->GetParent() != (uMod_TreeViewNode*) 0 )
+    menu.Enable(ID_RemovePackage, false);
+
+  // if nothing is selected, we cannot deleted selected packages ;)
+  if (ViewCtrl->GetSelectedItemsCount()<=0)
+    menu.Enable(ID_RemoveSelectedPackages, false);
+
+  int id = ViewCtrl->GetPopupMenuSelectionFromUser(menu);
+  switch (id)
+  {
+  case ID_OpenPackage:
+    OpenPackage();
+    break;
+  case ID_RemovePackage:
+    ViewModel->DeletePackage( event.GetItem());
+    break;
+  case ID_RemoveSelectedPackages:
+    {
+      wxDataViewItemArray items;
+      ViewCtrl->GetSelections(items);
+      ViewModel->DeletePackages( items);
+    }
+    break;
+  case ID_Update:
+    UpdateGame();
+    break;
+  case ID_Reload:
+    ReloadGame();
+    break;
+  case ID_SupportTPF:
+    Game.SupportTPF() = menu.IsChecked(ID_SupportTPF);
+    break;
+  default:
+      break;
+  }
+
+  if (!LastError.IsEmpty())
+  {
+    wxMessageBox(LastError, "ERROR", wxOK|wxICON_ERROR);
+    LastError.Empty();
+  }
+}
+
+
+int uMod_GamePage::OpenPackage(void)
+{
+  wxFileDialog *dialog = new wxFileDialog(this, Language->ChooseFile, Game.GetOpenPath(), wxEmptyString,
+      wxFileSelectorDefaultWildcardStr, wxFD_OPEN | wxFD_FILE_MUST_EXIST | wxFD_MULTIPLE);
+
+  if (dialog->ShowModal() == wxID_OK)
+  {
+    wxMessageBox("here");
+    wxArrayString files;
+    dialog->GetPaths( files); // get the filenames + the path
+
+    if (files.GetCount()>0)
+    {
+      wxMessageBox("add");
+      AddPackages(files);
+      if (!LastError.IsEmpty())
+      {
+        wxMessageBox(LastError, "ERROR", wxOK|wxICON_ERROR);
+        LastError.Empty();
+      }
+      UpdateGame();
+    }
   }
   return 0;
-}
-
-int uMod_GamePage::GetColour( wxTextCtrl* txt, int def)
-{
-  wxString temp = txt->GetValue();
-  long colour;
-  if (temp.ToLong(&colour))
-  {
-    if (colour<0) colour=0;
-    else if (colour>255) colour=255;
-  }
-  else colour = def;
-  return colour;
-}
-
-
-void uMod_GamePage::OnButtonUp(wxCommandEvent& event)
-{
-  int id = (event.GetId() - ID_Button_Texture)/3;
-  if (id <=0 || id>= NumberOfEntry) return;
-
-  wxString cpy_str = Files[id];
-  Files[id] = Files[id-1];
-  Files[id-1] = cpy_str;
-
-  CheckBoxes[id]->SetLabel(Files[id]);
-  CheckBoxes[id-1]->SetLabel(Files[id-1]);
-
-  bool cpy_checked = CheckBoxes[id]->GetValue();
-  CheckBoxes[id]->SetValue(CheckBoxes[id-1]->GetValue());
-  CheckBoxes[id-1]->SetValue(cpy_checked);
-
-  cpy_str = CheckBoxes[id]->GetToolTip()->GetTip();
-  wxString cpy_str2 = CheckBoxes[id-1]->GetToolTip()->GetTip();
-  CheckBoxes[id]->SetToolTip(cpy_str2);
-  CheckBoxes[id-1]->SetToolTip(cpy_str);
-
-}
-
-void uMod_GamePage::OnButtonDown(wxCommandEvent& event)
-{
-  int id = (event.GetId() - ID_Button_Texture-1)/3;
-  if (id <0 || id>= NumberOfEntry-1) return;
-
-  wxString cpy_str = Files[id];
-  Files[id] = Files[id+1];
-  Files[id+1] = cpy_str;
-
-  CheckBoxes[id]->SetLabel(Files[id]);
-  CheckBoxes[id+1]->SetLabel(Files[id+1]);
-
-  bool cpy_checked = CheckBoxes[id]->GetValue();
-  CheckBoxes[id]->SetValue(CheckBoxes[id+1]->GetValue());
-  CheckBoxes[id+1]->SetValue(cpy_checked);
-
-  cpy_str = CheckBoxes[id]->GetToolTip()->GetTip();
-  wxString cpy_str2 = CheckBoxes[id+1]->GetToolTip()->GetTip();
-  CheckBoxes[id]->SetToolTip(cpy_str2);
-  CheckBoxes[id+1]->SetToolTip(cpy_str);
-}
-
-void uMod_GamePage::OnButtonDelete(wxCommandEvent& event)
-{
-  int id = (event.GetId() - ID_Button_Texture-2)/3;
-  if (id <0 || id>= NumberOfEntry) return;
-
-  for (int i=id+1; i<NumberOfEntry; i++) CheckBoxes[i-1]->SetLabel(Files[i]);
-  for (int i=id+1; i<NumberOfEntry; i++) CheckBoxes[i-1]->SetValue(CheckBoxes[i]->GetValue());
-  wxString cpy_str;
-  for (int i=id+1; i<NumberOfEntry; i++)
-  {
-    cpy_str = CheckBoxes[i]->GetToolTip()->GetTip();
-    CheckBoxes[i-1]->SetToolTip(cpy_str);
-  }
-
-  Files.RemoveAt(id, 1);
-  NumberOfEntry--;
-
-
-  Unbind( wxEVT_COMMAND_BUTTON_CLICKED, &uMod_GamePage::OnButtonUp, this, ID_Button_Texture+3*NumberOfEntry);
-  Unbind( wxEVT_COMMAND_BUTTON_CLICKED, &uMod_GamePage::OnButtonDown, this, ID_Button_Texture+3*NumberOfEntry+1);
-  Unbind( wxEVT_COMMAND_BUTTON_CLICKED, &uMod_GamePage::OnButtonDelete, this, ID_Button_Texture+3*NumberOfEntry+2);
-
-
-  CheckBoxHSizers[NumberOfEntry]->Detach( (wxWindow*) CheckBoxes[NumberOfEntry]);
-  CheckBoxHSizers[NumberOfEntry]->Detach( (wxWindow*) CheckButtonUp[NumberOfEntry]);
-  CheckBoxHSizers[NumberOfEntry]->Detach( (wxWindow*) CheckButtonDown[NumberOfEntry]);
-  CheckBoxHSizers[NumberOfEntry]->Detach( (wxWindow*) CheckButtonDelete[NumberOfEntry]);
-
-  MainSizer->Detach( CheckBoxHSizers[NumberOfEntry]);
-
-  delete CheckBoxes[NumberOfEntry];
-  delete CheckButtonUp[NumberOfEntry];
-  delete CheckButtonDown[NumberOfEntry];
-  delete CheckButtonDelete[NumberOfEntry];
-  delete CheckBoxHSizers[NumberOfEntry];
 }
 
 
 int uMod_GamePage::UpdateLanguage(void)
 {
-  TextKeyBack->SetValue( Language->KeyBack);
-  TextKeySave->SetValue( Language->KeySave);
-  TextKeyNext->SetValue( Language->KeyNext);
-  FontColour[0]->SetValue( Language->FontColour);
-  TextureColour[0]->SetValue( Language->TextureColour);
-  SaveAllTextures->SetLabel( Language->CheckBoxSaveAllTextures);
+  CollPane->SetLabel(Language->CollapseTextureCapture);
+
   SaveSingleTexture->SetLabel( Language->CheckBoxSaveSingleTexture);
+  ShowSingleTextureString->SetLabel( Language->CheckBoxShowStringSaveSingleTexture);
+
+  KeyBack->SetLabel( Language->KeyBack);
+  KeySave->SetLabel( Language->KeySave);
+  KeyNext->SetLabel( Language->KeyNext);
+  FontColour->SetLabel( Language->FontColour);
+  TextureColour->SetLabel( Language->TextureColour);
+
+  SpinWidth->SetLabel( Language->WidthSpin);
+  SpinHeight->SetLabel( Language->HeightSpin);
+  SpinDepth->SetLabel( Language->DepthSpin);
+
+  SaveAllTextures->SetLabel( Language->CheckBoxSaveAllTextures);
   wxString temp = Language->TextCtrlSavePath;
   temp << Game.GetSavePath();
   SavePath->SetValue( temp);
