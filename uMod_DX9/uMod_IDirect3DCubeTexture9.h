@@ -46,8 +46,8 @@ public:
 		// original texture: stores the pointer to the fake texture object, is needed if original texture is deleted,
 		// thus the fake texture can also be deleted
 		Reference = -1; //need for fast deleting
-    Hash = 0u;
-    CRC = 0u;
+    CRC64 = 0u;
+    CRC32 = 0u;
     FAKE = false;
 	}
 
@@ -55,8 +55,8 @@ public:
 	uMod_IDirect3DCubeTexture9 *CrossRef_D3Dtex; //!< cross reference from the fake texture to the game texture and vice versa
 	IDirect3DDevice9 *m_D3Ddev; //!< pointer to the device
 	int Reference; //!< Index in the vector (needed for a fast delete).
-  DWORD64 Hash; //!< computed hash value for this game texture.
-  DWORD32 CRC; //!< computed crc32 value for this game texture.
+  DWORD64 CRC64; //!< computed hash value for this game texture.
+  DWORD32 CRC32; //!< computed crc32 value for this game texture.
   bool FAKE; //!< True if this texture is was loaded by uMod (fake texture)
 
 	// original interface

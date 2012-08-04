@@ -96,15 +96,18 @@ int uMod_Sender::Send( const uMod_GameInfo &game, const uMod_GameInfo &game_old,
   }
 
   SendBool( game.ShowSingleTextureString(), CONTROL_SHOW_STRING);
+  SendBool( game.ShowSingleTexture(), CONTROL_SHOW_TEXTURE);
   SendBool( game.GetSaveSingleTexture(), CONTROL_SAVE_SINGLE);
-  SendBool(game.GetSaveAllTextures(), CONTROL_SAVE_ALL);
+  SendBool( game.GetSaveAllTextures(), CONTROL_SAVE_ALL);
 
   SendBool(game.SupportTPF(), CONTROL_SUPPORT_TPF);
 
+  SendPath(game.GetSavePath());
+  /*
   wxString path;
   path = game.GetSavePath();
   if (path!=game_old.GetSavePath()) SendPath(path);
-
+*/
 
 
 
@@ -304,16 +307,16 @@ int uMod_Sender::SendPath( const wxString &path)
 
   msg->Hash = 0u;
   msg->Control = CONTROL_SET_DIR;
+  int len = path.Len();
+  if ((len+1)*sizeof(wchar_t) + sizeof(MsgStruct) >= BIG_BUFSIZE) return -1;
 
   const wchar_t *file = path.wc_str();
   wchar_t *buff_file = (wchar_t*) &Buffer[sizeof(MsgStruct)];
-  int len = 0;
-  while (file[len] && (sizeof(MsgStruct)+len*sizeof(wchar_t))<BIG_BUFSIZE) {buff_file[len] = file[len]; len++;};
-  if ((sizeof(MsgStruct)+len*sizeof(wchar_t))<BIG_BUFSIZE) buff_file[len] = 0;
-  len++;
+  for (int i=0; i<len; i++) {buff_file[i] = file[i];}
+  buff_file[len] = 0;
 
-  msg->Value = len*sizeof(wchar_t);
-  return SendToGame( Buffer, sizeof(MsgStruct)+len*sizeof(wchar_t));
+  msg->Value = (len+1)*sizeof(wchar_t);
+  return SendToGame( Buffer, sizeof(MsgStruct)+(len+1)*sizeof(wchar_t));
 }
 
 

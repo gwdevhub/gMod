@@ -238,7 +238,32 @@ HRESULT APIENTRY uMod_IDirect3DCubeTexture9::UnlockRect( D3DCUBEMAP_FACES FaceTy
 }
 
 
+int uMod_IDirect3DCubeTexture9::ComputetHash( bool compute_crc)
+{
+  if (FAKE) return (RETURN_BAD_ARGUMENT);
+  IDirect3DCubeTexture9 *pTexture = m_D3Dtex;
+  if (CrossRef_D3Dtex!=NULL) pTexture = CrossRef_D3Dtex->m_D3Dtex;
 
+
+  IDirect3DSurface9 *surface = NULL;
+  if (compute_crc) InitCRC32(CRC32);
+  InitCRC64(CRC64);
+
+  for (int site = 0; site<6; site++)
+  {
+    if (pTexture->GetCubeMapSurface( (D3DCUBEMAP_FACES) site, 0, &surface)!=D3D_OK)
+    {
+      Message("uMod_IDirect3DCubeTexture9::GetHash() Failed: GetSurfaceLevel\n");
+      return (RETURN_LockRect_FAILED);
+    }
+    ((uMod_IDirect3DDevice9*)(m_D3Ddev))->ComputetHash( CRC64, CRC32, surface, compute_crc);
+
+    surface->Release();
+  }
+  return (RETURN_OK);
+}
+
+/*
 int uMod_IDirect3DCubeTexture9::ComputetHash( bool compute_crc)
 {
   if (FAKE) return (RETURN_BAD_ARGUMENT);
@@ -304,7 +329,7 @@ int uMod_IDirect3DCubeTexture9::ComputetHash( bool compute_crc)
     if (compute_crc && site==0)
     {
       int size = (bits_per_pixel * desc.Width*desc.Height)/8;
-      CRC = GetCRC32( (char*) d3dlr.pBits, size); //calculate the crc32 of the texture
+      CRC = GetCRC32( (unsigned char*) d3dlr.pBits, size); //calculate the crc32 of the texture
     }
 
     if (pResolvedSurface!=NULL)
@@ -322,5 +347,5 @@ int uMod_IDirect3DCubeTexture9::ComputetHash( bool compute_crc)
   Message("uMod_IDirect3DCubeTexture9::GetHash() %#llX %#LX (%d %d) %d\n", Hash, CRC, desc.Width, desc.Height, desc.Format);
   return (RETURN_OK);
 }
-
+*/
 

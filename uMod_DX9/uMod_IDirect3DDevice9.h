@@ -182,6 +182,7 @@ public:
   uMod_IDirect3DVolumeTexture9* GetSingleVolumeTexture(void) {return (SingleVolumeTexture);}
   uMod_IDirect3DCubeTexture9* GetSingleCubeTexture(void) {return (SingleCubeTexture);}
 
+  int ComputetHash( DWORD64 &CRC64, DWORD32 &CRC32, IDirect3DSurface9 *surface, bool compute_crc);
 
  private:
 	int CreateSingleTexture(void);
@@ -195,7 +196,8 @@ public:
 
   D3DCOLOR TextureColour;
   ID3DXFont *OSD_Font;
-  //D3DCOLOR FontColour;
+  ID3DXSprite *pSprite;
+
   int BackBufferCount;
   bool NormalRendering;
 

@@ -37,6 +37,7 @@ public:
 
   int LoadTemplate( const wxString &file_name);
   int LoadTemplateFromString( const wxString &content);
+  int LoadGameData(const uMod_GameInfo &game);
 
   wxString GetExeName(void) {return ExeName;}
   wxString GetTemplateName(void) {return TemplateName;}
@@ -172,6 +173,13 @@ private:
    */
   int GetSettings(void);
 
+  /**
+   * returns the file name to a given template name
+   * @param template_name
+   * @param file_name
+   * @return 0 on success
+   */
+  int GetTemplateFileName( const wxString &template_name, wxString &file_name);
 
   wxString ExeName;
   wxString TemplateName;
@@ -191,6 +199,7 @@ private:
   wxBoxSizer *SingleTextureSizer;
   wxCheckBox *SaveSingleTexture;
   wxCheckBox *ShowSingleTextureString;
+  wxCheckBox *ShowSingleTexture;
 
 
   uMod_KeyPanel *KeyBack;

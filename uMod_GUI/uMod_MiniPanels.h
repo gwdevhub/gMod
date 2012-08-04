@@ -116,6 +116,11 @@ public:
    * @param label
    */
   void SetLabel(const wxString &label);
+
+  /**
+   * Set the label for the key.
+   */
+  void SetKeyLabel();
 private:
 
   /**
@@ -124,7 +129,6 @@ private:
    */
   void OnButton(wxCommandEvent& event);
 
-  void SetKeyLabel();
 
   wxButton *Button;
   wxTextCtrl *KeyText;

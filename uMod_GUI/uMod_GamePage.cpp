@@ -123,8 +123,12 @@ uMod_GamePage::uMod_GamePage( wxNotebook *parent, const wxString &exe, int injec
   SingleTextureSizer->Add( (wxWindow*) SaveSingleTexture, 0, wxEXPAND, 0);
 
   // check box for showing the string
+  ShowSingleTexture = new wxCheckBox( SingleTexturePanel, wxID_ANY, Language->CheckBoxShowSingleTexture);
+  SingleTextureSizer->Add( (wxWindow*) ShowSingleTexture, 0, wxEXPAND| wxUP | wxLEFT | wxRIGHT, 5);
+
+  // check box for showing the string
   ShowSingleTextureString = new wxCheckBox( SingleTexturePanel, ID_ShowSingleTextureString, Language->CheckBoxShowStringSaveSingleTexture);
-  SingleTextureSizer->Add( (wxWindow*) ShowSingleTextureString, 0, wxEXPAND|wxALL, 5);
+  SingleTextureSizer->Add( (wxWindow*) ShowSingleTextureString, 0, wxEXPAND| wxBOTTOM | wxLEFT | wxRIGHT, 5);
 
 
   //set the two colour buttons into one horizontal sizer
@@ -235,7 +239,7 @@ uMod_GamePage::uMod_GamePage( wxNotebook *parent, const wxString &exe, int injec
   temp_sizer->Add( (wxWindow*) SavePathButton, 0, wxEXPAND|wxALL, 0);
 
   temp_sizer->AddSpacer(10);
-  SavePath = new wxTextCtrl(win, wxID_ANY, Language->TextCtrlSavePath, wxDefaultPosition, wxDefaultSize, wxTE_READONLY);
+  SavePath = new wxTextCtrl(win, wxID_ANY, "", wxDefaultPosition, wxDefaultSize, wxTE_READONLY);
   temp_sizer->Add( (wxWindow*) SavePath, 1, wxEXPAND, 0);
   CollSizer->Add( temp_sizer, 0, wxEXPAND | wxBOTTOM | wxLEFT | wxRIGHT, 10);
 
@@ -305,20 +309,25 @@ uMod_GamePage::uMod_GamePage( wxNotebook *parent, const wxString &exe, int injec
   if (LastError.IsEmpty())
   {
     if (TemplateName.Len()>0) LoadTemplate(TemplateName);
-    LastError.Empty();
+    else LoadGameData(Game);
+    if (!LastError.IsEmpty())
+    {
+      LoadGameData(Game);
+      LastError.Empty();
+    }
   }
+  else LoadGameData(Game);
 }
 
 uMod_GamePage::~uMod_GamePage(void)
 {
-
+  GetSettings();
+  SaveTemplate("auto_save");
 }
 
 int uMod_GamePage::SetSavePath( const wxString &path)
 {
-  wxString save_path = Language->TextCtrlSavePath;
-  save_path << path;
-  SavePath->SetValue(save_path);
+  SavePath->SetValue(path);
   Game.SetSavePath( path);
   return 0;
 }
@@ -413,6 +422,9 @@ int uMod_GamePage::SetInfo(void)
   case NO_INJECTION:
     info = Language->NoInjection;
     break;
+  case INVALID_GAME_PAGE:
+    info = Language->InvalidGamePage;
+    break;
   default:
     info = "BUG^^ injection:";
     break;
@@ -483,6 +495,7 @@ int uMod_GamePage::GetSettings(void)
   Game.SetSaveAllTextures( save_all);
 
   Game.ShowSingleTextureString() = ShowSingleTextureString->GetValue();
+  Game.ShowSingleTexture() = ShowSingleTexture->GetValue();
 
   Game.UseSizeFilter() = UseSizeFilter->GetValue();
   SpinHeight->GetValue( Game.HeightMin(), Game.HeightMax());
@@ -525,9 +538,35 @@ int uMod_GamePage::ReloadGame(void)
   return LoadTemplateFromString(content);
 }
 
-int uMod_GamePage::SaveTemplate( const wxString &file_name)
+
+int uMod_GamePage::GetTemplateFileName( const wxString &template_name, wxString &file_name)
+{
+  if (template_name=="auto_save")
+  {
+    unsigned int hash = 0u;
+    int len = ExeName.Len();
+    unsigned char *str = (unsigned char*) ExeName.fn_str();
+    for (int i=0; i<len; i++)
+    {
+      hash = *str + (hash<< 6) + (hash << 16) - hash; // SDBM algorithm
+    }
+    file_name = "templates\\auto_save\\";
+    file_name << hash << "_" << GetPageName() << ".txt";
+  }
+  else
+  {
+    file_name = "templates\\";
+    file_name << template_name << ".txt";
+  }
+  return 0;
+}
+
+
+int uMod_GamePage::SaveTemplate( const wxString &template_name)
 {
   wxFile file;
+  wxString file_name;
+  GetTemplateFileName( template_name, file_name);
 
   file.Open(file_name, wxFile::write);
   if (!file.IsOpened())
@@ -569,21 +608,28 @@ int uMod_GamePage::SaveTemplateToString( wxString &content)
   return 0;
 }
 
-int uMod_GamePage::LoadTemplate( const wxString &file_name)
+
+
+int uMod_GamePage::LoadTemplate( const wxString &template_name)
 {
   LastError.Empty();
 
-  if (file_name.Len()==0) return -1;
+
+  if (template_name.Len()==0) return -1;
+  wxString file_name;
+  GetTemplateFileName( template_name, file_name);
 
   wxFile file;
   if (!file.Access(file_name, wxFile::read))
   {
+    if (template_name == "auto_save") return 0;
     LastError = Language->Error_FileOpen << "\n" << file_name;
     return -1;
   }
   file.Open(file_name, wxFile::read);
   if (!file.IsOpened())
   {
+    if (template_name == "auto_save") return 0;
     LastError = Language->Error_FileOpen << "\n" << file_name;
     return -1;
   }
@@ -614,7 +660,7 @@ int uMod_GamePage::LoadTemplate( const wxString &file_name)
 
   if (int ret = LoadTemplateFromString(content)) return ret;
 
-  TemplateName = file_name;
+  TemplateName = template_name;
   wxString path;
   path = Language->TextCtrlTemplate;
   path << TemplateName;
@@ -657,13 +703,22 @@ int uMod_GamePage::LoadTemplateFromString( const wxString &content_orig)
     LastError << ViewModel->LastError;
   }
 
+  LoadGameData(Game);
 
-  //if (Sender.Send( Game, GameOld, true)==0) GameOld = Game;
+  if (LastError.IsEmpty())
+  {
+    return UpdateGame();
+  }
+  else return -1;
+}
 
-  CollPane->Collapse( !Game.ShowCollPane());
+
+int uMod_GamePage::LoadGameData(const uMod_GameInfo &game)
+{
+  CollPane->Collapse( !game.ShowCollPane());
 
 
-  if (Game.ShowSingleTextureString())
+  if (game.ShowSingleTextureString())
   {
     ShowSingleTextureString->SetValue(true);
     FontColour->Enable();
@@ -673,16 +728,20 @@ int uMod_GamePage::LoadTemplateFromString( const wxString &content_orig)
     ShowSingleTextureString->SetValue(false);
     FontColour->Enable(false);
   }
+  if (game.ShowSingleTexture())
+    ShowSingleTexture->SetValue(true);
+  else
+    ShowSingleTexture->SetValue(false);
 
-  KeyBack->SetKey(Game.GetKeyBack());
-  KeySave->SetKey(Game.GetKeySave());
-  KeyNext->SetKey(Game.GetKeyNext());
+  KeyBack->SetKey(game.GetKeyBack());
+  KeySave->SetKey(game.GetKeySave());
+  KeyNext->SetKey(game.GetKeyNext());
 
-  SpinWidth->SetValue( Game.WidthMin(), Game.WidthMax());
-  SpinHeight->SetValue( Game.HeightMin(), Game.HeightMax());
-  SpinDepth->SetValue( Game.DepthMin(), Game.DepthMax());
+  SpinWidth->SetValue( game.WidthMin(), game.WidthMax());
+  SpinHeight->SetValue( game.HeightMin(), game.HeightMax());
+  SpinDepth->SetValue( game.DepthMin(), game.DepthMax());
 
-  if (Game.UseSizeFilter())
+  if (game.UseSizeFilter())
   {
     UseSizeFilter->SetValue(true);
     SpinWidth->Enable();
@@ -697,7 +756,7 @@ int uMod_GamePage::LoadTemplateFromString( const wxString &content_orig)
     SpinDepth->Enable(false);
   }
 
-  if (Game.UseFormatFilter())
+  if (game.UseFormatFilter())
   {
     UseFormatFilter->SetValue(true);
     FormatFilter->Enable();
@@ -709,14 +768,14 @@ int uMod_GamePage::LoadTemplateFromString( const wxString &content_orig)
   }
 
 
-  if (Game.GetSaveSingleTexture())
+  if (game.GetSaveSingleTexture())
   {
     SaveSingleTexture->SetValue( true);
     SaveAllTextures->SetValue(false);
     SingleTexturePanel->Enable();
     AllTexturePanel->Disable();
   }
-  else if (Game.GetSaveAllTextures())
+  else if (game.GetSaveAllTextures())
   {
     SaveSingleTexture->SetValue( false);
     SaveAllTextures->SetValue( true);
@@ -731,11 +790,9 @@ int uMod_GamePage::LoadTemplateFromString( const wxString &content_orig)
     AllTexturePanel->Enable();
   }
 
-  FileFormats->SetValue(Game.FileFormat());
+  FileFormats->SetValue(game.FileFormat());
 
-  wxString path = Language->TextCtrlSavePath;
-  path << Game.GetSavePath();
-  SavePath->SetValue( path);
+  SavePath->SetValue( game.GetSavePath());
 
 
   // The wxCollapsiblePane could be hide/shown thus we must manually layout and refresh the sizer and the window
@@ -745,11 +802,7 @@ int uMod_GamePage::LoadTemplateFromString( const wxString &content_orig)
   // VieCtrl must repaint otherwise some graphical glitches ocure
   ViewCtrl->Refresh();
 
-  if (LastError.IsEmpty())
-  {
-    return UpdateGame();
-  }
-  else return -1;
+  return 0;
 }
 
 void uMod_GamePage::OnCollPane(wxCollapsiblePaneEvent& WXUNUSED(event))
@@ -965,99 +1018,6 @@ void uMod_GamePage::OnButtonFormatFilter(wxCommandEvent& WXUNUSED(event))
   temp << "D3DFMT_YUY2 (" << MAKEFOURCC('Y', 'U', 'Y', '2') << ")";
   choices.Add(temp);
   temp.Empty();
-  /*
-  choices.Add("D3DFMT_DXT1 (827611204)"); 31545844
-  choices.Add("D3DFMT_DXT2 (844388420)"); 32545844
-  choices.Add("D3DFMT_DXT3 (861165636"); 33545844
-  choices.Add("D3DFMT_DXT4 (877942852)"); 34545844
-  choices.Add("D3DFMT_DXT5 (894720068)"); 35545844
-  choices.Add("D3DFMT_G8R8_G8B8 (MAKEFOURCC('G', 'R', 'G', 'B')");
-  choices.Add("D3DFMT_MULTI2_ARGB8 (MAKEFOURCC('M','E','T','1')"); 31
-  choices.Add("D3DFMT_R8G8_B8G8 (MAKEFOURCC('R', 'G', 'B', 'G')");
-  choices.Add("D3DFMT_UYVY (MAKEFOURCC('U', 'Y', 'V', 'Y')");
-  choices.Add("D3DFMT_YUY2 (MAKEFOURCC('Y', 'U', 'Y', '2')");
-*/
-/*
-  choices.Add("R8G8B8");
-  choices.Add("A8R8G8B8");
-  choices.Add("X8R8G8B8");
-  choices.Add("R5G6B");
-  choices.Add("X1R5G5B5");
-  choices.Add("A1R5G5B5");
-  choices.Add("A4R4G4B4");
-  choices.Add("R3G3B2");
-  choices.Add("A8");
-  choices.Add("A8R3G3B2");
-  choices.Add("X4R4G4B4");
-  choices.Add("A2B10G10R10");
-  choices.Add("A8B8G8R8");
-  choices.Add("X8B8G8R8");
-  choices.Add("G16R16");
-  choices.Add("A2R10G10B10");
-  choices.Add("A16B16G16R16");
-
-  choices.Add("A8P8");
-  choices.Add("P8");
-
-  choices.Add("L8");
-  choices.Add("A8L8");
-  choices.Add("A4L4");
-
-  choices.Add("V8U8");
-  choices.Add("L6V5U5");
-  choices.Add("X8L8V8U8");
-  choices.Add("Q8W8V8U8");
-  choices.Add("V16U16");
-  choices.Add("A2W10V10U10");
-
-  choices.Add("UYVY");
-  choices.Add("R8G8_B8G8");
-  choices.Add("YUY2");
-  choices.Add("G8R8_G8B8");
-  choices.Add("DXT1");
-  choices.Add("DXT2");
-  choices.Add("DXT3");
-  choices.Add("DXT4");
-  choices.Add("DXT5");
-
-  choices.Add("D16_LOCKABLE");
-  choices.Add("D32");
-  choices.Add("D15S1");
-  choices.Add("D24S8");
-  choices.Add("D24X8");
-  choices.Add("D24X4S4");
-  choices.Add("D16");
-
-  choices.Add("D32F_LOCKABLE");
-  choices.Add("D24FS8");
-
-  choices.Add("D32_LOCKABLE");
-  choices.Add("S8_LOCKABLE");
-
-  choices.Add("L16");
-
-  choices.Add("VERTEXDATA");
-  choices.Add("INDEX16");
-  choices.Add("INDEX32");
-
-  choices.Add("Q16W16V16U16");
-
-  choices.Add("MULTI2_ARGB8");
-
-  choices.Add("R16F");
-  choices.Add("G16R16F");
-  choices.Add("A16B16G16R16F");
-
-  choices.Add("R32F");
-  choices.Add("G32R32F");
-  choices.Add("A32B32G32R32F");
-
-  choices.Add("CxV8U8");
-
-  choices.Add("A1");
-  choices.Add("A2B10G10R10_XR_BIAS");
-  choices.Add("BINARYBUFFER");
-*/
   wxArrayInt selections;
   unsigned long selected = Game.FormatFilter();
 
@@ -1083,11 +1043,7 @@ void uMod_GamePage::OnButtonSavePath(wxCommandEvent& WXUNUSED(event))
   if ( !dir.empty() )
   {
     Game.SetSavePath(dir);
-
-    wxString path;
-    path = Language->TextCtrlSavePath;
-    path << dir;
-    SavePath->SetValue( path);
+    SavePath->SetValue( dir);
   }
 }
 
@@ -1231,6 +1187,13 @@ void uMod_GamePage::OnContextMenu( wxDataViewEvent &event )
   else if (node->GetParent() != (uMod_TreeViewNode*) 0 )
     menu.Enable(ID_RemovePackage, false);
 
+  // the first page has no update or reload function (it is not connected to a game)
+  if (InjectionMethod == INVALID_GAME_PAGE)
+  {
+    menu.Enable(ID_Update, false);
+    menu.Enable(ID_Reload, false);
+  }
+
   // if nothing is selected, we cannot deleted selected packages ;)
   if (ViewCtrl->GetSelectedItemsCount()<=0)
     menu.Enable(ID_RemoveSelectedPackages, false);
@@ -1301,25 +1264,46 @@ int uMod_GamePage::OpenPackage(void)
 
 int uMod_GamePage::UpdateLanguage(void)
 {
+  SetInfo();
+  wxString path;
+  path = Language->TextCtrlTemplate;
+  path << TemplateName;
+  TemplateFile->SetValue( path);
+
+
   CollPane->SetLabel(Language->CollapseTextureCapture);
 
   SaveSingleTexture->SetLabel( Language->CheckBoxSaveSingleTexture);
   ShowSingleTextureString->SetLabel( Language->CheckBoxShowStringSaveSingleTexture);
+  ShowSingleTexture->SetLabel( Language->CheckBoxShowSingleTexture);
 
   KeyBack->SetLabel( Language->KeyBack);
+  KeyBack->SetKeyLabel();
   KeySave->SetLabel( Language->KeySave);
+  KeySave->SetKeyLabel();
   KeyNext->SetLabel( Language->KeyNext);
+  KeyNext->SetKeyLabel();
   FontColour->SetLabel( Language->FontColour);
   TextureColour->SetLabel( Language->TextureColour);
 
+  SaveAllTextures->SetLabel( Language->CheckBoxSaveAllTextures);
+
+  UseSizeFilter->SetLabel( Language->CheckBoxUseSizeFilter);
   SpinWidth->SetLabel( Language->WidthSpin);
   SpinHeight->SetLabel( Language->HeightSpin);
   SpinDepth->SetLabel( Language->DepthSpin);
 
-  SaveAllTextures->SetLabel( Language->CheckBoxSaveAllTextures);
-  wxString temp = Language->TextCtrlSavePath;
-  temp << Game.GetSavePath();
-  SavePath->SetValue( temp);
+  UseFormatFilter->SetLabel( Language->CheckBoxUseFormatFilter);
+  FormatFilter->SetLabel( Language->SetFormatFilter);
+
+  SavePathButton->SetLabel( Language->ButtonDirectory);
+  SavePath->SetValue( Game.GetSavePath());
+
+
+  ViewCtrl->GetColumn(0)->SetTitle(Language->Title);
+  ViewCtrl->GetColumn(3)->SetTitle(Language->Author);
+  ViewCtrl->GetColumn(4)->SetTitle(Language->Comment);
+
   return 0;
 }
 

@@ -18,6 +18,8 @@ uMod_DX10/uMod_ID3D10Texture3D.h -text
 uMod_DX10/uMod_IDXGISwapChain.cpp -text
 uMod_DX10/uMod_IDXGISwapChain.h -text
 uMod_DX10/uMod_TextureClient_DX10.h -text
+uMod_DX9/uMod_ComputeHash.cpp -text
+uMod_DX9/uMod_ComputeHash.h -text
 uMod_DX9/uMod_DX9_dll.cpp -text
 uMod_DX9/uMod_DX9_dll.h -text
 uMod_DX9/uMod_IDirect3D9.cpp -text
@@ -64,7 +66,6 @@ uMod_GUI/bin/languages/uMod_LanguagePackU_Deutsch.txt -text
 uMod_GUI/bin/languages/uMod_LanguagePackU_French.txt -text
 uMod_GUI/bin/languages/uMod_LanguagePackU_Russian.txt -text
 uMod_GUI/bin/languages/uMod_LanguagePack_Italian.txt -text
-uMod_GUI/config.gcc -text
 uMod_GUI/config.vc -text
 uMod_GUI/makefile.vc -text
 uMod_GUI/uMod.ico -text

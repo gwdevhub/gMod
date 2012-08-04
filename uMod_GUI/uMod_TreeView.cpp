@@ -237,26 +237,7 @@ int uMod_TreeViewModel::AddPackages(const wxArrayString &files)
   uMod_File file;
   wxDataViewItemArray added_items;
   wxDataViewItemArray added_single_items;
-  /*
-  bool single_file = false;
 
-  // detect if there are more than one single file
-  for (unsigned int i=0; i<files.GetCount(); i++)
-  {
-    file.SetFile( files[i]);
-    if (file.SingleFile()) {single_file = true;
-  }
-  */
-
-/*
-  if (single_files>1)
-  {
-    uMod_ModElement *element = new uMod_ModElement(uMod_ModElement::Group, uMod_ModElement::NONE);
-    element->Title() = Language->MultipleSingleFiles;
-    single_file_node = new uMod_TreeViewNode( (uMod_TreeViewNode*)0, element);
-    element->Release();
-  }
-*/
 
   for (unsigned int i=0; i<files.GetCount(); i++)
   {

@@ -57,83 +57,52 @@ uMod_File::~uMod_File(void)
 bool uMod_File::FileSupported(void)
 {
   wxString file_type = FileName.AfterLast( '.');
-  if (file_type == L"zip") return true;
-  else if (file_type == L"tpf") return true;
-  else if (file_type == L"dds") return true;
+  if (file_type == "zip") return true;
+  if (file_type == "tpf") return true;
+  if (file_type == "bmp") return true;
+  if (file_type == "jpg") return true;
+  if (file_type == "tga") return true;
+  if (file_type == "png") return true;
+  if (file_type == "dds") return true;
+  if (file_type == "ppm") return true;
 
   return false;
 }
 
+
+bool uMod_File::PackageFile(void)
+{
+  wxString file_type = FileName.AfterLast( '.');
+  if (file_type == "zip") return true;
+  if (file_type == "tpf") return true;
+  return false;
+}
 
 bool uMod_File::SingleFile(void)
 {
   wxString file_type = FileName.AfterLast( '.');
-  if (file_type == L"dds") return true;
+  if (file_type == "bmp") return true;
+  if (file_type == "jpg") return true;
+  if (file_type == "tga") return true;
+  if (file_type == "png") return true;
+  if (file_type == "dds") return true;
+  if (file_type == "ppm") return true;
   return false;
 }
-
-/*
-int uMod_File::GetComment( wxString &tool_tip)
-{
-  wxString file_type = FileName.AfterLast( '.');
-  if (file_type == L"zip")
-  {
-    if (int ret = GetCommentZip( tool_tip)) return ret;
-  }
-  else if (file_type == L"tpf")
-  {
-    if (int ret = GetCommentTpf( tool_tip)) return ret;
-  }
-  else if (file_type == L"dds")
-  {
-    tool_tip = Language->NoComment;
-    return -1;
-  }
-  return 0;
-}
-
-int uMod_File::GetContent( AddTextureClass &tex, bool add)
-{
-  wxString file_type = FileName.AfterLast( '.');
-  if (file_type == L"zip")
-  {
-    AddZip( tex, add, false);
-  }
-  else if (file_type == L"tpf")
-  {
-    AddZip( tex, add, true);
-  }
-  else if (file_type == L"dds")
-  {
-    AddFile( tex, add);
-  }
-  else
-  {
-    LastError << Language->Error_FileNotSupported;
-    LastError << "\n" << FileName;
-  }
-  if (LastError.Len()>0) return -1;
-  else
-  {
-    if (add) tex.Loaded = true;
-    return 0;
-  }
-}
-*/
 
 
 int uMod_File::GetContent( uMod_TreeViewNode* node)
 {
   wxString file_type = FileName.AfterLast( '.');
-  if (file_type == L"zip")
+  if (file_type == "zip")
   {
     AddZip( node);
   }
-  else if (file_type == L"tpf")
+  else if (file_type == "tpf")
   {
     AddTpf( node);
   }
-  else if (file_type == L"dds")
+  else if (SingleFile())
   {
     AddFile( node);
   }
@@ -219,53 +188,17 @@ int uMod_File::UnXOR(void)
 }
 
 
-
-/*
 int uMod_File::AddFile( uMod_TreeViewNode* node)
 {
   DWORD64 temp_hash;
 
   wxString name = FileName.AfterLast( '_');
   name = name.BeforeLast( '.');
-  if (!name.ToULongLong( &temp_hash, 16)) {LastError << Language->Error_Hash <<"\n" << FileName << "\n"; return -1;} // return if hash could not be extracted
-
-  if (int ret = ReadFile()) return ret;
-
-  uMod_TextureElement *texture = new uMod_TextureElement();
-
-  if (texture->Content().SetSize(FileLen))
+  if (!name.ToULongLong( &temp_hash, 16)) // return if hash could not be extracted
   {
-    LastError << Language->Error_Memory;
-    texture->Release();
+    LastError << Language->Error_Hash <<"\n" << FileName << "\n";
     return -1;
   }
-  char *data = texture->Content().Data();
-
-  for (unsigned int i=0; i<FileLen; i++) data[i] = FileInMemory[i];
-
-  texture->Hash() = temp_hash;
-  texture->Title() = FileName;
-  texture->Status() = uMod_TextureElement::Activate;
-
-  uMod_ModElement *element = new uMod_ModElement(uMod_ModElement::Group, uMod_ModElement::NONE);
-  element->Title() = FileName;
-  node = new uMod_TreeViewNode( (uMod_TreeViewNode*)0, element);
-  uMod_TreeViewNode *texture_node = new uMod_TreeViewNode( node, texture);
-  node->Append(texture_node);
-
-  texture->Release();
-  element->Release();
-  return 0;
-}
-*/
-
-int uMod_File::AddFile( uMod_TreeViewNode* node)
-{
-  DWORD64 temp_hash;
-
-  wxString name = FileName.AfterLast( '_');
-  name = name.BeforeLast( '.');
-  if (!name.ToULongLong( &temp_hash, 16)) {LastError << Language->Error_Hash <<"\n" << FileName << "\n"; return -1;} // return if hash could not be extracted
 
   if (int ret = ReadFile()) return ret;
 
@@ -398,7 +331,6 @@ int uMod_File::GetContentTemplate_ZIP( const uMod_TreeViewNode_ArrayPtr &list_no
 
 int uMod_File::GetContentTemplate_SF( const uMod_TreeViewNode_ArrayPtr &list_node, uMod_TreeViewNode* node)
 {
-  DWORD64 temp_hash;
   wxString name;
 
   for (unsigned int i=0; i<list_node.GetCount(); i++)
@@ -425,7 +357,6 @@ int uMod_File::GetContentTemplate_SF( const uMod_TreeViewNode_ArrayPtr &list_nod
 
     for (unsigned int i=0; i<FileLen; i++) data[i] = FileInMemory[i];
 
-    texture->Hash() = temp_hash;
     texture->Status() = uMod_TextureElement::Activate;
   }
 

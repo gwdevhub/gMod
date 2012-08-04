@@ -42,6 +42,7 @@ public:
 
 
   bool &ShowCollPane(void) {return myShowCollPane;}
+  const bool &ShowCollPane(void) const {return myShowCollPane;}
 
 
   bool &SupportTPF(void) {return mySupportTPF;}
@@ -66,6 +67,9 @@ public:
 
   bool &ShowSingleTextureString() {return myShowSingleTextureString;}
   const bool &ShowSingleTextureString() const {return myShowSingleTextureString;}
+
+  bool &ShowSingleTexture() {return myShowSingleTexture;}
+  const bool &ShowSingleTexture() const {return myShowSingleTexture;}
 
   int SetFontColour(const unsigned char *colour) {FontColour[0]=colour[0];FontColour[1]=colour[1];FontColour[2]=colour[2];FontColour[3]=colour[3];return 0;}
   int GetFontColour(unsigned char *colour) const {colour[0]=FontColour[0];colour[1]=FontColour[1];colour[2]=FontColour[2];colour[3]=FontColour[3];return 0;}
@@ -135,6 +139,7 @@ private:
   unsigned long myFileFormat;
 
   bool myShowSingleTextureString;
+  bool myShowSingleTexture;
   unsigned char FontColour[4];
   unsigned char TextureColour[4];
 

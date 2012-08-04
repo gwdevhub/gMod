@@ -29,6 +29,7 @@ public:
   ~uMod_File(void);
 
   bool FileSupported(void);
+  bool PackageFile(void);
   bool SingleFile(void);
   //int AddSingleFileToNode( uMod_TreeViewNode* node);
   int GetContentTemplate(const wxString &content, uMod_TreeViewNode* node);

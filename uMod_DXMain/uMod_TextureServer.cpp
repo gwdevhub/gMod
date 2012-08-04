@@ -22,7 +22,7 @@ along with Universal Modding Engine.  If not, see <http://www.gnu.org/licenses/>
 
 uMod_TextureServer::uMod_TextureServer(wchar_t *game)
 {
-  Message("uMod_TextureServer(void): %lu\n", this);
+  Message("uMod_TextureServer(void): %p\n", this);
 
   Mutex = CreateMutex(NULL, false, NULL);
 
@@ -32,6 +32,7 @@ uMod_TextureServer::uMod_TextureServer(wchar_t *game)
   BoolSaveAllTextures = false;
   BoolSaveSingleTexture = false;
   BoolShowTextureString = false;
+  BoolShowSingleTexture = false;
   BoolSupportTPF = false;
 
   SavePath[0] = 0;
@@ -74,15 +75,25 @@ uMod_TextureServer::uMod_TextureServer(wchar_t *game)
 
 uMod_TextureServer::~uMod_TextureServer(void)
 {
-  Message("~uMod_TextureServer(void): %lu\n", this);
+  Message("~uMod_TextureServer(void): %p\n", this);
   if (Mutex != NULL) CloseHandle(Mutex);
 
   //delete the files in memory
   int num = CurrentMod.GetNumber();
-  for (int i = 0; i < num; i++) delete[] CurrentMod[i]->pData; //delete the file content of the texture
+  for (int i = 0; i < num; i++)
+  {
+    delete [] CurrentMod[i]->pData; //delete the file content of the texture
+    delete CurrentMod[i]; //delete the structure
+  }
 
   num = OldMod.GetNumber();
-  for (int i = 0; i < num; i++) delete[] OldMod[i]->pData; //delete the file content of the texture
+  for (int i = 0; i < num; i++)
+  {
+    delete [] OldMod[i]->pData; //delete the file content of the texture
+    delete OldMod[i]; //delete the structure
+  }
+
+  if (Clients != NULL) delete [] Clients;
 
   if (Pipe.In != INVALID_HANDLE_VALUE ) CloseHandle(Pipe.In);
   Pipe.In = INVALID_HANDLE_VALUE;
@@ -92,7 +103,7 @@ uMod_TextureServer::~uMod_TextureServer(void)
 
 int uMod_TextureServer::AddClient(uMod_TextureClient *client, TextureFileStruct* &update, int &number, const int version) // called from a client
 {
-  Message("AddClient(%lu): %lu\n", client, this);
+  Message("AddClient(%p): %p\n", client, this);
   if (int ret = LockMutex())
   {
     gl_ErrorState |= uMod_ERROR_SERVER;
@@ -106,6 +117,7 @@ int uMod_TextureServer::AddClient(uMod_TextureClient *client, TextureFileStruct*
   client->SaveAllTextures(BoolSaveAllTextures);
   client->SaveSingleTexture(BoolSaveSingleTexture);
   client->ShowTextureString(BoolShowTextureString);
+  client->ShowSingleTexture(BoolShowSingleTexture);
   client->SupportTPF(BoolSupportTPF);
   client->SetSaveDirectory(SavePath);
 
@@ -162,7 +174,7 @@ int uMod_TextureServer::AddClient(uMod_TextureClient *client, TextureFileStruct*
 
 int uMod_TextureServer::RemoveClient(uMod_TextureClient *client, const int version) // called from a client
 {
-  Message("RemoveClient(%lu): %lu\n", client);
+  Message("RemoveClient(%p): %p\n", client);
   if (int ret = LockMutex())
   {
     gl_ErrorState |= uMod_ERROR_SERVER;
@@ -200,8 +212,13 @@ int uMod_TextureServer::RemoveClient(uMod_TextureClient *client, const int versi
 
 int uMod_TextureServer::AddFile( char* buffer, DWORD64 size,  DWORD64 hash, bool force) // called from Mainloop()
 {
-  Message("uMod_TextureServer::AddFile( %p %llu, %#llX, %d): %lu\n", buffer, size, hash, force, this);
+  Message("uMod_TextureServer::AddFile( %p %llu, %#llX, %d): %p\n", buffer, size, hash, force, this);
 
+  if (int ret = LockMutex())
+  {
+    gl_ErrorState |= uMod_ERROR_SERVER;
+    return (ret);
+  }
   TextureFileStruct* temp = NULL;
 
   int num = CurrentMod.GetNumber();
@@ -258,101 +275,22 @@ int uMod_TextureServer::AddFile( char* buffer, DWORD64 size,  DWORD64 hash, bool
   //else
   temp->ForceReload = force;
 
-  Message("uMod_TextureServer::End AddFile(%#lX)\n", hash);
-  if (new_file) return (CurrentMod.Add(temp)); // new files must be added to the list of the CurrentMod
-  else return (RETURN_OK);
+  Message("uMod_TextureServer::End AddFile(%#llX)\n", hash);
+  if (new_file) CurrentMod.Add(temp); // new files must be added to the list of the CurrentMod+
+
+  return (UnlockMutex());
 }
-/*
-int uMod_TextureServer::AddFile(wchar_t* file_name, MyTypeHash hash, bool force) // called from Mainloop
-// this functions does the same, but loads the file content from disk
-{
-  Message("uMod_TextureServer::AddFile( %ls, %#lX, %d): %lu\n", file_name, hash, force, this);
 
-  TextureFileStruct* temp = NULL;
-
-  int num = CurrentMod.GetNumber();
-  for (int i = 0; i < num; i++) if (CurrentMod[i]->Hash == hash)
-  {
-    if (force) {temp = CurrentMod[i]; break;}
-    else return (RETURN_OK);
-  }
-  if (temp==NULL)
-  {
-    num = OldMod.GetNumber();
-    for (int i = 0; i < num; i++) if (OldMod[i]->Hash == hash)
-    {
-      temp = OldMod[i];
-      OldMod.Remove(temp);
-      CurrentMod.Add(temp);
-      if (force) break;
-      else return (RETURN_OK);
-    }
-  }
-
-  FILE* file;
-  if (_wfopen_s(&file, file_name, L"rb") != 0)
-  {
-    Message("AddFile( ): file not found\n");
-    return (RETURN_FILE_NOT_LOADED);
-  }
-
-  fseek (file, 0, SEEK_END);
-  unsigned int size = ftell(file);
-  fseek (file, 0, SEEK_SET);
-
-  bool new_file = true;
-  if (temp!=NULL)
-  {
-    new_file = false;
-    if (temp->pData!=NULL) delete [] temp->pData;
-    temp->pData = NULL;
-  }
-  else
-  {
-    new_file = true;
-    temp = new TextureFileStruct;
-    temp->Reference = -1;
-  }
-
-  try
-  {
-    temp->pData = new char[size];
-  }
-  catch (...)
-  {
-    if (!new_file) CurrentMod.Remove( temp);
-    delete temp;
-    gl_ErrorState |= uMod_ERROR_MEMORY | uMod_ERROR_SERVER;
-    return (RETURN_NO_MEMORY);
-  }
-  int result = fread(temp->pData, 1, size, file);
-  fclose(file);
-  if (result != size)
-  {
-    delete[] temp->pData;
-    if (!new_file) CurrentMod.Remove( temp);
-    delete temp;
-    return (RETURN_FILE_NOT_LOADED);
-  }
-
-  temp->Size = size;
-  temp->NumberOfTextures = 0;
-  temp->Textures = NULL;
-  temp->Hash = hash;
-
-  if (new_file) temp->ForceReload = false;
-  else temp->ForceReload = force;
-
-  Message("End AddFile(%#lX)\n", hash);
-  if (new_file) return (CurrentMod.Add(temp));
-  else return (RETURN_OK);
-}
-*/
 
 int uMod_TextureServer::RemoveFile(DWORD64 hash) // called from Mainloop()
 {
-  Message("RemoveFile( %lu): %lu\n", hash, this);
+  Message("RemoveFile( %#llx): %p\n", hash, this);
 
+  if (int ret = LockMutex())
+  {
+    gl_ErrorState |= uMod_ERROR_SERVER;
+    return (ret);
+  }
   int num = CurrentMod.GetNumber();
   for (int i = 0; i < num; i++) if (CurrentMod[i]->Hash == hash)
   {
@@ -360,7 +298,7 @@ int uMod_TextureServer::RemoveFile(DWORD64 hash) // called from Mainloop()
     CurrentMod.Remove(temp);
     return (OldMod.Add(temp));
   }
-  return (RETURN_OK);
+  return (UnlockMutex());
 }
 
 int uMod_TextureServer::SaveAllTextures(bool val) // called from Mainloop()
@@ -414,6 +352,23 @@ int uMod_TextureServer::ShowTextureString(bool val) // called from Mainloop()
   return (UnlockMutex());
 }
 
+int uMod_TextureServer::ShowSingleTexture(bool val) // called from Mainloop()
+{
+  if (BoolShowSingleTexture == val) return (RETURN_OK);
+  BoolShowSingleTexture = val;
+
+  if (int ret = LockMutex())
+  {
+    gl_ErrorState |= uMod_ERROR_SERVER;
+    return (ret);
+  }
+  for (int i = 0; i < NumberOfClients; i++)
+  {
+    Clients[i]->ShowSingleTexture(BoolShowSingleTexture);
+  }
+  return (UnlockMutex());
+}
+
 int uMod_TextureServer::SupportTPF(bool val) // called from Mainloop()
 {
   if (BoolSupportTPF == val) return (RETURN_OK);
@@ -433,7 +388,7 @@ int uMod_TextureServer::SupportTPF(bool val) // called from Mainloop()
 
 int uMod_TextureServer::SetSaveDirectory(wchar_t *dir) // called from Mainloop()
 {
-  Message("uMod_TextureServer::SetSaveDirectory( %ls): %lu\n", dir, this);
+  Message("uMod_TextureServer::SetSaveDirectory( %ls): %p\n", dir, this);
   int i = 0;
   for (i = 0; i < MAX_PATH && (dir[i]); i++) SavePath[i] = dir[i];
   if (i == MAX_PATH)
@@ -512,7 +467,7 @@ int uMod_TextureServer::SetFontColour(DWORD64 colour) // called from Mainloop()
     return (ret);
   }
   FontColour = colour;
-  Message("uMod_TextureServer::SetFontColour( %#lX): %lu\n",colour, this);
+  Message("uMod_TextureServer::SetFontColour( %#llX): %p\n",colour, this);
   for (int i = 0; i < NumberOfClients; i++)
   {
     Clients[i]->SetFontColour( colour);
@@ -529,7 +484,7 @@ int uMod_TextureServer::SetTextureColour(DWORD64 colour) // called from Mainloop
     return (ret);
   }
   TextureColour = colour;
-  Message("uMod_TextureServer::SetTextureColour( %#lX): %lu\n", colour, this);
+  Message("uMod_TextureServer::SetTextureColour( %#llX): %p\n", colour, this);
   for (int i = 0; i < NumberOfClients; i++)
   {
     Clients[i]->SetTextureColour( colour);
@@ -545,7 +500,7 @@ int uMod_TextureServer::SetFileFormat(DWORD64 format) // called from Mainloop()
     return (ret);
   }
   FileFormat = format;
-  Message("uMod_TextureServer::SetFileFormat( %lu): %lu\n", format, this);
+  Message("uMod_TextureServer::SetFileFormat( %#llX): %p\n", format, this);
   for (int i = 0; i < NumberOfClients; i++)
   {
     Clients[i]->SetFileFormat( format);
@@ -561,7 +516,7 @@ int uMod_TextureServer::SetFormatFilter(DWORD64 format) // called from Mainloop(
     return (ret);
   }
   FormatFilter = format;
-  Message("uMod_TextureServer::SetFormatFilter( %lu): %lu\n", format, this);
+  Message("uMod_TextureServer::SetFormatFilter( %#llX): %p\n", format, this);
   for (int i = 0; i < NumberOfClients; i++)
   {
     Clients[i]->SetFormatFilter( format);
@@ -577,7 +532,7 @@ int uMod_TextureServer::SetWidthFilter(DWORD64 size) // called from Mainloop()
     return (ret);
   }
   WidthFilter = size;
-  Message("uMod_TextureServer::SetWidthFilter( %lu): %lu\n", size, this);
+  Message("uMod_TextureServer::SetWidthFilter( %#llX): %p\n", size, this);
   for (int i = 0; i < NumberOfClients; i++)
   {
     Clients[i]->SetWidthFilter( size);
@@ -593,7 +548,7 @@ int uMod_TextureServer::SetHeightFilter(DWORD64 size) // called from Mainloop()
     return (ret);
   }
   HeightFilter = size;
-  Message("uMod_TextureServer::SetHeightFilter( %lu): %lu\n", size, this);
+  Message("uMod_TextureServer::SetHeightFilter( %#llX): %p\n", size, this);
   for (int i = 0; i < NumberOfClients; i++)
   {
     Clients[i]->SetHeightFilter( size);
@@ -609,7 +564,7 @@ int uMod_TextureServer::SetDepthFilter(DWORD64 size) // called from Mainloop()
     return (ret);
   }
   DepthFilter = size;
-  Message("uMod_TextureServer::SetDepthFilter( %lu): %lu\n", size, this);
+  Message("uMod_TextureServer::SetDepthFilter( %#llX): %p\n", size, this);
   for (int i = 0; i < NumberOfClients; i++)
   {
     Clients[i]->SetDepthFilter( size);
@@ -619,7 +574,7 @@ int uMod_TextureServer::SetDepthFilter(DWORD64 size) // called from Mainloop()
 
 int uMod_TextureServer::PropagateUpdate(uMod_TextureClient* client) // called from Mainloop(), send the update to all clients
 {
-  Message("PropagateUpdate(%lu): %lu\n", client, this);
+  Message("PropagateUpdate(%p): %p\n", client, this);
   if (int ret = LockMutex())
   {
     gl_ErrorState |= uMod_ERROR_TEXTURE;
@@ -667,7 +622,8 @@ int TextureFileStruct_Compare( const void * elem1, const void * elem2 )
 int uMod_TextureServer::PrepareUpdate(TextureFileStruct* &update, int &number) // called from the PropagateUpdate() and AddClient.
 // Prepare an update for one client. The allocated memory must deleted by the client.
 {
-  Message("PrepareUpdate(%lu, %d): %lu\n", update, number, this);
+  update = NULL;
+  number = 0;
 
   TextureFileStruct* temp = NULL;
   int num = CurrentMod.GetNumber();
@@ -684,9 +640,10 @@ int uMod_TextureServer::PrepareUpdate(TextureFileStruct* &update, int &number) /
     qsort( temp, num, sizeof(TextureFileStruct), TextureFileStruct_Compare);
   }
 
-
   update = temp;
   number = num;
+
+  Message("PrepareUpdate(%p, %d): %p\n", update, number, this);
   return (RETURN_OK);
 }
 #undef cpy_file_struct
@@ -841,6 +798,13 @@ int uMod_TextureServer::MainLoop(void) // run as a separated thread
           else ShowTextureString(true);
           break;
         }
+        case CONTROL_SHOW_TEXTURE:
+        {
+          Message("MainLoop: CONTROL_SHOW_TEXTURE (%#llX): %p\n", commands->Value, this);
+          if (commands->Value == 0) ShowSingleTexture(false);
+          else ShowSingleTexture(true);
+          break;
+        }
         case CONTROL_SUPPORT_TPF:
         {
           Message("MainLoop: CONTROL_SUPPORT_TPF (%#llX): %p\n", commands->Value, this);
@@ -850,8 +814,9 @@ int uMod_TextureServer::MainLoop(void) // run as a separated thread
         }
         case CONTROL_SET_DIR:
         {
+          Message("MainLoop: CONTROL_SET_DIR (%ls): %p\n", (wchar_t*) &buffer[pos + sizeof(MsgStruct)], this);
           size = commands->Value;
-          if (pos + sizeof(MsgStruct) +size <= num) SetSaveDirectory( (wchar_t*) &buffer[pos + sizeof(MsgStruct)]);
+          if (pos + sizeof(MsgStruct) + size <= num) SetSaveDirectory( (wchar_t*) &buffer[pos + sizeof(MsgStruct)]);
           break;
         }
 
@@ -918,7 +883,7 @@ int uMod_TextureServer::MainLoop(void) // run as a separated thread
 
         default:
         {
-          Message("MainLoop: DEFAULT: %lu  %#llX  %#llX\n", commands->Control, commands->Value, commands->Hash, this);
+          Message("MainLoop: DEFAULT: %lu  %#llX  %#llX: %p\n", commands->Control, commands->Value, commands->Hash, this);
           break;
         }
         }

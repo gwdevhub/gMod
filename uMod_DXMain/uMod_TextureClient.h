@@ -61,13 +61,19 @@ public:
    */
   virtual int SaveSingleTexture(bool val) = 0;
 
-
   /**
    * Enable/Disable the string in the left upper corner during save single texture mode (called from the mainloop).
    * @param[in] val
    * @return
    */
   int ShowTextureString(bool val) {BoolShowTextureString = val; return (RETURN_OK);}
+
+  /**
+   * Enable/Disable the string in the left upper corner during save single texture mode (called from the mainloop).
+   * @param[in] val
+   * @return
+   */
+  int ShowSingleTexture(bool val) {BoolShowSingleTexture = val; return (RETURN_OK);}
 
   /**
    * Enable/Disable the hashing with CRC32, which is needed to support also tpf mods (called from the mainloop).
@@ -172,6 +178,7 @@ public:
   bool BoolSaveAllTextures; //!< true if all textures should be saved
   bool BoolSaveSingleTexture; //!< true if "save single texture" mode is enabled
   bool BoolShowTextureString; //!< true if a string should be displayed during "save single texture" mode is enabled
+  bool BoolShowSingleTexture; //!< true if the texture should be displayed during "save single texture" mode is enabled
   bool BoolComputeCRC; //!< if true also the crc32 is calculated, which is need to support tpf
 
   int KeyBack; //!< key value for going to the previous texture

@@ -36,6 +36,7 @@ along with Universal Modding Engine.  If not, see <http://www.gnu.org/licenses/>
 
 int uMod_IDirect3DDevice9::CreateSingleTexture(void)
 {
+
   if (SingleTexture!=NULL && SingleVolumeTexture!=NULL && SingleCubeTexture!=NULL && TextureColour==uMod_Client->TextureColour) return (RETURN_OK);
   TextureColour = uMod_Client->TextureColour;
   if (SingleTexture==NULL) //create texture
@@ -150,6 +151,172 @@ int uMod_IDirect3DDevice9::CreateSingleTexture(void)
   return (RETURN_OK);
 }
 
+
+
+int uMod_IDirect3DDevice9::ComputetHash( DWORD64 &CRC64, DWORD32 &CRC32, IDirect3DSurface9 *surface, bool compute_crc)
+{
+
+  IDirect3DSurface9 *offscreen_surface = NULL;
+  D3DLOCKED_RECT d3dlr;
+  D3DSURFACE_DESC desc;
+  unsigned char *buffer = NULL;
+
+  bool locked = false;
+  int pitch = 0;
+
+  if (surface->GetDesc(&desc)!=D3D_OK) //get the format and the size of the texture
+  {
+    Message("ComputetHash() Failed: GetLevelDesc \n");
+    return (RETURN_GetLevelDesc_FAILED);
+  }
+
+  Message("ComputetHash() (%d %d) F%d T%d U%d P%d M(%d %d)\n", desc.Width, desc.Height,
+      desc.Format, desc.Type, desc.Usage, desc.Pool, desc.MultiSampleType, desc.MultiSampleQuality);
+
+
+  if (surface->LockRect( &d3dlr, NULL, D3DLOCK_READONLY)!=D3D_OK)
+  {
+    Message("ComputetHash() Failed: surface->LockRect()\n");
+  }
+  else
+  {
+    buffer = (unsigned char*) d3dlr.pBits;
+    pitch = d3dlr.Pitch;
+    locked = true;
+  }
+  if (!locked)
+  {
+    if (surface->GetDC( (HDC*) &buffer)!=D3D_OK)
+    {
+      Message("ComputetHash() Failed: surface->GetDC()\n");
+      buffer = NULL;
+    }
+  }
+
+
+  if (buffer==NULL)
+  {
+
+    IDirect3DSurface9 *resolved_surface = NULL;
+    if (desc.MultiSampleType != D3DMULTISAMPLE_NONE)
+    {
+      if (D3D_OK!=m_pIDirect3DDevice9->CreateRenderTarget( desc.Width, desc.Height, desc.Format, D3DMULTISAMPLE_NONE, 0, FALSE, &resolved_surface, NULL ))
+      {
+        Message("ComputetHash() Failed: CreateRenderTarget  (D3DPOOL_DEFAULT)\n");
+        return (RETURN_LockRect_FAILED);
+      }
+      if (D3D_OK!=m_pIDirect3DDevice9->StretchRect( surface, NULL, resolved_surface, NULL, D3DTEXF_NONE ))
+      {
+        Message("ComputetHash() Failed: StretchRect  (D3DPOOL_DEFAULT)\n");
+        return (RETURN_LockRect_FAILED);
+      }
+    }
+
+    if (D3D_OK!=m_pIDirect3DDevice9->CreateOffscreenPlainSurface( desc.Width, desc.Height, desc.Format, D3DPOOL_SYSTEMMEM, &offscreen_surface, NULL))
+    {
+      if (resolved_surface!=NULL) resolved_surface->Release();
+      Message("ComputetHash() Failed: CreateOffscreenPlainSurface (D3DPOOL_DEFAULT)\n");
+      return (RETURN_TEXTURE_NOT_LOADED);
+    }
+
+    HRESULT ret;
+    if (resolved_surface!=NULL) ret = m_pIDirect3DDevice9->GetRenderTargetData( resolved_surface, offscreen_surface);
+    else ret = m_pIDirect3DDevice9->GetRenderTargetData( surface, offscreen_surface);
+    if (D3D_OK!=ret)
+    {
+      if (resolved_surface!=NULL) resolved_surface->Release();
+      offscreen_surface->Release();
+      Message("ComputetHash() Failed: GetRenderTargetData (D3DPOOL_DEFAULT)\n");
+      return (RETURN_LockRect_FAILED);
+    }
+
+    if (resolved_surface!=NULL) resolved_surface->Release();
+    if (offscreen_surface->LockRect( &d3dlr, NULL, D3DLOCK_READONLY)!=D3D_OK)
+    {
+      offscreen_surface->Release();
+      Message("ComputetHash() Failed: offscreen_surface->LockRect (D3DPOOL_DEFAULT)\n");
+      return (RETURN_LockRect_FAILED);
+    }
+
+    buffer = (unsigned char*) d3dlr.pBits;
+    pitch = d3dlr.Pitch;
+  }
+
+  int bits_per_pixel = 0;
+
+  {
+    unsigned char *data = buffer;
+    unsigned int size;
+    unsigned int h_max = desc.Height;
+    if (desc.Format == D3DFMT_DXT1) // 8 bytes per block
+    {
+      h_max /= 4; // divided by block size
+      size = desc.Width*2; // desc.Width/4 * 8
+      if (pitch==0) pitch = ((desc.Width+3)/4)*8;
+    }
+    else if ( desc.Format==D3DFMT_DXT2 || desc.Format==D3DFMT_DXT3 || desc.Format==D3DFMT_DXT4 || desc.Format==D3DFMT_DXT5 ) // 16 bytes per block
+    {
+      h_max /= 4; // divided by block size
+      size = desc.Width*4; // desc.Width/4 * 16
+      if (pitch==0) pitch = ((desc.Width+3)/4)*16;
+    }
+    else
+    {
+      bits_per_pixel = GetBitsFromFormat( desc.Format);
+      size = (bits_per_pixel * desc.Width)/8;
+      if (pitch==0)
+      {
+        if (desc.Format==D3DFMT_R8G8_B8G8 || desc.Format==D3DFMT_G8R8_G8B8 || desc.Format==D3DFMT_UYVY || desc.Format==D3DFMT_YUY2)
+        {
+          pitch = ((desc.Width+1) >> 1) * 4;
+        }
+        else
+          pitch = (desc.Width * bits_per_pixel + 7 ) / 8 ;
+      }
+    }
+
+    for (unsigned int h=0; h<h_max; h++)
+    {
+      GetCRC64( CRC64, data, size);
+      data += pitch;
+    }
+  }
+
+  if (compute_crc)
+  {
+    if (bits_per_pixel==0) bits_per_pixel = GetBitsFromFormat( desc.Format);
+    int size = (bits_per_pixel * desc.Width*desc.Height)/8;
+    GetCRC32( CRC32, buffer, size); //calculate the crc32 of the texture
+  }
+
+  if (offscreen_surface!=NULL)
+  {
+    offscreen_surface->UnlockRect();
+    offscreen_surface->Release();
+  }
+  else if (locked)
+  {
+    surface->UnlockRect();
+  }
+  else
+  {
+    surface->ReleaseDC( (HDC) buffer);
+  }
+
+
+  Message("ComputetHash() %#llX %#LX (%d %d) %d\n", CRC64, CRC32, desc.Width, desc.Height, desc.Format);
+  return (RETURN_OK);
+}
+
+
+
+
+
+
+
+
+
+
 uMod_IDirect3DDevice9::uMod_IDirect3DDevice9( IDirect3DDevice9* pOriginal, uMod_TextureServer* server, int back_buffer_count)
 {
   Message( PRE_MESSAGE "::" PRE_MESSAGE  "( %lu, %lu): %lu\n", pOriginal, server, this);
@@ -160,6 +327,7 @@ uMod_IDirect3DDevice9::uMod_IDirect3DDevice9( IDirect3DDevice9* pOriginal, uMod_
   uMod_Server = server;
   uMod_Client = new uMod_TextureClient_DX9( this, DEF_DX_VERSION); //get a new texture client for this device
   uMod_Client->ConnectToServer( uMod_Server);
+  TextureColour = uMod_Client->TextureColour;
 
   LastCreatedTexture = NULL;
   LastCreatedVolumeTexture = NULL;
@@ -173,6 +341,8 @@ uMod_IDirect3DDevice9::uMod_IDirect3DDevice9( IDirect3DDevice9* pOriginal, uMod_
   SingleVolumeTexture = NULL;
   SingleCubeTexture = NULL;
   OSD_Font = NULL;
+
+  pSprite = NULL;
   uMod_Reference = 1;
 }
 
@@ -222,12 +392,16 @@ ULONG uMod_IDirect3DDevice9::Release(void)
     if (SingleVolumeTexture!=NULL) SingleVolumeTexture->Release(); //this is the only texture we must release by ourself
     if (SingleCubeTexture!=NULL) SingleCubeTexture->Release(); //this is the only texture we must release by ourself
     if (OSD_Font!=NULL) OSD_Font->Release();
+    if (pSprite!=NULL) pSprite->Release();
 
     if (uMod_Client!=NULL) delete uMod_Client; //must be deleted at the end, because other releases might call a function of this object
 
     uMod_Client = NULL;
     SingleTexture = NULL;
+    SingleVolumeTexture = NULL;
+    SingleCubeTexture = NULL;
     OSD_Font = NULL;
+    pSprite = NULL;
   }
 
 	ULONG count = m_pIDirect3DDevice9->Release();
@@ -309,6 +483,7 @@ UINT uMod_IDirect3DDevice9::GetNumberOfSwapChains(void)
 HRESULT uMod_IDirect3DDevice9::Reset(D3DPRESENT_PARAMETERS* pPresentationParameters)
 {
   if(OSD_Font!=NULL) {OSD_Font->Release(); OSD_Font=NULL;} //the game will crashes if the font is not released before the game is minimized!
+  if (pSprite!=NULL) {pSprite->Release(); pSprite=NULL;}
   return(m_pIDirect3DDevice9->Reset(pPresentationParameters));
 }
 
@@ -442,14 +617,16 @@ HRESULT uMod_IDirect3DDevice9::UpdateTexture(IDirect3DBaseTexture9* pSourceTextu
       case 0x01000000L:
       {
         pSource = (uMod_IDirect3DTexture9*)(pSourceTexture);
-        DWORD64 hash = pSource->Hash;
-        DWORD32 crc = pSource->CRC;
-        if (pSource->ComputetHash( crc>0 ) == RETURN_OK)
+        DWORD64 crc64 = pSource->CRC64;
+        DWORD32 crc32 = pSource->CRC32;
+        if (pSource->ComputetHash( crc32>0 ) == RETURN_OK)
         {
-          if (hash != pSource->Hash || (crc>0 && crc != pSource->CRC) ) // this hash has changed !!
+          if (crc64 != pSource->CRC64 || (crc32>0 && crc32 != pSource->CRC32) ) // this hash has changed !!
           {
+            pSource->CRC64 = crc64;
+            pSource->CRC32 = crc32;
             if (pSource->CrossRef_D3Dtex!=NULL) UnswitchTextures(pSource);
-            uMod_Client->LookUpToMod( pSource);
+            if ( uMod_Client!=NULL) uMod_Client->LookUpToMod( pSource);
           }
         }
         else if (pSource->CrossRef_D3Dtex!=NULL) UnswitchTextures(pSource); // we better unswitch
@@ -462,15 +639,16 @@ HRESULT uMod_IDirect3DDevice9::UpdateTexture(IDirect3DBaseTexture9* pSourceTextu
       case 0x01000001L:
       {
         pSourceVolume = (uMod_IDirect3DVolumeTexture9*)(pSourceTexture);
-        DWORD64 hash = pSourceVolume->Hash;
-        DWORD32 crc = pSourceVolume->CRC;
-        if (pSourceVolume->ComputetHash( crc>0 ) == RETURN_OK)
+        DWORD64 crc64 = pSourceVolume->CRC64;
+        DWORD32 crc32 = pSourceVolume->CRC32;
+        if (pSourceVolume->ComputetHash( crc32>0 ) == RETURN_OK)
         {
-          if (hash != pSourceVolume->Hash || (crc>0 && crc != pSource->CRC) ) // this hash has changed !!
+          if (crc64 != pSourceVolume->CRC64 || (crc32>0 && crc32 != pSource->CRC32) ) // this hash has changed !!
           {
-            pSourceVolume->Hash = hash;
+            pSourceVolume->CRC64 = crc64;
+            pSourceVolume->CRC32 = crc32;
             if (pSourceVolume->CrossRef_D3Dtex!=NULL) UnswitchTextures(pSourceVolume);
-            uMod_Client->LookUpToMod( pSourceVolume);
+            if ( uMod_Client!=NULL) uMod_Client->LookUpToMod( pSourceVolume);
           }
         }
         else if (pSourceVolume->CrossRef_D3Dtex!=NULL) UnswitchTextures(pSourceVolume); // we better unswitch
@@ -483,15 +661,16 @@ HRESULT uMod_IDirect3DDevice9::UpdateTexture(IDirect3DBaseTexture9* pSourceTextu
       case 0x01000002L:
       {
         pSourceCube = (uMod_IDirect3DCubeTexture9*)(pSourceTexture);
-        DWORD64 hash = pSourceCube->Hash;
-        DWORD32 crc = pSourceCube->CRC;
-        if (pSourceCube->ComputetHash( crc>0 ) == RETURN_OK)
+        DWORD64 crc64 = pSourceCube->CRC64;
+        DWORD32 crc32 = pSourceCube->CRC32;
+        if (pSourceCube->ComputetHash( crc32>0 ) == RETURN_OK)
         {
-          if (hash != pSourceCube->Hash || (crc>0 && crc != pSource->CRC) ) // this hash has changed !!
+          if (crc64 != pSourceCube->CRC64 || (crc32>0 && crc32 != pSource->CRC32) ) // this hash has changed !!
           {
-            pSourceCube->Hash = hash;
+            pSourceCube->CRC64 = crc64;
+            pSourceCube->CRC32 = crc32;
             if (pSourceCube->CrossRef_D3Dtex!=NULL) UnswitchTextures(pSourceCube);
-            uMod_Client->LookUpToMod( pSourceCube);
+            if ( uMod_Client!=NULL) uMod_Client->LookUpToMod( pSourceCube);
           }
         }
         else if (pSourceCube->CrossRef_D3Dtex!=NULL) UnswitchTextures(pSourceCube); // we better unswitch
@@ -516,9 +695,9 @@ HRESULT uMod_IDirect3DDevice9::UpdateTexture(IDirect3DBaseTexture9* pSourceTextu
       {
         uMod_IDirect3DTexture9* pDest = (uMod_IDirect3DTexture9*)(pDestinationTexture);
 
-        if (pSource!=NULL && pDest->Hash!=pSource->Hash)
+        if (pSource!=NULL && pDest->CRC64!=pSource->CRC64)
         {
-          pDest->Hash = pSource->Hash; // take over the hash
+          pDest->CRC64 = pSource->CRC64; // take over the hash
           UnswitchTextures(pDest);
           if (pSource->CrossRef_D3Dtex!=NULL)
           {
@@ -535,9 +714,9 @@ HRESULT uMod_IDirect3DDevice9::UpdateTexture(IDirect3DBaseTexture9* pSourceTextu
       {
         uMod_IDirect3DVolumeTexture9* pDest = (uMod_IDirect3DVolumeTexture9*)(pDestinationTexture);
 
-        if (pSourceVolume!=NULL && pDest->Hash!=pSourceVolume->Hash)
+        if (pSourceVolume!=NULL && pDest->CRC64!=pSourceVolume->CRC64)
         {
-          pDest->Hash = pSourceVolume->Hash; // take over the hash
+          pDest->CRC64 = pSourceVolume->CRC64; // take over the hash
           UnswitchTextures(pDest);
           if (pSourceVolume->CrossRef_D3Dtex!=NULL)
           {
@@ -554,9 +733,9 @@ HRESULT uMod_IDirect3DDevice9::UpdateTexture(IDirect3DBaseTexture9* pSourceTextu
       {
         uMod_IDirect3DCubeTexture9* pDest = (uMod_IDirect3DCubeTexture9*)(pDestinationTexture);
 
-        if (pSourceCube!=NULL && pDest->Hash!=pSourceCube->Hash)
+        if (pSourceCube!=NULL && pDest->CRC64!=pSourceCube->CRC64)
         {
-          pDest->Hash = pSourceCube->Hash; // take over the hash
+          pDest->CRC64 = pSourceCube->CRC64; // take over the hash
           UnswitchTextures(pDest);
           if (pSourceCube->CrossRef_D3Dtex!=NULL)
           {
@@ -569,6 +748,8 @@ HRESULT uMod_IDirect3DDevice9::UpdateTexture(IDirect3DBaseTexture9* pSourceTextu
         else pDestinationTexture = pDest->m_D3Dtex;
         break;
       }
+      default:
+        break; // this is no fake texture and QueryInterface failed, because IDirect3DBaseTexture9 object cannot be a IDirect3D9 object ;)
     }
   }
 	return(m_pIDirect3DDevice9->UpdateTexture(pSourceTexture,pDestinationTexture));
@@ -631,7 +812,7 @@ HRESULT uMod_IDirect3DDevice9::GetDepthStencilSurface(IDirect3DSurface9** ppZSte
 
 HRESULT uMod_IDirect3DDevice9::BeginScene(void)
 {
-  //if ( NormalRendering )
+  if ( uMod_Client!=NULL)
   {
     if (LastCreatedTexture!=NULL) // add the last created texture
     {
@@ -683,15 +864,15 @@ HRESULT uMod_IDirect3DDevice9::BeginScene(void)
             {
               case 0:
                 SwitchTextures( SingleTexture,  uMod_Client->OriginalTextures[CounterSaveSingleTexture]);
-                SingleTexture->Hash = uMod_Client->OriginalTextures[CounterSaveSingleTexture]->Hash; //set the hash for the display
+                SingleTexture->CRC64 = uMod_Client->OriginalTextures[CounterSaveSingleTexture]->CRC64; //set the CRC64 for the display
                 break;
               case 1:
                 SwitchTextures( SingleVolumeTexture,  uMod_Client->OriginalVolumeTextures[CounterSaveSingleTexture]);
-                SingleVolumeTexture->Hash = uMod_Client->OriginalVolumeTextures[CounterSaveSingleTexture]->Hash; //set the hash for the display
+                SingleVolumeTexture->CRC64 = uMod_Client->OriginalVolumeTextures[CounterSaveSingleTexture]->CRC64; //set the CRC64 for the display
                 break;
               case 2:
                 SwitchTextures( SingleCubeTexture,  uMod_Client->OriginalCubeTextures[CounterSaveSingleTexture]);
-                SingleCubeTexture->Hash = uMod_Client->OriginalCubeTextures[CounterSaveSingleTexture]->Hash; //set the hash for the display
+                SingleCubeTexture->CRC64 = uMod_Client->OriginalCubeTextures[CounterSaveSingleTexture]->CRC64; //set the CRC64 for the display
                 break;
             }
           }
@@ -759,15 +940,15 @@ HRESULT uMod_IDirect3DDevice9::BeginScene(void)
             {
               case 0:
                 SwitchTextures( SingleTexture,  uMod_Client->OriginalTextures[CounterSaveSingleTexture]);
-                SingleTexture->Hash = uMod_Client->OriginalTextures[CounterSaveSingleTexture]->Hash; //set the hash for the display
+                SingleTexture->CRC64 = uMod_Client->OriginalTextures[CounterSaveSingleTexture]->CRC64; //set the CRC64 for the display
                 break;
               case 1:
                 SwitchTextures( SingleVolumeTexture,  uMod_Client->OriginalVolumeTextures[CounterSaveSingleTexture]);
-                SingleVolumeTexture->Hash = uMod_Client->OriginalVolumeTextures[CounterSaveSingleTexture]->Hash; //set the hash for the display
+                SingleVolumeTexture->CRC64 = uMod_Client->OriginalVolumeTextures[CounterSaveSingleTexture]->CRC64; //set the CRC64 for the display
                 break;
               case 2:
                 SwitchTextures( SingleCubeTexture,  uMod_Client->OriginalCubeTextures[CounterSaveSingleTexture]);
-                SingleCubeTexture->Hash = uMod_Client->OriginalCubeTextures[CounterSaveSingleTexture]->Hash; //set the hash for the display
+                SingleCubeTexture->CRC64 = uMod_Client->OriginalCubeTextures[CounterSaveSingleTexture]->CRC64; //set the CRC64 for the display
                 break;
             }
           }
@@ -779,62 +960,98 @@ HRESULT uMod_IDirect3DDevice9::BeginScene(void)
   return (m_pIDirect3DDevice9->BeginScene());
 }
 
+
 HRESULT uMod_IDirect3DDevice9::EndScene(void)
 {
-  if ( NormalRendering && uMod_Client->BoolShowTextureString && uMod_Client->BoolSaveSingleTexture && SingleTexture!=NULL && SingleVolumeTexture!=NULL && SingleCubeTexture!=NULL)
+  if ( uMod_Client!=NULL && NormalRendering && uMod_Client->BoolSaveSingleTexture && SingleTexture!=NULL && SingleVolumeTexture!=NULL && SingleCubeTexture!=NULL)
   {
-    if (OSD_Font==NULL) // create the font
-    {
-      if (D3D_OK!=D3DXCreateFontA( m_pIDirect3DDevice9, 20, 0, FW_BOLD, 0, FALSE, DEFAULT_CHARSET, OUT_DEFAULT_PRECIS, DEFAULT_QUALITY, DEFAULT_PITCH | FF_DONTCARE, TEXT("Arial"), &OSD_Font))
-      {
-        OSD_Font=NULL;
-        return(m_pIDirect3DDevice9->EndScene());
-      }
-    }
-
-    char buffer[100];
-    buffer[0]=0;
-    switch (SingleTextureMod)
-    {
-      case 0:
-      {
-        if (SingleTexture->CrossRef_D3Dtex!=NULL) sprintf_s( buffer, 100, "normal texture: %4d (1..%d): %#llX", CounterSaveSingleTexture+1, uMod_Client->OriginalTextures.GetNumber(), SingleTexture->Hash);
-        else
-        {
-          if (uMod_Client->OriginalTextures.GetNumber()>0) sprintf_s( buffer, 100, "normal texture: nothing selected (1..%d)", uMod_Client->OriginalTextures.GetNumber());
-          else sprintf_s( buffer, 100, "normal texture: nothing loaded");
-        }
-        break;
-      }
-      case 1:
-      {
-        if (SingleVolumeTexture->CrossRef_D3Dtex!=NULL) sprintf_s( buffer, 100, "volume texture: %4d (1..%d): %#llX", CounterSaveSingleTexture+1, uMod_Client->OriginalVolumeTextures.GetNumber(), SingleVolumeTexture->Hash);
-        else
-        {
-          if (uMod_Client->OriginalVolumeTextures.GetNumber()>0) sprintf_s( buffer, 100, "volume texture: nothing selected (1..%d)", uMod_Client->OriginalVolumeTextures.GetNumber());
-          else sprintf_s( buffer, 100, "volume texture: nothing loaded");
-        }
-        break;
-      }
-      case 2:
-      {
-        if (SingleCubeTexture->CrossRef_D3Dtex!=NULL) sprintf_s( buffer, 100, "cube texture: %4d (1..%d): %#llX", CounterSaveSingleTexture+1, uMod_Client->OriginalCubeTextures.GetNumber(), SingleCubeTexture->Hash);
-        else
-        {
-          if (uMod_Client->OriginalCubeTextures.GetNumber()>0) sprintf_s( buffer, 100, "cube texture: nothing selected (1..%d)", uMod_Client->OriginalCubeTextures.GetNumber());
-          else sprintf_s( buffer, 100, "cube   texture: nothing loaded");
-        }
-        break;
-      }
-    }
     D3DVIEWPORT9 viewport;
     GetViewport( &viewport);
-    RECT rct;
-    rct.left=viewport.X + 10;
-    rct.right=0; //size of box is calculated automatically (DT_NOCLIP)
-    rct.top=viewport.Y + 10;
-    rct.bottom=0; //size of box is calculated automatically (DT_NOCLIP)
-    OSD_Font->DrawTextA(NULL, buffer, -1, &rct, DT_NOCLIP, uMod_Client->FontColour);
+
+    if (SingleTexture->CrossRef_D3Dtex!=NULL && uMod_Client->BoolShowSingleTexture)
+    {
+      if (pSprite==NULL)
+      {
+        if (D3D_OK!=D3DXCreateSprite( m_pIDirect3DDevice9 , &pSprite)) pSprite = NULL;
+      }
+      if (pSprite!=NULL)
+      {
+        D3DSURFACE_DESC desc;
+        SingleTexture->m_D3Dtex->GetLevelDesc(0, &desc);
+        D3DXMATRIX scale;
+        float factorx, factory;
+
+        pSprite->Begin(D3DXSPRITE_ALPHABLEND);
+
+        factorx = 0.5f * ((float) viewport.Width) / ((float) desc.Width) ;
+        factory = 0.5f * ((float) viewport.Height) / ((float) desc.Height) ;
+
+        if (factory<factorx) factorx=factory;
+        if (factorx<1.0)
+        {
+          D3DXMATRIX scale;
+          D3DXMatrixScaling(&scale, factorx, factorx, 1.0f);
+          pSprite->SetTransform(&scale);
+        }
+        pSprite->Draw(SingleTexture->m_D3Dtex,NULL,NULL,NULL,0xFFFFFFFF);
+        pSprite->End();
+      }
+
+    }
+    if (uMod_Client->BoolShowTextureString)
+    {
+      if (OSD_Font==NULL) // create the font
+      {
+        if (D3D_OK!=D3DXCreateFontA( m_pIDirect3DDevice9, 18, 5, FW_BOLD, 0, FALSE, DEFAULT_CHARSET, OUT_DEFAULT_PRECIS, DEFAULT_QUALITY, DEFAULT_PITCH | FF_DONTCARE, TEXT("Courier"), &OSD_Font))
+          OSD_Font=NULL;
+      }
+
+      if (OSD_Font!=NULL)
+      {
+        char buffer[256];
+        buffer[0]=0;
+        switch (SingleTextureMod)
+        {
+          case 0:
+          {
+            if (SingleTexture->CrossRef_D3Dtex!=NULL) sprintf_s( buffer, 256, "normal texture: %4d (1..%d): %#llX", CounterSaveSingleTexture+1, uMod_Client->OriginalTextures.GetNumber(), SingleTexture->CRC64);
+            else
+            {
+              if (uMod_Client->OriginalTextures.GetNumber()>0) sprintf_s( buffer, 256, "normal texture: %4d (1..%d): nothing selected ", CounterSaveSingleTexture+1, uMod_Client->OriginalTextures.GetNumber());
+              else sprintf_s( buffer, 100, "normal texture: nothing loaded");
+            }
+            break;
+          }
+          case 1:
+          {
+            if (SingleVolumeTexture->CrossRef_D3Dtex!=NULL) sprintf_s( buffer, 256, "volume texture: %4d (1..%d): %#llX", CounterSaveSingleTexture+1, uMod_Client->OriginalVolumeTextures.GetNumber(), SingleVolumeTexture->CRC64);
+            else
+            {
+              if (uMod_Client->OriginalVolumeTextures.GetNumber()>0) sprintf_s( buffer, 256, "volume texture: %4d (1..%d): nothing selected", CounterSaveSingleTexture+1, uMod_Client->OriginalVolumeTextures.GetNumber());
+              else sprintf_s( buffer, 100, "volume texture: nothing loaded");
+            }
+            break;
+          }
+          case 2:
+          {
+            if (SingleCubeTexture->CrossRef_D3Dtex!=NULL) sprintf_s( buffer, 256, "cube texture: %4d (1..%d): %#llX", CounterSaveSingleTexture+1, uMod_Client->OriginalCubeTextures.GetNumber(), SingleCubeTexture->CRC64);
+            else
+            {
+              if (uMod_Client->OriginalCubeTextures.GetNumber()>0) sprintf_s( buffer, 256, "cube texture: %4d (1..%d): nothing selected", CounterSaveSingleTexture+1, uMod_Client->OriginalCubeTextures.GetNumber());
+              else sprintf_s( buffer, 100, "cube   texture: nothing loaded");
+            }
+            break;
+          }
+        }
+
+        RECT rct;
+        rct.left=viewport.X + 10;
+        rct.right=0; //size of box is calculated automatically (DT_NOCLIP)
+        rct.top=viewport.Y + 10;
+        rct.bottom=0; //size of box is calculated automatically (DT_NOCLIP)
+        OSD_Font->DrawTextA(NULL, buffer, -1, &rct, DT_NOCLIP, uMod_Client->FontColour);
+      }
+    }
   }
   return(m_pIDirect3DDevice9->EndScene());
 }
@@ -952,9 +1169,6 @@ HRESULT uMod_IDirect3DDevice9::GetTexture(DWORD Stage,IDirect3DBaseTexture9** pp
 HRESULT uMod_IDirect3DDevice9::SetTexture(DWORD Stage, IDirect3DBaseTexture9* pTexture)
 {
   // we must pass the real texture objects
-  // if (dev != this) this texture was not initialized through our device and is thus no fake texture object
-
-	//IDirect3DDevice9 *dev = NULL;
   IDirect3DBaseTexture9* cpy;
 	if( pTexture != NULL )
 	{
@@ -971,12 +1185,6 @@ HRESULT uMod_IDirect3DDevice9::SetTexture(DWORD Stage, IDirect3DBaseTexture9* pT
 	      break; // this is no fake texture and QueryInterface failed, because IDirect3DBaseTexture9 object cannot be a IDirect3D9 object ;)
 	  }
 	}
-	/*
-  if (pTexture != NULL && ((uMod_IDirect3DTexture9*)(pTexture))->GetDevice(&dev) == D3D_OK)
-  {
-		if(dev == this)	pTexture = ((uMod_IDirect3DTexture9*)(pTexture))->m_D3Dtex;
-  }
-  */
   return (m_pIDirect3DDevice9->SetTexture(Stage, pTexture));
 }
 

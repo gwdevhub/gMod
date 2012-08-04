@@ -74,13 +74,19 @@ public:
   wxString CollapseTextureCapture;
   wxString CheckBoxSaveSingleTexture;
   wxString CheckBoxShowStringSaveSingleTexture;
+  wxString CheckBoxShowSingleTexture;
   wxString CheckBoxSaveAllTextures;
-  wxString TextCtrlSavePath;
 
   wxString SelectLanguage;
 
   wxString StartGame;
   wxString CommandLine;
+
+  wxString ChooseTemplate;
+  wxString OpenTemplate;
+  wxString SaveTemplate;
+  wxString DefaultTemplate;
+  wxString AutoSaveTemplate;
 
   wxString ChooseGame;
   wxString DeleteGame;
@@ -113,6 +119,7 @@ public:
   wxString Error_Hash;
   wxString Error_FileOpen;
   wxString Error_FileRead;
+  wxString Error_NoTemplates;
   wxString Error_Memory;
   wxString Error_Unzip;
   wxString Error_ZipEntry;

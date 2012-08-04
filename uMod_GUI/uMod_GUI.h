@@ -74,7 +74,6 @@ public:
 
   void OnMenuOpenTemplate(wxCommandEvent& WXUNUSED(event));
   void OnMenuSaveTemplate(wxCommandEvent& WXUNUSED(event));
-  void OnMenuSaveTemplateAs(wxCommandEvent& WXUNUSED(event));
   void OnMenuSetDefaultTemplate(wxCommandEvent& WXUNUSED(event));
   void OnMenuLanguage(wxCommandEvent& WXUNUSED(event));
 
@@ -86,6 +85,8 @@ public:
 
 private:
 
+  int ChooseTemplate( const wxString &message, wxString &file);
+
   int ActivateGamesControl(void);
   int DeactivateGamesControl(void);
 
@@ -96,6 +97,8 @@ private:
 
   int GetInjectedGames( wxArrayString &games, wxArrayString &cmd);
   int SetInjectedGames( wxArrayString &games, wxArrayString &cmd);
+
+
 
   uMod_Server *Server;
 

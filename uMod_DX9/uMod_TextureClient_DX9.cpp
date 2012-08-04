@@ -25,14 +25,14 @@ along with Universal Modding Engine.  If not, see <http://www.gnu.org/licenses/>
 uMod_TextureClient_DX9::uMod_TextureClient_DX9( IDirect3DDevice9* device, const int version)
   : uMod_TextureClient( version)
 {
-  Message("uMod_TextureClient_DX9::uMod_TextureClient_DX9(void): %lu\n", this);
+  Message("uMod_TextureClient_DX9::uMod_TextureClient_DX9(void): %p\n", this);
   D3D9Device = device;
   Bool_CheckAgainNonAdded = false;
 }
 
 uMod_TextureClient_DX9::~uMod_TextureClient_DX9(void)
 {
-  Message("uMod_TextureClient_DX9::~uMod_TextureClient(void): %lu\n", this);
+  Message("uMod_TextureClient_DX9::~uMod_TextureClient(void): %p\n", this);
 }
 
 
@@ -45,7 +45,7 @@ int uMod_TextureClient_DX9::AddTexture( uMod_IDirect3DTexture9* pTexture)
 
   if (pTexture->FAKE) return (RETURN_OK); // this is a fake texture
 
-  Message("uMod_TextureClient_DX9::AddTexture( %lu): %lu (thread: %lu)\n", pTexture, this, GetCurrentThreadId());
+  Message("uMod_TextureClient_DX9::AddTexture( %p): %p (thread: %lu)\n", pTexture, this, GetCurrentThreadId());
 
   if (int ret = pTexture->ComputetHash( BoolComputeCRC))
   {
@@ -72,7 +72,7 @@ int uMod_TextureClient_DX9::AddTexture( uMod_IDirect3DVolumeTexture9* pTexture)
 
   if (pTexture->FAKE) return (RETURN_OK); // this is a fake texture
 
-  Message("uMod_TextureClient_DX9::AddTexture( Volume: %lu): %lu (thread: %lu)\n", pTexture, this, GetCurrentThreadId());
+  Message("uMod_TextureClient_DX9::AddTexture( Volume: %p): %p (thread: %lu)\n", pTexture, this, GetCurrentThreadId());
 
   if (int ret = pTexture->ComputetHash( BoolComputeCRC))
   {
@@ -99,7 +99,7 @@ int uMod_TextureClient_DX9::AddTexture( uMod_IDirect3DCubeTexture9* pTexture)
 
   if (pTexture->FAKE) return (RETURN_OK); // this is a fake texture
 
-  Message("uMod_TextureClient_DX9::AddTexture( Cube: %lu): %lu (thread: %lu)\n", pTexture, this, GetCurrentThreadId());
+  Message("uMod_TextureClient_DX9::AddTexture( Cube: %p): %p (thread: %lu)\n", pTexture, this, GetCurrentThreadId());
 
   if (int ret = pTexture->ComputetHash( BoolComputeCRC))
   {
@@ -120,7 +120,7 @@ int uMod_TextureClient_DX9::AddTexture( uMod_IDirect3DCubeTexture9* pTexture)
 
 int uMod_TextureClient_DX9::CheckAgainNonAdded(void)
 {
-  Message("uMod_TextureClient_DX9::CheckAgainNonAdded( %u, %u, %u): %lu\n", NonAdded_OriginalTextures.GetNumber(),
+  Message("uMod_TextureClient_DX9::CheckAgainNonAdded( %u, %u, %u): %p\n", NonAdded_OriginalTextures.GetNumber(),
       NonAdded_OriginalVolumeTextures.GetNumber(), NonAdded_OriginalCubeTextures.GetNumber(), this);
 
   Bool_CheckAgainNonAdded = false;
@@ -133,6 +133,7 @@ int uMod_TextureClient_DX9::CheckAgainNonAdded(void)
     if (pTexture->ComputetHash( BoolComputeCRC) == RETURN_OK)
     {
       NonAdded_OriginalTextures.Remove(pTexture);
+      if (BoolSaveAllTextures) SaveTexture(pTexture, true);
       OriginalTextures.Add( pTexture); // add the texture to the list of original texture
       LookUpToMod(pTexture); // check if this texture should be modded
     }
@@ -146,6 +147,7 @@ int uMod_TextureClient_DX9::CheckAgainNonAdded(void)
     if (pTexture->ComputetHash( BoolComputeCRC) == RETURN_OK)
     {
       NonAdded_OriginalVolumeTextures.Remove(pTexture);
+      if (BoolSaveAllTextures) SaveTexture(pTexture, true);
       OriginalVolumeTextures.Add( pTexture); // add the texture to the list of original texture
       LookUpToMod(pTexture); // check if this texture should be modded
     }
@@ -159,17 +161,18 @@ int uMod_TextureClient_DX9::CheckAgainNonAdded(void)
     if (pTexture->ComputetHash( BoolComputeCRC) == RETURN_OK)
     {
       NonAdded_OriginalCubeTextures.Remove(pTexture);
+      if (BoolSaveAllTextures) SaveTexture(pTexture, true);
       OriginalCubeTextures.Add( pTexture); // add the texture to the list of original texture
       LookUpToMod(pTexture); // check if this texture should be modded
     }
   }
-  Message("uMod_TextureClient_DX9::CheckAgainNonAdded() END: %lu\n", this);
+  Message("uMod_TextureClient_DX9::CheckAgainNonAdded() END: %p\n", this);
   return (RETURN_OK);
 }
 
 int uMod_TextureClient_DX9::RemoveTexture( uMod_IDirect3DTexture9* pTexture) // is called from a texture, if it is finally released
 {
-  Message("uMod_TextureClient_DX9::RemoveTexture( %lu, %#lX): %lu\n", pTexture, pTexture->Hash, this);
+  Message("uMod_TextureClient_DX9::RemoveTexture( %p, %#llX): %p\n", pTexture, pTexture->CRC64, this);
 
   if (gl_ErrorState & uMod_ERROR_FATAL) return (RETURN_FATAL_ERROR);
   if (pTexture->FAKE)
@@ -197,7 +200,7 @@ int uMod_TextureClient_DX9::RemoveTexture( uMod_IDirect3DTexture9* pTexture) // 
 
 int uMod_TextureClient_DX9::RemoveTexture( uMod_IDirect3DVolumeTexture9* pTexture) // is called from a texture, if it is finally released
 {
-  Message("uMod_TextureClient_DX9::RemoveTexture( Volume %lu, %#lX): %lu\n", pTexture, pTexture->Hash, this);
+  Message("uMod_TextureClient_DX9::RemoveTexture( Volume %p, %#llX): %p\n", pTexture, pTexture->CRC64, this);
 
   if (gl_ErrorState & uMod_ERROR_FATAL) return (RETURN_FATAL_ERROR);
   if (pTexture->FAKE)
@@ -225,7 +228,7 @@ int uMod_TextureClient_DX9::RemoveTexture( uMod_IDirect3DVolumeTexture9* pTextur
 
 int uMod_TextureClient_DX9::RemoveTexture( uMod_IDirect3DCubeTexture9* pTexture) // is called from a texture, if it is finally released
 {
-  Message("uMod_TextureClient_DX9::RemoveTexture( Cube %lu, %#lX): %lu\n", pTexture, pTexture->Hash, this);
+  Message("uMod_TextureClient_DX9::RemoveTexture( Cube %p, %#llX): %p\n", pTexture, pTexture->CRC64, this);
 
   if (gl_ErrorState & uMod_ERROR_FATAL) return (RETURN_FATAL_ERROR);
   if (pTexture->FAKE)
@@ -254,14 +257,14 @@ int uMod_TextureClient_DX9::RemoveTexture( uMod_IDirect3DCubeTexture9* pTexture)
 
 int uMod_TextureClient_DX9::SaveAllTextures(bool val)
 {
-  Message("uMod_TextureClient_DX9::SaveAllTextures( %d): %lu\n", val, this);
+  Message("uMod_TextureClient_DX9::SaveAllTextures( %d): %p\n", val, this);
   BoolSaveAllTextures=val;
   return (RETURN_OK);
 }
 
 int uMod_TextureClient_DX9::SaveSingleTexture(bool val)
 {
-  Message("uMod_TextureClient_DX9::SaveSingleTexture( %d): %lu\n", val, this);
+  Message("uMod_TextureClient_DX9::SaveSingleTexture( %d): %p\n", val, this);
   if (BoolSaveSingleTexture && !val) //if BoolSaveSingleTexture is set to false and was previously true we switch the SingleTexture back
   {
     uMod_IDirect3DTexture9* pTexture;
@@ -282,7 +285,7 @@ int uMod_TextureClient_DX9::SaveTexture(uMod_IDirect3DTexture9* pTexture, bool s
   if (pTexture==NULL) return (RETURN_BAD_ARGUMENT);
   if (SavePath[0]==0)
   {
-    Message("uMod_TextureClient_DX9::SaveTexture( %#lX, %lu): %lu,   SavePath not set\n", pTexture->Hash, pTexture->m_D3Dtex, this);
+    Message("uMod_TextureClient_DX9::SaveTexture( %#llX, %p): %p,   SavePath not set\n", pTexture->CRC64, pTexture->m_D3Dtex, this);
     return (RETURN_TEXTURE_NOT_SAVED);
   }
   D3DSURFACE_DESC desc;
@@ -311,9 +314,9 @@ int uMod_TextureClient_DX9::SaveTexture(uMod_IDirect3DTexture9* pTexture, bool s
 
 
   wchar_t file[MAX_PATH];
-  if (GameName[0]) swprintf_s( file, MAX_PATH, L"%ls\\%ls_W%u_H%u_F%u_T_%#llX", SavePath, GameName, desc.Width, desc.Height,desc.Format, pTexture->Hash);
-  else swprintf_s( file, MAX_PATH, L"%ls\\W%u_H%u_F%u_T_%#llX", SavePath, desc.Width, desc.Height, desc.Format, pTexture->Hash);
-  Message("uMod_TextureClient_DX9::SaveTexture( %ls): %lu\n", file, this);
+  if (GameName[0]) swprintf_s( file, MAX_PATH, L"%ls\\%ls_W%u_H%u_F%u_T_%#llX", SavePath, GameName, desc.Width, desc.Height,desc.Format, pTexture->CRC64);
+  else swprintf_s( file, MAX_PATH, L"%ls\\W%u_H%u_F%u_T_%#llX", SavePath, desc.Width, desc.Height, desc.Format, pTexture->CRC64);
+  Message("uMod_TextureClient_DX9::SaveTexture( %ls): %p\n", file, this);
 
   return (SaveTexture( pTexture->m_D3Dtex, file));
 }
@@ -321,7 +324,7 @@ int uMod_TextureClient_DX9::SaveTexture(uMod_IDirect3DTexture9* pTexture, bool s
 int uMod_TextureClient_DX9::SaveTexture(uMod_IDirect3DVolumeTexture9* pTexture, bool save_all)
 {
   if (pTexture==NULL) return (RETURN_BAD_ARGUMENT);
-  if (SavePath[0]==0) {Message("uMod_TextureClient_DX9::SaveTexture( %#lX, %lu): %lu,   SavePath not set\n", pTexture->Hash, pTexture->m_D3Dtex, this); return (RETURN_TEXTURE_NOT_SAVED);}
+  if (SavePath[0]==0) {Message("uMod_TextureClient_DX9::SaveTexture( %#llX, %p): %p,   SavePath not set\n", pTexture->CRC64, pTexture->m_D3Dtex, this); return (RETURN_TEXTURE_NOT_SAVED);}
 
   D3DVOLUME_DESC desc;
   if (pTexture->m_D3Dtex->GetLevelDesc(0, &desc)!=D3D_OK) //get the format and the size of the texture
@@ -354,9 +357,9 @@ int uMod_TextureClient_DX9::SaveTexture(uMod_IDirect3DVolumeTexture9* pTexture, 
   }
 
   wchar_t file[MAX_PATH];
-  if (GameName[0]) swprintf_s( file, MAX_PATH, L"%ls\\%ls_W%u_H%u_D%u_F%u_V_%#llX", SavePath, GameName, desc.Width, desc.Height, desc.Depth, desc.Format, pTexture->Hash);
-  else swprintf_s( file, MAX_PATH, L"%ls\\W%u_H%u_D%u_F%u_V_%#llX", SavePath, desc.Width, desc.Height, desc.Depth, desc.Format, pTexture->Hash);
-  Message("uMod_TextureClient_DX9::SaveTexture( %ls): %lu\n", file, this);
+  if (GameName[0]) swprintf_s( file, MAX_PATH, L"%ls\\%ls_W%u_H%u_D%u_F%u_V_%#llX", SavePath, GameName, desc.Width, desc.Height, desc.Depth, desc.Format, pTexture->CRC64);
+  else swprintf_s( file, MAX_PATH, L"%ls\\W%u_H%u_D%u_F%u_V_%#llX", SavePath, desc.Width, desc.Height, desc.Depth, desc.Format, pTexture->CRC64);
+  Message("uMod_TextureClient_DX9::SaveTexture( %ls): %p\n", file, this);
 
   return (SaveTexture( pTexture->m_D3Dtex, file));
 }
@@ -364,7 +367,7 @@ int uMod_TextureClient_DX9::SaveTexture(uMod_IDirect3DVolumeTexture9* pTexture, 
 int uMod_TextureClient_DX9::SaveTexture(uMod_IDirect3DCubeTexture9* pTexture, bool save_all)
 {
   if (pTexture==NULL) return (RETURN_BAD_ARGUMENT);
-  if (SavePath[0]==0) {Message("uMod_TextureClient_DX9::SaveTexture( %#lX, %lu): %lu,   SavePath not set\n", pTexture->Hash, pTexture->m_D3Dtex, this); return (RETURN_TEXTURE_NOT_SAVED);}
+  if (SavePath[0]==0) {Message("uMod_TextureClient_DX9::SaveTexture( %#llX, %p): %p,   SavePath not set\n", pTexture->CRC64, pTexture->m_D3Dtex, this); return (RETURN_TEXTURE_NOT_SAVED);}
 
   D3DSURFACE_DESC desc;
   if (pTexture->m_D3Dtex->GetLevelDesc(0, &desc)!=D3D_OK) //get the format and the size of the texture
@@ -385,9 +388,9 @@ int uMod_TextureClient_DX9::SaveTexture(uMod_IDirect3DCubeTexture9* pTexture, bo
   }
 
   wchar_t file[MAX_PATH];
-  if (GameName[0]) swprintf_s( file, MAX_PATH, L"%ls\\%ls_W%u_F%u_C_%#llX.dds", SavePath, GameName, desc.Width, desc.Format, pTexture->Hash);
-  else swprintf_s( file, MAX_PATH, L"%ls\\W%u_F%u_C_%#llX.dds", SavePath, desc.Width, desc.Format, pTexture->Hash);
-  Message("uMod_TextureClient_DX9::SaveTexture( %ls): %lu\n", file, this);
+  if (GameName[0]) swprintf_s( file, MAX_PATH, L"%ls\\%ls_W%u_F%u_C_%#llX.dds", SavePath, GameName, desc.Width, desc.Format, pTexture->CRC64);
+  else swprintf_s( file, MAX_PATH, L"%ls\\W%u_F%u_C_%#llX.dds", SavePath, desc.Width, desc.Format, pTexture->CRC64);
+  Message("uMod_TextureClient_DX9::SaveTexture( %ls): %p\n", file, this);
 
 
   return (SaveTexture( pTexture->m_D3Dtex, file));
@@ -524,7 +527,7 @@ int uMod_TextureClient_DX9::MergeUpdate(void)
   if (NumberOfUpdate<0) {return (RETURN_OK);}
   if (int ret = LockMutex()) {gl_ErrorState |= uMod_ERROR_TEXTURE ; return (ret);}
 
-  Message("uMod_TextureClient_DX9::MergeUpdate(): %lu\n", this);
+  Message("uMod_TextureClient_DX9::MergeUpdate(): %p\n", this);
 
   for (int i=0; i<NumberOfUpdate; i++) {Update[i].NumberOfTextures=0; Update[i].Textures = NULL;} // this is already done, but safety comes first ^^
 
@@ -588,7 +591,7 @@ int uMod_TextureClient_DX9::MergeUpdate(void)
               if (int ret = LoadTexture( & (Update[pos_new]), &fake_Texture)) return (ret);
               if (SwitchTextures( fake_Texture, pRefTexture))
               {
-                Message("MergeUpdate(): textures not switched %#lX\n", pRefTexture->Hash);
+                Message("MergeUpdate(): textures not switched %#llX\n", pRefTexture->CRC64);
                 fake_Texture->Release();
               }
               else
@@ -609,7 +612,7 @@ int uMod_TextureClient_DX9::MergeUpdate(void)
               if (int ret = LoadTexture( & (Update[pos_new]), &fake_Texture)) return (ret);
               if (SwitchTextures( fake_Texture, pRefTexture))
               {
-                Message("MergeUpdate(): textures not switched %#lX\n", pRefTexture->Hash);
+                Message("MergeUpdate(): textures not switched %#llX\n", pRefTexture->CRC64);
                 fake_Texture->Release();
               }
               else
@@ -630,7 +633,7 @@ int uMod_TextureClient_DX9::MergeUpdate(void)
               if (int ret = LoadTexture( & (Update[pos_new]), &fake_Texture)) return (ret);
               if (SwitchTextures( fake_Texture, pRefTexture))
               {
-                Message("MergeUpdate(): textures not switched %#lX\n", pRefTexture->Hash);
+                Message("MergeUpdate(): textures not switched %#llX\n", pRefTexture->CRC64);
                 fake_Texture->Release();
               }
               else
@@ -735,16 +738,16 @@ int uMod_TextureClient_DX9::MergeUpdate(void)
 
 int uMod_TextureClient_DX9::LookUpToMod( uMod_IDirect3DTexture9* pTexture, int num_index_list, int *index_list) // should only be called for original textures
 {
-  Message("uMod_TextureClient_DX9::LookUpToMod( %p): hash: %#llX,  %p\n", pTexture, pTexture->Hash, this);
+  Message("uMod_TextureClient_DX9::LookUpToMod( %p): hash: %#llX,  %p\n", pTexture, pTexture->CRC64, this);
   if (pTexture->CrossRef_D3Dtex!=NULL) return (RETURN_OK); // bug, this texture is already switched
-  int index = GetIndex( pTexture->Hash, num_index_list, index_list);
+  int index = GetIndex( pTexture->CRC64, num_index_list, index_list);
   if (index>=0)
   {
     uMod_IDirect3DTexture9 *fake_Texture;
     if (int ret = LoadTexture( & (FileToMod[index]), &fake_Texture)) return (ret);
     if (SwitchTextures( fake_Texture, pTexture))
     {
-      Message("uMod_TextureClient_DX9::LookUpToMod(): textures not switched %#lX\n", FileToMod[index].Hash);
+      Message("uMod_TextureClient_DX9::LookUpToMod(): textures not switched %#llX\n", FileToMod[index].Hash);
       fake_Texture->Release();
     }
     else
@@ -759,16 +762,16 @@ int uMod_TextureClient_DX9::LookUpToMod( uMod_IDirect3DTexture9* pTexture, int n
       fake_Texture->Reference = index;
     }
   }
-  else if (BoolComputeCRC &&  pTexture->CRC>0)
+  else if (BoolComputeCRC &&  pTexture->CRC32>0)
   {
-    index = GetIndex( pTexture->CRC, num_index_list, index_list);
+    index = GetIndex( pTexture->CRC32, num_index_list, index_list);
     if (index>=0)
     {
       uMod_IDirect3DTexture9 *fake_Texture;
       if (int ret = LoadTexture( & (FileToMod[index]), &fake_Texture)) return (ret);
       if (SwitchTextures( fake_Texture, pTexture))
       {
-        Message("uMod_TextureClient_DX9::LookUpToMod(): textures not switched %#lX\n", FileToMod[index].Hash);
+        Message("uMod_TextureClient_DX9::LookUpToMod(): textures not switched %#llX\n", FileToMod[index].Hash);
         fake_Texture->Release();
       }
       else
@@ -789,16 +792,16 @@ int uMod_TextureClient_DX9::LookUpToMod( uMod_IDirect3DTexture9* pTexture, int n
 
 int uMod_TextureClient_DX9::LookUpToMod( uMod_IDirect3DVolumeTexture9* pTexture, int num_index_list, int *index_list) // should only be called for original textures
 {
-  Message("uMod_TextureClient_DX9::LookUpToMod( Volume %p): hash: %#llX,  %p\n", pTexture, pTexture->Hash, this);
+  Message("uMod_TextureClient_DX9::LookUpToMod( Volume %p): hash: %#llX,  %p\n", pTexture, pTexture->CRC64, this);
   if (pTexture->CrossRef_D3Dtex!=NULL) return (RETURN_OK); // bug, this texture is already switched
-  int index = GetIndex( pTexture->Hash, num_index_list, index_list);
+  int index = GetIndex( pTexture->CRC64, num_index_list, index_list);
   if (index>=0)
   {
     uMod_IDirect3DVolumeTexture9 *fake_Texture;
     if (int ret = LoadTexture( & (FileToMod[index]), &fake_Texture)) return (ret);
     if (SwitchTextures( fake_Texture, pTexture))
     {
-      Message("uMod_TextureClient_DX9::LookUpToMod(): textures not switched %#lX\n", FileToMod[index].Hash);
+      Message("uMod_TextureClient_DX9::LookUpToMod(): textures not switched %#llX\n", FileToMod[index].Hash);
       fake_Texture->Release();
     }
     else
@@ -813,16 +816,16 @@ int uMod_TextureClient_DX9::LookUpToMod( uMod_IDirect3DVolumeTexture9* pTexture,
       fake_Texture->Reference = index;
     }
   }
-  else if (BoolComputeCRC &&  pTexture->CRC>0)
+  else if (BoolComputeCRC &&  pTexture->CRC32>0)
   {
-    index = GetIndex( pTexture->CRC, num_index_list, index_list);
+    index = GetIndex( pTexture->CRC32, num_index_list, index_list);
     if (index>=0)
     {
       uMod_IDirect3DVolumeTexture9 *fake_Texture;
       if (int ret = LoadTexture( & (FileToMod[index]), &fake_Texture)) return (ret);
       if (SwitchTextures( fake_Texture, pTexture))
       {
-        Message("uMod_TextureClient_DX9::LookUpToMod(): textures not switched %#lX\n", FileToMod[index].Hash);
+        Message("uMod_TextureClient_DX9::LookUpToMod(): textures not switched %#llX\n", FileToMod[index].Hash);
         fake_Texture->Release();
       }
       else
@@ -843,16 +846,16 @@ int uMod_TextureClient_DX9::LookUpToMod( uMod_IDirect3DVolumeTexture9* pTexture,
 
 int uMod_TextureClient_DX9::LookUpToMod( uMod_IDirect3DCubeTexture9* pTexture, int num_index_list, int *index_list) // should only be called for original textures
 {
-  Message("uMod_TextureClient_DX9::LookUpToMod( Cube %p): hash: %#llX,  %p\n", pTexture, pTexture->Hash, this);
+  Message("uMod_TextureClient_DX9::LookUpToMod( Cube %p): hash: %#llX,  %p\n", pTexture, pTexture->CRC64, this);
   if (pTexture->CrossRef_D3Dtex!=NULL) return (RETURN_OK); // bug, this texture is already switched
-  int index = GetIndex( pTexture->Hash, num_index_list, index_list);
+  int index = GetIndex( pTexture->CRC64, num_index_list, index_list);
   if (index>=0)
   {
     uMod_IDirect3DCubeTexture9 *fake_Texture;
     if (int ret = LoadTexture( & (FileToMod[index]), &fake_Texture)) return (ret);
     if (SwitchTextures( fake_Texture, pTexture))
     {
-      Message("uMod_TextureClient_DX9::LookUpToMod(): textures not switched %#lX\n", FileToMod[index].Hash);
+      Message("uMod_TextureClient_DX9::LookUpToMod(): textures not switched %#llX\n", FileToMod[index].Hash);
       fake_Texture->Release();
     }
     else
@@ -867,16 +870,16 @@ int uMod_TextureClient_DX9::LookUpToMod( uMod_IDirect3DCubeTexture9* pTexture, i
       fake_Texture->Reference = index;
     }
   }
-  else if (BoolComputeCRC &&  pTexture->CRC>0)
+  else if (BoolComputeCRC &&  pTexture->CRC32>0)
   {
-    index = GetIndex( pTexture->CRC, num_index_list, index_list);
+    index = GetIndex( pTexture->CRC32, num_index_list, index_list);
     if (index>=0)
     {
       uMod_IDirect3DCubeTexture9 *fake_Texture;
       if (int ret = LoadTexture( & (FileToMod[index]), &fake_Texture)) return (ret);
       if (SwitchTextures( fake_Texture, pTexture))
       {
-        Message("uMod_TextureClient_DX9::LookUpToMod(): textures not switched %#lX\n", FileToMod[index].Hash);
+        Message("uMod_TextureClient_DX9::LookUpToMod(): textures not switched %#llX\n", FileToMod[index].Hash);
         fake_Texture->Release();
       }
       else

@@ -39,6 +39,7 @@ void uMod_GameInfo::Init(void)
   SaveSingleTexture = false;
   SaveAllTextures = false;
   myShowSingleTextureString = false;
+  myShowSingleTexture = false;
   mySupportTPF = false;
 
   KeyBack = -1;
@@ -59,7 +60,9 @@ void uMod_GameInfo::Init(void)
   myFormatFilter = 0u;
   myFileFormat = uMod_D3DXIFF_DDS;
 
-  SavePath.Empty();
+  SavePath = wxGetCwd();
+  SavePath << "\\textures";
+
   OpenPath.Empty();
 }
 
@@ -88,6 +91,9 @@ int uMod_GameInfo::SaveToString( wxString &content )
   content << temp;
 
   temp.Printf( "ShowSingleTextureString:%d\n", myShowSingleTextureString);
+  content << temp;
+
+  temp.Printf( "ShowSingleTexture:%d\n", myShowSingleTexture);
   content << temp;
 
   temp.Printf( "SupportTPF:%d\n", mySupportTPF);
@@ -182,6 +188,12 @@ int uMod_GameInfo::LoadFromString( const wxString &content)
       temp = line.AfterFirst(':');
       if (temp.Len()>0 && temp[0]=='0') myShowSingleTextureString = false;
       else myShowSingleTextureString = true;
+    }
+    else if (command == "ShowSingleTexture")
+    {
+      temp = line.AfterFirst(':');
+      if (temp.Len()>0 && temp[0]=='0') myShowSingleTexture = false;
+      else myShowSingleTexture = true;
     }
     else if (command == "SupportTPF")
     {

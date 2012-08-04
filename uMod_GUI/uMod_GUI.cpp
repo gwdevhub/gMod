@@ -33,10 +33,6 @@ DEFINE_EVENT_TYPE(uMod_EVENT_TYPE)
 BEGIN_EVENT_TABLE(uMod_Frame, wxFrame)
   EVT_CLOSE(uMod_Frame::OnClose)
 
-  //EVT_BUTTON(ID_Button_Open, uMod_Frame::OnButtonOpen)
-  //EVT_BUTTON(ID_Button_Path, uMod_Frame::OnButtonPath)
-  //EVT_BUTTON(ID_Button_Update, uMod_Frame::OnButtonUpdate)
-  //EVT_BUTTON(ID_Button_Reload, uMod_Frame::OnButtonReload)
 
   EVT_MENU(ID_Menu_Help, uMod_Frame::OnMenuHelp)
   EVT_MENU(ID_Menu_About, uMod_Frame::OnMenuAbout)
@@ -52,7 +48,7 @@ BEGIN_EVENT_TABLE(uMod_Frame, wxFrame)
 
   EVT_MENU(ID_Menu_LoadTemplate, uMod_Frame::OnMenuOpenTemplate)
   EVT_MENU(ID_Menu_SaveTemplate, uMod_Frame::OnMenuSaveTemplate)
-  EVT_MENU(ID_Menu_SaveTemplateAs, uMod_Frame::OnMenuSaveTemplateAs)
+  EVT_MENU(ID_Menu_SaveTemplateAs, uMod_Frame::OnMenuSaveTemplate)
   EVT_MENU(ID_Menu_SetDefaultTemplate, uMod_Frame::OnMenuSetDefaultTemplate)
 
   EVT_MENU(ID_Menu_Lang, uMod_Frame::OnMenuLanguage)
@@ -85,7 +81,7 @@ bool MyApp::OnInit(void)
     wxMessageBox( Language->Error_AlreadyRunning, "ERROR", wxOK|wxICON_ERROR);
     return false;
   }
-  uMod_Frame *frame = new uMod_Frame( uMod_VERSION, set);
+  uMod_Frame *frame = new uMod_Frame( uMod_VERSION L"  by  ROTA", set);
   SetTopWindow( frame );
 
   return true;
@@ -142,7 +138,7 @@ uMod_Frame::uMod_Frame(const wxString& title, uMod_Settings &set)
   MainSizer->Add( (wxWindow*) Notebook, 1, wxEXPAND , 0 );
 
   PipeStruct pipe = {INVALID_HANDLE_VALUE,INVALID_HANDLE_VALUE};
-  uMod_GamePage *page = new uMod_GamePage( Notebook, "uMod", INVALID_GAME_PAGE, "templates/uMod.txt", pipe);
+  uMod_GamePage *page = new uMod_GamePage( Notebook, "uMod", INVALID_GAME_PAGE, "uMod", pipe);
   if (page->LastError.Len()>0)
   {
     wxMessageBox(page->LastError, "ERROR", wxOK|wxICON_ERROR);
@@ -253,7 +249,7 @@ void uMod_Frame::OnAddGame( wxCommandEvent &event)
   client->Create();
   client->Run();
 
-  wxString save_file;
+  wxString save_file = "auto_save";
   int num = SaveFile_Exe.GetCount();
   for (int i=0; i<num; i++) if (name==SaveFile_Exe[i])
   {
@@ -330,75 +326,35 @@ void uMod_Frame::OnClose(wxCloseEvent& event)
   //event.Skip();
   Destroy();
 }
-/*
-void uMod_Frame::OnButtonOpen(wxCommandEvent& WXUNUSED(event))
+
+
+
+int uMod_Frame::ChooseTemplate( const wxString &message, wxString &file)
 {
-  if (Notebook->GetPageCount()==0) return;
-  uMod_GamePage *page = (uMod_GamePage*) Notebook->GetCurrentPage();
-  if (page==NULL) return;
+  file.Empty();
 
-  wxString temp = "D:\\Code\\uMod\\temp\\bf.tpf";
-  if (page->AddTexture( temp)) wxMessageBox(page->LastError);
-
-  temp = "D:\\Code\\uMod\\temp\\tex.zip";
-  if (page->AddTexture( temp)) wxMessageBox(page->LastError);
-
-  temp = "D:\\Code\\uMod\\temp\\test.zip";
-  if (page->AddTexture( temp)) wxMessageBox(page->LastError);
-
-   return;
-  //wxString file_name = wxFileSelector( Language->ChooseFile, page->GetOpenPath(), "", "*.*",  "textures (*.dds)|*.dds|zip (*.zip)|*.zip|tpf (*.tpf)|*.tpf", wxFD_OPEN | wxFD_FILE_MUST_EXIST, this);
-  wxString file_name = wxFileSelector( Language->ChooseFile, page->GetOpenPath(), "", "",  "", wxFD_OPEN | wxFD_FILE_MUST_EXIST, this);
-  if ( !file_name.empty() )
+  wxArrayString files;
+  if (wxDir::GetAllFiles( "templates/", &files, "*.txt", wxDIR_FILES)<=0)
   {
-    page->SetOpenPath(file_name.BeforeLast( '/'));
-    if (page->AddTexture( file_name))
-    {
-      wxMessageBox(page->LastError, "ERROR", wxOK|wxICON_ERROR);
-      page->LastError.Empty();
-    }
+    wxMessageBox( Language->Error_NoTemplates, "ERROR", wxOK|wxICON_ERROR);
+    return -1;
   }
-}
 
-void uMod_Frame::OnButtonPath(wxCommandEvent& WXUNUSED(event))
-{
-  if (Notebook->GetPageCount()==0) return;
-  uMod_GamePage *page = (uMod_GamePage*) Notebook->GetCurrentPage();
-  if (page==NULL) return;
+  for (unsigned int i=0; i<files.GetCount();i++)
+    files[i] =  files[i].AfterFirst('\\').BeforeLast('.');
 
-  wxString dir = wxDirSelector( Language->ChooseDir, page->GetSavePath());
-  if ( !dir.empty() )
+
+  files.Insert("auto_save", 0);
+
+  wxSingleChoiceDialog *dialog = new wxSingleChoiceDialog(this, Language->ChooseTemplate, message, files);
+
+  if (dialog->ShowModal ()==wxID_OK)
   {
-    page->SetSavePath( dir);
+    file = dialog->GetStringSelection();
+    return 0;
   }
+  return 1;
 }
-
-void uMod_Frame::OnButtonUpdate(wxCommandEvent& WXUNUSED(event))
-{
-  if (Notebook->GetPageCount()==0) return;
-  uMod_GamePage *page = (uMod_GamePage*) Notebook->GetCurrentPage();
-  if (page==NULL) return;
-  if (page->UpdateGame())
-  {
-    wxMessageBox(page->LastError, "ERROR", wxOK|wxICON_ERROR);
-    page->LastError.Empty();
-  }
-}
-
-void uMod_Frame::OnButtonReload(wxCommandEvent& WXUNUSED(event))
-{
-  if (Notebook->GetPageCount()==0) return;
-  uMod_GamePage *page = (uMod_GamePage*) Notebook->GetCurrentPage();
-  if (page==NULL) return;
-  if (page->ReloadGame())
-  {
-    wxMessageBox(page->LastError, "ERROR", wxOK|wxICON_ERROR);
-    page->LastError.Empty();
-  }
-}
-*/
-
-
 
 void uMod_Frame::OnMenuOpenTemplate(wxCommandEvent& WXUNUSED(event))
 {
@@ -406,55 +362,38 @@ void uMod_Frame::OnMenuOpenTemplate(wxCommandEvent& WXUNUSED(event))
   uMod_GamePage *page = (uMod_GamePage*) Notebook->GetCurrentPage();
   if (page==NULL) return;
 
-
-  //wxString file_name = wxFileSelector( Language->ChooseFile, page->GetOpenPath(), "", "*.*",  "textures (*.dds)|*.dds|zip (*.zip)|*.zip|tpf (*.tpf)|*.tpf", wxFD_OPEN | wxFD_FILE_MUST_EXIST, this);
-
-  wxString dir = wxGetCwd();
-  dir << "/templates";
-  wxString file_name = wxFileSelector( Language->ChooseFile, dir, "", "*.txt",  "text (*.txt)|*.txt", wxFD_OPEN | wxFD_FILE_MUST_EXIST, this);
-  if ( !file_name.empty() )
+  wxString file_name;
+  if (ChooseTemplate( Language->OpenTemplate, file_name)!=0)
+    return;
+  if (page->LoadTemplate( file_name))
   {
-    if (page->LoadTemplate( file_name))
-    {
-      wxMessageBox(page->LastError, "ERROR", wxOK|wxICON_ERROR);
-      page->LastError.Empty();
-    }
+    wxMessageBox(page->LastError, "ERROR", wxOK|wxICON_ERROR);
+    page->LastError.Empty();
   }
 }
 
-void uMod_Frame::OnMenuSaveTemplate(wxCommandEvent& WXUNUSED(event))
+void uMod_Frame::OnMenuSaveTemplate(wxCommandEvent& event)
 {
+  int id = event.GetId();
+
   if (Notebook->GetPageCount()==0) return;
   uMod_GamePage *page = (uMod_GamePage*) Notebook->GetCurrentPage();
   if (page==NULL) return;
 
   wxString file_name = page->GetTemplateName();
 
-  if ( file_name.empty() )
+  if (id==ID_Menu_SaveTemplateAs || file_name.IsEmpty())
   {
-    wxString dir = wxGetCwd();
-    dir << "/templates";
-    file_name = wxFileSelector( Language->ChooseFile, dir, "", "*.txt",  "text (*.txt)|*.txt", wxFD_SAVE | wxFD_OVERWRITE_PROMPT, this);
-  }
-  if ( !file_name.empty() )
-  {
-    if (page->SaveTemplate(file_name))
+    file_name = file_name.AfterFirst('\\').BeforeLast('.');
+    wxTextEntryDialog *dialog = new wxTextEntryDialog( this, Language->ChooseTemplate , Language->SaveTemplate, file_name);
+    if (dialog->ShowModal ()==wxID_OK)
     {
-      wxMessageBox(page->LastError, "ERROR", wxOK|wxICON_ERROR);
-      page->LastError.Empty();
+      file_name = dialog->GetValue();
     }
+
+    delete dialog;
   }
-}
 
-void uMod_Frame::OnMenuSaveTemplateAs(wxCommandEvent& WXUNUSED(event))
-{
-  if (Notebook->GetPageCount()==0) return;
-  uMod_GamePage *page = (uMod_GamePage*) Notebook->GetCurrentPage();
-  if (page==NULL) return;
-
-  wxString dir = wxGetCwd();
-  dir << "/templates";
-  wxString file_name = wxFileSelector( Language->ChooseFile, dir, "", "*.txt",  "text (*.txt)|*.txt", wxFD_SAVE | wxFD_OVERWRITE_PROMPT, this);
   if ( !file_name.empty() )
   {
     if (page->SaveTemplate(file_name))
@@ -472,21 +411,24 @@ void uMod_Frame::OnMenuSetDefaultTemplate(wxCommandEvent& WXUNUSED(event))
   if (page==NULL) return;
   if (page == (uMod_GamePage*) Notebook->GetPage(0)) return;
 
+  wxString file_name;
+  if (ChooseTemplate( Language->DefaultTemplate, file_name)!=0)
+    return;
+
   wxString exe = page->GetExeName();
-  wxString file = page->GetTemplateName();
 
   int num = SaveFile_Exe.GetCount();
   bool hit = false;
   for (int i=0; i<num; i++) if (SaveFile_Exe[i]==exe)
   {
-    SaveFile_Name[i] = file;
+    SaveFile_Name[i] = file_name;
     hit = true;
     break;
   }
   if (!hit)
   {
     SaveFile_Exe.Add(exe);
-    SaveFile_Name.Add(file);
+    SaveFile_Name.Add(file_name);
   }
   if (SaveTemplate())
   {
@@ -574,9 +516,11 @@ void uMod_Frame::OnMenuAcknowledgement(wxCommandEvent& WXUNUSED(event))
   wxString msg;
   msg << "ROTA thanks:\n\n";
   msg << "RS for coding the original TexMod and for information about the used hashing algorithm\n\n";
+  msg << "Vergil for the uMod logo and useful hints\n\n";
   msg << "EvilAlex for translation into Russian and bug fixing\n";
-  msg << "ReRRemi for translation into French";
-  msg << "\n\n";
+  msg << "ReRRemi for translation into French\n";
+  msg << "mirHL for transaltion into Italian\n";
+  //msg << "\n\n";
   //msg << "King Brace Blane for a tutorial video on YouTube and bug fixing";
   wxMessageBox( msg, Language->MenuAcknowledgement, wxOK);
 }

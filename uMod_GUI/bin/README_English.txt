@@ -13,14 +13,14 @@ cannot be delivered together with Universal Modding Engine . If D3DX9_43.dll is 
 installed on your system, Universal Modding Engine will give you a hint at program start.
 
 
-What can Universal Modding Engine (uMod) V1.0?
+What can Universal Modding Engine (uMod) V2.0?
 
 -extract and save single textures from a DX9 game (the target texture can be toggled in the game)
--extract and save all textures from a DX9 game
+-extract and save all textures from a DX9 game (with size and texture format filter)
 -load textures into a game to replace target textures
 -support single dds texture
--support zip-files as whole mod package
--support the original TexMod *.tpf files
+-support zip-files as whole mod package (groups of textures can be displayed as tree view)
+-support the original TexMod *.tpf files (the tpf support must be enabled through the context menu)
 
 All these options can be switched on or off, while the game is already running!
 So you can search for a texture in the game, save it to disk, edit it,
@@ -32,12 +32,8 @@ the textures are loaded by the game and only in the moment they are loaded.
 If you switch this option on, while a map is loaded, probably nothing will hapen,
 because all textures are loaded for this map. Change the Map or reload it again.
 
-Zip files can include a "texmod.def" file which contains the hash and the file name.
-Each line should be in the format "hash|filename.dds"
-If it does not contain a "texmod.def" each file will be unpacked and those which match
-the wildcard "*_hash.dds" will be used.
-The zip file can include a "Comment.txt" file. The content will be shown as comment 
-in the GUI.
+Zip files can include a content.txt" file which contains information about
+groups and textures. Two examples are included in the package.
 
 If you load single files, they should match the wildcard "*_hash.dds"
 
@@ -80,23 +76,29 @@ If you have chosen the first or third method, you simply start Universal Modding
 and afterwards the game. Do NOT start the game through Universal Modding Engine.
 
 If the game starts and all works fine, a new tab opens immediately in uMod.
-In this tab you can now mod the game. Press the "update" button to commit
-the changes to the game. You can also save your current settings as a template.
-One template can be set as default for a game, which will be loaded and 
-and committed automatically when you start this game the next time.
+In the upper text control you can read the method of injection. An additional information
+about created DirectX devices follows e.g. (DX9) or (DX9EX: 3). It informs you, what kind of
+device and how many devices were created by the game (and detoured by uMod). If this
+information is not displayed, you are not able to modify the game. Possible reason might
+be, that the game does not use DirectX9 or uMod was not fast enough to inject the game.
 
-To load a mod, you must set the check mark of the file. If you wish to unload a mod,
-just remove the check mark and click on update again. 
+After you have changed Settings you have to update via the context menu (right click
+in the bottom window). Update (reload) reloads all texture from disk, this is only for
+users, which edit textures. 
 
 Clicking on update will only update the differences (if packages have been
 removed from the list, you toggled check marks or changed the order). The reload 
 button forces to reload from disk (if you have edited the texture itself).
 
-Due to the fact that different mods can modify the same target texture, only the
-mod-texture of the first file in the list is taken into account. The action of this file
-(load or unload) is proceeded regardless of what the following mods are opposed
-to do with their mod-textures.
+New mods or textures can be opened through the context menu or through drag&drop
+from the explorer. The order of mods can be rearranged also using drag&drop. The order
+of mods is important, if two mods try to modify the same game texture. In this case, 
+the texture from the mod listed first is taken.
 
+Additionally you can expand mods and activate or deactivate single textures. Mod
+with the new mod-format can contain many groups, which can be activated or deactivated
+separately. For textures at least one tick mark must be set, for mods and groups bot tick
+marks can be unset to give the control to the underlying layer.
 
 How to get Universal Modding Engine work together with Steam?
 

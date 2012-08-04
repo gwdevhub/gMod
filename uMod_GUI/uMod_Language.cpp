@@ -20,7 +20,7 @@ along with Universal Modding Engine.  If not, see <http://www.gnu.org/licenses/>
 
 #include "uMod_Main.h"
 
-uMod_Language *Language = NULL;
+uMod_Language *Language = (uMod_Language*)0;
 
 uMod_Language::uMod_Language(void)
 {
@@ -217,11 +217,16 @@ int uMod_Language::LoadLanguage(const wxString &name)
     CheckEntry( command, msg, CollapseTextureCapture)
     CheckEntry( command, msg, CheckBoxSaveSingleTexture)
     CheckEntry( command, msg, CheckBoxShowStringSaveSingleTexture)
+    CheckEntry( command, msg, CheckBoxShowSingleTexture)
     CheckEntry( command, msg, CheckBoxSaveAllTextures)
-    CheckEntry( command, msg, TextCtrlSavePath)
     CheckEntry( command, msg, SelectLanguage)
     CheckEntry( command, msg, StartGame)
     CheckEntry( command, msg, CommandLine)
+    CheckEntry( command, msg, ChooseTemplate)
+    CheckEntry( command, msg, OpenTemplate)
+    CheckEntry( command, msg, SaveTemplate)
+    CheckEntry( command, msg, DefaultTemplate)
+    CheckEntry( command, msg, AutoSaveTemplate)
     CheckEntry( command, msg, ChooseGame)
     CheckEntry( command, msg, DeleteGame)
     CheckEntry( command, msg, GameAlreadyAdded)
@@ -250,6 +255,7 @@ int uMod_Language::LoadLanguage(const wxString &name)
     CheckEntry( command, msg, Error_Hash)
     CheckEntry( command, msg, Error_FileOpen)
     CheckEntry( command, msg, Error_FileRead)
+    CheckEntry( command, msg, Error_NoTemplates)
     CheckEntry( command, msg, Error_Memory)
     CheckEntry( command, msg, Error_Unzip)
     CheckEntry( command, msg, Error_ZipEntry)
@@ -278,8 +284,8 @@ int uMod_Language::LoadDefault(void)
   CurrentLanguage="English";
 
   MenuLanguage = "Change language";
-  MenuHelp  = "Help";
-  MenuAbout  = "About";
+  MenuHelp = "Help";
+  MenuAbout = "About";
   MenuAcknowledgement = "Acknowledgement";
 
   MenuStartGame = "Start game through uMod";
@@ -321,13 +327,19 @@ int uMod_Language::LoadDefault(void)
   CollapseTextureCapture = "Capture textures";
   CheckBoxSaveSingleTexture = "Save single texture";
   CheckBoxShowStringSaveSingleTexture = "Show message in the upper left corner";
+  CheckBoxShowSingleTexture = "Show texture in the upper left corner";
   CheckBoxSaveAllTextures = "Save all textures";
-  TextCtrlSavePath = "Save path:";
 
   SelectLanguage = "Select a language.";
 
   StartGame = "Select the game to start.";
   CommandLine = "Set command line arguments.";
+
+  ChooseTemplate = "Chose a template";
+  OpenTemplate = "Open template";
+  SaveTemplate = "Save template";
+  DefaultTemplate = "Set default template";
+  AutoSaveTemplate = "auto save";
 
   ChooseGame = "Select a game binary.";
   DeleteGame = "Select the games to be deleted.";
@@ -360,6 +372,7 @@ int uMod_Language::LoadDefault(void)
   Error_Hash = "Could not find hash, maybe file is not named as *_HASH.dds";
   Error_FileOpen = "Could not open file:";
   Error_FileRead = "Could not read file:";
+  Error_NoTemplates = "No templates available.";
   Error_Memory = "Could not allocate enough memory.";
   Error_Unzip = "Could not unzip.";
   Error_ZipEntry = "Could not find zip entry.";

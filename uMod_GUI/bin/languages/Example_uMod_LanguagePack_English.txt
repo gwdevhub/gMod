@@ -1,5 +1,5 @@
 If you have created a language package and would like to add to the officially download, please send it to me.
-Email address and support can be found at http://code.google.com/p/texmod/  
+Email address and support can be found at http://code.google.com/p/texmod/
 
 
 The file name must match the wildcard uMod_LanguagePack_NAMEOFLANGUAGE.txt
@@ -36,117 +36,122 @@ English itself is compiled into the uMod_GUI.exe, thus there exists no uMod_Lang
 The following list is an example of how an English package would look like (maybe not all keywords are present).
 
 
-
-MenuHelp:
-Help|
-MenuAbout:
-About|
+MenuLanguage:Change language|
+MenuHelp:Help|
+MenuAbout:About|
 MenuAcknowledgement:Acknowledgement|
+
 MenuStartGame:Start game through uMod|
-MenuStartGameCMD :Start game through uMod (with command line)|
+MenuStartGameCMD:Start game through uMod (with command line)|
+
 MenuUseHook:Use global hook|
-MenuAddGame:
-Add game|
-MenuDeleteGame:
-Delete Game|
+MenuAddGame:Add game|
+MenuDeleteGame:Delete game|
 MenuLoadTemplate:Load template|
 MenuSaveTemplate:Save template|
 MenuSaveTemplateAs:Save template as ...|
 MenuSetDefaultTemplate:Set template as default|
-MenuLanguage:Change language|
 MenuExit:Exit|
+
 MainMenuMain:Main|
-MainMenuHelp:
-Help|
+MainMenuHelp:Help|
 
+MenuOpenPackage:Open texture/package|
+MenuRemovePackage:Remove package|
+MenuRemoveSelectedPackages:Remove selected packages|
 
-ButtonOpen:
-Open texture|
-ButtonDirectory:
-save directory|
-ButtonUpdate:
-Update|
-ButtonReload:Update (reload)|
-
+MenuUpdate:Update|
+MenuReload:Update (reload)|
+MenuSupportTPF:Support TPF-Mods|
+ButtonUpdate:Update|
+ButtonDirectory:Set save directory|
 
 ChooseFile:Choose a file|
-ChooseDir:
-Choose a directory|
-CheckBoxSaveSingleTexture:
-Save single texture|
+ChooseDir:Choose a directory|
+
+MultipleSingleFiles:Multiple single files|
+
+HookInjection:Hook Injection: |
+DirectInjection:Direct Injection: |
+NoInjection:No Injection: |
+InvalidGamePage:default page|
 TextCtrlTemplate:Template: |
-CheckBoxSaveAllTextures:
-Save all textures|
-TextCtrlSavePath:
-Save path: |
-SelectLanguage:
-Select a language|
+
+CollapseTextureCapture:Capture textures|
+CheckBoxSaveSingleTexture:Save single texture|
+CheckBoxShowStringSaveSingleTexture:Show message in the upper left corner|
+CheckBoxShowSingleTexture:Show texture in the upper left corner|
+CheckBoxSaveAllTextures:Save all textures|
+
+SelectLanguage:Select a language.|
+
 StartGame:Select the game to start.|
 CommandLine:Set command line arguments.|
-ChooseGame:
-Select a game binary.
-DeleteGame:
-Select the games to be deleted.|
-GameAlreadyAdded:
-Game has been already added.|
-ExitGameAnyway:
-Closing Universal Modding Engine while a game is running might lead to a crash of the game.
-Exit anyway?|
-NoComment:
-No comment.|
-Author:
-Author: |
 
+ChooseTemplate:Chose a template|
+OpenTemplate:Open template|
+SaveTemplate:Save template|
+DefaultTemplate:Set default template|
+AutoSaveTemplate:auto save|
+
+ChooseGame:Select a game binary.|
+DeleteGame:Select the games to be deleted.|
+GameAlreadyAdded:Game has been already added.|
+ExitGameAnyway:Closing OpenTexMod while a game is running might lead to a crash of the game.
+Exit anyway?|
+Title:Title|
+Author:Author|
+Comment:Comment|
+SingleTextureNode:Single Textures|
 
 Error_GameIsHooked:The global hook is active and this game will be injected! Please delete the game from the list or disable the hook.|
 Error_ProcessNotStarted:The game could not be started.|
 Error_RemoveHook:Removing the Hook while a game is running might lead to crash.|
-Error_FileNotSupported:
-This file type is not supported:|
-Error_DLLNotFound:
-Could not load the dll.
+
+Error_FileNotSupported:This file type is not supported:
+|
+Error_FileIsEmpty:Could not retrieve textures from file:
+|
+Error_D3DX9NotFound:The D3DX9_43.dll (32bit) is not available on your system.
+Please install the newest DirectX End-User Runtime Installer.|
+Error_DLLNotFound:Could not load the dll.
 The dll injection won't work.
-This might happen if D3DX9_43.dll is not installed on your system.
+This might happen if D3DX9_43.dll (32bit) is not installed on your system.
 Please install the newest DirectX End-User Runtime Web Installer.|
-Error_FktNotFound:
-Could not load function out of dll.
+Error_FktNotFound:Could not load function out of dll.
 The dll injection won't work.|
-Error_AlreadyRunning:An other instance of Universal Modding Engine is already running.|
-Error_Send:
-Could not send to game.|
-Error_KeyTwice:
-You assigned a key twice.|
-Error_NoSavePath:
-You did not set a save path.|
-Error_KeyNotSet:
-At least one key is not set.|
-Error_SaveFile:
-Could not save to file.|
-Error_NoPipe:
-Pipe is not opened.|
-Error_WritePipe:
-Could not write in pipe.|
-Error_FlushPipe:
-Could not flush pipe buffer.|
-Error_Hash:
-Could not find hash, maybe file is not named as *_HASH.dds|
-Error_FileOpen:
-Could not open file.|
-Error_FileRead:
-Could not read file.|
-Error_Memory:
-Could not allocate enough memory|
-Error_Unzip:
-Could not unzip.|
-Error_ZipEntry:
-Could not find zip entry.|
-KeyBack:
-Back|
-KeySave:
-Save|
-KeyNext:
-Next|
-FontColour:
-Font colour (RGB):|
-TextureColour:
-Texture colour (RGB):|
+Error_AlreadyRunning:An other instance of OpenTexMod is already running.|
+
+Error_Send:Could not send to game.|
+Error_KeyTwice:You have assigned the same key twice.|
+Error_NoSavePath:You did not set a save path.|
+Error_KeyNotSet:At least one key is not set.|
+Error_SaveFile:Could not save to file.|
+Error_NoPipe:Pipe is not opened.|
+Error_WritePipe:Could not write in pipe.|
+Error_FlushPipe:Could not flush pipe buffer.|
+Error_Hash:Could not find hash, maybe file is not named as *_HASH.dds|
+Error_FileOpen:Could not open file:|
+Error_FileRead:Could not read file:|
+Error_NoTemplates:No templates available.|
+Error_Memory:Could not allocate enough memory.|
+Error_Unzip:Could not unzip.|
+Error_ZipEntry:Could not find zip entry.|
+
+CheckBoxUseSizeFilter:Use size filter|
+CheckBoxUseFormatFilter:Use texture format filter|
+SetFormatFilter:Set the filter|
+WidthSpin:Width :|
+HeightSpin:Height :|
+DepthSpin:Depth :|
+
+KeyBack:Back|
+KeySave:Save|
+KeyNext:Next|
+
+AskForKey:Pleas press a Key.|
+KeyNotSet:Not set|
+UnknownKey:Unknown|
+
+FontColour:Font colour|
+TextureColour:Texture colour|

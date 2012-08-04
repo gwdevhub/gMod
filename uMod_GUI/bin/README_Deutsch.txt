@@ -16,14 +16,14 @@ diese dll nicht mit Universal Modding Engine mit geliefert werden. Wenn diese dl
 deinem System nicht installiert ist, wird dich Universal Modding Engine darauf hinweisen.
 
 
-Was kann Universal Modding Engine (uMod) V1.0?
+Was kann Universal Modding Engine (uMod) V2.0?
 
 -einzelne Texturen aus einem Spiel extrahieren und speichern (Die Zieltextur kann im Spiel geändert werden.)
--alle Texturen aus einem Spiel extrahieren und speichern
+-alle Texturen aus einem Spiel extrahieren und speichern (mit Größen- und Texturformat-Filter)
 -Texturen in ein Spiel laden und Zieltexturen ersetzen
--Support einzelner dds Texturen
--Support von zip-Dateien
--Support der originalen TexMod *.tpf Datein
+-Support einzelner Texturen
+-Support von zip-Dateien (mit Darstellung von Textur-Gruppen als Baumstruktur)
+-Support der originalen TexMod *.tpf Dateien (der Support muss über das Kontext-Menü aktiviert werden)
 
 Alle diese Optionen können während des Spieles an und aus geschaltet werden!
 Du kannst also nach einer Textur suchen, diese speichern, sie anschließend
@@ -37,12 +37,8 @@ geladen werden. Stellst du diese Option an, während die Map bereits geladen ist,
 wahrscheinlich nichts geschehen, da alle Texturen für diese Map bereits geladen sind.
 Wechsle also die Map oder lade erneut.
 
-Zip Dateien können eine "texmod.def" Datei enthalten, welche die Hash-Werte und
-Dateinamen enthält. Jede Zeile sollte dem Format "hash|filename.dds" entsprechen.
-Wenn es keine "texmod.def" Datei enthält, wird jede Datei entpackt und jene, deren 
-Namen auf das Wildcard  "*_hash.dds" zutrifft, werden benutzt.
-Die Zip Datei kann eine "Comment.txt" Datei enthalten. Der Inhalte wird als Kommentar
-in der GUI angezeigt.
+Zip Dateien können eine "content.txt" Datei enthalten, welche Informationen Gruppen und Texturen enthält.
+Siehe dazu die zwei mitgelieferten Beispiele.
 
 Wenn du einzelne Dateien lädst, sollten diese dem Wildcard  "*_hash.dds" entsprechen.
 
@@ -69,9 +65,9 @@ Es gibt drei Wege wie uMod sich in die DirectX Verbindung einklinken kann:
     
     bekannte Probleme: Guild Wars (Win XP)
     
-2) Starte das Spiel direkt durch OTM über das Menü
-     "Einstellungen->Sarte Spiel durch OTM" oder
-     "Einstellungen->Sarte Spiel durch OTM (mit Kommandozeile)".
+2) Starte das Spiel direkt durch uMod über das Menü
+     "Einstellungen->Sarte Spiel durch uMod" oder
+     "Einstellungen->Sarte Spiel durch uMod (mit Kommandozeile)".
      Das Spiel startet sofort.
 
 3) Kopiere die d3d9.dll (vom uMod Verzeichnis) in das Spiele Verzeichnis.
@@ -86,25 +82,31 @@ Universal Modding Engine und danach das Spiel. Starte das Spiel in beiden Fällen
 Universal Modding Engine .
 
 Wenn das Spiel startet und alles glatt läuft, öffnet sich sofort ein neuer Tab in uMod.
-In diesem Tab kannst du nun das Spiel  modden. Drücke den "Update" Button um
-die Einstellungen an das Spiel zu senden. Du kannst deine aktuellen Einstellungen auch
-als ein Template speichern. Ein Template kann auch als Standard eingestellt werden.
-Es wird dann automatisch geladen und an das Spiel gesendet, wenn
-dieses Spiel das nächste Mal gestartet wird.
+Im obersten Feld steht die Methode, welche verwendet wurde um sich in das Spiel
+ein zu klinken. Danach sollten Informationen über erzeugte DirectX Devices stehen.
+z.B. (DX9) oder (DX9EX: 3). Dies gibt an, welches Device und wie viele durch das Spiel
+gestartet (und von uMod umgeleitet) wurden. Fehlt diese Information, so ist das Modden
+nicht möglich. Mögliche Ursachen können sein, dass das Spiel kein DirectX 9 verwendet
+oder uMod zu langsam war, um sich in das Spiel ein zu klinken.
 
-Um einen Mod zu laden, musst du das Häkchen vor den Namen setzen. Wenn du
-den Mod entladen willst, entferne das Häkchen und klicke auf "Update".
 
-Der Update Button lädt nur Veränderungen (wenn 1) Pakete aus der Liste entfernt
-wurden, 2) du die Häkchen verändert hast oder 3) sich die Reihenfolge geändert hat)
-Der "neu laden" Button erzwingt das Neuladen von Festplatte (z.B. wenn du die
-Texturen verändert hast).
+Wenn Du Veränderungen vornimmst, so musst Du diese über das Kontext-Menü
+(rechte Maustaste im unteren Fenster) -> Update bestätigen. 
+Update (neu laden) bewirkt, dass die Texturen neu von der Festplatte geladen werden.
+Diese Option ist nur für diejenigen sinnvoll, die Texturen editieren.
 
-Weil verschiedene Mods die gleiche Ziel-Textur verändern könnten, wird nur die
-Mod-Textur des ersten Mods berücksichtigt. Die Aktion dieses Mods (also Laden oder
-Entladen) wird durchgeführt, ungeachtet dessen, was die restlichen Mods mit der
-Ziel-Textur machen sollen.
+Neue Mods oder Texturen kannst Du über das Kontext-Menü oder per Drag&Drop aus
+dem Explorer heraus öffnen. Die Reihenfolge der Mods veränderst Du ebenfalls über
+Drag&Drop. Die Reihenfolge kann dann wichtig sein, wenn zwei Mods, die gleiche 
+Spiele-Textur verändern wollen. Dann wird die Änderung des Mods aktiv, welcher weiter
+oben gelistet ist.
 
+Zusätzlich kannst Du jeden Mod aufklappen und einzelne Texturen aktivieren oder deaktivieren.
+Mods mit dem neuen Mod-Format können auch mehrere Ebenen von Gruppen enthalten.
+Hier kannst du einzelne Gruppen aktivieren und deaktivieren.
+Während bei Texturen immer eines der beiden Häkchen gesetzt sein muss, können beim
+Mod-Paket oder bei Gruppen beide Häkchen entfernt werden, um die Kontrolle an die nächst
+tiefer liegende Ebene zu übergeben.
 
 Wie bekommt man Universal Modding Engine mit Steam zum Laufen?
 

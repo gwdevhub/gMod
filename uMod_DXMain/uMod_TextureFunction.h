@@ -20,24 +20,31 @@ along with Universal Modding Engine.  If not, see <http://www.gnu.org/licenses/>
 
 
 
-// this value is simply the init value for the D.J. Bernsteins algorithm (djb2)
-#define HASH_INIT_VALUE 5381
+inline void InitCRC64(DWORD64 &crc)
+{
+  crc = 0xFFFFFFFFFFFFFFFFULL;
+}
 
+extern const DWORD64 crctab64[256];
 /**
- * This hash function combines the djb2 and sdbm algorithm. Both are designed for hashing strings,
- * but compared to many others they don't include a  Hash*data[i] operation, which would reset the hash
- * if data[i]==0. This is never the case while hashing text, but it is very often the case when hashing
- * textures. Therefore many good algorithm cannot be used at this point.
- *
- * Here are two algorithm used to reduce the number of collision (collision == two different textures have
- * the same hash value)
+ * CRC64 function
  *
  * @param[in] data pointer to the buffer
  * @param[in] len length of buffer in bytes
  * @param[in,out] hash in = initial value of the hash; out = returned hash
  */
-void GetHash( unsigned char *str, unsigned int len, DWORD64 &hash); // estimate the hash
+inline void GetCRC64(DWORD64 &crc, const unsigned char *cp, unsigned long length)
+{
+  while (length--)
+    crc = crctab64[(crc ^ *(cp++)) & 0xff] ^ (crc >> 8);
+}
 
+
+
+inline void InitCRC32(DWORD32 &crc)
+{
+  crc = 0xffffffff;
+}
 
 /**
  * Caluclate the CRC32 value over a buffer. This function is used in texmod. Thanks to RS for given me this information!
@@ -45,7 +52,7 @@ void GetHash( unsigned char *str, unsigned int len, DWORD64 &hash); // estimate 
  * @param[in] len length of buffer in bytes
  * @return CRC32 value
  */
-DWORD32 GetCRC32( char *data, unsigned int len);
+void GetCRC32( DWORD32 &crc, unsigned char *data, unsigned int len);
 /*
     case D3DFMT_MULTI2_ARGB8:
     case D3DFMT_VERTEXDATA:

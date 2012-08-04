@@ -280,7 +280,7 @@ int uMod_IDirect3DVolumeTexture9::ComputetHash( bool compute_crc)
   int bits_per_pixel = GetBitsFromFormat( desc.Format);
 
   {
-    Hash = HASH_INIT_VALUE;
+    InitCRC64(CRC64);
     unsigned char *data = (unsigned char*) d3dlr.pBits;
 
     unsigned int size;
@@ -303,7 +303,7 @@ int uMod_IDirect3DVolumeTexture9::ComputetHash( bool compute_crc)
       unsigned char* data_inner_loop = data;
       for (unsigned int h=0; h<h_max; h++)
       {
-        GetHash( data_inner_loop, size, Hash);
+        GetCRC64( CRC64, data_inner_loop, size);
         data_inner_loop += d3dlr.RowPitch;
       }
       data += d3dlr.SlicePitch;
@@ -312,8 +312,9 @@ int uMod_IDirect3DVolumeTexture9::ComputetHash( bool compute_crc)
 
   if (compute_crc)
   {
+    InitCRC32(CRC32);
     int size = (bits_per_pixel * desc.Width*desc.Height*desc.Depth)/8;
-    CRC = GetCRC32( (char*) d3dlr.pBits, size); //calculate the crc32 of the texture
+    GetCRC32( CRC32, (unsigned char*) d3dlr.pBits, size); //calculate the crc32 of the texture
   }
 
 
@@ -324,6 +325,6 @@ int uMod_IDirect3DVolumeTexture9::ComputetHash( bool compute_crc)
   }
   else pTexture->UnlockBox(0);
 
-  Message("uMod_IDirect3DVolumeTexture9::GetHash() %#llX %#LX (%d %d %d) %d\n", Hash, CRC, desc.Width, desc.Height, desc.Depth, desc.Format);
+  Message("uMod_IDirect3DVolumeTexture9::GetHash() %#llX %#LX (%d %d %d) %d\n", CRC64, CRC32, desc.Width, desc.Height, desc.Depth, desc.Format);
   return (RETURN_OK);
 }
