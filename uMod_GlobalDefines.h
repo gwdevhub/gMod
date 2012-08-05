@@ -49,7 +49,8 @@ typedef struct
 
 #define uMod_APP_DX9 L"uMod_DX9.txt"
 #define uMod_APP_DIR L"uMod"
-#define uMod_VERSION L"uMod V 2.0 alpha"
+#define uMod_VERSION_char "uMod V 2.0 alpha (r51)"
+#define uMod_VERSION L"uMod V 2.0 alpha (r51)"
 
 #define PIPE_uMod2Game L"\\\\.\\pipe\\uMod2Game"
 #define PIPE_Game2uMod L"\\\\.\\pipe\\Game2uMod"
@@ -192,88 +193,5 @@ typedef struct
 #define uMod_D3DFMT_UYVY 1ull<<62
 #define uMod_D3DFMT_YUY2 1ull<<63
     
-    /*
 
-#define uMod_D3DFMT_R8G8B8 1ull<<0
-#define uMod_D3DFMT_A8R8G8B8 1ull<<1
-#define uMod_D3DFMT_X8R8G8B8 1ull<<2
-#define uMod_D3DFMT_R5G6B5 1ull<<3
-#define uMod_D3DFMT_X1R5G5B5 1ull<<4
-#define uMod_D3DFMT_A1R5G5B5 1ull<<5
-#define uMod_D3DFMT_A4R4G4B4 1ull<<6
-#define uMod_D3DFMT_R3G3B2 1ull<<7
-#define uMod_D3DFMT_A8 1ull<<8
-#define uMod_D3DFMT_A8R3G3B2 1ull<<9
-#define uMod_D3DFMT_X4R4G4B4 1ull<<10
-#define uMod_D3DFMT_A2B10G10R10 1ull<<11
-#define uMod_D3DFMT_A8B8G8R8 1ull<<12
-#define uMod_D3DFMT_X8B8G8R8 1ull<<13
-#define uMod_D3DFMT_G16R16 1ull<<14
-#define uMod_D3DFMT_A2R10G10B10 1ull<<15
-#define uMod_D3DFMT_A16B16G16R16 1ull<<16
-
-#define uMod_D3DFMT_A8P8 1ull<<17
-#define uMod_D3DFMT_P8 1ull<<18
-
-#define uMod_D3DFMT_L8 1ull<<19
-#define uMod_D3DFMT_A8L8 1ull<<20
-#define uMod_D3DFMT_A4L4 1ull<<21
-
-#define uMod_D3DFMT_V8U8 1ull<<22
-#define uMod_D3DFMT_L6V5U5 1ull<<23
-#define uMod_D3DFMT_X8L8V8U8 1ull<<24
-#define uMod_D3DFMT_Q8W8V8U8 1ull<<25
-#define uMod_D3DFMT_V16U16 1ull<<26
-#define uMod_D3DFMT_A2W10V10U10 1ull<<27
-
-#define uMod_D3DFMT_UYVY 1ull<<28
-#define uMod_D3DFMT_R8G8_B8G8 1ull<<29
-#define uMod_D3DFMT_YUY2 1ull<<30
-#define uMod_D3DFMT_G8R8_G8B8 1ull<<31
-#define uMod_D3DFMT_DXT1 1ull<<32
-#define uMod_D3DFMT_DXT2 1ull<<33
-#define uMod_D3DFMT_DXT3 1ull<<34
-#define uMod_D3DFMT_DXT4 1ull<<35
-#define uMod_D3DFMT_DXT5 1ull<<36
-
-#define uMod_D3DFMT_D16_LOCKABLE 1ull<<37
-#define uMod_D3DFMT_D32 1ull<<38
-#define uMod_D3DFMT_D15S1 1ull<<39
-#define uMod_D3DFMT_D24S8 1ull<<40
-#define uMod_D3DFMT_D24X8 1ull<<41
-#define uMod_D3DFMT_D24X4S4 1ull<<42
-#define uMod_D3DFMT_D16 1ull<<43
-
-#define uMod_D3DFMT_D32F_LOCKABLE 1ull<<44
-#define uMod_D3DFMT_D24FS8 1ull<<45
-
-#define uMod_D3DFMT_D32_LOCKABLE 1ull<<46
-#define uMod_D3DFMT_S8_LOCKABLE 1ull<<47
-
-#define uMod_D3DFMT_L16 1ull<<48
-
-#define uMod_D3DFMT_VERTEXDATA 1ull<<49
-#define uMod_D3DFMT_INDEX16 1ull<<50
-#define uMod_D3DFMT_INDEX32 1ull<<51
-
-#define uMod_D3DFMT_Q16W16V16U16 1ull<<52
-
-#define uMod_D3DFMT_MULTI2_ARGB8 1ull<<53
-
-#define uMod_D3DFMT_R16F 1ull<<54
-#define uMod_D3DFMT_G16R16F 1ull<<55
-#define uMod_D3DFMT_A16B16G16R16F 1ull<<56
-
-#define uMod_D3DFMT_R32F 1ull<<57
-#define uMod_D3DFMT_G32R32F 1ull<<58
-#define uMod_D3DFMT_A32B32G32R32F 1ull<<59
-
-#define uMod_D3DFMT_CxV8U8 1ull<<60
-
-#define uMod_D3DFMT_A1 1ull<<61
-#define uMod_D3DFMT_A2B10G10R10_XR_BIAS 1ull<<62
-#define uMod_D3DFMT_BINARYBUFFER 1ull<<63
-
-//#define uMod_D3DFMT_FORCE_DWORD 1<<64
-*/
 #endif

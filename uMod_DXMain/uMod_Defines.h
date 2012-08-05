@@ -27,15 +27,15 @@ extern FILE *gl_File;
 
 #define Message(...) {if (gl_File!=NULL) {fprintf( gl_File, __VA_ARGS__); fflush(gl_File);}}
 #if INJECTION_METHOD == HOOK_INJECTION
-#define OpenMessage(...) {if (fopen_s( &gl_File, "uMod_log.txt", "wt")) gl_File=NULL; else fprintf( gl_File, "HI R49: 0000001\n");}
+#define OpenMessage(...) {if (fopen_s( &gl_File, "uMod_log.txt", "wt")) gl_File=NULL; else fprintf( gl_File, "HI " uMod_VERSION_char ": 0000001\n");}
 #endif
 
 #if INJECTION_METHOD == DIRECT_INJECTION
-#define OpenMessage(...) {if (fopen_s( &gl_File, "uMod_log.txt", "wt")) gl_File=NULL; else fprintf( gl_File, "DI R49: 0000001\n");}
+#define OpenMessage(...) {if (fopen_s( &gl_File, "uMod_log.txt", "wt")) gl_File=NULL; else fprintf( gl_File, "DI " uMod_VERSION_char ": 0000001\n");}
 #endif
 
 #if INJECTION_METHOD == NO_INJECTION
-#define OpenMessage(...) {if (fopen_s( &gl_File, "uMod_log.txt", "wt")) gl_File=NULL; else fprintf( gl_File, "NI R49: 0000001\n");}
+#define OpenMessage(...) {if (fopen_s( &gl_File, "uMod_log.txt", "wt")) gl_File=NULL; else fprintf( gl_File, "NI " uMod_VERSION_char ": 0000001\n");}
 #endif
 
 #define CloseMessage(...) {if (gl_File!=NULL) fclose(gl_File);}

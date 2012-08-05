@@ -58,7 +58,7 @@ TARGET_CPU = $(CPU)
 # Should debugging info be included in the executables? The default value
 # "default" means that debug info will be included if BUILD=debug
 # and not included if BUILD=release. [0,1,default]
-DEBUG_INFO = 1
+DEBUG_INFO = 0
 
 # Value of wxDEBUG_LEVEL. The default value is the same as 1 and means that all
 # but expensive assert checks are enabled, use 0 to completely remove debugging
@@ -67,7 +67,7 @@ DEBUG_FLAG = 0
 
 # Link against debug (e.g. msvcrtd.dll) or release (msvcrt.dll) RTL?
 # Default is to use debug CRT if and only if BUILD==debug. [0,1,default]
-DEBUG_RUNTIME_LIBS = default
+DEBUG_RUNTIME_LIBS = 0
 
 # Multiple libraries or single huge monolithic one? [0,1]
 MONOLITHIC = 0
