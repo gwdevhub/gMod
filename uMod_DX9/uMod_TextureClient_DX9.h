@@ -115,7 +115,8 @@ public:
 
   int MergeUpdate(void); //called from uMod_IDirect3DDevice9::BeginScene()
 
-
+  int CRCHasChanged( uMod_IDirect3DTexture9* pTexture);
+  int CRCHasChanged( uMod_IDirect3DCubeTexture9* pTexture);
 
   int LookUpToMod( uMod_IDirect3DTexture9* pTexture, int num_index_list=0, int *index_list=(int*)0); // called at the end AddTexture(...) and from Device->UpdateTexture(...)
 

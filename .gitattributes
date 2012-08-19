@@ -18,8 +18,6 @@ uMod_DX10/uMod_ID3D10Texture3D.h -text
 uMod_DX10/uMod_IDXGISwapChain.cpp -text
 uMod_DX10/uMod_IDXGISwapChain.h -text
 uMod_DX10/uMod_TextureClient_DX10.h -text
-uMod_DX9/uMod_ComputeHash.cpp -text
-uMod_DX9/uMod_ComputeHash.h -text
 uMod_DX9/uMod_DX9_dll.cpp -text
 uMod_DX9/uMod_DX9_dll.h -text
 uMod_DX9/uMod_IDirect3D9.cpp -text
@@ -32,6 +30,8 @@ uMod_DX9/uMod_IDirect3DDevice9.cpp -text
 uMod_DX9/uMod_IDirect3DDevice9.h -text
 uMod_DX9/uMod_IDirect3DDevice9Ex.cpp -text
 uMod_DX9/uMod_IDirect3DDevice9Ex.h -text
+uMod_DX9/uMod_IDirect3DSurface9.cpp -text
+uMod_DX9/uMod_IDirect3DSurface9.h -text
 uMod_DX9/uMod_IDirect3DTexture9.cpp -text
 uMod_DX9/uMod_IDirect3DTexture9.h -text
 uMod_DX9/uMod_IDirect3DVolumeTexture9.cpp -text
@@ -74,6 +74,8 @@ uMod_GUI/uMod_AddTexture.cpp -text
 uMod_GUI/uMod_AddTexture.h -text
 uMod_GUI/uMod_Client.cpp -text
 uMod_GUI/uMod_Client.h -text
+uMod_GUI/uMod_Dialogs.cpp -text
+uMod_GUI/uMod_Dialogs.h -text
 uMod_GUI/uMod_DirectInjection.cpp -text
 uMod_GUI/uMod_DirectInjection.h -text
 uMod_GUI/uMod_Event.cpp -text

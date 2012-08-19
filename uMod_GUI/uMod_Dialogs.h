@@ -17,10 +17,16 @@ along with Universal Modding Engine.  If not, see <http://www.gnu.org/licenses/>
 */
 
 
-#include "../uMod_DXMain/uMod_Main.h"
-#include "../uMod_DXMain/uMod_TextureFunction.h"
+#ifndef UMOD_DIALOGS_H_
+#define UMOD_DIALOGS_H_
+
+#include "uMod_Main.h"
+class uMod_Acknowledgement : public wxDialog
+{
+public:
+  uMod_Acknowledgement(wxWindow *parent, int id);
+  virtual ~uMod_Acknowledgement() {}
+};
 
 
-#include <d3d9.h>
-#include <d3dx9.h>
-
+#endif /* UMOD_DIALOGS_H_ */

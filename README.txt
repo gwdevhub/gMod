@@ -16,7 +16,7 @@ Compiling wxWidgets:
 If you use my makefiles, you have to change the WX_DIR Variable to your wxWidgets directory. This Variable is nearly at the beginning of the makefiles.
 note: I have set the linkage to static in the corresponding config.* files, if you have not compiled you wxWidgets with static linkage the compiler will fail, when linking the GUI.
 
-1.2) Using gcc:
+1.2) Using gcc:  <-- not provide any more
 change in the uMod_GUI Directory and type:
 mingw32-make -f makefile.gcc BUILD=release
 (note: with the options -j 4 you compile simultaneously with 4 threads)
@@ -42,17 +42,16 @@ If you want to use the logging mode of the dll you have to parse LOG_MESSAGE=1
 
 
 2.2) Using gcc (BUT you need the vc compiler!):
-change in the uMod_DX9 Directory and type:
-mingw32-make -f makefile.gcc 
+change in the uMod_DXMain Directory and type:
+mingw32-make -f makefile.gcc HI=1
 mingw32-make -f makefile.gcc DI=1
 mingw32-make -f makefile.gcc NI=1
 (note: you need to use the special MS Visual prompt)
-(note: with the options -j 4 you compile simultaneously with 4 threads)
 
 
 2.3) Using vc:
-change in the uMod_DX9 Directory and type:
-nmake -f makefile.vc 
+change in the uMod_DXMain Directory and type:
+nmake -f makefile.vc HI=1
 nmake -f makefile.vc DI=1
 nmake -f makefile.vc NI=1
 (note: you need to use the special MS Visual prompt)

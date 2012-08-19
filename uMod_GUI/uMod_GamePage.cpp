@@ -35,6 +35,7 @@ EVT_CHECKBOX( ID_UseSizeFilter, uMod_GamePage::OnCheckBox)
 EVT_CHECKBOX( ID_UseFormatFilter, uMod_GamePage::OnCheckBox)
 EVT_BUTTON(ID_SetFormatFilter, uMod_GamePage::OnButtonFormatFilter)
 
+EVT_BUTTON(ID_Button_Update, uMod_GamePage::OnButtonUpdate)
 EVT_BUTTON(ID_Button_SavePath, uMod_GamePage::OnButtonSavePath)
 
 
@@ -238,9 +239,14 @@ uMod_GamePage::uMod_GamePage( wxNotebook *parent, const wxString &exe, int injec
   SavePathButton = new wxButton( win, ID_Button_SavePath, Language->ButtonDirectory, wxDefaultPosition, wxSize(100,24));
   temp_sizer->Add( (wxWindow*) SavePathButton, 0, wxEXPAND|wxALL, 0);
 
-  temp_sizer->AddSpacer(10);
+  temp_sizer->AddSpacer(5);
   SavePath = new wxTextCtrl(win, wxID_ANY, "", wxDefaultPosition, wxDefaultSize, wxTE_READONLY);
   temp_sizer->Add( (wxWindow*) SavePath, 1, wxEXPAND, 0);
+
+  temp_sizer->AddSpacer(30);
+  UpdateButton = new wxButton( win, ID_Button_Update, Language->ButtonUpdate, wxDefaultPosition, wxSize(100,24));
+  temp_sizer->Add( (wxWindow*) UpdateButton, 0, wxEXPAND|wxALL, 0);
+
   CollSizer->Add( temp_sizer, 0, wxEXPAND | wxBOTTOM | wxLEFT | wxRIGHT, 10);
 
 
@@ -1047,6 +1053,17 @@ void uMod_GamePage::OnButtonSavePath(wxCommandEvent& WXUNUSED(event))
   }
 }
 
+void uMod_GamePage::OnButtonUpdate(wxCommandEvent& WXUNUSED(event))
+{
+  UpdateGame();
+
+  if (!LastError.IsEmpty())
+  {
+    wxMessageBox(LastError, "ERROR", wxOK|wxICON_ERROR);
+    LastError.Empty();
+  }
+}
+
 void uMod_GamePage::OnBeginDrag( wxDataViewEvent &event)
 {
   uMod_TreeViewNode *node = (uMod_TreeViewNode*) event.GetItem().GetID();
@@ -1192,6 +1209,7 @@ void uMod_GamePage::OnContextMenu( wxDataViewEvent &event )
   {
     menu.Enable(ID_Update, false);
     menu.Enable(ID_Reload, false);
+    menu.Enable(ID_SupportTPF, false);
   }
 
   // if nothing is selected, we cannot deleted selected packages ;)

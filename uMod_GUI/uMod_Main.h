@@ -44,6 +44,7 @@ along with Universal Modding Engine.  If not, see <http://www.gnu.org/licenses/>
 #define wxUSE_DATAVIEWCTRL 1
 #define wxUSE_COLLPANE 1
 #define wxUSE_COLOURDLG 1
+#define wxUSE_HYPERLINKCTRL 1
 #endif
 #define wxUSE_SPINCTRL 1
 
@@ -73,6 +74,7 @@ along with Universal Modding Engine.  If not, see <http://www.gnu.org/licenses/>
 #include <wx/colourdata.h>
 #include <wx/colordlg.h>
 #include <wx/spinctrl.h>
+#include <wx/hyperlink.h>
 //#include <windows.h>
 
 #include "../uMod_GlobalDefines.h"
@@ -140,6 +142,7 @@ enum
 #include "uMod_TreeView.h"
 #include "uMod_AddTexture.h"
 #include "uMod_Language.h"
+#include "uMod_Dialogs.h"
 #include "uMod_Event.h"
 #include "uMod_Client.h"
 #include "uMod_GameInfo.h"

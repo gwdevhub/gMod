@@ -225,6 +225,7 @@ int uMod_Language::LoadLanguage(const wxString &name)
     CheckEntry( command, msg, ChooseTemplate)
     CheckEntry( command, msg, OpenTemplate)
     CheckEntry( command, msg, SaveTemplate)
+    CheckEntry( command, msg, SetTemplateName)
     CheckEntry( command, msg, DefaultTemplate)
     CheckEntry( command, msg, AutoSaveTemplate)
     CheckEntry( command, msg, ChooseGame)
@@ -294,10 +295,10 @@ int uMod_Language::LoadDefault(void)
   MenuUseHook = "Use global hook";
   MenuAddGame = "Add game";
   MenuDeleteGame = "Delete game";
-  MenuLoadTemplate = "Load template";
+  MenuLoadTemplate = "Load template ...";
   MenuSaveTemplate = "Save template";
   MenuSaveTemplateAs = "Save template as ...";
-  MenuSetDefaultTemplate = "Set template as default";
+  MenuSetDefaultTemplate = "Set default template ...";
   MenuExit = "Exit";
 
   MainMenuMain = "Main";
@@ -338,6 +339,7 @@ int uMod_Language::LoadDefault(void)
   ChooseTemplate = "Chose a template";
   OpenTemplate = "Open template";
   SaveTemplate = "Save template";
+  SetTemplateName = "Set a template name";
   DefaultTemplate = "Set default template";
   AutoSaveTemplate = "auto save";
 

@@ -196,7 +196,7 @@ public:
 
   int ComputetHash( DWORD64 &CRC64, DWORD32 &CRC32, IDirect3DSurface9 *surface, bool compute_crc);
 
-
+  void SetNextTextureIsFake(void) {NextTextureIsFake=true;}
 
  private:
   int CreateSingleTexture(void);
@@ -217,6 +217,7 @@ public:
 
   int uMod_Reference;
 
+  bool NextTextureIsFake;
   uMod_IDirect3DTexture9* LastCreatedTexture;
   uMod_IDirect3DVolumeTexture9* LastCreatedVolumeTexture;
   uMod_IDirect3DCubeTexture9* LastCreatedCubeTexture;

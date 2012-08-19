@@ -385,7 +385,7 @@ void uMod_Frame::OnMenuSaveTemplate(wxCommandEvent& event)
   if (id==ID_Menu_SaveTemplateAs || file_name.IsEmpty())
   {
     file_name = file_name.AfterFirst('\\').BeforeLast('.');
-    wxTextEntryDialog *dialog = new wxTextEntryDialog( this, Language->ChooseTemplate , Language->SaveTemplate, file_name);
+    wxTextEntryDialog *dialog = new wxTextEntryDialog( this, Language->SetTemplateName , Language->SaveTemplate, file_name);
     if (dialog->ShowModal ()==wxID_OK)
     {
       file_name = dialog->GetValue();
@@ -514,6 +514,7 @@ void uMod_Frame::OnMenuAbout(wxCommandEvent& WXUNUSED(event))
 void uMod_Frame::OnMenuAcknowledgement(wxCommandEvent& WXUNUSED(event))
 {
   wxString msg;
+  /*
   msg << "ROTA thanks:\n\n";
   msg << "RS for coding the original TexMod and for information about the used hashing algorithm\n\n";
   msg << "Vergil for the uMod logo and useful hints\n\n";
@@ -523,6 +524,14 @@ void uMod_Frame::OnMenuAcknowledgement(wxCommandEvent& WXUNUSED(event))
   //msg << "\n\n";
   //msg << "King Brace Blane for a tutorial video on YouTube and bug fixing";
   wxMessageBox( msg, Language->MenuAcknowledgement, wxOK);
+  */
+  //msg=""
+
+  uMod_Acknowledgement *dialog = new uMod_Acknowledgement( this, wxID_ANY);
+  dialog->ShowModal();
+
+  delete dialog;
+
 }
 
 void uMod_Frame::OnMenuStartGame(wxCommandEvent& event)

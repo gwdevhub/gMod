@@ -96,6 +96,12 @@ public:
    */
   void OnButtonSavePath(wxCommandEvent& event);
 
+  /**
+   * Gets called, when the update-path button is pressed
+   * @param event
+   */
+  void OnButtonUpdate(wxCommandEvent& event);
+
 
   /**
    * Gets called by a rigth click in the ViewCtrl
@@ -226,6 +232,8 @@ private:
 
 
   uMod_CheckBoxArray *FileFormats;
+
+  wxButton *UpdateButton;
   wxButton *SavePathButton;
   wxTextCtrl *SavePath;
 

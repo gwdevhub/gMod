@@ -49,8 +49,8 @@ typedef struct
 
 #define uMod_APP_DX9 L"uMod_DX9.txt"
 #define uMod_APP_DIR L"uMod"
-#define uMod_VERSION_char "uMod V 2.0 alpha (r51)"
-#define uMod_VERSION L"uMod V 2.0 alpha (r51)"
+#define uMod_VERSION_char "uMod V 2.0 alpha (r52)"
+#define uMod_VERSION L"uMod V 2.0 alpha (r52)"
 
 #define PIPE_uMod2Game L"\\\\.\\pipe\\uMod2Game"
 #define PIPE_Game2uMod L"\\\\.\\pipe\\Game2uMod"

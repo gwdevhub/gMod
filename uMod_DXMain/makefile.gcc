@@ -87,6 +87,7 @@ objects = \
   ${obj}\uMod_IDirect3D9Ex.${obj_suff} \
   ${obj}\uMod_IDirect3DDevice9.${obj_suff} \
   ${obj}\uMod_IDirect3DDevice9Ex.${obj_suff} \
+  ${obj}\uMod_IDirect3DSurface9.${obj_suff} \
   ${obj}\uMod_IDirect3DTexture9.${obj_suff} \
   ${obj}\uMod_IDirect3DVolumeTexture9.${obj_suff} \
   ${obj}\uMod_IDirect3DCubeTexture9.${obj_suff} \
@@ -113,6 +114,8 @@ DX9_headers = \
  ..\uMod_DX9\uMod_TextureClient_DX9.h \
  ..\uMod_DX9\uMod_IDirect3D9.h \
  ..\uMod_DX9\uMod_IDirect3DDevice9.h \
+ ..\uMod_DX9\uMod_IDirect3DDevice9Ex.h \
+ ..\uMod_DX9\uMod_IDirect3DSurface9.h \
  ..\uMod_DX9\uMod_IDirect3DTexture9.h \
  ..\uMod_DX9\uMod_IDirect3DVolumeTexture9.h \
  ..\uMod_DX9\uMod_IDirect3DCubeTexture9.h
@@ -156,13 +159,16 @@ ${obj}\uMod_TextureClient_DX9.${obj_suff}: ..\uMod_DX9\uMod_TextureClient_DX9.cp
 ${obj}\uMod_IDirect3D9.${obj_suff}: ..\uMod_DX9\uMod_IDirect3D9.cpp ${headers} ${DX9_headers}
 	${CXX} ${CFLAGS} /c $< /Fo$@
 
-${obj}\uMod_IDirect3D9Ex.${obj_suff}: ..\uMod_DX9\uMod_IDirect3D9Ex.cpp ${headers} ${DX9_headers}
+${obj}\uMod_IDirect3D9Ex.${obj_suff}: ..\uMod_DX9\uMod_IDirect3D9Ex.cpp ${headers} ${DX9_headers} ..\uMod_DX9\uMod_IDirect3D9.cpp
 	${CXX} ${CFLAGS} /c $< /Fo$@
 
 ${obj}\uMod_IDirect3DDevice9.${obj_suff}: ..\uMod_DX9\uMod_IDirect3DDevice9.cpp  ${headers} ${DX9_headers}
 	${CXX} ${CFLAGS} /c $< /Fo$@
 
-${obj}\uMod_IDirect3DDevice9Ex.${obj_suff}: ..\uMod_DX9\uMod_IDirect3DDevice9Ex.cpp  ${headers} ${DX9_headers}
+${obj}\uMod_IDirect3DDevice9Ex.${obj_suff}: ..\uMod_DX9\uMod_IDirect3DDevice9Ex.cpp  ${headers} ${DX9_headers} ..\uMod_DX9\uMod_IDirect3DDevice9.cpp
+	${CXX} ${CFLAGS} /c $< /Fo$@
+
+${obj}\uMod_IDirect3DSurface9.${obj_suff}: ..\uMod_DX9\uMod_IDirect3DSurface9.cpp  ${headers} ${DX9_headers}
 	${CXX} ${CFLAGS} /c $< /Fo$@
 
 ${obj}\uMod_IDirect3DTexture9.${obj_suff}: ..\uMod_DX9\uMod_IDirect3DTexture9.cpp  ${headers} ${DX9_headers}
@@ -171,7 +177,7 @@ ${obj}\uMod_IDirect3DTexture9.${obj_suff}: ..\uMod_DX9\uMod_IDirect3DTexture9.cp
 ${obj}\uMod_IDirect3DVolumeTexture9.${obj_suff}: ..\uMod_DX9\uMod_IDirect3DVolumeTexture9.cpp  ${headers} ${DX9_headers}
 	${CXX} ${CFLAGS} /c $< /Fo$@
 
-${obj}\uMod_IDirect3DCubeTexture9.${obj_suff}: ..\uMod_DX9\uMod_IDirect3DCubeTexture9.cpp  ${headers}
+${obj}\uMod_IDirect3DCubeTexture9.${obj_suff}: ..\uMod_DX9\uMod_IDirect3DCubeTexture9.cpp  ${headers} ${DX9_headers}
 	${CXX} ${CFLAGS} /c $< /Fo$@
 
 

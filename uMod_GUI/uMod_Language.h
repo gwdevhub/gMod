@@ -85,6 +85,7 @@ public:
   wxString ChooseTemplate;
   wxString OpenTemplate;
   wxString SaveTemplate;
+  wxString SetTemplateName;
   wxString DefaultTemplate;
   wxString AutoSaveTemplate;
 

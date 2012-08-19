@@ -26,6 +26,7 @@ along with Universal Modding Engine.  If not, see <http://www.gnu.org/licenses/>
 #include "../uMod_DXMain/uMod_TextureFunction.h"
 #include "uMod_IDirect3DDevice9.h"
 #include "uMod_IDirect3DCubeTexture9.h"
+#include "uMod_IDirect3DSurface9.h"
 
 //this function yields for the non switched texture object
 HRESULT APIENTRY uMod_IDirect3DCubeTexture9::QueryInterface(REFIID riid, void** ppvObj)
@@ -219,8 +220,21 @@ HRESULT APIENTRY uMod_IDirect3DCubeTexture9::GetLevelDesc(UINT Level,D3DSURFACE_
 //this function yields for the non switched texture object
 HRESULT APIENTRY uMod_IDirect3DCubeTexture9::GetCubeMapSurface(D3DCUBEMAP_FACES FaceType, UINT Level, IDirect3DSurface9 **ppCubeMapSurface)
 {
-  if (CrossRef_D3Dtex!=NULL) return (CrossRef_D3Dtex->m_D3Dtex->GetCubeMapSurface( FaceType, Level, ppCubeMapSurface));
-	return (m_D3Dtex->GetCubeMapSurface( FaceType, Level, ppCubeMapSurface));
+  Message( "uMod_IDirect3DCubeTexture9::GetCubeMapSurface( %d, %u, %p): %p\n", FaceType,  Level, *ppCubeMapSurface, this);
+  IDirect3DSurface9* pSurf;
+  uMod_IDirect3DSurface9* puMod_Surf;
+  HRESULT ret;
+  if (CrossRef_D3Dtex!=NULL) ret = (CrossRef_D3Dtex->m_D3Dtex->GetCubeMapSurface( FaceType, Level, &pSurf));
+  else ret = (m_D3Dtex->GetCubeMapSurface( FaceType, Level, &pSurf));
+
+  if (SUCCEEDED(ret))
+  {
+    puMod_Surf = new uMod_IDirect3DSurface9( pSurf, NULL, this, m_D3Ddev);
+    *ppCubeMapSurface = puMod_Surf;
+  }
+  else *ppCubeMapSurface = pSurf;
+
+  return ret;
 }
 
 //this function yields for the non switched texture object
@@ -235,6 +249,26 @@ HRESULT APIENTRY uMod_IDirect3DCubeTexture9::UnlockRect( D3DCUBEMAP_FACES FaceTy
 {
   if (CrossRef_D3Dtex!=NULL) return (CrossRef_D3Dtex->m_D3Dtex->UnlockRect( FaceType, Level));
 	return (m_D3Dtex->UnlockRect( FaceType, Level));
+
+  HRESULT ret;
+  if (CrossRef_D3Dtex!=NULL) ret = (CrossRef_D3Dtex->m_D3Dtex->UnlockRect( FaceType, Level));
+  ret = (m_D3Dtex->UnlockRect( FaceType, Level));
+
+  DWORD64 crc64 = CRC64;
+  DWORD64 crc32 = CRC32;
+  ComputetHash(crc32>0);
+  if (crc64!=CRC64)
+  {
+    // device can be uMod_IDirect3DDevice9 object or a uMod_IDirect3DDevice9Ex object !
+    void *cpy;
+    long ret = m_D3Ddev->QueryInterface( IID_IDirect3DTexture9, &cpy);
+    if (ret == 0x01000000L)
+      ((uMod_IDirect3DDevice9*) m_D3Ddev)->GetuMod_Client()->CRCHasChanged(this);
+    else
+      ((uMod_IDirect3DDevice9Ex*) m_D3Ddev)->GetuMod_Client()->CRCHasChanged(this);
+  }
+
+  return ret;
 }
 
 

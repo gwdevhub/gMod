@@ -735,11 +735,30 @@ int uMod_TextureClient_DX9::MergeUpdate(void)
 }
 
 
+int uMod_TextureClient_DX9::CRCHasChanged( uMod_IDirect3DTexture9* pTexture)
+{
+  UnswitchTextures(pTexture);
+  if (pTexture->Reference<0) // this texture was not added before or it is a fake texture !
+    return AddTexture( pTexture);
+  else
+    return LookUpToMod( pTexture);
+}
+
+int uMod_TextureClient_DX9::CRCHasChanged( uMod_IDirect3DCubeTexture9* pTexture)
+{
+  UnswitchTextures(pTexture);
+  if (pTexture->Reference<0) // this texture was not added before or it is a fake texture !
+    return AddTexture( pTexture);
+  else
+    return LookUpToMod( pTexture);
+}
 
 int uMod_TextureClient_DX9::LookUpToMod( uMod_IDirect3DTexture9* pTexture, int num_index_list, int *index_list) // should only be called for original textures
 {
   Message("uMod_TextureClient_DX9::LookUpToMod( %p): hash: %#llX,  %p\n", pTexture, pTexture->CRC64, this);
   if (pTexture->CrossRef_D3Dtex!=NULL) return (RETURN_OK); // bug, this texture is already switched
+  if (pTexture->CRC64==0) return (RETURN_OK);
+
   int index = GetIndex( pTexture->CRC64, num_index_list, index_list);
   if (index>=0)
   {

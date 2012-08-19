@@ -20,6 +20,7 @@ along with Universal Modding Engine.  If not, see <http://www.gnu.org/licenses/>
 
 #include "..\uMod_DXMain\uMod_Main.h"
 #include "uMod_IDirect3DDevice9Ex.h"
+#include "uMod_IDirect3DSurface9.h"
 
 #define uMod_IDirect3DDevice9 uMod_IDirect3DDevice9Ex
 #define IDirect3DDevice9 IDirect3DDevice9Ex

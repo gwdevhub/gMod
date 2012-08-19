@@ -40,6 +40,7 @@ class uMod_IDirect3DTexture9 : public IDirect3DTexture9
 public:
 	uMod_IDirect3DTexture9(IDirect3DTexture9 **ppTex, IDirect3DDevice9 *pIDirect3DDevice9)
 	{
+    Message( "uMod_IDirect3DTexture9::uMod_IDirect3DTexture9(%p %p): %p\n", *ppTex, pIDirect3DDevice9, this);
 		m_D3Dtex = *ppTex; //Texture which will be displayed and will be passed to the game
 		m_D3Ddev = pIDirect3DDevice9; //device pointer
 		CrossRef_D3Dtex = NULL; //cross reference

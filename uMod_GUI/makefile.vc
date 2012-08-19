@@ -36,6 +36,7 @@ MINIMAL_OBJECTS =  \
   $(OBJS)\uMod_DirectInjection.obj \
   $(OBJS)\uMod_GUI.obj \
   $(OBJS)\uMod_GameInfo.obj \
+  $(OBJS)\uMod_Dialogs.obj \
   $(OBJS)\uMod_MiniPanels.obj \
   $(OBJS)\uMod_GamePage.obj \
   $(OBJS)\uMod_Server.obj \
@@ -57,6 +58,7 @@ HEADERS = \
  uMod_Event.h \
  uMod_File.h \
  uMod_GameInfo.h \
+ uMod_Dialogs.h \
  uMod_MiniPanels.h \
  uMod_GamePage.h \
  uMod_GUI.h \
@@ -398,6 +400,9 @@ $(OBJS)\uMod_GUI.obj: .\uMod_GUI.cpp $(HEADERS)
 
 $(OBJS)\uMod_GameInfo.obj: .\uMod_GameInfo.cpp $(HEADERS)
   $(CXX) /c /nologo /TP /Fo$@ $(MINIMAL_CXXFLAGS) .\uMod_GameInfo.cpp
+
+$(OBJS)\uMod_Dialogs.obj: .\uMod_Dialogs.cpp $(HEADERS)
+  $(CXX) /c /nologo /TP /Fo$@ $(MINIMAL_CXXFLAGS) .\uMod_Dialogs.cpp
 
 $(OBJS)\uMod_MiniPanels.obj: .\uMod_MiniPanels.cpp $(HEADERS)
   $(CXX) /c /nologo /TP /Fo$@ $(MINIMAL_CXXFLAGS) .\uMod_MiniPanels.cpp
