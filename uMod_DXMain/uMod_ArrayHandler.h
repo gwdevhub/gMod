@@ -101,7 +101,7 @@ typedef uMod_TextureHandler<TextureFileStruct> uMod_FileHandler;
 template <class T>
 uMod_TextureHandler<T>::uMod_TextureHandler(void)
 {
-  Message("uMod_TextureHandler(void): %lu\n", this);
+  Message("uMod_TextureHandler(void): %p\n", this);
   Number = 0;
   FieldCounter = 0;
 
@@ -111,7 +111,7 @@ uMod_TextureHandler<T>::uMod_TextureHandler(void)
 template <class T>
 uMod_TextureHandler<T>::~uMod_TextureHandler(void)
 {
-  Message("~uMod_TextureHandler(void): %lu\n", this);
+  Message("~uMod_TextureHandler(void): %p\n", this);
   if (Content!=NULL)
   {
     for (int i=0; i<FieldCounter; i++) if (Content[i] != NULL) delete [] Content[i];
@@ -122,7 +122,7 @@ uMod_TextureHandler<T>::~uMod_TextureHandler(void)
 template <class T>
 int uMod_TextureHandler<T>::Add(T* entry)
 {
-  Message("uMod_TextureHandler::Add( %lu): %lu\n", entry, this);
+  Message("uMod_TextureHandler::Add( %p): %p\n", entry, this);
   if (gl_ErrorState & uMod_ERROR_FATAL) return (RETURN_FATAL_ERROR);
 
   if (entry->Reference>=0) return (RETURN_TEXTURE_ALLREADY_ADDED);
@@ -168,7 +168,7 @@ int uMod_TextureHandler<T>::Add(T* entry)
 template <class T>
 int uMod_TextureHandler<T>::Remove(T* entry) //will be called, if a texture is completely released
 {
-  Message("uMod_TextureHandler::Remove( %lu): %lu\n", entry, this);
+  Message("uMod_TextureHandler::Remove( %p): %p\n", entry, this);
   if (gl_ErrorState & uMod_ERROR_FATAL) return (RETURN_FATAL_ERROR);
 
   int ref = entry->Reference;

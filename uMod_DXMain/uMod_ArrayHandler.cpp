@@ -29,7 +29,7 @@ along with Universal Modding Engine.  If not, see <http://www.gnu.org/licenses/>
 
 uMod_FileHandler::uMod_FileHandler(void)
 {
-  Message("uMod_FileHandler(void): %lu\n", this);
+  Message("uMod_FileHandler(void): %p\n", this);
   Number = 0;
   FieldCounter = 0;
   Files = NULL;
@@ -37,7 +37,7 @@ uMod_FileHandler::uMod_FileHandler(void)
 
 uMod_FileHandler::~uMod_FileHandler(void)
 {
-  Message("~uMod_FileHandler(void): %lu\n", this);
+  Message("~uMod_FileHandler(void): %p\n", this);
   if (Files!=NULL)
   {
     for (int i=0; i<FieldCounter; i++) if (Files[i] != NULL) delete [] Files[i];
@@ -47,7 +47,7 @@ uMod_FileHandler::~uMod_FileHandler(void)
 
 int uMod_FileHandler::Add(TextureFileStruct* file)
 {
-  Message("uMod_FileHandler::Add(%lu): %lu\n", file, this);
+  Message("uMod_FileHandler::Add(%p): %p\n", file, this);
   if (gl_ErrorState & uMod_ERROR_FATAL) return (RETURN_FATAL_ERROR);
 
   if (file->Reference>=0) return (RETURN_UPDATE_ALLREADY_ADDED);
@@ -92,7 +92,7 @@ int uMod_FileHandler::Add(TextureFileStruct* file)
 
 int uMod_FileHandler::Remove(TextureFileStruct* file)
 {
-  Message("uMod_FileHandler::Remove(%lu): %lu\n", file, this);
+  Message("uMod_FileHandler::Remove(%p): %p\n", file, this);
   if (gl_ErrorState & uMod_ERROR_FATAL) return (RETURN_FATAL_ERROR);
   int ref = file->Reference;
 

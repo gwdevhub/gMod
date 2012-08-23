@@ -23,7 +23,7 @@ along with Universal Modding Engine.  If not, see <http://www.gnu.org/licenses/>
 
 uMod_TextureClient::uMod_TextureClient(const int version) : Version(version)
 {
-  Message("uMod_TextureClient::uMod_TextureClient(void): %lu\n", this);
+  Message("uMod_TextureClient::uMod_TextureClient(void): %p\n", this);
   Server = NULL;
   BoolSaveAllTextures = false;
   BoolSaveSingleTexture = false;
@@ -57,7 +57,7 @@ uMod_TextureClient::uMod_TextureClient(const int version) : Version(version)
 
 uMod_TextureClient::~uMod_TextureClient(void)
 {
-  Message("uMod_TextureClient::~uMod_TextureClient(void): %lu\n", this);
+  Message("uMod_TextureClient::~uMod_TextureClient(void): %p\n", this);
   if (Server!=NULL) Server->RemoveClient(this, Version);
 
   if (Mutex!=NULL) CloseHandle(Mutex);
@@ -92,7 +92,7 @@ int uMod_TextureClient::ConnectToServer(uMod_TextureServer* server)
 
 int uMod_TextureClient::SetSaveDirectory( wchar_t *dir)
 {
-  Message("uMod_TextureClient::SetSaveDirectory( %ls): %lu\n", dir, this);
+  Message("uMod_TextureClient::SetSaveDirectory( %ls): %p\n", dir, this);
   int i = 0;
   for (i=0; i<MAX_PATH && (dir[i]); i++) SavePath[i] = dir[i];
   if (i==MAX_PATH)
@@ -106,7 +106,7 @@ int uMod_TextureClient::SetSaveDirectory( wchar_t *dir)
 
 int uMod_TextureClient::SetGameName( wchar_t *name)
 {
-  Message("uMod_TextureClient::SetGameName( %ls): %lu\n", name, this);
+  Message("uMod_TextureClient::SetGameName( %ls): %p\n", name, this);
   int i = 0;
   for (i=0; i<MAX_PATH && (name[i]); i++) GameName[i] = name[i];
   if (i==MAX_PATH)
@@ -123,7 +123,7 @@ int uMod_TextureClient::SetGameName( wchar_t *name)
 
 int uMod_TextureClient::AddUpdate(TextureFileStruct* update, int number)  //client must delete the update array
 {
-  Message("AddUpdate( %lu, %d): %lu\n", update, number, this);
+  Message("AddUpdate( %p, %d): %p\n", update, number, this);
   if (int ret = LockMutex()) {gl_ErrorState |= uMod_ERROR_TEXTURE; return (ret);}
   if (Update!=NULL) delete [] Update;
   Update = update;

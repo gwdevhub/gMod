@@ -724,7 +724,7 @@ int uMod_TextureServer::MainLoop(void) // run as a separated thread
         case CONTROL_ADD_TEXTURE:
         {
           size = commands->Value;
-          Message("MainLoop: CONTROL_ADD_TEXTURE (%#lX  %u,  %u %u): %lu\n", commands->Hash, size, sizeof(MsgStruct), sizeof(char), this);
+          Message("MainLoop: CONTROL_ADD_TEXTURE (%#lX  %u,  %u %u): %p\n", commands->Hash, size, sizeof(MsgStruct), sizeof(char), this);
           if (pos + sizeof(MsgStruct) + size <= num) AddFile( (wchar_t*) &buffer[pos + sizeof(MsgStruct)], commands->Hash, force);
           //update_textures = true;
           force = false;

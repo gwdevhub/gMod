@@ -98,7 +98,7 @@ void InitInstance(HINSTANCE hModule)
   if (HookThisProgram( game, 10*MAX_PATH)) //ask if we need to hook this program
   {
     OpenMessage();
-    Message("InitInstance: %lu (%ls)\n", hModule, game);
+    Message("InitInstance: %p (%ls)\n", hModule, game);
 
     gl_TextureServer = new uMod_TextureServer(game); //create the server which listen on the pipe and prepare the update for the texture clients
 

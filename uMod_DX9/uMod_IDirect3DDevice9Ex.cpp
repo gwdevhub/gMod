@@ -48,7 +48,30 @@ HRESULT __stdcall uMod_IDirect3DDevice9Ex::CheckResourceResidency( IDirect3DReso
 
 HRESULT __stdcall uMod_IDirect3DDevice9Ex::ComposeRects( IDirect3DSurface9 *pSource, IDirect3DSurface9 *pDestination, IDirect3DVertexBuffer9 *pSrcRectDescriptors, UINT NumRects, IDirect3DVertexBuffer9 *pDstRectDescriptors, D3DCOMPOSERECTSOP Operation, INT XOffset, INT YOffset)
 {
-  return(m_pIDirect3DDevice9Ex->ComposeRects( pSource, pDestination, pSrcRectDescriptors, NumRects, pDstRectDescriptors, Operation, XOffset, YOffset));
+  Message( PRE_MESSAGE "::ComposeRects( %p, %p, %p, %u, %p, ...): %p\n", pSource, pDestination, pSrcRectDescriptors, NumRects, this);
+  IDirect3DSurface9* cpy;
+  uMod_IDirect3DSurface9 *DestSurf=NULL;
+  if( pSource != NULL )
+  {
+    long int ret = pSource->QueryInterface( IID_IDirect3D9, (void**) &cpy);
+    if (ret == 0x01000000L)
+    {
+      pSource = ((uMod_IDirect3DSurface9*)pSource)->m_D3Dsurf;
+    }
+  }
+  if( pDestination != NULL )
+  {
+    long int ret = pDestination->QueryInterface( IID_IDirect3D9, (void**) &cpy);
+    if (ret == 0x01000000L)
+    {
+      DestSurf = ((uMod_IDirect3DSurface9*)pDestination);
+      pDestination = DestSurf->m_D3Dsurf;
+    }
+  }
+  HRESULT ret = (m_pIDirect3DDevice9Ex->ComposeRects( pSource, pDestination, pSrcRectDescriptors, NumRects, pDstRectDescriptors, Operation, XOffset, YOffset));
+
+  CheckForChangeSurface(DestSurf);
+  return (ret);
 }
 
 HRESULT __stdcall uMod_IDirect3DDevice9Ex::CreateDepthStencilSurfaceEx( UINT Width, UINT Height, D3DFORMAT Format, D3DMULTISAMPLE_TYPE MultiSample, DWORD MultisampleQuality, BOOL Discard, IDirect3DSurface9 **ppSurface, HANDLE *pSharedHandle, DWORD Usage)

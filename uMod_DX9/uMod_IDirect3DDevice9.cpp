@@ -156,7 +156,6 @@ int uMod_IDirect3DDevice9::CreateSingleTexture(void)
 
 int uMod_IDirect3DDevice9::ComputetHash( DWORD64 &CRC64, DWORD32 &CRC32, IDirect3DSurface9 *surface, bool compute_crc)
 {
-
   IDirect3DSurface9 *offscreen_surface = NULL;
   D3DLOCKED_RECT d3dlr;
   D3DSURFACE_DESC desc;
@@ -310,6 +309,29 @@ int uMod_IDirect3DDevice9::ComputetHash( DWORD64 &CRC64, DWORD32 &CRC32, IDirect
 }
 
 
+int uMod_IDirect3DDevice9::CheckForChangeSurface(uMod_IDirect3DSurface9 *surface)
+{
+  if (surface!=NULL)
+  {
+    if (surface->m_D3DTex!=NULL)
+    {
+      DWORD64 crc64 = surface->m_D3DTex->CRC64;
+      DWORD32 crc32 = surface->m_D3DTex->CRC32;
+      surface->m_D3DTex->ComputetHash(crc32>0);
+      if (crc64!=surface->m_D3DTex->CRC64)
+        uMod_Client->CRCHasChanged(surface->m_D3DTex);
+    }
+    else if (surface->m_D3DCubeTex!=NULL)
+    {
+      DWORD64 crc64 = surface->m_D3DCubeTex->CRC64;
+      DWORD32 crc32 = surface->m_D3DCubeTex->CRC32;
+      surface->m_D3DCubeTex->ComputetHash(crc32>0);
+      if (crc64!=surface->m_D3DCubeTex->CRC64)
+        uMod_Client->CRCHasChanged(surface->m_D3DCubeTex);
+    }
+  }
+  return (0);
+}
 
 
 
@@ -453,6 +475,15 @@ HRESULT uMod_IDirect3DDevice9::GetCreationParameters(D3DDEVICE_CREATION_PARAMETE
 
 HRESULT uMod_IDirect3DDevice9::SetCursorProperties(UINT XHotSpot,UINT YHotSpot,IDirect3DSurface9* pCursorBitmap)
 {
+  IDirect3DSurface9* cpy;
+  if( pCursorBitmap != NULL )
+  {
+    long int ret = pCursorBitmap->QueryInterface( IID_IDirect3D9, (void**) &cpy);
+    if (ret == 0x01000000L)
+    {
+      pCursorBitmap = ((uMod_IDirect3DSurface9*)pCursorBitmap)->m_D3Dsurf;
+    }
+  }
   return(m_pIDirect3DDevice9->SetCursorProperties(XHotSpot,YHotSpot,pCursorBitmap));
 }
 
@@ -832,22 +863,93 @@ HRESULT uMod_IDirect3DDevice9::UpdateTexture(IDirect3DBaseTexture9* pSourceTextu
 
 HRESULT uMod_IDirect3DDevice9::GetRenderTargetData(IDirect3DSurface9* pRenderTarget,IDirect3DSurface9* pDestSurface)
 {
-  return(m_pIDirect3DDevice9->GetRenderTargetData(pRenderTarget,pDestSurface));
+  Message( PRE_MESSAGE "::GetRenderTargetData( %p, %p): %p\n", pRenderTarget, pDestSurface, this);
+  IDirect3DSurface9* cpy;
+  uMod_IDirect3DSurface9 *DestSurf=NULL;
+  if( pRenderTarget != NULL )
+  {
+    long int ret = pRenderTarget->QueryInterface( IID_IDirect3D9, (void**) &cpy);
+    if (ret == 0x01000000L)
+    {
+      pRenderTarget = ((uMod_IDirect3DSurface9*)pRenderTarget)->m_D3Dsurf;
+    }
+  }
+  if( pDestSurface != NULL )
+  {
+    long int ret = pDestSurface->QueryInterface( IID_IDirect3D9, (void**) &cpy);
+    if (ret == 0x01000000L)
+    {
+      DestSurf = ((uMod_IDirect3DSurface9*)pDestSurface);
+      pDestSurface = DestSurf->m_D3Dsurf;
+    }
+  }
+  HRESULT ret = (m_pIDirect3DDevice9->GetRenderTargetData(pRenderTarget,pDestSurface));
+
+  CheckForChangeSurface(DestSurf);
+  return ret;
 }
 
 HRESULT uMod_IDirect3DDevice9::GetFrontBufferData(UINT iSwapChain,IDirect3DSurface9* pDestSurface)
 {
+  Message( PRE_MESSAGE "::GetFrontBufferData( %u, %p): %p\n", iSwapChain, pDestSurface, this);
+  IDirect3DSurface9* cpy;
+  if( pDestSurface != NULL )
+  {
+    long int ret = pDestSurface->QueryInterface( IID_IDirect3D9, (void**) &cpy);
+    if (ret == 0x01000000L)
+    {
+      pDestSurface = ((uMod_IDirect3DSurface9*)pDestSurface)->m_D3Dsurf;
+    }
+  }
   return(m_pIDirect3DDevice9->GetFrontBufferData(iSwapChain,pDestSurface));
 }
 
 HRESULT uMod_IDirect3DDevice9::StretchRect(IDirect3DSurface9* pSourceSurface,CONST RECT* pSourceRect,IDirect3DSurface9* pDestSurface,CONST RECT* pDestRect,D3DTEXTUREFILTERTYPE Filter)
 {
-  return(m_pIDirect3DDevice9->StretchRect(pSourceSurface,pSourceRect,pDestSurface,pDestRect,Filter));
+  Message( PRE_MESSAGE "::StretchRect( %p, %p, %p, %p): %p\n", pSourceSurface, pSourceRect, pDestSurface, pDestRect, this);
+  IDirect3DSurface9* cpy;
+  uMod_IDirect3DSurface9 *DestSurf=NULL;
+  if( pSourceSurface != NULL )
+  {
+    long int ret = pSourceSurface->QueryInterface( IID_IDirect3D9, (void**) &cpy);
+    if (ret == 0x01000000L)
+    {
+      pSourceSurface = ((uMod_IDirect3DSurface9*)pSourceSurface)->m_D3Dsurf;
+    }
+  }
+  if( pDestSurface != NULL )
+  {
+    long int ret = pDestSurface->QueryInterface( IID_IDirect3D9, (void**) &cpy);
+    if (ret == 0x01000000L)
+    {
+      DestSurf = ((uMod_IDirect3DSurface9*)pDestSurface);
+      pDestSurface = DestSurf->m_D3Dsurf;
+    }
+  }
+  HRESULT ret = (m_pIDirect3DDevice9->StretchRect(pSourceSurface,pSourceRect,pDestSurface,pDestRect,Filter));
+
+  CheckForChangeSurface(DestSurf);
+  return (ret);
 }
 
 HRESULT uMod_IDirect3DDevice9::ColorFill(IDirect3DSurface9* pSurface,CONST RECT* pRect,D3DCOLOR color)
 {
-  return(m_pIDirect3DDevice9->ColorFill(pSurface,pRect,color));
+  Message( PRE_MESSAGE "::ColorFill( %p, %u): %p\n", pSurface, color, this);
+  IDirect3DSurface9* cpy;
+  uMod_IDirect3DSurface9 *Surf=NULL;
+  if( pSurface != NULL )
+  {
+    long int ret = pSurface->QueryInterface( IID_IDirect3D9, (void**) &cpy);
+    if (ret == 0x01000000L)
+    {
+      Surf = ((uMod_IDirect3DSurface9*)pSurface);
+      pSurface = Surf->m_D3Dsurf;
+    }
+  }
+  HRESULT ret = (m_pIDirect3DDevice9->ColorFill(pSurface,pRect,color));
+
+  CheckForChangeSurface(Surf);
+  return (ret);
 }
 
 HRESULT uMod_IDirect3DDevice9::CreateOffscreenPlainSurface(UINT Width,UINT Height,D3DFORMAT Format,D3DPOOL Pool,IDirect3DSurface9** ppSurface,HANDLE* pSharedHandle)
@@ -857,6 +959,7 @@ HRESULT uMod_IDirect3DDevice9::CreateOffscreenPlainSurface(UINT Width,UINT Heigh
 
 HRESULT uMod_IDirect3DDevice9::SetRenderTarget(DWORD RenderTargetIndex,IDirect3DSurface9* pRenderTarget)
 {
+  Message( PRE_MESSAGE "::SetRenderTarget( %u, %p): %p\n", RenderTargetIndex, pRenderTarget, this);
   {
     IDirect3DSurface9 *back_buffer;
     NormalRendering = false;
@@ -865,6 +968,15 @@ HRESULT uMod_IDirect3DDevice9::SetRenderTarget(DWORD RenderTargetIndex,IDirect3D
       m_pIDirect3DDevice9->GetBackBuffer( 0, i, D3DBACKBUFFER_TYPE_MONO, &back_buffer);
       if (back_buffer == pRenderTarget) NormalRendering = true;
       back_buffer->Release();
+    }
+  }
+  IDirect3DSurface9* cpy;
+  if( pRenderTarget != NULL )
+  {
+    long int ret = pRenderTarget->QueryInterface( IID_IDirect3D9, (void**) &cpy);
+    if (ret == 0x01000000L)
+    {
+      pRenderTarget = ((uMod_IDirect3DSurface9*)pRenderTarget)->m_D3Dsurf;
     }
   }
   return (m_pIDirect3DDevice9->SetRenderTarget(RenderTargetIndex,pRenderTarget));
@@ -877,6 +989,16 @@ HRESULT uMod_IDirect3DDevice9::GetRenderTarget(DWORD RenderTargetIndex,IDirect3D
 
 HRESULT uMod_IDirect3DDevice9::SetDepthStencilSurface(IDirect3DSurface9* pNewZStencil)
 {
+  Message( PRE_MESSAGE "::SetDepthStencilSurface( %p): %p\n", pNewZStencil, this);
+  IDirect3DSurface9* cpy;
+  if( pNewZStencil != NULL )
+  {
+    long int ret = pNewZStencil->QueryInterface( IID_IDirect3D9, (void**) &cpy);
+    if (ret == 0x01000000L)
+    {
+      pNewZStencil = ((uMod_IDirect3DSurface9*)pNewZStencil)->m_D3Dsurf;
+    }
+  }
   return(m_pIDirect3DDevice9->SetDepthStencilSurface(pNewZStencil));
 }
 

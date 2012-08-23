@@ -25,6 +25,7 @@ along with Universal Modding Engine.  If not, see <http://www.gnu.org/licenses/>
 #include "uMod_IDirect3DTexture9.h"
 #include "uMod_IDirect3DVolumeTexture9.h"
 #include "uMod_IDirect3DCubeTexture9.h"
+#include "uMod_IDirect3DSurface9.h"
 
 class uMod_TextureClient_DX9;
 
@@ -195,6 +196,7 @@ public:
   uMod_IDirect3DCubeTexture9* GetSingleCubeTexture(void) {return (SingleCubeTexture);}
 
   int ComputetHash( DWORD64 &CRC64, DWORD32 &CRC32, IDirect3DSurface9 *surface, bool compute_crc);
+  int CheckForChangeSurface(uMod_IDirect3DSurface9 *surface);
 
   void SetNextTextureIsFake(void) {NextTextureIsFake=true;}
 
