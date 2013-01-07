@@ -56,9 +56,15 @@ public:
   wxString MenuRemoveSelectedPackages;
   wxString MenuUpdate;
   wxString MenuReload;
-  wxString MenuSupportTPF;
   wxString ButtonUpdate;
   wxString ButtonDirectory;
+
+  wxString CollapseModSettings;
+  wxString SupportTPF;
+  wxString ComputeRenderTargets;
+  wxString ExtractTexturesToDisk;
+  wxString DeleteExtractedTexturesOnDisk;
+  wxString ExtractPath;
 
   wxString ChooseFile;
   wxString ChooseDir;

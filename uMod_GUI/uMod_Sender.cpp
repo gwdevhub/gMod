@@ -101,17 +101,11 @@ int uMod_Sender::Send( const uMod_GameInfo &game, const uMod_GameInfo &game_old,
   SendBool( game.GetSaveAllTextures(), CONTROL_SAVE_ALL);
 
   SendBool(game.SupportTPF(), CONTROL_SUPPORT_TPF);
+  SendBool(game.ComputeRenderTargets(), CONTROL_COMPUTE_RENDER_TARGETS);
 
   SendPath(game.GetSavePath());
-  /*
-  wxString path;
-  path = game.GetSavePath();
-  if (path!=game_old.GetSavePath()) SendPath(path);
-*/
 
-
-
-  if ( OldTextures== (uMod_TextureElement_SortedArrayPtr*)0) OldTextures = new uMod_TextureElement_SortedArrayPtr( Compare_uMod_TextureElement );
+  if ( OldTextures == (uMod_TextureElement_SortedArrayPtr*)0) OldTextures = new uMod_TextureElement_SortedArrayPtr( Compare_uMod_TextureElement );
 
   //uMod_TextureElement_SortedArrayPtr* current_textures = new uMod_TextureElement_SortedArrayPtr( Compare_uMod_TextureElement );
 
@@ -161,6 +155,7 @@ int uMod_Sender::SendTextures(const uMod_TextureElement_SortedArrayPtr &old_tex,
   unsigned int new_pos=0;
   MsgStruct *msg;
   int buffer_pos = 0;
+
 
   // both arrays are sorted
   // we go through both arrays in parallel
@@ -222,7 +217,18 @@ int uMod_Sender::SendTextures(const uMod_TextureElement_SortedArrayPtr &old_tex,
 int uMod_Sender::AddTexture( uMod_TextureElement *tex, int &buffer_pos)
 {
   MsgStruct *msg;
+  bool send_data = true;
   unsigned int size = tex->Content().Len();
+
+  if (size==0)
+  {
+    send_data = false;
+    size = tex->ExtractedFile().Len();
+    if (size==0) return 0;
+    size++;
+    size*=sizeof(wchar_t);
+  }
+
   if ((sizeof(MsgStruct) + buffer_pos) >=BIG_BUFSIZE) //the buffer is full
   {
     if (int ret = SendToGame( Buffer, buffer_pos)) return ret;
@@ -232,12 +238,22 @@ int uMod_Sender::AddTexture( uMod_TextureElement *tex, int &buffer_pos)
   msg = (MsgStruct*) &Buffer[buffer_pos];
   msg->Hash = tex->Hash();
   msg->Value = size;
-  msg->Control = CONTROL_FORCE_RELOAD_TEXTURE_DATA;
+  if (send_data)
+    msg->Control = CONTROL_FORCE_RELOAD_TEXTURE_DATA;
+  else
+    msg->Control = CONTROL_FORCE_RELOAD_TEXTURE;
+
 
 
   buffer_pos += sizeof(MsgStruct);
 
-  const char* temp = tex->Content().Data();
+  const char* temp = NULL;
+
+  if (send_data)
+    temp = tex->Content().Data();
+  else
+    temp = (const char*) tex->ExtractedFile().wc_str();
+
   if (temp!=(char*)0)
   {
     unsigned int l = 0u;
@@ -252,8 +268,7 @@ int uMod_Sender::AddTexture( uMod_TextureElement *tex, int &buffer_pos)
     }
   }
 
-  if (LastError.Len()>0) return 1;
-  else return 0;
+  return 0;
 }
 
 int uMod_Sender::RemoveTexture( uMod_TextureElement *tex, int &buffer_pos)
@@ -272,8 +287,7 @@ int uMod_Sender::RemoveTexture( uMod_TextureElement *tex, int &buffer_pos)
   buffer_pos += sizeof(MsgStruct);
 
 
-  if (LastError.Len()>0) return 1;
-  else return 0;
+  return 0;
 }
 
 int uMod_Sender::SendKey(int key, int ctr)

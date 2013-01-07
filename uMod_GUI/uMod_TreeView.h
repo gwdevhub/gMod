@@ -31,42 +31,42 @@ class uMod_TreeViewNode
 {
 public:
   uMod_TreeViewNode( uMod_TreeViewNode* parent, uMod_ModElement *element) : myParent(parent), myElement(element)
+  {
+    myElement->AddRef();
+  }
+
+  ~uMod_TreeViewNode()
+  {
+    // free all our children nodes
+    size_t count = myChildren.GetCount();
+    for (size_t i = 0; i < count; i++)
     {
-        myElement->AddRef();
+      uMod_TreeViewNode *child = myChildren[i];
+      delete child;
     }
+    myElement->Release();
+  }
 
-    ~uMod_TreeViewNode()
-    {
-        // free all our children nodes
-        size_t count = myChildren.GetCount();
-        for (size_t i = 0; i < count; i++)
-        {
-          uMod_TreeViewNode *child = myChildren[i];
-          delete child;
-        }
-        myElement->Release();
-    }
+  bool IsContainer() const  {if (myElement->Type() == uMod_ModElement::Group) return true; else return false;}
 
-    bool IsContainer() const  {if (myElement->Type() == uMod_ModElement::Group) return true; else return false;}
+  uMod_TreeViewNode* GetParent() {return myParent;}
 
-    uMod_TreeViewNode* GetParent() {return myParent;}
+  uMod_TreeViewNode_ArrayPtr& GetChildren() {return myChildren;}
 
-    uMod_TreeViewNode_ArrayPtr& GetChildren() {return myChildren;}
+  uMod_TreeViewNode* GetNthChild( unsigned int n ) {return myChildren.Item( n);}
 
-    uMod_TreeViewNode* GetNthChild( unsigned int n ) {return myChildren.Item( n);}
+  void Insert( uMod_TreeViewNode* child, unsigned int n) {myChildren.Insert( child, n);}
 
-    void Insert( uMod_TreeViewNode* child, unsigned int n) {myChildren.Insert( child, n);}
+  void Append( uMod_TreeViewNode* child )  {myChildren.Add( child );}
 
-    void Append( uMod_TreeViewNode* child )  {myChildren.Add( child );}
-
-    unsigned int GetChildCount() const {return myChildren.GetCount();}
+  unsigned int GetChildCount() const {return myChildren.GetCount();}
 
 public:     // public to avoid getters/setters
-    uMod_ModElement *myElement;
+  uMod_ModElement *myElement;
 
 //private:
-    uMod_TreeViewNode* myParent;
-    uMod_TreeViewNode_ArrayPtr myChildren;
+  uMod_TreeViewNode* myParent;
+  uMod_TreeViewNode_ArrayPtr myChildren;
 };
 
 
@@ -81,7 +81,7 @@ public:
 
   virtual unsigned int GetColumnCount() const
   {
-      return 5;
+    return 5;
   }
 
   virtual wxString GetColumnType( unsigned int col ) const
@@ -108,14 +108,14 @@ public:
   // implementation of uMod functions
   int CreateSingleNode(void);
 
-  int AddPackage(const wxString &file_name);
-  int AddPackages(const wxArrayString &files);
-  int AddPackagesFromTemplate(const wxArrayString &packages);
+  int AddPackage(const wxString &file_name, const wxString &extract_path);
+  int AddPackages(const wxArrayString &files, const wxString &extract_path);
+  int AddPackagesFromTemplate(const wxArrayString &packages, const wxString &extract_path);
 
-  int DeletePackage( const wxDataViewItem &item);
-  int DeletePackages( const wxDataViewItemArray &item);
-  int DeleteAllPackages(void);
-
+  int DeletePackage( const wxDataViewItem &item, bool delete_files_on_disk = false);
+  int DeletePackages( const wxDataViewItemArray &item,  bool delete_files_on_disk = false);
+  int DeleteAllPackages( bool delete_files_on_disk = false);
+  int DeleteFileOfPackage(uMod_TreeViewNode *node);
 
   int GetActiveTexture( uMod_TextureElement_SortedArrayPtr &texture);
 

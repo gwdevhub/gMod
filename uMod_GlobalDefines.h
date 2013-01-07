@@ -27,7 +27,7 @@ along with Universal Modding Engine.  If not, see <http://www.gnu.org/licenses/>
  * This struct is the basic of the communication between dll and GUI. For each command send through the pipe a control value is set to MsgStruct::Control.
  * The MsgStruct::Value can store various information (e.g. key values, boolean, or length of data).
  *
- * If mor date should be send, Control is set to one of the intended values and value to the amount of data in byte.
+ * If more date should be send, Control is set to one of the intended values and value to the amount of data in byte.
  * After the MsgStruct is send also the data is send through the pipe.
  */
 typedef struct
@@ -43,14 +43,14 @@ typedef struct
 typedef struct
 {
   HANDLE In; //!< Incoming pipe
-  HANDLE Out; //!< Outgoning pipe
+  HANDLE Out; //!< Outgoing pipe
 } PipeStruct;
 
 
 #define uMod_APP_DX9 L"uMod_DX9.txt"
 #define uMod_APP_DIR L"uMod"
-#define uMod_VERSION_char "uMod V 2.0 alpha (r53)"
-#define uMod_VERSION L"uMod V 2.0 alpha (r53)"
+#define uMod_VERSION_char "uMod V 2.0 alpha (r54)"
+#define uMod_VERSION L"uMod V 2.0 alpha (r54)"
 
 #define PIPE_uMod2Game L"\\\\.\\pipe\\uMod2Game"
 #define PIPE_Game2uMod L"\\\\.\\pipe\\Game2uMod"
@@ -85,6 +85,7 @@ typedef struct
 #define CONTROL_SAVE_FORMAT 50
 
 #define CONTROL_SUPPORT_TPF 60
+#define CONTROL_COMPUTE_RENDER_TARGETS 61
 
 #define CONTROL_GAME_EXIT 100
 #define CONTROL_ADD_CLIENT 101

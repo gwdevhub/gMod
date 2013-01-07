@@ -38,6 +38,7 @@ public:
   {
     if (myData!=(T*)0) delete [] myData;
     myData = (T*)0;
+    myLen = 0;
     if (size<=0) return 0;
 
     try {myData = new T[size];}
@@ -75,12 +76,23 @@ public:
     NONE
   };
 
-  uMod_ModElement( enumType t,  enumStatus s = NONE) : myType(t), myStatus(s), myCounter(1) {}
+  enum enumError
+  {
+    OK=0,
+    MemoryError,
+    ZIPError,
+    DiskError,
+    HashError
+  };
+
+
+  uMod_ModElement( enumType t,  enumStatus s = NONE) : myType(t), myStatus(s), myError(OK), myCounter(1) {}
   virtual ~uMod_ModElement() {}
 
   int AddRef(void) {return ++myCounter;}
-  int Release(void) {if (--myCounter==0) {delete this;} return myCounter;}
+  int Release();
 
+  virtual void DeleteFileOnDisk(void) {}
 
   const wxString &File(void) const {return myFile;}
   wxString &File(void) {return myFile;}
@@ -101,6 +113,9 @@ public:
   const enumStatus &Status(void) const {return myStatus;}
   enumStatus &Status(void) {return myStatus;}
 
+  const enumError &Error(void) const {return myError;}
+  enumError &Error(void) {return myError;}
+
 private:
 
   wxString myFile;
@@ -109,6 +124,7 @@ private:
   wxString myComment;
   const  enumType myType;
   enumStatus myStatus;
+  enumError myError;
   int myCounter;
 
 
@@ -128,16 +144,21 @@ public:
   uMod_TextureElement() : uMod_ModElement(Texture) {}
   virtual ~uMod_TextureElement() {}
 
+  virtual void DeleteFileOnDisk(void);
 
   uMod_Data<char> &Content(void) {return myContent;}
-
 
   const DWORD64 &Hash(void) const {return myHash;}
   DWORD64 &Hash(void) {return myHash;}
 
+  const wxString &ExtractedFile(void) const {return myExtractedFile;}
+  wxString &ExtractedFile(void) {return myExtractedFile;}
+
 private:
   uMod_Data<char> myContent;
   DWORD64 myHash;
+  wxString myExtractedFile;
+
 
 
 

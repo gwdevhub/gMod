@@ -169,24 +169,14 @@ public:
 
   uMod_TextureClient_DX9* GetuMod_Client(void) {return (uMod_Client);}
 
-  uMod_IDirect3DTexture9* GetLastCreatedTexture(void) {return (LastCreatedTexture);}
-  int SetLastCreatedTexture(uMod_IDirect3DTexture9* pTexture) {LastCreatedTexture=pTexture; return (RETURN_OK);}
-
-  uMod_IDirect3DVolumeTexture9* GetLastCreatedVolumeTexture(void) {return (LastCreatedVolumeTexture);}
-  int SetLastCreatedVolumeTexture(uMod_IDirect3DVolumeTexture9* pTexture) {LastCreatedVolumeTexture=pTexture; return (RETURN_OK);}
-
-  uMod_IDirect3DCubeTexture9* GetLastCreatedCubeTexture(void) {return (LastCreatedCubeTexture);}
-  int SetLastCreatedCubeTexture(uMod_IDirect3DCubeTexture9* pTexture) {LastCreatedCubeTexture=pTexture; return (RETURN_OK);}
-
-
   uMod_IDirect3DTexture9* GetSingleTexture(void) {return (SingleTexture);}
   uMod_IDirect3DVolumeTexture9* GetSingleVolumeTexture(void) {return (SingleVolumeTexture);}
   uMod_IDirect3DCubeTexture9* GetSingleCubeTexture(void) {return (SingleCubeTexture);}
 
-  int ComputetHash( DWORD64 &CRC64, DWORD32 &CRC32, IDirect3DSurface9 *surface, bool compute_crc);
-  int CheckForChangeSurface(uMod_IDirect3DSurface9 *surface);
+  int ComputeCRC( DWORD64 &CRC64, DWORD32 &CRC32, IDirect3DSurface9 *surface, bool compute_crc);
+  int CheckForChangeSurface(uMod_IDirect3DSurface9 *surface, bool render_target=false);
 
-  void SetNextTextureIsFake(void) {NextTextureIsFake=true;}
+  void SetNextTextureIsFake(bool val = true) {NextTextureIsFake=val;}
 
  private:
 	int CreateSingleTexture(void);
@@ -208,9 +198,6 @@ public:
   int uMod_Reference;
 
   bool NextTextureIsFake;
-  uMod_IDirect3DTexture9* LastCreatedTexture;
-  uMod_IDirect3DVolumeTexture9* LastCreatedVolumeTexture;
-  uMod_IDirect3DCubeTexture9* LastCreatedCubeTexture;
 
   uMod_TextureServer* uMod_Server;
   uMod_TextureClient_DX9* uMod_Client;

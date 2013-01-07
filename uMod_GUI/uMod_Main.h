@@ -28,6 +28,7 @@ along with Universal Modding Engine.  If not, see <http://www.gnu.org/licenses/>
 #define __WXMSW__
 #define NOPCH
 #define _UNICODE
+#define wxUSE_GUI 1
 #define wxUSE_NOTEBOOK 1
 #define wxUSE_CHECKBOX 1
 #define wxUSE_THREADS 1
@@ -128,6 +129,10 @@ enum
   ID_UseFormatFilter,
   ID_SetFormatFilter,
   ID_Button_SavePath,
+
+  ID_Button_ExtractPath,
+
+  ID_ExtractTextures,
 
   ID_DataViewCtrl,
   ID_ContextMenu,

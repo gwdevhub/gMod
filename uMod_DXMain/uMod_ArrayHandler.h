@@ -24,19 +24,55 @@ along with Universal Modding Engine.  If not, see <http://www.gnu.org/licenses/>
 #include "..\uMod_GlobalDefines.h"
 
 /**
- * On entry hold the pointer to the fake texture data (file content)
- * and the pointer to all game texture which are replaced by this texture.
+ * On entry hold the pointer to the fake texture data (file content) or the filename.
+ *
+ * An object is created for each texture to be modded from the server.
  */
-typedef struct
+class TextureFileContent
 {
+public:
+  TextureFileContent();
+  ~TextureFileContent();
+
+  int AddRef(void) {return ++RefCounter;}
+  int Release(void) {if (--RefCounter==0) {delete this; return 0;} else return RefCounter;}
+
   bool ForceReload; //!< to force a reload of the texture (only important, if it is already modded)
-  char* pData; //!<  store texture file as file in memory
+  wchar_t* pFileName; //!< store the texture file name (if available)
+  char* pData; //!<  store texture file as file in memory (if available)
   unsigned int Size; //!< size of file (\a pData)
-  int NumberOfTextures; //!< Number of textures loaded by the game, which match the hash and thus are switched
   int Reference; //!< for a fast delete in the FileHandler
-  void **Textures; //!< pointer to all texture loade by the game, which match the hash and thus are switched
   DWORD64 Hash; //!< hash value
-} TextureFileStruct;
+
+private:
+  int RefCounter;
+};
+
+
+/**
+ * One object holds a pointer to the data (\a TextureFileContent)
+ * and a Reference to all generated fake texture.
+ *
+ * An object is created for each texture to be modded from the server for each client separately.
+ */
+class TextureEntry
+{
+public:
+  TextureEntry(void);
+  ~TextureEntry();
+
+  int AddTexture(IUnknown *tex);
+  int RemoveTexture(IUnknown* tex);
+
+  void SetContent(TextureFileContent *content);
+  const TextureFileContent * Content() {return TexContent;}
+
+
+
+  TextureFileContent *TexContent;
+  int NumberOfTextures; //!< Number of textures loaded by the game, which match the hash and thus are switched
+  IUnknown **Textures; //!< pointer to all texture loaded by the game, which match the hash and thus are switched;
+};
 
 
 
@@ -87,7 +123,7 @@ private:
 
 
 
-typedef uMod_TextureHandler<TextureFileStruct> uMod_FileHandler;
+typedef uMod_TextureHandler<TextureFileContent> uMod_FileHandler;
 
 
 
@@ -122,7 +158,7 @@ uMod_TextureHandler<T>::~uMod_TextureHandler(void)
 template <class T>
 int uMod_TextureHandler<T>::Add(T* entry)
 {
-  Message("uMod_TextureHandler::Add( %p): %p\n", entry, this);
+  //Message("uMod_TextureHandler::Add( %p): %p\n", entry, this);
   if (gl_ErrorState & uMod_ERROR_FATAL) return (RETURN_FATAL_ERROR);
 
   if (entry->Reference>=0) return (RETURN_TEXTURE_ALLREADY_ADDED);
@@ -168,7 +204,7 @@ int uMod_TextureHandler<T>::Add(T* entry)
 template <class T>
 int uMod_TextureHandler<T>::Remove(T* entry) //will be called, if a texture is completely released
 {
-  Message("uMod_TextureHandler::Remove( %p): %p\n", entry, this);
+  //Message("uMod_TextureHandler::Remove( %p): %p\n", entry, this);
   if (gl_ErrorState & uMod_ERROR_FATAL) return (RETURN_FATAL_ERROR);
 
   int ref = entry->Reference;

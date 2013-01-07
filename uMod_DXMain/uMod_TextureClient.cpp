@@ -28,7 +28,6 @@ uMod_TextureClient::uMod_TextureClient(const int version) : Version(version)
   BoolSaveAllTextures = false;
   BoolSaveSingleTexture = false;
   BoolShowTextureString = false;
-  BoolComputeCRC = false;
 
   KeyBack = 0;
   KeySave = 0;
@@ -63,11 +62,13 @@ uMod_TextureClient::~uMod_TextureClient(void)
   if (Mutex!=NULL) CloseHandle(Mutex);
 
   if (Update!=NULL) delete [] Update;
-  if (FileToMod!=NULL)
+  if (FileToMod!=NULL) delete [] FileToMod;
+  /*
   {
     for (int i=0; i<NumberToMod; i++) if (FileToMod[i].Textures!=NULL) delete [] FileToMod[i].Textures;
     delete [] FileToMod;
   }
+  */
 }
 
 
@@ -121,7 +122,7 @@ int uMod_TextureClient::SetGameName( wchar_t *name)
 
 
 
-int uMod_TextureClient::AddUpdate(TextureFileStruct* update, int number)  //client must delete the update array
+int uMod_TextureClient::AddUpdate(TextureEntry* update, int number)  //client must delete the update array
 {
   Message("AddUpdate( %p, %d): %p\n", update, number, this);
   if (int ret = LockMutex()) {gl_ErrorState |= uMod_ERROR_TEXTURE; return (ret);}
@@ -152,7 +153,7 @@ int uMod_TextureClient::GetIndex( DWORD64 hash, int num_index_list, int *index_l
   {
     if (index_list==NULL || num_index_list==0)
     {
-      if (hash<FileToMod[0].Hash || hash>FileToMod[NumberToMod-1].Hash) return (-1);
+      if (hash<FileToMod[0].Content()->Hash || hash>FileToMod[NumberToMod-1].Content()->Hash) return (-1);
       int pos = NumberToMod/2;
       int begin = 0;
       int end = NumberToMod-1;
@@ -162,23 +163,23 @@ int uMod_TextureClient::GetIndex( DWORD64 hash, int num_index_list, int *index_l
       // Note: contradicting to normal C-code here the interval includes the index "begin" and "end"!
       while (begin+1<end) // as long as the interval is longer than two
       {
-        if (hash > FileToMod[pos].Hash) // the new interval is the right half of the actual interval
+        if (hash > FileToMod[pos].Content()->Hash) // the new interval is the right half of the actual interval
         {
           begin = pos+1; // the new interval does not contain the index "pos"
           pos = (begin + end)/2; // set "pos" somewhere inside the new interval
         }
-        else if (hash < FileToMod[pos].Hash) // the new interval is the left half of the actual interval
+        else if (hash < FileToMod[pos].Content()->Hash) // the new interval is the left half of the actual interval
         {
           end = pos-1; // the new interval does not contain the index "pos"
           pos = (begin + end)/2; // set "pos" somewhere inside the new interval
         }
         else {return (pos); break;} // we hit the correct hash
       }
-      for ( pos=begin; pos<=end; pos++) if (FileToMod[pos].Hash==hash) return (pos);
+      for ( pos=begin; pos<=end; pos++) if (FileToMod[pos].Content()->Hash==hash) return (pos);
     }
     else
     {
-      if (hash<FileToMod[index_list[0]].Hash || hash>FileToMod[index_list[num_index_list-1]].Hash) return (-1);
+      if (hash<FileToMod[index_list[0]].Content()->Hash || hash>FileToMod[index_list[num_index_list-1]].Content()->Hash) return (-1);
       int pos = num_index_list/2;
       int begin = 0;
       int end = num_index_list-1;
@@ -188,19 +189,19 @@ int uMod_TextureClient::GetIndex( DWORD64 hash, int num_index_list, int *index_l
       // Note: contradicting to normal C-code here the interval includes the index "begin" and "end"!
       while (begin+1<end) // as long as the interval is longer than two
       {
-        if (hash > FileToMod[index_list[pos]].Hash) // the new interval is the right half of the actual interval
+        if (hash > FileToMod[index_list[pos]].Content()->Hash) // the new interval is the right half of the actual interval
         {
           begin = pos+1; // the new interval does not contain the index "pos"
           pos = (begin + end)/2; // set "pos" somewhere inside the new interval
         }
-        else if (hash < FileToMod[index_list[pos]].Hash) // the new interval is the left half of the actual interval
+        else if (hash < FileToMod[index_list[pos]].Content()->Hash) // the new interval is the left half of the actual interval
         {
           end = pos-1; // the new interval does not contain the index "pos"
           pos = (begin + end)/2; // set "pos" somewhere inside the new interval
         }
         else {return (index_list[pos]); break;} // we hit the correct hash
       }
-      for ( pos=begin; pos<=end; pos++) if (FileToMod[index_list[pos]].Hash==hash) return (index_list[pos]);
+      for ( pos=begin; pos<=end; pos++) if (FileToMod[index_list[pos]].Content()->Hash==hash) return (index_list[pos]);
     }
   }
   return (-1);

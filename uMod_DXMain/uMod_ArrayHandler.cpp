@@ -21,88 +21,57 @@ along with Universal Modding Engine.  If not, see <http://www.gnu.org/licenses/>
 
 #include "uMod_Main.h"
 
-
-
-
-/*
-
-
-uMod_FileHandler::uMod_FileHandler(void)
+TextureFileContent::TextureFileContent() : ForceReload(false), pFileName(NULL), pData(NULL), Size(0u), Reference(-1), Hash(0u), RefCounter(1)
 {
-  Message("uMod_FileHandler(void): %p\n", this);
-  Number = 0;
-  FieldCounter = 0;
-  Files = NULL;
 }
 
-uMod_FileHandler::~uMod_FileHandler(void)
+TextureFileContent::~TextureFileContent()
 {
-  Message("~uMod_FileHandler(void): %p\n", this);
-  if (Files!=NULL)
-  {
-    for (int i=0; i<FieldCounter; i++) if (Files[i] != NULL) delete [] Files[i];
-    delete [] Files;
-  }
-}
-
-int uMod_FileHandler::Add(TextureFileStruct* file)
-{
-  Message("uMod_FileHandler::Add(%p): %p\n", file, this);
-  if (gl_ErrorState & uMod_ERROR_FATAL) return (RETURN_FATAL_ERROR);
-
-  if (file->Reference>=0) return (RETURN_UPDATE_ALLREADY_ADDED);
-
-  if (Number/FieldLength==FieldCounter) // get more memory
-  {
-    TextureFileStruct*** temp = NULL;
-    try {temp = new TextureFileStruct**[FieldCounter+10];}
-    catch (...)
-    {
-      gl_ErrorState |= uMod_ERROR_MEMORY | uMod_ERROR_TEXTURE;
-      return (RETURN_NO_MEMORY);
-    }
-
-    for (int i=0; i<FieldCounter; i++) temp[i] = Files[i]; //copy to new allocated memory
-
-    for (int i=FieldCounter; i<FieldCounter+10; i++) temp[i] = NULL; // initialize unused parts to zero
-
-    FieldCounter += 10;
-
-    if (Files!=NULL) delete [] Files;
-
-    Files = temp;
-  }
-  if (Number%FieldLength==0) // maybe we need to get more memory
-  {
-    try {if (Files[Number/FieldLength]==NULL) Files[Number/FieldLength] = new TextureFileStruct*[FieldLength];}
-    catch (...)
-    {
-      Files[Number/FieldLength] = NULL;
-      gl_ErrorState |= uMod_ERROR_MEMORY | uMod_ERROR_TEXTURE;
-      return (RETURN_NO_MEMORY);
-    }
-  }
-
-  Files[Number/FieldLength][Number%FieldLength] = file;
-  file->Reference = Number++; //set the reference for a fast deleting
-
-  return (RETURN_OK);
+  if (pFileName!=NULL) delete [] pFileName;
+  if (pData!=NULL) delete [] pData;
 }
 
 
-int uMod_FileHandler::Remove(TextureFileStruct* file)
-{
-  Message("uMod_FileHandler::Remove(%p): %p\n", file, this);
-  if (gl_ErrorState & uMod_ERROR_FATAL) return (RETURN_FATAL_ERROR);
-  int ref = file->Reference;
 
-  if (ref<0) return (RETURN_OK); // returning if no Reference is set
-  file->Reference = -1; //set reference outside of bound
-  if (ref<(--Number)) //if reference is unequal to Number-1 we copy the last entry to the index "ref"
-  {
-    Files[ref/FieldLength][ref%FieldLength] = Files[Number/FieldLength][Number%FieldLength];
-    Files[ref/FieldLength][ref%FieldLength]->Reference = ref; //set the new reference entry
-  }
-  return (RETURN_OK);
+
+TextureEntry::TextureEntry(void) : TexContent(NULL), NumberOfTextures(0), Textures(NULL)
+{
 }
-*/
+
+TextureEntry::~TextureEntry()
+{
+  //for (int i=0; i<NumberOfTextures; i++) Textures[i]->Release();
+  if (Textures!=NULL) delete [] Textures;
+  if (TexContent!=NULL) TexContent->Release();
+}
+
+
+void TextureEntry::SetContent(TextureFileContent *content)
+{
+  if (TexContent!=NULL) TexContent->Release();
+  TexContent = content;
+  if (TexContent!=NULL) TexContent->AddRef();
+}
+
+int TextureEntry::AddTexture(IUnknown* tex)
+{
+  IUnknown** temp = new IUnknown*[NumberOfTextures+1];
+  for (int i=0; i<NumberOfTextures; i++) temp[i] = Textures[i];
+
+  if (Textures!=NULL) delete [] Textures;
+  Textures = temp;
+  return 0;
+}
+
+int TextureEntry::RemoveTexture(IUnknown* tex)
+{
+  for (int i=0; i<NumberOfTextures; i++) if (Textures[i] == tex)
+  {
+    NumberOfTextures--;
+    for (int j=i; j<NumberOfTextures; j++)
+      Textures[j] = Textures[j+1];
+    break;
+  }
+  return 0;
+}
+

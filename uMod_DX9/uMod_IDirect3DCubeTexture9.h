@@ -49,6 +49,7 @@ public:
     CRC64 = 0u;
     CRC32 = 0u;
     FAKE = false;
+    Dirty = 1;
 	}
 
 	IDirect3DCubeTexture9 *m_D3Dtex; //!< pointer to the real IDirect3DCubeTexture9 object
@@ -58,6 +59,7 @@ public:
   DWORD64 CRC64; //!< computed hash value for this game texture.
   DWORD32 CRC32; //!< computed crc32 value for this game texture.
   bool FAKE; //!< True if this texture is was loaded by uMod (fake texture)
+  unsigned char  Dirty;
 
 	// original interface
     STDMETHOD(QueryInterface) (REFIID riid, void** ppvObj);
@@ -87,41 +89,5 @@ public:
 
     int ComputetHash( bool compute_crc);
 };
-
-
-
-inline void UnswitchTextures(uMod_IDirect3DCubeTexture9 *pTexture)
-{
-  uMod_IDirect3DCubeTexture9* CrossRef = pTexture->CrossRef_D3Dtex;
-  if (CrossRef!=NULL)
-  {
-    // switch textures back
-    IDirect3DCubeTexture9* cpy = pTexture->m_D3Dtex;
-    pTexture->m_D3Dtex = CrossRef->m_D3Dtex;
-    CrossRef->m_D3Dtex = cpy;
-
-    // cancel the link
-    CrossRef->CrossRef_D3Dtex = NULL;
-    pTexture->CrossRef_D3Dtex = NULL;
-  }
-}
-
-inline int SwitchTextures( uMod_IDirect3DCubeTexture9 *pTexture1, uMod_IDirect3DCubeTexture9 *pTexture2)
-{
-  if (pTexture1->m_D3Ddev == pTexture2->m_D3Ddev && pTexture1->CrossRef_D3Dtex == NULL && pTexture2->CrossRef_D3Dtex == NULL)
-  {
-    // make cross reference
-    pTexture1->CrossRef_D3Dtex = pTexture2;
-    pTexture2->CrossRef_D3Dtex = pTexture1;
-
-    // switch textures
-    IDirect3DCubeTexture9* cpy = pTexture2->m_D3Dtex;
-    pTexture2->m_D3Dtex = pTexture1->m_D3Dtex;
-    pTexture1->m_D3Dtex = cpy;
-    return (RETURN_OK);
-  }
-  else return (RETURN_TEXTURE_NOT_SWITCHED);
-}
-
 
 #endif

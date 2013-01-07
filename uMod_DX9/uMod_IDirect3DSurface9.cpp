@@ -26,7 +26,7 @@ along with Universal Modding Engine.  If not, see <http://www.gnu.org/licenses/>
 
 HRESULT uMod_IDirect3DSurface9::QueryInterface(REFIID riid, void** ppvObj)
 {
-  Message( "uMod_IDirect3DSurface9::uMod_IDirect3DSurface9(): %p\n", this);
+  //Message( "uMod_IDirect3DSurface9::uMod_IDirect3DSurface9(): %p\n", this);
   if (riid==IID_IDirect3D9)
   {
     // This function should never be called with IID_IDirect3D9 by the game
@@ -50,14 +50,14 @@ HRESULT uMod_IDirect3DSurface9::QueryInterface(REFIID riid, void** ppvObj)
 
 ULONG uMod_IDirect3DSurface9::AddRef()
 {
-  Message( "uMod_IDirect3DSurface9::AddRef(): %p\n", this);
+  //Message( "uMod_IDirect3DSurface9::AddRef(): %p\n", this);
   RefCounter++;
   return m_D3Dsurf->AddRef();
 }
 
 ULONG uMod_IDirect3DSurface9::Release()
 {
-  Message( "uMod_IDirect3DSurface9::Release(): %p\n", this);
+  //Message( "uMod_IDirect3DSurface9::Release(): %p\n", this);
   // this object might be created by uMod_IDirect3DTexture9::GetSurfaceLevel
   // thus the RefCounter might be zero although m_D3Dsurf->Release() does not delete
   // the m_D3Dsurf object
@@ -68,55 +68,55 @@ ULONG uMod_IDirect3DSurface9::Release()
 
 HRESULT uMod_IDirect3DSurface9::GetDevice( IDirect3DDevice9** ppDevice)
 {
-  Message( "uMod_IDirect3DSurface9::GetDevice(): %p\n", this);
+  //Message( "uMod_IDirect3DSurface9::GetDevice(): %p\n", this);
   *ppDevice = m_D3Ddev;
   return 0;
 }
 
 HRESULT uMod_IDirect3DSurface9::SetPrivateData( REFGUID refguid,CONST void* pData,DWORD SizeOfData,DWORD Flags)
 {
-  Message( "uMod_IDirect3DSurface9::SetPrivateData(): %p\n", this);
+  //Message( "uMod_IDirect3DSurface9::SetPrivateData(): %p\n", this);
   return m_D3Dsurf->SetPrivateData( refguid, pData, SizeOfData, Flags);
 }
 
 HRESULT uMod_IDirect3DSurface9::GetPrivateData( REFGUID refguid,void* pData,DWORD* pSizeOfData)
 {
-  Message( "uMod_IDirect3DSurface9::GetPrivateData(): %p\n", this);
+  //Message( "uMod_IDirect3DSurface9::GetPrivateData(): %p\n", this);
   return m_D3Dsurf->GetPrivateData( refguid, pData, pSizeOfData);
 }
 
 HRESULT uMod_IDirect3DSurface9::FreePrivateData( REFGUID refguid)
 {
-  Message( "uMod_IDirect3DSurface9::FreePrivateData(): %p\n", this);
+  //Message( "uMod_IDirect3DSurface9::FreePrivateData(): %p\n", this);
   return m_D3Dsurf->FreePrivateData( refguid);
 }
 
 DWORD uMod_IDirect3DSurface9::SetPriority(DWORD PriorityNew)
 {
-  Message( "uMod_IDirect3DSurface9::SetPriority(): %p\n", this);
+  //Message( "uMod_IDirect3DSurface9::SetPriority(): %p\n", this);
   return m_D3Dsurf->SetPriority(PriorityNew);
 }
 DWORD uMod_IDirect3DSurface9::GetPriority()
 {
-  Message( "uMod_IDirect3DSurface9::GetPriority(): %p\n", this);
+  //Message( "uMod_IDirect3DSurface9::GetPriority(): %p\n", this);
   return m_D3Dsurf->GetPriority();
 }
 
 void uMod_IDirect3DSurface9::PreLoad()
 {
-  Message( "uMod_IDirect3DSurface9::PreLoad(): %p\n", this);
+  //Message( "uMod_IDirect3DSurface9::PreLoad(): %p\n", this);
   return m_D3Dsurf->PreLoad();
 }
 
 D3DRESOURCETYPE uMod_IDirect3DSurface9::GetType()
 {
-  Message( "uMod_IDirect3DSurface9::GetType(): %p\n", this);
+  //Message( "uMod_IDirect3DSurface9::GetType(): %p\n", this);
   return m_D3Dsurf->GetType();
 }
 
 HRESULT uMod_IDirect3DSurface9::GetContainer( REFIID riid,void** ppContainer)
 {
-  Message( "uMod_IDirect3DSurface9::GetContainer(): %p\n", this);
+  //Message( "uMod_IDirect3DSurface9::GetContainer(): %p\n", this);
   HRESULT ret = m_D3Dsurf->GetContainer( riid, ppContainer);
 
   //return the uMod_IDirect3DTexture9 object
@@ -136,100 +136,44 @@ HRESULT uMod_IDirect3DSurface9::GetContainer( REFIID riid,void** ppContainer)
 
 HRESULT uMod_IDirect3DSurface9::GetDesc( D3DSURFACE_DESC *pDesc)
 {
-  Message( "uMod_IDirect3DSurface9::GetDesc(): %p\n", this);
+  //Message( "uMod_IDirect3DSurface9::GetDesc(): %p\n", this);
   return m_D3Dsurf->GetDesc( pDesc);
 }
 
 HRESULT uMod_IDirect3DSurface9::LockRect( D3DLOCKED_RECT* pLockedRect,CONST RECT* pRect,DWORD Flags)
 {
-  Message( "uMod_IDirect3DSurface9::LockRect(): %p\n", this);
+  //Message( "uMod_IDirect3DSurface9::LockRect(): %p\n", this);
   return m_D3Dsurf->LockRect( pLockedRect, pRect, Flags);
 }
 
 HRESULT uMod_IDirect3DSurface9::UnlockRect()
 {
-  Message( "uMod_IDirect3DSurface9::UnlockRect(): %p\n", this);
+  //Message( "uMod_IDirect3DSurface9::UnlockRect(): %p\n", this);
   HRESULT ret = m_D3Dsurf->UnlockRect();
 
-  if (m_D3DTex!=NULL)
-  {
-    DWORD64 crc64 = m_D3DTex->CRC64;
-    DWORD64 crc32 = m_D3DTex->CRC32;
-    m_D3DTex->ComputetHash(crc32>0);
-    if (crc64!=m_D3DTex->CRC64)
-    {
-      // device can be uMod_IDirect3DDevice9 object or a uMod_IDirect3DDevice9Ex object !
-      void *cpy;
-      long ret = m_D3Ddev->QueryInterface( IID_IDirect3DTexture9, &cpy);
-      if (ret == 0x01000000L)
-        ((uMod_IDirect3DDevice9*) m_D3Ddev)->GetuMod_Client()->CRCHasChanged(m_D3DTex);
-      else
-        ((uMod_IDirect3DDevice9Ex*) m_D3Ddev)->GetuMod_Client()->CRCHasChanged(m_D3DTex);
-    }
-  }
-  else if (m_D3DCubeTex!=NULL)
-  {
-    DWORD64 crc64 = m_D3DCubeTex->CRC64;
-    DWORD64 crc32 = m_D3DCubeTex->CRC32;
-    m_D3DCubeTex->ComputetHash(crc32>0);
-    if (crc64!=m_D3DCubeTex->CRC64)
-    {
-      // device can be uMod_IDirect3DDevice9 object or a uMod_IDirect3DDevice9Ex object !
-      void *cpy;
-      long ret = m_D3Ddev->QueryInterface( IID_IDirect3DTexture9, &cpy);
-      if (ret == 0x01000000L)
-        ((uMod_IDirect3DDevice9*) m_D3Ddev)->GetuMod_Client()->CRCHasChanged(m_D3DCubeTex);
-      else
-        ((uMod_IDirect3DDevice9Ex*) m_D3Ddev)->GetuMod_Client()->CRCHasChanged(m_D3DCubeTex);
-    }
-  }
+  if (m_D3DTex!=NULL && !m_D3DTex->FAKE)
+    m_D3DTex->Dirty=1;
+  else if (m_D3DCubeTex!=NULL && !m_D3DCubeTex->FAKE)
+    m_D3DCubeTex->Dirty = 1;
 
   return ret;
 }
 
 HRESULT uMod_IDirect3DSurface9::GetDC( HDC *phdc)
 {
-  Message( "uMod_IDirect3DSurface9::GetDC(): %p\n", this);
+  //Message( "uMod_IDirect3DSurface9::GetDC(): %p\n", this);
   return m_D3Dsurf->GetDC( phdc);
 }
 
 HRESULT uMod_IDirect3DSurface9::ReleaseDC( HDC hdc)
 {
-  Message( "uMod_IDirect3DSurface9::ReleaseDC(): %p\n", this);
+  //Message( "uMod_IDirect3DSurface9::ReleaseDC(): %p\n", this);
   HRESULT ret = m_D3Dsurf->ReleaseDC( hdc);
 
-  if (m_D3DTex!=NULL)
-  {
-    DWORD64 crc64 = m_D3DTex->CRC64;
-    DWORD64 crc32 = m_D3DTex->CRC32;
-    m_D3DTex->ComputetHash(crc32>0);
-    if (crc64!=m_D3DTex->CRC64)
-    {
-      // device can be uMod_IDirect3DDevice9 object or a uMod_IDirect3DDevice9Ex object !
-      void *cpy;
-      long ret = m_D3Ddev->QueryInterface( IID_IDirect3DTexture9, &cpy);
-      if (ret == 0x01000000L)
-        ((uMod_IDirect3DDevice9*) m_D3Ddev)->GetuMod_Client()->CRCHasChanged(m_D3DTex);
-      else
-        ((uMod_IDirect3DDevice9Ex*) m_D3Ddev)->GetuMod_Client()->CRCHasChanged(m_D3DTex);
-    }
-  }
-  else if (m_D3DCubeTex!=NULL)
-  {
-    DWORD64 crc64 = m_D3DCubeTex->CRC64;
-    DWORD64 crc32 = m_D3DCubeTex->CRC32;
-    m_D3DCubeTex->ComputetHash(crc32>0);
-    if (crc64!=m_D3DCubeTex->CRC64)
-    {
-      // device can be uMod_IDirect3DDevice9 object or a uMod_IDirect3DDevice9Ex object !
-      void *cpy;
-      long ret = m_D3Ddev->QueryInterface( IID_IDirect3DTexture9, &cpy);
-      if (ret == 0x01000000L)
-        ((uMod_IDirect3DDevice9*) m_D3Ddev)->GetuMod_Client()->CRCHasChanged(m_D3DCubeTex);
-      else
-        ((uMod_IDirect3DDevice9Ex*) m_D3Ddev)->GetuMod_Client()->CRCHasChanged(m_D3DCubeTex);
-    }
-  }
+  if (m_D3DTex!=NULL && !m_D3DTex->FAKE)
+    m_D3DTex->Dirty=1;
+  else if (m_D3DCubeTex!=NULL && !m_D3DCubeTex->FAKE)
+    m_D3DCubeTex->Dirty = 1;
 
   return ret;
 }

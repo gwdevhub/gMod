@@ -54,7 +54,7 @@ public:
    * @param[in] version The device version (DX9, DX9EX, DX10, or DX101)
    * @return RETURN_OK on success
    */
-  int AddClient(uMod_TextureClient *client, TextureFileStruct* &update, int &number, const int version); // called from a Client
+  int AddClient(uMod_TextureClient *client, TextureEntry* &update, int &number, const int version); // called from a Client
 
   /**
    * On destruction of client, it disconnect from the server.
@@ -98,7 +98,7 @@ private:
   int AddFile( char* buffer, DWORD64 size,  DWORD64 hash, bool force); // called from Mainloop(), if the content of the texture is sent
 
   /**
-   * Add a file to the list of texture to be modded (called from the mainloop). Not supported anymore!
+   * Add a file to the list of texture to be modded (called from the mainloop).
    * @param[in] file_name Name and path to the file to be loaded.
    * @param[in] hash hash of the texture to be replaced
    * @param[in] force set to TRUE to force a reload of the texture
@@ -148,6 +148,12 @@ private:
    */
   int SupportTPF(bool val); // called from Mainloop()
 
+  /**
+   * Enable/Disable the computation of the hash of render targets (called from the mainloop).
+   * @param[in] val
+   * @return
+   */
+  int ComputeRenderTargets(bool val); // called from Mainloop()
   /**
    * Set saving directory (called from the mainloop).
    * @param[in] dir
@@ -238,7 +244,7 @@ private:
    * @param[out] number
    * @return
    */
-  int PrepareUpdate(TextureFileStruct* &update, int &number);
+  int PrepareUpdate(TextureEntry* &update, int &number);
 
   /**
    * Locks the mutex.
@@ -258,6 +264,7 @@ private:
   bool BoolShowTextureString;
   bool BoolShowSingleTexture;
   bool BoolSupportTPF;
+  bool BoolComputeRenderTargets; //!< true if the hash of render targets should be computed (very slow because each frame the hash must be recomputed)
 
   wchar_t SavePath[MAX_PATH];
   wchar_t GameName[MAX_PATH];
@@ -283,8 +290,6 @@ private:
   int LenghtOfClients;
 
   uMod_FileHandler CurrentMod;  // hold the file content of texture
-  uMod_FileHandler OldMod; // hold the file content of texture which were added previously but are not needed any more
-  // this is needed, because a texture clients might not have merged the last update and thus hold pointers to the file content of old textures
 };
 
 

@@ -80,9 +80,16 @@ public:
    * @param[in] val
    * @return
    */
-  int SupportTPF(bool val) {BoolComputeCRC = val; return (RETURN_OK);}
+  virtual int SupportTPF(bool val) = 0;
 
   /**
+   * Enable/Disable the computation of the hash of render targets.
+   * @param[in] val
+   * @return
+   */
+  int ComputeRenderTargets(bool val) {BoolComputeRenderTargets = val; return (RETURN_OK);}
+
+  /**ComputeRenderTargets
    * Set the directory, wher the texture should be stored (called from the server)
    * @param dir
    * @return RETURN_OK on success
@@ -165,7 +172,7 @@ public:
    * @param number number of entries
    * @return RETURN_OK on success
    */
-  int AddUpdate(TextureFileStruct* update, int number);
+  int AddUpdate(TextureEntry* update, int number);
 
 
   /**
@@ -179,7 +186,8 @@ public:
   bool BoolSaveSingleTexture; //!< true if "save single texture" mode is enabled
   bool BoolShowTextureString; //!< true if a string should be displayed during "save single texture" mode is enabled
   bool BoolShowSingleTexture; //!< true if the texture should be displayed during "save single texture" mode is enabled
-  bool BoolComputeCRC; //!< if true also the crc32 is calculated, which is need to support tpf
+  bool BoolComputeRenderTargets; //!< true if the hash of render targets should be computed (very slow because each frame the hash must be recomputed)
+
 
   int KeyBack; //!< key value for going to the previous texture
   int KeySave; //!< key value for saving the current texture
@@ -200,7 +208,7 @@ public:
   wchar_t SavePath[MAX_PATH]; //!< saving directory
   wchar_t GameName[MAX_PATH]; //!< game name
 
-  TextureFileStruct* Update; //!< array which stores the file in memory and the hash of each texture to be modded
+  TextureEntry* Update; //!< array which stores the file in memory and the hash of each texture to be modded
   int NumberOfUpdate; //!< number of texture to be modded
 
   /**
@@ -216,7 +224,7 @@ public:
   HANDLE Mutex; //!< The mutex protect the AddUpdate and MergeUpdate function to be called simultaneously.
 
   int NumberToMod; //!< number of texture to be modded
-  TextureFileStruct* FileToMod; //!< array which stores the file in memory and the hash of each texture to be modded
+  TextureEntry* FileToMod; //!< array which stores the file in memory and the hash of each texture to be modded
 
   /**
    * Find the given hash value in the \a FileToMod list. A vector with index can be passed. If so, only these index are considered in the search

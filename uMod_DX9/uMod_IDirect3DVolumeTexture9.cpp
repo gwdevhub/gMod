@@ -40,17 +40,9 @@ HRESULT APIENTRY uMod_IDirect3DVolumeTexture9::QueryInterface(REFIID riid, void*
     *ppvObj = this;
     return (0x01000001L);
   }
-  HRESULT hRes;
-  if (CrossRef_D3Dtex!=NULL)
-  {
-    hRes = CrossRef_D3Dtex->m_D3Dtex->QueryInterface(riid, ppvObj);
-    if (*ppvObj==CrossRef_D3Dtex->m_D3Dtex) *ppvObj=this;
-  }
-  else
-  {
-    hRes = m_D3Dtex->QueryInterface(riid, ppvObj);
-    if (*ppvObj==m_D3Dtex) *ppvObj=this;
-  }
+  HRESULT hRes = m_D3Dtex->QueryInterface(riid, ppvObj);
+  if (*ppvObj==m_D3Dtex) *ppvObj=this;
+
   return (hRes);
 }
 
@@ -58,11 +50,7 @@ HRESULT APIENTRY uMod_IDirect3DVolumeTexture9::QueryInterface(REFIID riid, void*
 ULONG APIENTRY uMod_IDirect3DVolumeTexture9::AddRef()
 {
   if (FAKE) return (1); //bug, this case should never happen
-  if (CrossRef_D3Dtex!=NULL)
-  {
-    return (CrossRef_D3Dtex->m_D3Dtex->AddRef());
-  }
-  else return (m_D3Dtex->AddRef());
+  return (m_D3Dtex->AddRef());
 }
 
 //this function yields for the non switched texture object
@@ -81,42 +69,18 @@ ULONG APIENTRY uMod_IDirect3DVolumeTexture9::Release()
   }
   else
   {
-    if (CrossRef_D3Dtex!=NULL) //if this texture is switched with a fake texture
-    {
-      uMod_IDirect3DVolumeTexture9 *fake_texture = CrossRef_D3Dtex;
-      count = fake_texture->m_D3Dtex->Release(); //release the original texture
-      if (count==0) //if texture is released we switch the textures back
-      {
-        UnswitchTextures(this);
-        if (ret == 0x01000000L)
-        {
-          if (((uMod_IDirect3DDevice9*) m_D3Ddev)->GetSingleVolumeTexture()!=fake_texture) fake_texture->Release(); // we release the fake texture
-        }
-        else
-        {
-          if (((uMod_IDirect3DDevice9Ex*) m_D3Ddev)->GetSingleVolumeTexture()!=fake_texture) fake_texture->Release(); // we release the fake texture
-        }
-      }
-    }
-    else
-    {
-      count = m_D3Dtex->Release();
-    }
+    count = m_D3Dtex->Release();
   }
 
   if (count==0) //if this texture is released, we clean up
   {
-    // if this texture is the LastCreatedTexture, the next time LastCreatedTexture would be added,
-    // the hash of a non existing texture would be calculated
     if (ret == 0x01000000L)
     {
-      if (((uMod_IDirect3DDevice9*) m_D3Ddev)->GetLastCreatedVolumeTexture()==this) ((uMod_IDirect3DDevice9*) m_D3Ddev)->SetLastCreatedVolumeTexture( NULL);
-      else ((uMod_IDirect3DDevice9*) m_D3Ddev)->GetuMod_Client()->RemoveTexture(this); // remove this texture from the texture client
+      ((uMod_IDirect3DDevice9*) m_D3Ddev)->GetuMod_Client()->RemoveTexture(this); // remove this texture from the texture client
     }
     else
     {
-      if (((uMod_IDirect3DDevice9Ex*) m_D3Ddev)->GetLastCreatedVolumeTexture()==this) ((uMod_IDirect3DDevice9Ex*) m_D3Ddev)->SetLastCreatedVolumeTexture( NULL);
-      else ((uMod_IDirect3DDevice9Ex*) m_D3Ddev)->GetuMod_Client()->RemoveTexture(this); // remove this texture from the texture client
+      ((uMod_IDirect3DDevice9Ex*) m_D3Ddev)->GetuMod_Client()->RemoveTexture(this); // remove this texture from the texture client
     }
 
     delete(this);
@@ -133,21 +97,18 @@ HRESULT APIENTRY uMod_IDirect3DVolumeTexture9::GetDevice(IDirect3DDevice9** ppDe
 //this function yields for the non switched texture object
 HRESULT APIENTRY uMod_IDirect3DVolumeTexture9::SetPrivateData(REFGUID refguid,CONST void* pData,DWORD SizeOfData,DWORD Flags)
 {
-  if (CrossRef_D3Dtex!=NULL) return (CrossRef_D3Dtex->m_D3Dtex->SetPrivateData(refguid, pData, SizeOfData, Flags));
 	return (m_D3Dtex->SetPrivateData(refguid, pData, SizeOfData, Flags));
 }
 
 //this function yields for the non switched texture object
 HRESULT APIENTRY uMod_IDirect3DVolumeTexture9::GetPrivateData(REFGUID refguid,void* pData,DWORD* pSizeOfData)
 {
-  if (CrossRef_D3Dtex!=NULL) return (CrossRef_D3Dtex->m_D3Dtex->GetPrivateData(refguid, pData, pSizeOfData));
 	return (m_D3Dtex->GetPrivateData(refguid, pData, pSizeOfData));
 }
 
 //this function yields for the non switched texture object
 HRESULT APIENTRY uMod_IDirect3DVolumeTexture9::FreePrivateData(REFGUID refguid)
 {
-  if (CrossRef_D3Dtex!=NULL) return (CrossRef_D3Dtex->m_D3Dtex->FreePrivateData(refguid));
 	return (m_D3Dtex->FreePrivateData(refguid));
 }
 
@@ -206,34 +167,32 @@ void APIENTRY uMod_IDirect3DVolumeTexture9::GenerateMipSubLevels()
 //this function yields for the non switched texture object
 HRESULT APIENTRY uMod_IDirect3DVolumeTexture9::AddDirtyBox(CONST D3DBOX *pDirtyBox)
 {
-  if (CrossRef_D3Dtex!=NULL) return (CrossRef_D3Dtex->m_D3Dtex->AddDirtyBox(pDirtyBox));
   return (m_D3Dtex->AddDirtyBox(pDirtyBox));
 }
 
 //this function yields for the non switched texture object
 HRESULT APIENTRY uMod_IDirect3DVolumeTexture9::GetLevelDesc(UINT Level, D3DVOLUME_DESC *pDesc)
 {
-  if (CrossRef_D3Dtex!=NULL) return (CrossRef_D3Dtex->m_D3Dtex->GetLevelDesc(Level, pDesc));
 	return (m_D3Dtex->GetLevelDesc(Level, pDesc));
 }
 
 //this function yields for the non switched texture object
 HRESULT APIENTRY uMod_IDirect3DVolumeTexture9::GetVolumeLevel(UINT Level, IDirect3DVolume9 **ppVolumeLevel)
 {
-  if (CrossRef_D3Dtex!=NULL) return (CrossRef_D3Dtex->m_D3Dtex->GetVolumeLevel(Level, ppVolumeLevel));
+  Dirty=1;
 	return (m_D3Dtex->GetVolumeLevel(Level, ppVolumeLevel));
 }
 
 //this function yields for the non switched texture object
 HRESULT APIENTRY uMod_IDirect3DVolumeTexture9::LockBox(UINT Level, D3DLOCKED_BOX *pLockedVolume, CONST D3DBOX *pBox ,DWORD Flags)
 {
-  if (CrossRef_D3Dtex!=NULL) return (CrossRef_D3Dtex->m_D3Dtex->LockBox(Level, pLockedVolume, pBox, Flags));
 	return (m_D3Dtex->LockBox(Level, pLockedVolume, pBox, Flags));
 }
 
 //this function yields for the non switched texture object
 HRESULT APIENTRY uMod_IDirect3DVolumeTexture9::UnlockBox(UINT Level)
 {
+  Dirty=1;
   if (CrossRef_D3Dtex!=NULL) return (CrossRef_D3Dtex->m_D3Dtex->UnlockBox(Level));
 	return (m_D3Dtex->UnlockBox(Level));
 }
@@ -243,7 +202,6 @@ int uMod_IDirect3DVolumeTexture9::ComputetHash( bool compute_crc)
 {
   if (FAKE) return (RETURN_BAD_ARGUMENT);
   IDirect3DVolumeTexture9 *pTexture = m_D3Dtex;
-  if (CrossRef_D3Dtex!=NULL) pTexture = CrossRef_D3Dtex->m_D3Dtex;
 
   //IDirect3DVolume9  *pOffscreenSurface = NULL;
   //IDirect3DVolumeTexture9 *pOffscreenTexture = NULL;

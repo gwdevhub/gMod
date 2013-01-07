@@ -33,10 +33,13 @@ EVT_CHECKBOX( ID_SaveAllTexture, uMod_GamePage::OnCheckBox)
 EVT_CHECKBOX( ID_ShowSingleTextureString, uMod_GamePage::OnCheckBox)
 EVT_CHECKBOX( ID_UseSizeFilter, uMod_GamePage::OnCheckBox)
 EVT_CHECKBOX( ID_UseFormatFilter, uMod_GamePage::OnCheckBox)
-EVT_BUTTON(ID_SetFormatFilter, uMod_GamePage::OnButtonFormatFilter)
+EVT_CHECKBOX( ID_ExtractTextures, uMod_GamePage::OnCheckBox)
+
 
 EVT_BUTTON(ID_Button_Update, uMod_GamePage::OnButtonUpdate)
+EVT_BUTTON(ID_SetFormatFilter, uMod_GamePage::OnButtonFormatFilter)
 EVT_BUTTON(ID_Button_SavePath, uMod_GamePage::OnButtonSavePath)
+EVT_BUTTON(ID_Button_ExtractPath, uMod_GamePage::OnButtonExtractPath)
 
 
 EVT_BUTTON(ID_FontColour, uMod_GamePage::OnButtonColour)
@@ -70,7 +73,11 @@ uMod_GamePage::uMod_GamePage( wxNotebook *parent, const wxString &exe, int injec
   //SetBackgroundColour( wxColour( "LIGHT GREY"));
 
 
+  //set the two colour buttons into one horizontal sizer
+  wxBoxSizer *temp_sizer;
   MainSizer = new wxBoxSizer(wxVERTICAL);
+  UpdateButton = new wxButton( this, ID_Button_Update, Language->ButtonUpdate, wxDefaultPosition, wxSize(100,24));
+
 
   //initialize injection string
   switch (InjectionMethod)
@@ -86,12 +93,18 @@ uMod_GamePage::uMod_GamePage( wxNotebook *parent, const wxString &exe, int injec
     break;
   case INVALID_GAME_PAGE:
     DX_DLL_Info = new wxTextCtrl(this, wxID_ANY,  Language->InvalidGamePage, wxDefaultPosition, wxDefaultSize, wxTE_READONLY);
+    UpdateButton->Enable(false);
     break;
   default:
     DX_DLL_Info = new wxTextCtrl(this, wxID_ANY, "BUG^^ injection:", wxDefaultPosition, wxDefaultSize, wxTE_READONLY);
     break;
   }
-  MainSizer->Add( (wxWindow*) DX_DLL_Info, 0, wxEXPAND, 0);
+  temp_sizer = new wxBoxSizer(wxHORIZONTAL);
+  temp_sizer->Add( (wxWindow*) DX_DLL_Info, 1, wxEXPAND|wxALL, 0);
+  temp_sizer->AddSpacer(10);
+  temp_sizer->Add( (wxWindow*) UpdateButton, 0, wxEXPAND|wxALL, 0);
+  temp_sizer->AddSpacer(10);
+  MainSizer->Add( temp_sizer, 0, wxEXPAND, 0);
 
   // initialize template string
   TemplateFile = new wxTextCtrl(this, wxID_ANY, Language->TextCtrlTemplate, wxDefaultPosition, wxDefaultSize, wxTE_READONLY);
@@ -103,13 +116,13 @@ uMod_GamePage::uMod_GamePage( wxNotebook *parent, const wxString &exe, int injec
   //
 
   // create collapsible pane
-  CollPane = new  wxCollapsiblePane(this, ID_CollPane, Language->CollapseTextureCapture,wxDefaultPosition,wxDefaultSize,wxCP_NO_TLW_RESIZE);
+  CollCapturePane = new  wxCollapsiblePane(this, ID_CollPane, Language->CollapseTextureCapture,wxDefaultPosition,wxDefaultSize,wxCP_NO_TLW_RESIZE);
 
 
-  CollSizer = new wxBoxSizer(wxVERTICAL);
+  CollCaptureSizer = new wxBoxSizer(wxVERTICAL);
 
   // get window inside the collapsible pane
-  wxWindow *win = CollPane->GetPane();
+  wxWindow *win = CollCapturePane->GetPane();
 
   // this sizer contains the left save-single-texture part and the right save-all-texture part
   TextureSizer = new wxBoxSizer(wxHORIZONTAL);
@@ -132,15 +145,14 @@ uMod_GamePage::uMod_GamePage( wxNotebook *parent, const wxString &exe, int injec
   SingleTextureSizer->Add( (wxWindow*) ShowSingleTextureString, 0, wxEXPAND| wxBOTTOM | wxLEFT | wxRIGHT, 5);
 
 
-  //set the two colour buttons into one horizontal sizer
-  wxBoxSizer *temp_sizer = new wxBoxSizer(wxHORIZONTAL);
+  temp_sizer = new wxBoxSizer(wxHORIZONTAL);
   FontColour = new wxButton( SingleTexturePanel, ID_FontColour, Language->FontColour, wxDefaultPosition, wxSize(100,24));
   FontColour->Enable(false); //siable the font color, per default ShowSingleTextureString is not checked
-  temp_sizer->Add( FontColour, 0, wxEXPAND, 0);
+  temp_sizer->Add( (wxWindow*) FontColour, 0, wxEXPAND, 0);
 
   temp_sizer->AddSpacer(10);
   TextureColour = new wxButton( SingleTexturePanel, ID_TextureColour, Language->TextureColour, wxDefaultPosition, wxSize(100,24));
-  temp_sizer->Add( TextureColour, 0, wxEXPAND, 0);
+  temp_sizer->Add( (wxWindow*) TextureColour, 0, wxEXPAND, 0);
 
   temp_sizer->AddStretchSpacer();
   SingleTextureSizer->Add( temp_sizer, 0, wxEXPAND | wxBOTTOM | wxLEFT | wxRIGHT, 10);
@@ -214,12 +226,12 @@ uMod_GamePage::uMod_GamePage( wxNotebook *parent, const wxString &exe, int injec
 
 
 
-
   //combine both texture sizer
-  TextureSizer->Add( SingleTexturePanel, 1, wxEXPAND | wxBOTTOM | wxLEFT | wxRIGHT, 10);
-  TextureSizer->Add( AllTexturePanel, 1, wxEXPAND | wxBOTTOM | wxLEFT | wxRIGHT, 10);
+  TextureSizer->Add( SingleTexturePanel, 0, wxEXPAND | wxBOTTOM | wxLEFT | wxRIGHT, 10);
+  TextureSizer->Add( AllTexturePanel, 0, wxEXPAND | wxBOTTOM | wxLEFT | wxRIGHT, 10);
+  TextureSizer->AddStretchSpacer();
 
-  CollSizer->Add( TextureSizer, 1, wxEXPAND, 0);
+  CollCaptureSizer->Add( TextureSizer, 1, wxEXPAND, 0);
 
   wxArrayString choices;
   choices.Add("BMP");
@@ -230,7 +242,7 @@ uMod_GamePage::uMod_GamePage( wxNotebook *parent, const wxString &exe, int injec
   choices.Add("PPM");
   FileFormats = new uMod_CheckBoxArray( win, choices, -1);
   FileFormats->SetValue( Game.FileFormat());
-  CollSizer->Add( (wxWindow*) FileFormats, 0, wxEXPAND | wxBOTTOM | wxLEFT | wxRIGHT, 10);
+  CollCaptureSizer->Add( (wxWindow*) FileFormats, 0, wxEXPAND | wxBOTTOM | wxLEFT | wxRIGHT, 10);
 
 
 
@@ -243,21 +255,64 @@ uMod_GamePage::uMod_GamePage( wxNotebook *parent, const wxString &exe, int injec
   SavePath = new wxTextCtrl(win, wxID_ANY, "", wxDefaultPosition, wxDefaultSize, wxTE_READONLY);
   temp_sizer->Add( (wxWindow*) SavePath, 1, wxEXPAND, 0);
 
-  temp_sizer->AddSpacer(30);
-  UpdateButton = new wxButton( win, ID_Button_Update, Language->ButtonUpdate, wxDefaultPosition, wxSize(100,24));
-  temp_sizer->Add( (wxWindow*) UpdateButton, 0, wxEXPAND|wxALL, 0);
-
-  CollSizer->Add( temp_sizer, 0, wxEXPAND | wxBOTTOM | wxLEFT | wxRIGHT, 10);
+  CollCaptureSizer->Add( temp_sizer, 0, wxEXPAND | wxBOTTOM | wxLEFT | wxRIGHT, 10);
 
 
-  win->SetSizer(CollSizer);
-  CollSizer->SetSizeHints(win);
+  win->SetSizer(CollCaptureSizer);
+  CollCaptureSizer->SetSizeHints(win);
 
-  MainSizer->Add(CollPane, 0, wxEXPAND, 5);
+  MainSizer->Add(CollCapturePane, 0, wxEXPAND, 5);
   MainSizer->AddSpacer(10);
 
 
 
+
+
+  //
+  // settings part
+  //
+
+  // create collapsible pane
+  CollSettingsPane = new  wxCollapsiblePane(this, ID_CollPane, Language->CollapseModSettings,wxDefaultPosition,wxDefaultSize,wxCP_NO_TLW_RESIZE);
+
+
+  CollSettingsSizer = new wxBoxSizer(wxVERTICAL);
+
+  // get window inside the collapsible pane
+  win = CollSettingsPane->GetPane();
+  CollSettingsPanel = new wxPanel(win);
+
+
+  SupportTPF = new wxCheckBox( win, wxID_ANY, Language->SupportTPF);
+  CollSettingsSizer->Add( (wxWindow*) SupportTPF, 0, wxEXPAND, 0);
+
+  ComputeRenderTargets = new wxCheckBox( win, wxID_ANY, Language->ComputeRenderTargets);
+  CollSettingsSizer->Add( (wxWindow*) ComputeRenderTargets, 0, wxEXPAND, 0);
+
+  ExtractTexturesToDisk = new wxCheckBox( win, ID_ExtractTextures, Language->ExtractTexturesToDisk);
+  CollSettingsSizer->Add( (wxWindow*) ExtractTexturesToDisk, 0, wxEXPAND, 0);
+
+  DeleteExtractedTexturesOnDisk = new wxCheckBox( win, wxID_ANY, Language->DeleteExtractedTexturesOnDisk);
+  CollSettingsSizer->Add( (wxWindow*) DeleteExtractedTexturesOnDisk, 0, wxEXPAND, 0);
+
+
+  // add extract path string
+  temp_sizer = new wxBoxSizer(wxHORIZONTAL);
+  ExtractPathButton = new wxButton( win, ID_Button_ExtractPath, Language->ExtractPath, wxDefaultPosition, wxSize(100,24));
+  temp_sizer->Add( (wxWindow*) ExtractPathButton, 0, wxEXPAND|wxALL, 0);
+
+  temp_sizer->AddSpacer(5);
+  ExtractPath = new wxTextCtrl(win, wxID_ANY, "", wxDefaultPosition, wxDefaultSize, wxTE_READONLY);
+  temp_sizer->Add( (wxWindow*) ExtractPath, 1, wxEXPAND, 0);
+
+  CollSettingsSizer->Add( temp_sizer, 0, wxEXPAND | wxBOTTOM | wxLEFT | wxRIGHT, 10);
+
+
+  win->SetSizer(CollSettingsSizer);
+  CollSettingsSizer->SetSizeHints(win);
+
+  MainSizer->Add( (wxWindow*)CollSettingsPane, 0, wxEXPAND, 5);
+  MainSizer->AddSpacer(10);
 
   //
   // initialize the treeview for the mod packages
@@ -329,6 +384,8 @@ uMod_GamePage::~uMod_GamePage(void)
 {
   GetSettings();
   SaveTemplate("auto_save");
+
+  ViewModel->DeleteAllPackages(Game.DeleteExtractedTexturesOnDisk());
 }
 
 int uMod_GamePage::SetSavePath( const wxString &path)
@@ -340,7 +397,11 @@ int uMod_GamePage::SetSavePath( const wxString &path)
 
 int uMod_GamePage::AddPackage( const wxString &file_name)
 {
-  if (ViewModel->AddPackage(file_name))
+  wxString extract_path;
+  if (Game.ExtractTexturesToDisk())
+    extract_path = Game.GetExtractPath();
+
+  if (ViewModel->AddPackage(file_name, extract_path))
   {
     LastError << ViewModel->LastError;
     return -1;
@@ -350,8 +411,12 @@ int uMod_GamePage::AddPackage( const wxString &file_name)
 
 int uMod_GamePage::AddPackages(const wxString *files, int num)
 {
+  wxString extract_path;
+  if (Game.ExtractTexturesToDisk())
+    extract_path = Game.GetExtractPath();
+
   wxArrayString strings( num, files);
-  if (ViewModel->AddPackages( strings))
+  if (ViewModel->AddPackages( strings, extract_path))
   {
     LastError << ViewModel->LastError;
     return -1;
@@ -361,7 +426,11 @@ int uMod_GamePage::AddPackages(const wxString *files, int num)
 
 int uMod_GamePage::AddPackages(const wxArrayString &files)
 {
-  if (ViewModel->AddPackages( files))
+  wxString extract_path;
+  if (Game.ExtractTexturesToDisk())
+    extract_path = Game.GetExtractPath();
+
+  if (ViewModel->AddPackages( files, extract_path))
   {
     LastError << ViewModel->LastError;
     return -1;
@@ -475,7 +544,7 @@ int uMod_GamePage::SetInfo(void)
 
 int uMod_GamePage::GetSettings(void)
 {
-  Game.ShowCollPane() = CollPane->IsExpanded();
+  Game.ShowCollCapturePane() = CollCapturePane->IsExpanded();
 
   int key_back = KeyBack->GetKey();
   int key_save = KeySave->GetKey();
@@ -510,6 +579,14 @@ int uMod_GamePage::GetSettings(void)
 
   Game.UseFormatFilter() = UseFormatFilter->GetValue();
   FileFormats->GetValue(Game.FileFormat());
+
+
+  Game.ShowCollSettingsPane() = CollSettingsPane->IsExpanded();
+  Game.SupportTPF() = SupportTPF->GetValue();
+  Game.ComputeRenderTargets() = ComputeRenderTargets->GetValue();
+  Game.ExtractTexturesToDisk() = ExtractTexturesToDisk->GetValue();
+  Game.DeleteExtractedTexturesOnDisk() = DeleteExtractedTexturesOnDisk->GetValue();
+
   return 0;
 }
 
@@ -541,6 +618,8 @@ int uMod_GamePage::ReloadGame(void)
 
   wxString content;
   SaveTemplateToString(content);
+
+  ViewModel->DeleteAllPackages(Game.DeleteExtractedTexturesOnDisk());
   return LoadTemplateFromString(content);
 }
 
@@ -704,7 +783,11 @@ int uMod_GamePage::LoadTemplateFromString( const wxString &content_orig)
     Game.LoadFromString(content);
   }
 
-  if (ViewModel->AddPackagesFromTemplate( packages))
+  wxString extract_path;
+  if (Game.ExtractTexturesToDisk())
+    extract_path = Game.GetExtractPath();
+
+  if (ViewModel->AddPackagesFromTemplate( packages, extract_path))
   {
     LastError << ViewModel->LastError;
   }
@@ -721,7 +804,7 @@ int uMod_GamePage::LoadTemplateFromString( const wxString &content_orig)
 
 int uMod_GamePage::LoadGameData(const uMod_GameInfo &game)
 {
-  CollPane->Collapse( !game.ShowCollPane());
+  CollCapturePane->Collapse( !game.ShowCollCapturePane());
 
 
   if (game.ShowSingleTextureString())
@@ -799,6 +882,27 @@ int uMod_GamePage::LoadGameData(const uMod_GameInfo &game)
   FileFormats->SetValue(game.FileFormat());
 
   SavePath->SetValue( game.GetSavePath());
+
+
+  CollSettingsPane->Collapse( !game.ShowCollSettingsPane());
+  SupportTPF->SetValue( game.SupportTPF());
+  ComputeRenderTargets->SetValue( game.ComputeRenderTargets());
+  ExtractTexturesToDisk->SetValue( game.ExtractTexturesToDisk());
+  DeleteExtractedTexturesOnDisk->SetValue( game.DeleteExtractedTexturesOnDisk());
+  ExtractPath->SetValue(game.GetExtractPath());
+
+  if (game.ExtractTexturesToDisk())
+  {
+    DeleteExtractedTexturesOnDisk->Enable();
+    ExtractPathButton->Enable();
+    ExtractPath->Enable();
+  }
+  else
+  {
+    DeleteExtractedTexturesOnDisk->Enable(false);
+    ExtractPathButton->Enable(false);
+    ExtractPath->Enable(false);
+  }
 
 
   // The wxCollapsiblePane could be hide/shown thus we must manually layout and refresh the sizer and the window
@@ -901,6 +1005,22 @@ void uMod_GamePage::OnCheckBox(wxCommandEvent& event)
       FontColour->Enable();
     else
       FontColour->Enable(false);
+    break;
+  }
+  case ID_ExtractTextures:
+  {
+    if (ExtractTexturesToDisk->GetValue())
+    {
+      DeleteExtractedTexturesOnDisk->Enable();
+      ExtractPathButton->Enable();
+      ExtractPath->Enable();
+    }
+    else
+    {
+      DeleteExtractedTexturesOnDisk->Enable(false);
+      ExtractPathButton->Enable(false);
+      ExtractPath->Enable(false);
+    }
     break;
   }
   default:
@@ -1053,6 +1173,17 @@ void uMod_GamePage::OnButtonSavePath(wxCommandEvent& WXUNUSED(event))
   }
 }
 
+void uMod_GamePage::OnButtonExtractPath(wxCommandEvent& WXUNUSED(event))
+{
+  wxString dir = wxDirSelector( Language->ChooseDir, Game.GetExtractPath());
+  if ( !dir.empty() )
+  {
+    Game.SetExtractPath(dir);
+    ExtractPath->SetValue( dir);
+  }
+}
+
+
 void uMod_GamePage::OnButtonUpdate(wxCommandEvent& WXUNUSED(event))
 {
   UpdateGame();
@@ -1194,8 +1325,6 @@ void uMod_GamePage::OnContextMenu( wxDataViewEvent &event )
   menu.Append( ID_RemoveSelectedPackages, Language->MenuRemoveSelectedPackages);
   menu.Append( ID_Update, Language->MenuUpdate);
   menu.Append( ID_Reload, Language->MenuReload);
-  menu.AppendCheckItem( ID_SupportTPF, Language->MenuSupportTPF);
-  menu.Check(ID_SupportTPF, Game.SupportTPF());
 
   // if no node is selected, there is nothing to delete ^^
   if (node ==  (uMod_TreeViewNode*) 0)
@@ -1209,7 +1338,6 @@ void uMod_GamePage::OnContextMenu( wxDataViewEvent &event )
   {
     menu.Enable(ID_Update, false);
     menu.Enable(ID_Reload, false);
-    menu.Enable(ID_SupportTPF, false);
   }
 
   // if nothing is selected, we cannot deleted selected packages ;)
@@ -1237,9 +1365,6 @@ void uMod_GamePage::OnContextMenu( wxDataViewEvent &event )
     break;
   case ID_Reload:
     ReloadGame();
-    break;
-  case ID_SupportTPF:
-    Game.SupportTPF() = menu.IsChecked(ID_SupportTPF);
     break;
   default:
       break;
@@ -1289,7 +1414,7 @@ int uMod_GamePage::UpdateLanguage(void)
   TemplateFile->SetValue( path);
 
 
-  CollPane->SetLabel(Language->CollapseTextureCapture);
+  CollCapturePane->SetLabel(Language->CollapseTextureCapture);
 
   SaveSingleTexture->SetLabel( Language->CheckBoxSaveSingleTexture);
   ShowSingleTextureString->SetLabel( Language->CheckBoxShowStringSaveSingleTexture);
@@ -1317,6 +1442,14 @@ int uMod_GamePage::UpdateLanguage(void)
   SavePathButton->SetLabel( Language->ButtonDirectory);
   SavePath->SetValue( Game.GetSavePath());
 
+
+  CollSettingsPane->SetLabel(Language->CollapseModSettings);
+
+  SupportTPF->SetLabel( Language->SupportTPF);
+  ComputeRenderTargets->SetLabel( Language->ComputeRenderTargets);
+  ExtractTexturesToDisk->SetLabel( Language->ExtractTexturesToDisk);
+  DeleteExtractedTexturesOnDisk->SetLabel( Language->DeleteExtractedTexturesOnDisk);
+  ExtractPathButton->SetLabel( Language->ExtractPath);
 
   ViewCtrl->GetColumn(0)->SetTitle(Language->Title);
   ViewCtrl->GetColumn(3)->SetTitle(Language->Author);

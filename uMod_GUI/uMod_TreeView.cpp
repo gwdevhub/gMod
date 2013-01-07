@@ -180,15 +180,17 @@ int uMod_TreeViewModel::CreateSingleNode()
   return 0;
 }
 
-int uMod_TreeViewModel::AddPackage(const wxString &file_name)
+int uMod_TreeViewModel::AddPackage(const wxString &file_name, const wxString &extract_path)
 {
   uMod_File file( file_name);
+
   if (! file.FileSupported())
   {
     LastError << Language->Error_FileNotSupported << "\n" << file_name;
     return -1;
   }
   bool single_file = file.SingleFile();
+  file.SetExtractPath(extract_path);
 
   uMod_TreeViewNode *node;
 
@@ -231,10 +233,11 @@ int uMod_TreeViewModel::AddPackage(const wxString &file_name)
   return 0;
 }
 
-int uMod_TreeViewModel::AddPackages(const wxArrayString &files)
+int uMod_TreeViewModel::AddPackages(const wxArrayString &files, const wxString &extract_path)
 {
   LastError.Empty();
   uMod_File file;
+  file.SetExtractPath(extract_path);
   wxDataViewItemArray added_items;
   wxDataViewItemArray added_single_items;
 
@@ -299,11 +302,12 @@ int uMod_TreeViewModel::AddPackages(const wxArrayString &files)
 }
 
 
-int uMod_TreeViewModel::AddPackagesFromTemplate(const wxArrayString &packages)
+int uMod_TreeViewModel::AddPackagesFromTemplate(const wxArrayString &packages, const wxString &extract_path)
 {
   LastError.Empty();
 
   uMod_File file;
+  file.SetExtractPath(extract_path);
   wxDataViewItemArray added_items;
 
   DeleteAllPackages();
@@ -345,16 +349,21 @@ int uMod_TreeViewModel::AddPackagesFromTemplate(const wxArrayString &packages)
 }
 
 
-int uMod_TreeViewModel::DeletePackage( const wxDataViewItem &item)
+int uMod_TreeViewModel::DeletePackage( const wxDataViewItem &item, bool delete_files_on_disk)
 {
   uMod_TreeViewNode *node = (uMod_TreeViewNode*) item.GetID();
   if (node)
   {
     if (node->GetParent()== (uMod_TreeViewNode*) 0 )
     {
+      if (delete_files_on_disk)
+        DeleteFileOfPackage( node);
+
+      if (node == SingleTextureNode)
+        SingleTextureNode = (uMod_TreeViewNode*) 0;
+
       myPackages.Remove( node);
       delete node;
-      if (node == SingleTextureNode) SingleTextureNode = (uMod_TreeViewNode*) 0;
 
 
       wxDataViewItem parent( (void*) 0 );
@@ -366,7 +375,7 @@ int uMod_TreeViewModel::DeletePackage( const wxDataViewItem &item)
   return 2;
 }
 
-int uMod_TreeViewModel::DeletePackages( const wxDataViewItemArray &items)
+int uMod_TreeViewModel::DeletePackages( const wxDataViewItemArray &items, bool delete_files_on_disk)
 {
   int num = items.GetCount();
   wxDataViewItemArray deleted_items;
@@ -377,9 +386,15 @@ int uMod_TreeViewModel::DeletePackages( const wxDataViewItemArray &items)
     {
       if (node->GetParent()== (uMod_TreeViewNode*) 0 )
       {
+        if (delete_files_on_disk)
+          DeleteFileOfPackage( node);
+
+        if (node == SingleTextureNode)
+          SingleTextureNode = (uMod_TreeViewNode*) 0;
+
         myPackages.Remove( node);
         delete node;
-        if (node == SingleTextureNode) SingleTextureNode = (uMod_TreeViewNode*) 0;
+
         deleted_items.Add( items[i]);
       }
     }
@@ -389,18 +404,64 @@ int uMod_TreeViewModel::DeletePackages( const wxDataViewItemArray &items)
   return 0;
 }
 
-int uMod_TreeViewModel::DeleteAllPackages(void)
+int uMod_TreeViewModel::DeleteAllPackages(bool delete_files_on_disk)
 {
   wxDataViewItemArray deleted_items;
+
+
   for (unsigned int i=0; i<myPackages.GetCount(); i++)
   {
     wxDataViewItem child( myPackages[i]);
     deleted_items.Add( child);
+
+    if (delete_files_on_disk)
+      DeleteFileOfPackage( myPackages[i]);
+
+    delete myPackages[i];
   }
   SingleTextureNode = (uMod_TreeViewNode*) 0;
   wxDataViewItem parent( (void*) 0 );
   ItemsDeleted( parent, deleted_items);
   myPackages.Empty();
+  return 0;
+}
+
+int uMod_TreeViewModel::DeleteFileOfPackage(uMod_TreeViewNode *node)
+{
+  if (node==SingleTextureNode)
+    return 0;
+
+
+  uMod_TreeViewNode_ArrayPtr buffer; // this array store the "path" to the current group node (parent0->parent1->parent2->current_group)
+  wxArrayInt counter; // this array store the actual index position for each group in the hierarchy
+
+  buffer.Add(node);
+  counter.Add(0);
+
+  while (!buffer.IsEmpty())
+  {
+    int pos = buffer.GetCount()-1;
+    unsigned int index = counter[pos];
+
+    if (index < buffer[pos]->myChildren.GetCount()) // it has still children
+    {
+      buffer[pos]->myChildren[index]->myElement->DeleteFileOnDisk();
+
+      if (buffer[pos]->myChildren[index]->myElement->Type() == uMod_ModElement::Group)
+      {
+        buffer.Add(buffer[pos]->myChildren[index]);
+        counter.Add(0);
+      }
+
+      counter[pos]++;
+    }
+    else // finished this group
+    {
+      buffer.RemoveAt(pos);
+      counter.RemoveAt(pos);
+    }
+  }
+
   return 0;
 }
 
@@ -445,7 +506,7 @@ int uMod_TreeViewModel::GetActiveTexture( uMod_TextureElement_SortedArrayPtr &te
           {
             uMod_TextureElement *tex = (uMod_TextureElement*) buffer[pos]->myChildren[index]->myElement;
 
-            if (tex->Content().Len()>0 && ((active[pos]>0)  || (tex->Status()==uMod_ModElement::Activate)))
+            if ((tex->Content().Len()>0 || tex->ExtractedFile().Len()>0) && ((active[pos]>0)  || (tex->Status()==uMod_ModElement::Activate)))
             {
               if( wxNOT_FOUND == texture.Index(tex))
               {

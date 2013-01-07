@@ -31,6 +31,7 @@ along with Universal Modding Engine.  If not, see <http://www.gnu.org/licenses/>
 uMod_File::uMod_File(void)
 {
   Loaded=false;
+  myExtractArchivesToDisk = false;
   XORed=false;
   FileInMemory=(char*)0;
   MemoryLength=0u;
@@ -40,6 +41,7 @@ uMod_File::uMod_File(void)
 uMod_File::uMod_File(const wxString &file)
 {
   Loaded=false;
+  myExtractArchivesToDisk = false;
   XORed=false;
   FileInMemory=(char*)0;
   MemoryLength=0u;
@@ -54,39 +56,46 @@ uMod_File::~uMod_File(void)
 }
 
 
-bool uMod_File::FileSupported(void)
+bool uMod_File::FileSupported(void) const
 {
   wxString file_type = FileName.AfterLast( '.');
-  if (file_type == "zip") return true;
-  if (file_type == "tpf") return true;
-  if (file_type == "bmp") return true;
-  if (file_type == "jpg") return true;
-  if (file_type == "tga") return true;
-  if (file_type == "png") return true;
-  if (file_type == "dds") return true;
-  if (file_type == "ppm") return true;
+  return FileSupported(file_type);
+}
 
-  return false;
+bool uMod_File::FileSupported( const wxString &suffix) const
+{
+  if (PackageFile(suffix)) return true;
+  return SingleFile(suffix);
 }
 
 
-bool uMod_File::PackageFile(void)
+bool uMod_File::PackageFile(void) const
 {
   wxString file_type = FileName.AfterLast( '.');
-  if (file_type == "zip") return true;
-  if (file_type == "tpf") return true;
+  return PackageFile(file_type);
+}
+
+bool uMod_File::PackageFile( const wxString &suffix) const
+{
+  if (suffix == "zip") return true;
+  if (suffix == "tpf") return true;
   return false;
 }
 
-bool uMod_File::SingleFile(void)
+bool uMod_File::SingleFile(void) const
 {
   wxString file_type = FileName.AfterLast( '.');
-  if (file_type == "bmp") return true;
-  if (file_type == "jpg") return true;
-  if (file_type == "tga") return true;
-  if (file_type == "png") return true;
-  if (file_type == "dds") return true;
-  if (file_type == "ppm") return true;
+  return SingleFile(file_type);
+}
+
+bool uMod_File::SingleFile( const wxString &suffix) const
+{
+  if (suffix == "bmp") return true;
+  if (suffix == "jpg") return true;
+  if (suffix == "tga") return true;
+  if (suffix == "png") return true;
+  if (suffix == "dds") return true;
+  if (suffix == "ppm") return true;
   return false;
 }
 
@@ -200,19 +209,31 @@ int uMod_File::AddFile( uMod_TreeViewNode* node)
     return -1;
   }
 
-  if (int ret = ReadFile()) return ret;
-
   uMod_TextureElement *texture = new uMod_TextureElement();
 
-  if (texture->Content().SetSize(FileLen))
+  if (ExtractArchivesToDisk())
   {
-    LastError << Language->Error_Memory;
-    texture->Release();
-    return -1;
+    texture->ExtractedFile() = FileName;
+    texture->Content().SetSize(0);
   }
-  char *data = texture->Content().Data();
+  else
+  {
+    if (int ret = ReadFile())
+    {
+      texture->Release();
+      return ret;
+    }
 
-  for (unsigned int i=0; i<FileLen; i++) data[i] = FileInMemory[i];
+    if (texture->Content().SetSize(FileLen))
+    {
+      LastError << Language->Error_Memory;
+      texture->Release();
+      return -1;
+    }
+    char *data = texture->Content().Data();
+
+    for (unsigned int i=0; i<FileLen; i++) data[i] = FileInMemory[i];
+  }
 
   texture->Hash() = temp_hash;
   texture->File() = FileName;
@@ -247,6 +268,7 @@ int uMod_File::GetContentTemplate(const wxString &content, uMod_TreeViewNode* no
 int uMod_File::GetContentTemplate_ZIP( const uMod_TreeViewNode_ArrayPtr &list_node, uMod_TreeViewNode* node)
 {
   SetFile(node->myElement->File());
+
   if (!FileSupported())
   {
     LastError << Language->Error_FileNotSupported <<"\n" << FileName;
@@ -294,6 +316,7 @@ int uMod_File::GetContentTemplate_ZIP( const uMod_TreeViewNode_ArrayPtr &list_no
       {
         if (texture->Content().SetSize(ze.unc_size))
         {
+          texture->Error() = uMod_TextureElement::MemoryError;
           texture->Comment() = Language->Error_Memory;
           continue;
         }
@@ -302,13 +325,26 @@ int uMod_File::GetContentTemplate_ZIP( const uMod_TreeViewNode_ArrayPtr &list_no
         ZRESULT rz = UnzipItem( ZIP_Handle, index, data, ze.unc_size);
         if (rz!=ZR_OK && rz!=ZR_MORE)
         {
+          texture->Error() = uMod_TextureElement::ZIPError;
           texture->Content().SetSize(0);
           texture->Comment() = Language->Error_Unzip;
           texture->Comment() <<" : " << FileName << " ==>> " << file;
         }
+
+        if (ExtractArchivesToDisk())
+        {
+          wxString file_name = file;
+
+          if (!WriteContentToDisk( file_name, texture->Content().Data(), texture->Content().Len()))
+          {
+            texture->Content().SetSize(0);
+            texture->ExtractedFile() = file_name;
+          }
+        }
       }
       else
       {
+        texture->Error() = uMod_TextureElement::ZIPError;
         texture->Content().SetSize(0);
         texture->Comment() = Language->Error_Unzip;
         texture->Comment() << " : " << FileName << " -> " << file;
@@ -340,22 +376,32 @@ int uMod_File::GetContentTemplate_SF( const uMod_TreeViewNode_ArrayPtr &list_nod
     uMod_TextureElement *texture = (uMod_TextureElement*) list_node[i]->myElement;
 
     SetFile( texture->File());
-    if (int ret = ReadFile())
+    if (ExtractArchivesToDisk())
     {
-      texture->Comment() = Language->Error_FileRead;
-      texture->Comment() << " : " << texture->File();
-      continue;
+      texture->ExtractedFile() = FileName;
+      texture->Content().SetSize(0);
     }
-
-    if (texture->Content().SetSize(FileLen))
+    else
     {
-      texture->Comment() = Language->Error_Memory;
-      texture->Comment() << " : " << texture->File();
-      continue;
-    }
-    char *data = texture->Content().Data();
+      if (int ret = ReadFile())
+      {
+        texture->Error() = uMod_TextureElement::DiskError;
+        texture->Comment() = Language->Error_FileRead;
+        texture->Comment() << " : " << texture->File();
+        continue;
+      }
 
-    for (unsigned int i=0; i<FileLen; i++) data[i] = FileInMemory[i];
+      if (texture->Content().SetSize(FileLen))
+      {
+        texture->Error() = uMod_TextureElement::MemoryError;
+        texture->Comment() = Language->Error_Memory;
+        texture->Comment() << " : " << texture->File();
+        continue;
+      }
+      char *data = texture->Content().Data();
+
+      for (unsigned int i=0; i<FileLen; i++) data[i] = FileInMemory[i];
+    }
 
     texture->Status() = uMod_TextureElement::Activate;
   }
@@ -465,6 +511,18 @@ int uMod_File::AddContent( const char* pw, uMod_TreeViewNode* node)
           texture->File() = file;
           texture->Status() = uMod_TextureElement::Activate;
 
+          if (ExtractArchivesToDisk())
+          {
+            wxString file_name = file;
+
+            if (!WriteContentToDisk( file_name, texture->Content().Data(), texture->Content().Len()))
+            {
+              texture->Content().SetSize(0);
+              texture->ExtractedFile() = file_name;
+            }
+          }
+
+
           uMod_TreeViewNode *node_texture = new uMod_TreeViewNode( node, texture);
           node->Append(node_texture);
           texture->Release();
@@ -547,8 +605,10 @@ int uMod_File::AddContent( const char* pw, uMod_TreeViewNode* node)
         FindZipItem( ZIP_Handle, file.wc_str(), false, &index, &ze); // look for texture
         if (index>=0)
         {
+
           if (texture->Content().SetSize(ze.unc_size))
           {
+            texture->Error() = uMod_TextureElement::MemoryError;
             texture->Comment() = Language->Error_Memory;
             continue;
           }
@@ -557,12 +617,25 @@ int uMod_File::AddContent( const char* pw, uMod_TreeViewNode* node)
           ZRESULT rz = UnzipItem( ZIP_Handle, index, data, ze.unc_size);
           if (rz!=ZR_OK && rz!=ZR_MORE)
           {
+            texture->Error() = uMod_TextureElement::ZIPError;
             texture->Content().SetSize(0);
             texture->Comment() = Language->Error_Unzip;
+          }
+
+          if (ExtractArchivesToDisk())
+          {
+            wxString file_name = file;
+
+            if (!WriteContentToDisk( file_name, texture->Content().Data(), texture->Content().Len()))
+            {
+              texture->Content().SetSize(0);
+              texture->ExtractedFile() = file_name;
+            }
           }
         }
         else
         {
+          texture->Error() = uMod_TextureElement::ZIPError;
           texture->Content().SetSize(0);
           texture->Comment() =  Language->Error_Unzip;
           CloseZip(ZIP_Handle); //somehow we need to close and to reopen the zip handle, otherwise the program crashes
@@ -582,7 +655,7 @@ int uMod_File::AddContent( const char* pw, uMod_TreeViewNode* node)
   }
 
 
-  //we load each dds file
+  //we load each supported file
   {
     CloseZip(ZIP_Handle); //somehow we need to close and to reopen the zip handle, otherwise the program crashes
     ZIP_Handle = OpenZip( FileInMemory, FileLen, pw);
@@ -647,7 +720,7 @@ int uMod_File::AddContent( const char* pw, uMod_TreeViewNode* node)
       }
 
       name = file.AfterLast( '.');
-      if (name!="dds")
+      if (!SingleFile(name))
       {
         texture->Release();
         continue;
@@ -669,6 +742,17 @@ int uMod_File::AddContent( const char* pw, uMod_TreeViewNode* node)
       texture->File() = ze.name;
       texture->Status() = uMod_TextureElement::Activate;
 
+      if (ExtractArchivesToDisk())
+      {
+        wxString file_name = file;
+
+        if (!WriteContentToDisk( file_name, texture->Content().Data(), texture->Content().Len()))
+        {
+          texture->Content().SetSize(0);
+          texture->ExtractedFile() = file_name;
+        }
+      }
+
       uMod_TreeViewNode *node_texture = new uMod_TreeViewNode( node, texture);
       node->Append(node_texture);
       texture->Release();
@@ -683,5 +767,28 @@ int uMod_File::AddContent( const char* pw, uMod_TreeViewNode* node)
     }
     return 0;
   }
+  return 0;
+}
+
+
+int uMod_File::WriteContentToDisk( wxString& file , char* data, int len)
+{
+  if (data == NULL || len<=0) return -1;
+
+  wxString package_name = FileName;
+  package_name = package_name.AfterLast('\\');
+
+  wxString file_name = ExtractPath;
+  file_name << "\\" << package_name << "." << file;
+
+  wxFile dat;
+  dat.Open( file_name, wxFile::write);
+  if (!dat.IsOpened()) {LastError << Language->Error_FileOpen <<"\n" << FileName; return -1;}
+
+  unsigned int result = dat.Write( data, len);
+  dat.Close();
+  if (result!=len) return -1;
+
+  file = file_name;
   return 0;
 }

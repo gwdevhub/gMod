@@ -41,12 +41,27 @@ public:
 
 
 
-  bool &ShowCollPane(void) {return myShowCollPane;}
-  const bool &ShowCollPane(void) const {return myShowCollPane;}
+  bool &ShowCollCapturePane(void) {return myShowCollCapturePane;}
+  const bool &ShowCollCapturePane(void) const {return myShowCollCapturePane;}
+
+  bool &ShowCollSettingsPane(void) {return myShowCollSettingsPane;}
+  const bool &ShowCollSettingsPane(void) const {return myShowCollSettingsPane;}
 
 
   bool &SupportTPF(void) {return mySupportTPF;}
   const bool &SupportTPF(void) const {return mySupportTPF;}
+
+  bool &ComputeRenderTargets(void) {return myComputeRenderTargets;}
+  const bool &ComputeRenderTargets(void) const {return myComputeRenderTargets;}
+
+  bool &ExtractTexturesToDisk(void) {return myExtractTexturesToDisk;}
+  const bool &ExtractTexturesToDisk(void) const {return myExtractTexturesToDisk;}
+
+  bool &DeleteExtractedTexturesOnDisk(void) {return myDeleteExtractedTexturesOnDisk;}
+  const bool &DeleteExtractedTexturesOnDisk(void) const {return myDeleteExtractedTexturesOnDisk;}
+
+  int SetExtractPath(const wxString &path) {ExtractPath=path; return 0;}
+  const wxString& GetExtractPath(void) const {return ExtractPath;}
 
 
   int SetSaveSingleTexture(bool val);
@@ -107,17 +122,22 @@ public:
 
 
   int SetOpenPath(const wxString &path) {OpenPath=path; return 0;}
-  wxString GetOpenPath(void) const {return OpenPath;}
+  const wxString& GetOpenPath(void) const {return OpenPath;}
 
   int SetSavePath(const wxString &path) {SavePath=path; return 0;}
-  wxString GetSavePath(void) const {return SavePath;}
+  const wxString& GetSavePath(void) const {return SavePath;}
 
   uMod_GameInfo& operator = (const  uMod_GameInfo &rhs);
 
 private:
-  bool myShowCollPane;
+  bool myShowCollCapturePane;
+  bool myShowCollSettingsPane;
 
   bool mySupportTPF;
+  bool myComputeRenderTargets;
+  bool myExtractTexturesToDisk;
+  bool myDeleteExtractedTexturesOnDisk;
+  wxString ExtractPath;
 
   bool SaveSingleTexture;
   bool SaveAllTextures;

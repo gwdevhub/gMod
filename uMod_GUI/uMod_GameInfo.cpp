@@ -34,13 +34,12 @@ uMod_GameInfo::~uMod_GameInfo(void)
 
 void uMod_GameInfo::Init(void)
 {
-  myShowCollPane = false;
+  myShowCollCapturePane = false;
 
   SaveSingleTexture = false;
   SaveAllTextures = false;
   myShowSingleTextureString = false;
   myShowSingleTexture = false;
-  mySupportTPF = false;
 
   KeyBack = -1;
   KeySave = -1;
@@ -64,6 +63,16 @@ void uMod_GameInfo::Init(void)
   SavePath << "\\textures";
 
   OpenPath.Empty();
+
+
+  myShowCollSettingsPane = false;
+  mySupportTPF = false;
+  myComputeRenderTargets = false;
+  myExtractTexturesToDisk = true;
+  myDeleteExtractedTexturesOnDisk = false;
+
+  ExtractPath = wxGetCwd();
+  ExtractPath << "\\ExtractedMods";
 }
 
 int uMod_GameInfo::SaveToString( wxString &content )
@@ -72,7 +81,7 @@ int uMod_GameInfo::SaveToString( wxString &content )
 
   wxString temp;
 
-  temp.Printf( "ShowCollPane:%d\n", myShowCollPane);
+  temp.Printf( "ShowCollCapturePane:%d\n", myShowCollCapturePane);
   content << temp;
 
   if (SavePath.Len()>0)
@@ -94,9 +103,6 @@ int uMod_GameInfo::SaveToString( wxString &content )
   content << temp;
 
   temp.Printf( "ShowSingleTexture:%d\n", myShowSingleTexture);
-  content << temp;
-
-  temp.Printf( "SupportTPF:%d\n", mySupportTPF);
   content << temp;
 
   if (KeyBack>=0)
@@ -141,6 +147,32 @@ int uMod_GameInfo::SaveToString( wxString &content )
   content << temp;
   temp.Printf( L"TextureColour:%u,%u,%u,%u\n", TextureColour[0], TextureColour[1], TextureColour[2], TextureColour[3]);
   content << temp;
+
+
+
+  temp.Printf( "ShowCollSettingsPane:%d\n", myShowCollSettingsPane);
+  content << temp;
+
+  temp.Printf( "SupportTPF:%d\n", mySupportTPF);
+  content << temp;
+
+  temp.Printf( "ComputeRenderTargets:%d\n", myComputeRenderTargets);
+  content << temp;
+
+  temp.Printf( "ExtractTexturesToDisk:%d\n", myExtractTexturesToDisk);
+  content << temp;
+
+  temp.Printf( "DeleteExtractedTexturesOnDisk:%d\n", myDeleteExtractedTexturesOnDisk);
+  content << temp;
+
+  if (ExtractPath.Len()>0)
+  {
+    temp.Printf( "ExtractPath:%ls\n", ExtractPath.wc_str());
+    content << temp;
+  }
+
+
+
   return 0;
 }
 
@@ -163,11 +195,11 @@ int uMod_GameInfo::LoadFromString( const wxString &content)
     line = token.GetNextToken();
     command = line.BeforeFirst(':');
 
-    if (command == "ShowCollPane")
+    if (command == "ShowCollCapturePane")
     {
       temp = line.AfterFirst(':');
-      if (temp.Len()>0 && temp[0]=='0') myShowCollPane = false;
-      else myShowCollPane = true;
+      if (temp.Len()>0 && temp[0]=='0') myShowCollCapturePane = false;
+      else myShowCollCapturePane = true;
     }
     else if (command == "SavePath") SavePath = line.AfterFirst(':');
     else if (command == "OpenPath") OpenPath = line.AfterFirst(':');
@@ -194,12 +226,6 @@ int uMod_GameInfo::LoadFromString( const wxString &content)
       temp = line.AfterFirst(':');
       if (temp.Len()>0 && temp[0]=='0') myShowSingleTexture = false;
       else myShowSingleTexture = true;
-    }
-    else if (command == "SupportTPF")
-    {
-      temp = line.AfterFirst(':');
-      if (temp.Len()>0 && temp[0]=='0') mySupportTPF = false;
-      else mySupportTPF = true;
     }
     else if  (command == "KeyBack")
     {
@@ -315,6 +341,37 @@ int uMod_GameInfo::LoadFromString( const wxString &content)
         if (temp.ToLong( &colour)) TextureColour[i] = colour;
       }
     }
+    if (command == "ShowCollSettingsPane")
+    {
+      temp = line.AfterFirst(':');
+      if (temp.Len()>0 && temp[0]=='0') myShowCollSettingsPane = false;
+      else myShowCollSettingsPane = true;
+    }
+    else if (command == "SupportTPF")
+    {
+      temp = line.AfterFirst(':');
+      if (temp.Len()>0 && temp[0]=='0') mySupportTPF = false;
+      else mySupportTPF = true;
+    }
+    else if (command == "ComputeRenderTargets")
+    {
+      temp = line.AfterFirst(':');
+      if (temp.Len()>0 && temp[0]=='0') myComputeRenderTargets = false;
+      else myComputeRenderTargets = true;
+    }
+    else if (command == "ExtractTexturesToDisk")
+    {
+      temp = line.AfterFirst(':');
+      if (temp.Len()>0 && temp[0]=='0') myExtractTexturesToDisk = false;
+      else myExtractTexturesToDisk = true;
+    }
+    else if (command == "DeleteExtractedTexturesOnDisk")
+    {
+      temp = line.AfterFirst(':');
+      if (temp.Len()>0 && temp[0]=='0') myDeleteExtractedTexturesOnDisk = false;
+      else myDeleteExtractedTexturesOnDisk = true;
+    }
+    else if (command == "ExtractPath") ExtractPath = line.AfterFirst(':');
   }
   if (SaveAllTextures && SaveSingleTexture)
   {
@@ -340,7 +397,7 @@ int uMod_GameInfo::SetSaveAllTextures(bool val)
 
 uMod_GameInfo& uMod_GameInfo::operator = (const  uMod_GameInfo &rhs)
 {
-  myShowCollPane = rhs.myShowCollPane;
+  myShowCollCapturePane = rhs.myShowCollCapturePane;
 
   SaveSingleTexture = rhs.SaveSingleTexture;
   SaveAllTextures = rhs.SaveAllTextures;
@@ -368,6 +425,13 @@ uMod_GameInfo& uMod_GameInfo::operator = (const  uMod_GameInfo &rhs)
 
   SavePath = rhs.SavePath;
   OpenPath = rhs.OpenPath;
+  ExtractPath = rhs.ExtractPath;
+
+  myShowCollSettingsPane = rhs.myShowCollSettingsPane;
+  mySupportTPF = rhs.mySupportTPF;
+  myComputeRenderTargets = rhs.myComputeRenderTargets;
+  myExtractTexturesToDisk = rhs.myExtractTexturesToDisk;
+  ExtractPath = rhs.ExtractPath;
 
   return *this;
 }

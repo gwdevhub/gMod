@@ -28,9 +28,12 @@ public:
   uMod_File(const wxString &file);
   ~uMod_File(void);
 
-  bool FileSupported(void);
-  bool PackageFile(void);
-  bool SingleFile(void);
+  bool FileSupported(void) const;
+  bool FileSupported( const wxString &suffix) const;
+  bool PackageFile(void) const;
+  bool PackageFile( const wxString &suffix) const;
+  bool SingleFile(void) const;
+  bool SingleFile( const wxString &suffix) const;
   //int AddSingleFileToNode( uMod_TreeViewNode* node);
   int GetContentTemplate(const wxString &content, uMod_TreeViewNode* node);
 
@@ -41,8 +44,13 @@ public:
   int GetContent( uMod_TreeViewNode* node);
 
   int SetFile(const wxString &file) {FileName=file;Loaded=false; return 0;}
-  wxString GetFile(void) {return FileName;}
+  const wxString& GetFile(void) const {return FileName;}
 
+  int SetExtractPath(const wxString &path) {ExtractPath=path; if (path.Len()>0) myExtractArchivesToDisk=true; else myExtractArchivesToDisk=false; return 0;}
+  const wxString& GetExtractPath(void) const {return ExtractPath;}
+
+  const bool &ExtractArchivesToDisk(void) const {return myExtractArchivesToDisk;}
+  bool &ExtractArchivesToDisk(void) {return myExtractArchivesToDisk;}
 
   wxString LastError;
 
@@ -63,7 +71,12 @@ private:
   int GetContentTemplate_ZIP( const uMod_TreeViewNode_ArrayPtr &list_node, uMod_TreeViewNode* node);
   int GetContentTemplate_SF( const uMod_TreeViewNode_ArrayPtr &list_node, uMod_TreeViewNode* node);
 
+  int WriteContentToDisk( wxString& file , char* data, int len);
+
   wxString FileName;
+  wxString ExtractPath;
+  bool myExtractArchivesToDisk;
+
   bool Loaded;
   bool XORed;
   char *FileInMemory;

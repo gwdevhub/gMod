@@ -86,8 +86,20 @@ public:
    */
   int RemoveTexture( uMod_IDirect3DCubeTexture9* tex);
 
+
+  int ComputeCRC( uMod_IDirect3DTexture9* tex);
+  int ComputeCRC( uMod_IDirect3DVolumeTexture9* tex);
+  int ComputeCRC( uMod_IDirect3DCubeTexture9* tex);
+
   int SaveAllTextures(bool val); //called from the Server
   int SaveSingleTexture(bool val); //called from the Server
+
+  /**
+   * Enable/Disable the hashing with CRC32, which is needed to support also tpf mods (called from the mainloop).
+   * @param[in] val
+   * @return
+   */
+  virtual int SupportTPF(bool val);
 
   /**
    * called from uMod_IDirect3DDevice9::BeginScene() (save button) or from AddTexture(...) (SaveAllTextures)
@@ -115,8 +127,6 @@ public:
 
   int MergeUpdate(void); //called from uMod_IDirect3DDevice9::BeginScene()
 
-  int CRCHasChanged( uMod_IDirect3DTexture9* pTexture);
-  int CRCHasChanged( uMod_IDirect3DCubeTexture9* pTexture);
 
   int LookUpToMod( uMod_IDirect3DTexture9* pTexture, int num_index_list=0, int *index_list=(int*)0); // called at the end AddTexture(...) and from Device->UpdateTexture(...)
 
@@ -128,17 +138,11 @@ public:
   uMod_TextureHandler<uMod_IDirect3DVolumeTexture9> OriginalVolumeTextures; // stores the pointer to the uMod_IDirect3DVolumeTexture9 objects created by the game
   uMod_TextureHandler<uMod_IDirect3DCubeTexture9> OriginalCubeTextures; // stores the pointer to the uMod_IDirect3DCubeTexture9 objects created by the game
 
-
-  // if the has could not be calculated for a texture it is not considered in the original texture list,
-  // but it is now added into the following lists and we try to calculate the hash once again later
-  int CheckAgainNonAdded(void);
-  bool Bool_CheckAgainNonAdded;
-  uMod_TextureHandler<uMod_IDirect3DTexture9> NonAdded_OriginalTextures; // stores the pointer to the uMod_IDirect3DTexture9 objects created by the game
-  uMod_TextureHandler<uMod_IDirect3DVolumeTexture9> NonAdded_OriginalVolumeTextures; // stores the pointer to the uMod_IDirect3DVolumeTexture9 objects created by the game
-  uMod_TextureHandler<uMod_IDirect3DCubeTexture9> NonAdded_OriginalCubeTextures; // stores the pointer to the uMod_IDirect3DCubeTexture9 objects created by the game
+  bool BoolComputeCRC32; //!< if true also the crc32 is calculated, which is need to support tpf
 
 private:
   IDirect3DDevice9* D3D9Device;
+
 
 
   /**
@@ -156,16 +160,37 @@ private:
    */
   bool SaveTextureFilterFormat(D3DFORMAT format);
 
-  int LoadTexture( TextureFileStruct* file_in_memory, uMod_IDirect3DTexture9 **ppTexture); // called if a target texture is found
-  int LoadTexture( TextureFileStruct* file_in_memory, uMod_IDirect3DVolumeTexture9 **ppTexture); // called if a target texture is found
-  int LoadTexture( TextureFileStruct* file_in_memory, uMod_IDirect3DCubeTexture9 **ppTexture); // called if a target texture is found
+  int LoadTexture( const TextureFileContent* file, uMod_IDirect3DTexture9 **ppTexture); // called if a target texture is found
+  int LoadTexture( const TextureFileContent* file, uMod_IDirect3DVolumeTexture9 **ppTexture); // called if a target texture is found
+  int LoadTexture( const TextureFileContent* file, uMod_IDirect3DCubeTexture9 **ppTexture); // called if a target texture is found
 
-  // and the corresponding fake texture should be loaded
-
-  //MyTypeHash GetHash(unsigned char *str, int len);
-  //unsigned int GetCRC32(char *pcDatabuf, unsigned int ulDatalen);
 };
 
 
+template <class T>
+inline void UnswitchTextures(T *pTexture)
+{
+  T* CrossRef = pTexture->CrossRef_D3Dtex;
+  if (CrossRef!=NULL)
+  {
+    // cancel the link
+    CrossRef->CrossRef_D3Dtex = NULL;
+    pTexture->CrossRef_D3Dtex = NULL;
+  }
+}
+
+template <class T>
+inline int SwitchTextures( T *pTexture1, T *pTexture2)
+{
+  if (pTexture1->m_D3Ddev == pTexture2->m_D3Ddev && pTexture1->CrossRef_D3Dtex == NULL && pTexture2->CrossRef_D3Dtex == NULL)
+  {
+    // make cross reference
+    pTexture1->CrossRef_D3Dtex = pTexture2;
+    pTexture2->CrossRef_D3Dtex = pTexture1;
+
+    return (RETURN_OK);
+  }
+  else return (RETURN_TEXTURE_NOT_SWITCHED);
+}
 
 #endif /* uMod_TEXTUREHANDLER_HPP_ */

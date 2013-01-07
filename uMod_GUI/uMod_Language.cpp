@@ -203,9 +203,14 @@ int uMod_Language::LoadLanguage(const wxString &name)
     CheckEntry( command, msg, MenuRemoveSelectedPackages)
     CheckEntry( command, msg, MenuUpdate)
     CheckEntry( command, msg, MenuReload)
-    CheckEntry( command, msg, MenuSupportTPF)
     CheckEntry( command, msg, ButtonUpdate)
     CheckEntry( command, msg, ButtonDirectory)
+    CheckEntry( command, msg, CollapseModSettings)
+    CheckEntry( command, msg, SupportTPF)
+    CheckEntry( command, msg, ComputeRenderTargets)
+    CheckEntry( command, msg, ExtractTexturesToDisk)
+    CheckEntry( command, msg, DeleteExtractedTexturesOnDisk)
+    CheckEntry( command, msg, ExtractPath)
     CheckEntry( command, msg, ChooseFile)
     CheckEntry( command, msg, ChooseDir)
     CheckEntry( command, msg, MultipleSingleFiles)
@@ -310,9 +315,15 @@ int uMod_Language::LoadDefault(void)
 
   MenuUpdate = "Update";
   MenuReload = "Update (reload)";
-  MenuSupportTPF = "Support TPF-Mods";
   ButtonUpdate = "Update";
   ButtonDirectory = "Set save directory";
+
+  CollapseModSettings = "Settings";
+  SupportTPF = "Support TPF-Mods";
+  ComputeRenderTargets = "Compute hash also from rendering targets";
+  ExtractTexturesToDisk = "Extract texture to disk (recommended for huge mod packages)";
+  DeleteExtractedTexturesOnDisk = "Delete extracted textures if uMod is closed";
+  ExtractPath = "Extract directory";
 
   ChooseFile = "Choose a file";
   ChooseDir = "Choose a directory";

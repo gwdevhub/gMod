@@ -97,6 +97,12 @@ public:
   void OnButtonSavePath(wxCommandEvent& event);
 
   /**
+   * Gets called, when the Extract-path button is pressed
+   * @param event
+   */
+  void OnButtonExtractPath(wxCommandEvent& event);
+
+  /**
    * Gets called, when the update-path button is pressed
    * @param event
    */
@@ -191,13 +197,14 @@ private:
   wxString TemplateName;
 
 
+  wxButton *UpdateButton;
 
   wxBoxSizer *MainSizer;
   wxTextCtrl *DX_DLL_Info;
   wxTextCtrl *TemplateFile;
 
-  wxCollapsiblePane *CollPane;
-  wxBoxSizer *CollSizer;
+  wxCollapsiblePane *CollCapturePane;
+  wxBoxSizer *CollCaptureSizer;
 
   wxBoxSizer *TextureSizer;
 
@@ -233,9 +240,24 @@ private:
 
   uMod_CheckBoxArray *FileFormats;
 
-  wxButton *UpdateButton;
   wxButton *SavePathButton;
   wxTextCtrl *SavePath;
+
+
+
+  wxCollapsiblePane *CollSettingsPane;
+  wxBoxSizer *CollSettingsSizer;
+  wxPanel *CollSettingsPanel;
+
+
+  wxCheckBox *SupportTPF;
+  wxCheckBox *ComputeRenderTargets;
+  wxCheckBox *ExtractTexturesToDisk;
+  wxCheckBox *DeleteExtractedTexturesOnDisk;
+
+  wxButton *ExtractPathButton;
+  wxTextCtrl *ExtractPath;
+
 
   wxDataViewCtrl *ViewCtrl;
   uMod_TreeViewModel *ViewModel;
