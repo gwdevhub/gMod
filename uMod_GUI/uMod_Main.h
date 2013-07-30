@@ -140,7 +140,7 @@ enum
 
 #define ABORT_SERVER L"uMod_Abort_Server"
 #define uMod_d3d9_Hook_dll L"uMod_d3d9_HI.dll"
-#define uMod_d3d9_DI_dll L"uMod_d3d9_DI.dll"
+#define uMod_d3d9_DI_dll L"uMod_d3d9_10_DI.dll"
 
 #include "uMod_Settings.h"
 #include "uMod_ModElement.h"

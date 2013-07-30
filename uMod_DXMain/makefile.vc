@@ -79,6 +79,7 @@ objects = \
   $(obj)\uMod_ArrayHandler.$(DX_XX_File).$(obj_suff) \
   $(obj)\uMod_TextureClient.$(DX_XX_File).$(obj_suff) \
   $(obj)\uMod_TextureServer.$(DX_XX_File).$(obj_suff) \
+  $(obj)\uMod_Detour.$(DX_XX_File).$(obj_suff) \
   $(obj)\uMod_DXMain_dll.$(DX_XX_File).$(obj_suff) \
   \
   $(obj)\uMod_DX9_dll.$(obj_suff) \
@@ -103,6 +104,8 @@ objects = \
 
 headers = uMod_Main.h \
  uMod_DXMain_dll.h \
+ uMod_Detour.h \
+ uMod_DetourEntry.h \
  uMod_Defines.h \
  uMod_TextureFunction.h \
  uMod_ArrayHandler.h \
@@ -136,6 +139,9 @@ $(bin)\d3d9.dll: $(objects)
 
 $(obj)\uMod_DXMain_dll.$(DX_XX_File).$(obj_suff): uMod_DXMain_dll.cpp  $(headers)
 	$(CXX) $(CFLAGS) /c uMod_DXMain_dll.cpp /Fo$@
+
+$(obj)\uMod_Detour.$(DX_XX_File).$(obj_suff): uMod_Detour.cpp  $(headers)
+  $(CXX) $(CFLAGS) /c uMod_Detour.cpp /Fo$@
 
 $(obj)\uMod_ArrayHandler.$(DX_XX_File).$(obj_suff): uMod_ArrayHandler.cpp  $(headers)
 	$(CXX) $(CFLAGS) /c uMod_ArrayHandler.cpp /Fo$@

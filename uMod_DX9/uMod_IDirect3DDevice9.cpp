@@ -491,11 +491,13 @@ BOOL uMod_IDirect3DDevice9::ShowCursor(BOOL bShow)
 
 HRESULT uMod_IDirect3DDevice9::CreateAdditionalSwapChain(D3DPRESENT_PARAMETERS* pPresentationParameters,IDirect3DSwapChain9** pSwapChain)
 {
+  Message("uMod_IDirect3DDevice9::CreateAdditionalSwapChain() %p\n", this);
   return(m_pIDirect3DDevice9->CreateAdditionalSwapChain(pPresentationParameters,pSwapChain));
 }
 
 HRESULT uMod_IDirect3DDevice9::GetSwapChain(UINT iSwapChain,IDirect3DSwapChain9** pSwapChain)
 {
+  Message("uMod_IDirect3DDevice9::GetSwapChain() %p\n", this);
   return(m_pIDirect3DDevice9->GetSwapChain(iSwapChain,pSwapChain));
 }
 
@@ -971,7 +973,7 @@ HRESULT uMod_IDirect3DDevice9::CreateOffscreenPlainSurface(UINT Width,UINT Heigh
 
 HRESULT uMod_IDirect3DDevice9::SetRenderTarget(DWORD RenderTargetIndex,IDirect3DSurface9* pRenderTarget)
 {
-  //Message( PRE_MESSAGE "::SetRenderTarget( %u, %p): %p\n", RenderTargetIndex, pRenderTarget, this);
+  Message( PRE_MESSAGE "::SetRenderTarget( %u, %p): %p\n", RenderTargetIndex, pRenderTarget, this);
   {
     IDirect3DSurface9 *back_buffer;
     NormalRendering = false;

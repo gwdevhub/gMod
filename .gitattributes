@@ -44,12 +44,16 @@ uMod_DXMain/uMod_ArrayHandler.cpp -text
 uMod_DXMain/uMod_ArrayHandler.h -text
 uMod_DXMain/uMod_DX10_dll_DIRECT_INJECTION.def -text
 uMod_DXMain/uMod_DX10_dll_HOOK_INJECTION.def -text
+uMod_DXMain/uMod_DX9_10_dll_DIRECT_INJECTION.def -text
 uMod_DXMain/uMod_DX9_dll_DIRECT_INJECTION.def -text
 uMod_DXMain/uMod_DX9_dll_HOOK_INJECTION.def -text
 uMod_DXMain/uMod_DX9_dll_NO_INJECTION.def -text
 uMod_DXMain/uMod_DXMain_dll.cpp -text
 uMod_DXMain/uMod_DXMain_dll.h -text
 uMod_DXMain/uMod_Defines.h -text
+uMod_DXMain/uMod_Detour.cpp -text
+uMod_DXMain/uMod_Detour.h -text
+uMod_DXMain/uMod_DetourEntry.h -text
 uMod_DXMain/uMod_Main.h -text
 uMod_DXMain/uMod_TextureClient.cpp -text
 uMod_DXMain/uMod_TextureClient.h -text

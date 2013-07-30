@@ -50,14 +50,14 @@ HRESULT uMod_IDirect3DSurface9::QueryInterface(REFIID riid, void** ppvObj)
 
 ULONG uMod_IDirect3DSurface9::AddRef()
 {
-  //Message( "uMod_IDirect3DSurface9::AddRef(): %p\n", this);
+  Message( "uMod_IDirect3DSurface9::AddRef(): %p\n", this);
   RefCounter++;
   return m_D3Dsurf->AddRef();
 }
 
 ULONG uMod_IDirect3DSurface9::Release()
 {
-  //Message( "uMod_IDirect3DSurface9::Release(): %p\n", this);
+  Message( "uMod_IDirect3DSurface9::Release(): %p\n", this);
   // this object might be created by uMod_IDirect3DTexture9::GetSurfaceLevel
   // thus the RefCounter might be zero although m_D3Dsurf->Release() does not delete
   // the m_D3Dsurf object
@@ -75,19 +75,19 @@ HRESULT uMod_IDirect3DSurface9::GetDevice( IDirect3DDevice9** ppDevice)
 
 HRESULT uMod_IDirect3DSurface9::SetPrivateData( REFGUID refguid,CONST void* pData,DWORD SizeOfData,DWORD Flags)
 {
-  //Message( "uMod_IDirect3DSurface9::SetPrivateData(): %p\n", this);
+  Message( "uMod_IDirect3DSurface9::SetPrivateData(): %p\n", this);
   return m_D3Dsurf->SetPrivateData( refguid, pData, SizeOfData, Flags);
 }
 
 HRESULT uMod_IDirect3DSurface9::GetPrivateData( REFGUID refguid,void* pData,DWORD* pSizeOfData)
 {
-  //Message( "uMod_IDirect3DSurface9::GetPrivateData(): %p\n", this);
+  Message( "uMod_IDirect3DSurface9::GetPrivateData(): %p\n", this);
   return m_D3Dsurf->GetPrivateData( refguid, pData, pSizeOfData);
 }
 
 HRESULT uMod_IDirect3DSurface9::FreePrivateData( REFGUID refguid)
 {
-  //Message( "uMod_IDirect3DSurface9::FreePrivateData(): %p\n", this);
+  Message( "uMod_IDirect3DSurface9::FreePrivateData(): %p\n", this);
   return m_D3Dsurf->FreePrivateData( refguid);
 }
 
@@ -116,7 +116,7 @@ D3DRESOURCETYPE uMod_IDirect3DSurface9::GetType()
 
 HRESULT uMod_IDirect3DSurface9::GetContainer( REFIID riid,void** ppContainer)
 {
-  //Message( "uMod_IDirect3DSurface9::GetContainer(): %p\n", this);
+  Message( "uMod_IDirect3DSurface9::GetContainer(): %p\n", this);
   HRESULT ret = m_D3Dsurf->GetContainer( riid, ppContainer);
 
   //return the uMod_IDirect3DTexture9 object
@@ -136,38 +136,37 @@ HRESULT uMod_IDirect3DSurface9::GetContainer( REFIID riid,void** ppContainer)
 
 HRESULT uMod_IDirect3DSurface9::GetDesc( D3DSURFACE_DESC *pDesc)
 {
-  //Message( "uMod_IDirect3DSurface9::GetDesc(): %p\n", this);
+  Message( "uMod_IDirect3DSurface9::GetDesc(): %p\n", this);
   return m_D3Dsurf->GetDesc( pDesc);
 }
 
 HRESULT uMod_IDirect3DSurface9::LockRect( D3DLOCKED_RECT* pLockedRect,CONST RECT* pRect,DWORD Flags)
 {
-  //Message( "uMod_IDirect3DSurface9::LockRect(): %p\n", this);
+  Message( "uMod_IDirect3DSurface9::LockRect(): %p\n", this);
   return m_D3Dsurf->LockRect( pLockedRect, pRect, Flags);
 }
 
 HRESULT uMod_IDirect3DSurface9::UnlockRect()
 {
-  //Message( "uMod_IDirect3DSurface9::UnlockRect(): %p\n", this);
+  Message( "uMod_IDirect3DSurface9::UnlockRect(): %p\n", this);
   HRESULT ret = m_D3Dsurf->UnlockRect();
 
   if (m_D3DTex!=NULL && !m_D3DTex->FAKE)
     m_D3DTex->Dirty=1;
   else if (m_D3DCubeTex!=NULL && !m_D3DCubeTex->FAKE)
     m_D3DCubeTex->Dirty = 1;
-
   return ret;
 }
 
 HRESULT uMod_IDirect3DSurface9::GetDC( HDC *phdc)
 {
-  //Message( "uMod_IDirect3DSurface9::GetDC(): %p\n", this);
+  Message( "uMod_IDirect3DSurface9::GetDC(): %p\n", this);
   return m_D3Dsurf->GetDC( phdc);
 }
 
 HRESULT uMod_IDirect3DSurface9::ReleaseDC( HDC hdc)
 {
-  //Message( "uMod_IDirect3DSurface9::ReleaseDC(): %p\n", this);
+  Message( "uMod_IDirect3DSurface9::ReleaseDC(): %p\n", this);
   HRESULT ret = m_D3Dsurf->ReleaseDC( hdc);
 
   if (m_D3DTex!=NULL && !m_D3DTex->FAKE)

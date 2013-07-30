@@ -34,15 +34,17 @@ along with Universal Modding Engine.  If not, see <http://www.gnu.org/licenses/>
 /*
  * global variable which are not linked external
  */
+#if INJECTION_METHOD==NO_INJECTION
 HINSTANCE             gl_hOriginal_DX10_Dll = NULL;
 HINSTANCE             gl_hOriginal_DX101_Dll = NULL;
+#endif
 
+#if INJECTION_METHOD==DIRECT_INJECTION || INJECTION_METHOD==HOOK_INJECTION
 typedef HRESULT (APIENTRY *D3D10CreateDeviceAndSwapChain_type)( IDXGIAdapter*, D3D10_DRIVER_TYPE, HMODULE, UINT, UINT, DXGI_SWAP_CHAIN_DESC*, IDXGISwapChain**, ID3D10Device**);
 typedef HRESULT (APIENTRY *D3D10CreateDeviceAndSwapChain1_type)( IDXGIAdapter*, D3D10_DRIVER_TYPE, HMODULE, UINT, D3D10_FEATURE_LEVEL1,  UINT, DXGI_SWAP_CHAIN_DESC*, IDXGISwapChain**, ID3D10Device1**);
 
-#if INJECTION_METHOD==DIRECT_INJECTION || INJECTION_METHOD==HOOK_INJECTION
-D3D10CreateDeviceAndSwapChain_type D3D10CreateDeviceAndSwapChain_fn = NULL;
-D3D10CreateDeviceAndSwapChain1_type D3D10CreateDeviceAndSwapChain1_fn = NULL;
+uMod_Detour_Entry<D3D10CreateDeviceAndSwapChain_type> Detour_D3D10CreateDeviceAndSwapChain(5);
+uMod_Detour_Entry<D3D10CreateDeviceAndSwapChain1_type> Detour_D3D10CreateDeviceAndSwapChain1(5);
 #endif
 
 
@@ -54,34 +56,46 @@ D3D10CreateDeviceAndSwapChain1_type D3D10CreateDeviceAndSwapChain1_fn = NULL;
 
 void InitDX10(void)
 {
+
+#if INJECTION_METHOD==NO_INJECTION
   LoadOriginal_DX10_Dll();
+#endif
 
 #if INJECTION_METHOD==DIRECT_INJECTION || INJECTION_METHOD==HOOK_INJECTION
 
-  // we detour the original D3D10CreateDeviceAndSwapChain to our uMod_D3D10CreateDeviceAndSwapChain
-  if (gl_hOriginal_DX10_Dll!=NULL)
-  {
-    D3D10CreateDeviceAndSwapChain_fn = (D3D10CreateDeviceAndSwapChain_type) GetProcAddress(gl_hOriginal_DX10_Dll, "D3D10CreateDeviceAndSwapChain");
-    if (D3D10CreateDeviceAndSwapChain_fn!=NULL)
-    {
-      Message("Detour: D3D10CreateDeviceAndSwapChain\n");
-      D3D10CreateDeviceAndSwapChain_fn = (D3D10CreateDeviceAndSwapChain_type)DetourFunc( (BYTE*)D3D10CreateDeviceAndSwapChain_fn, (BYTE*)uMod_D3D10CreateDeviceAndSwapChain, number_of_byte);
-    }
-  }
-  if (gl_hOriginal_DX101_Dll!=NULL)
-  {
-    D3D10CreateDeviceAndSwapChain1_fn = (D3D10CreateDeviceAndSwapChain1_type) GetProcAddress(gl_hOriginal_DX101_Dll, "D3D10CreateDeviceAndSwapChain1");
-    if (D3D10CreateDeviceAndSwapChain1_fn!=NULL)
-    {
-      Message("Detour: D3D10CreateDeviceAndSwapChain1\n");
-      D3D10CreateDeviceAndSwapChain1_fn = (D3D10CreateDeviceAndSwapChain1_type)DetourFunc( (BYTE*)D3D10CreateDeviceAndSwapChain1_fn, (BYTE*)uMod_D3D10CreateDeviceAndSwapChain1, 5);
-    }
-  }
+  char buffer[MAX_PATH];
+  wchar_t buffer_w[MAX_PATH];
+  GetSystemDirectory(buffer,MAX_PATH); //get the system directory, we need to open the original d3d9.dll
+  swprintf_s( buffer_w, MAX_PATH, L"%s\\d3d10.dll", buffer);
+  strcat_s( buffer, MAX_PATH,"\\d3d10.dll");
+
+  Detour_D3D10CreateDeviceAndSwapChain.SetFunctionName( "D3D10CreateDeviceAndSwapChain");
+  Detour_D3D10CreateDeviceAndSwapChain.SetTargetFunction( uMod_D3D10CreateDeviceAndSwapChain);
+  Detour_D3D10CreateDeviceAndSwapChain.SetLibName( "d3d10.dll");
+  Detour_D3D10CreateDeviceAndSwapChain.SetFullLibName( buffer);
+  Detour_D3D10CreateDeviceAndSwapChain.SetLibName( L"d3d10.dll"); // set also for wide character
+  Detour_D3D10CreateDeviceAndSwapChain.SetFullLibName( buffer_w); // set also for wide character
+
+  GetSystemDirectory(buffer,MAX_PATH); //get the system directory, we need to open the original d3d9.dll
+  swprintf_s( buffer_w, MAX_PATH, L"%s\\d3d10_1.dll", buffer);
+  strcat_s( buffer, MAX_PATH,"\\d3d10_1.dll");
+
+  Detour_D3D10CreateDeviceAndSwapChain1.SetFunctionName( "D3D10CreateDeviceAndSwapChain1");
+  Detour_D3D10CreateDeviceAndSwapChain1.SetTargetFunction( uMod_D3D10CreateDeviceAndSwapChain1);
+  Detour_D3D10CreateDeviceAndSwapChain1.SetLibName( "d3d10_1.dll");
+  Detour_D3D10CreateDeviceAndSwapChain1.SetFullLibName( buffer);
+  Detour_D3D10CreateDeviceAndSwapChain1.SetLibName( L"d3d10_1.dll"); // set also for wide character
+  Detour_D3D10CreateDeviceAndSwapChain1.SetFullLibName( buffer_w); // set also for wide character
+
+  GlobalDetour.AddEntry(&Detour_D3D10CreateDeviceAndSwapChain);
+  GlobalDetour.AddEntry(&Detour_D3D10CreateDeviceAndSwapChain1);
+
 #endif
 }
 
 void ExitDX10(void)
 {
+#if INJECTION_METHOD==NO_INJECTION
   // Release the system's d3d9.dll
   if (gl_hOriginal_DX10_Dll!=NULL)
   {
@@ -94,7 +108,15 @@ void ExitDX10(void)
     FreeLibrary(gl_hOriginal_DX101_Dll);
     gl_hOriginal_DX101_Dll = NULL;
   }
+#endif
+
+#if INJECTION_METHOD==DIRECT_INJECTION || INJECTION_METHOD==HOOK_INJECTION
+#endif
 }
+
+
+
+#if INJECTION_METHOD==NO_INJECTION
 void LoadOriginal_DX10_Dll(void)
 {
   char buffer[MAX_PATH];
@@ -119,8 +141,6 @@ void LoadOriginal_DX10_Dll(void)
 
 }
 
-
-#if INJECTION_METHOD==NO_INJECTION
 /*
  * We do not inject, the game loads this dll by itself thus we must include the Direct3DCreate9 function
  */
@@ -254,10 +274,8 @@ HRESULT APIENTRY uMod_D3D10CreateDeviceAndSwapChain(
   ID3D10Device **ppDevice
 )
 {
-  RetourFunc((BYTE*) GetProcAddress( gl_hOriginal_DX10_Dll, "D3D10CreateDeviceAndSwapChain"), (BYTE*)D3D10CreateDeviceAndSwapChain_fn, number_of_byte);
-  D3D10CreateDeviceAndSwapChain_fn = (D3D10CreateDeviceAndSwapChain_type) GetProcAddress( gl_hOriginal_DX10_Dll, "D3D10CreateDeviceAndSwapChain");
-
-  HRESULT ret = D3D10CreateDeviceAndSwapChain_fn(pAdapter,DriverType,Software,Flags,SDKVersion,pSwapChainDesc, ppSwapChain, ppDevice);
+  Detour_D3D10CreateDeviceAndSwapChain.Retour();
+  HRESULT ret = Detour_D3D10CreateDeviceAndSwapChain.Function()(pAdapter,DriverType,Software,Flags,SDKVersion,pSwapChainDesc, ppSwapChain, ppDevice);
   if (ret==S_OK)
   {
     uMod_ID3D10Device *dev = new uMod_ID3D10Device( *ppDevice, gl_TextureServer);
@@ -270,7 +288,7 @@ HRESULT APIENTRY uMod_D3D10CreateDeviceAndSwapChain(
     }
   }
   else Message("D3D10CreateDeviceAndSwapChain: Failed\n");
-  D3D10CreateDeviceAndSwapChain_fn = (D3D10CreateDeviceAndSwapChain_type)DetourFunc( (BYTE*)D3D10CreateDeviceAndSwapChain_fn, (BYTE*)uMod_D3D10CreateDeviceAndSwapChain, number_of_byte);
+  Detour_D3D10CreateDeviceAndSwapChain.Detour();
   return ret;
 }
 
@@ -286,10 +304,8 @@ HRESULT APIENTRY uMod_D3D10CreateDeviceAndSwapChain1(
   ID3D10Device1 **ppDevice
 )
 {
-  RetourFunc((BYTE*) GetProcAddress( gl_hOriginal_DX101_Dll, "D3D10CreateDeviceAndSwapChain1"), (BYTE*)D3D10CreateDeviceAndSwapChain1_fn, 5);
-  D3D10CreateDeviceAndSwapChain1_fn = (D3D10CreateDeviceAndSwapChain1_type) GetProcAddress( gl_hOriginal_DX101_Dll, "D3D10CreateDeviceAndSwapChain1");
-
-  HRESULT ret = D3D10CreateDeviceAndSwapChain1_fn(pAdapter,DriverType,Software,Flags,HardwareLevel,SDKVersion,pSwapChainDesc, ppSwapChain, ppDevice);
+  Detour_D3D10CreateDeviceAndSwapChain1.Retour();
+  HRESULT ret = Detour_D3D10CreateDeviceAndSwapChain1.Function()(pAdapter,DriverType,Software,Flags,HardwareLevel,SDKVersion,pSwapChainDesc, ppSwapChain, ppDevice);
   if (ret==S_OK)
   {
     uMod_ID3D10Device1 *dev = new uMod_ID3D10Device1( *ppDevice, gl_TextureServer);
@@ -302,9 +318,7 @@ HRESULT APIENTRY uMod_D3D10CreateDeviceAndSwapChain1(
     }
   }
   else Message("D3D10CreateDeviceAndSwapChain1: Failed\n");
-
-  D3D10CreateDeviceAndSwapChain1_fn = (D3D10CreateDeviceAndSwapChain1_type)DetourFunc( (BYTE*)D3D10CreateDeviceAndSwapChain1_fn, (BYTE*)uMod_D3D10CreateDeviceAndSwapChain1, 5);
-
+  Detour_D3D10CreateDeviceAndSwapChain1.Detour();
   return (ret);
 }
 

@@ -102,6 +102,7 @@ void InitInstance(HINSTANCE hModule)
 
     gl_TextureServer = new uMod_TextureServer(game); //create the server which listen on the pipe and prepare the update for the texture clients
 
+    GlobalDetour.Init();
 #ifdef DEF_USE_DX9
     InitDX9();
 #endif
@@ -146,6 +147,7 @@ void ExitInstance()
   ExitDX10();
 #endif
 
+  GlobalDetour.Exit();
   CloseMessage();
 }
 

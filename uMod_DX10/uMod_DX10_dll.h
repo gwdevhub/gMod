@@ -23,9 +23,16 @@ along with Universal Modding Engine.  If not, see <http://www.gnu.org/licenses/>
 
 #include "../uMod_DXMain/uMod_Main.h"
 
-void LoadOriginal_DX10_Dll(void);
 void InitDX10();
 void ExitDX10();
+
+#if INJECTION_METHOD==NO_INJECTION
+/**
+ * Load the official d3d10.dll from the system path.
+ */
+void LoadOriginal_DX10_Dll(void);
+#endif
+
 
 #if INJECTION_METHOD==DIRECT_INJECTION || INJECTION_METHOD==HOOK_INJECTION
 

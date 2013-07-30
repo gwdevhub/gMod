@@ -23,20 +23,17 @@ along with Universal Modding Engine.  If not, see <http://www.gnu.org/licenses/>
 
 #include "../uMod_DXMain/uMod_Main.h"
 
+
+
+void InitDX9();
+void ExitDX9();
+
+#if INJECTION_METHOD==NO_INJECTION
 /**
  * Load the official d3d9.dll from the system path.
  */
 void LoadOriginal_DX9_Dll(void);
-
-/**
- * Initialize dx9 -> loads d3d9.dll and set detour if this dll is compiled for "Direct Injection" or "Hook Injection"
- */
-void InitDX9();
-
-/**
- * Unload the d3d9.dll
- */
-void ExitDX9();
+#endif
 
 #if INJECTION_METHOD==DIRECT_INJECTION || INJECTION_METHOD==HOOK_INJECTION
 

@@ -23,7 +23,7 @@ along with Universal Modding Engine.If not, see <http://www.gnu.org/licenses/>.
 
 uMod_IDXGISwapChain::uMod_IDXGISwapChain(IDXGISwapChain *pOriginal, uMod_ID3D10Device *dev)
 {
-  Message( "IDXGISwapChain::IDXGISwapChain( %lu, %lu): %lu\n", pOriginal, dev, this);
+  Message( "uMod_IDXGISwapChain::uMod_IDXGISwapChain( %lu, %lu): %lu\n", pOriginal, dev, this);
   m_IDXGISwapChain = pOriginal;
   u_ID3D10Device = dev;
   RefCounter = 1;
@@ -37,7 +37,7 @@ uMod_IDXGISwapChain::~uMod_IDXGISwapChain()
 HRESULT STDMETHODCALLTYPE uMod_IDXGISwapChain::QueryInterface( REFIID riid, void** ppvObject)
 {
   *ppvObject = NULL;
-  Message( "IDXGISwapChain::QueryInterface(): %lu\n", this);
+  Message( "uMod_IDXGISwapChain::QueryInterface(): %lu\n", this);
   HRESULT hRes = m_IDXGISwapChain->QueryInterface(riid, ppvObject);
 
   if (*ppvObject == m_IDXGISwapChain)
@@ -51,12 +51,14 @@ HRESULT STDMETHODCALLTYPE uMod_IDXGISwapChain::QueryInterface( REFIID riid, void
 
 ULONG STDMETHODCALLTYPE uMod_IDXGISwapChain::AddRef(void)
 {
+  Message( "uMod_IDXGISwapChain::AddRef(): %lu\n", this);
   RefCounter++;
   return m_IDXGISwapChain->AddRef();
 }
 
 ULONG STDMETHODCALLTYPE uMod_IDXGISwapChain::Release( void)
 {
+  Message( "uMod_IDXGISwapChain::Release(): %lu\n", this);
   if (--RefCounter==0) //if our counter drops to zero, the real device will be deleted, so we clean up before
    {
      // we must not release the fake textures, cause they are released if the target textures are released
@@ -111,11 +113,13 @@ HRESULT STDMETHODCALLTYPE uMod_IDXGISwapChain::GetDevice( REFIID riid, void **pp
 
 HRESULT STDMETHODCALLTYPE uMod_IDXGISwapChain::Present( UINT SyncInterval, UINT Flags)
 {
+  Message( "uMod_IDXGISwapChain::Present(): %lu\n", this);
   return m_IDXGISwapChain->Present( SyncInterval, Flags);
 }
 
 HRESULT STDMETHODCALLTYPE uMod_IDXGISwapChain::GetBuffer( UINT Buffer, REFIID riid, void **ppSurface)
 {
+  Message( "uMod_IDXGISwapChain::GetBuffer(): %lu\n", this);
   return m_IDXGISwapChain->GetBuffer( Buffer, riid, ppSurface);
 }
 

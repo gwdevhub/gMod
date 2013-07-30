@@ -52,6 +52,8 @@ along with Universal Modding Engine.  If not, see <http://www.gnu.org/licenses/>
 
 #include "uMod_TextureFunction.h"
 
+#include "uMod_DetourEntry.h"
+#include "uMod_Detour.h"
 #include "uMod_DXMain_dll.h"
 
 
