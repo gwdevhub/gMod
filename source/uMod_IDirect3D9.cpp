@@ -20,7 +20,9 @@ along with Universal Modding Engine.  If not, see <http://www.gnu.org/licenses/>
 
 
 
-#include "uMod_Main.h"
+#include "../header/uMod_Main.h"
+#include "../header/uMod_IDirect3D9.h"
+#include "../header/uMod_IDirect3DDevice9.h"
 
 #ifndef PRE_MESSAGE
 #define PRE_MESSAGE "uMod_IDirect3D9"

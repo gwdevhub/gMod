@@ -17,33 +17,12 @@ along with Universal Modding Engine.  If not, see <http://www.gnu.org/licenses/>
 */
 
 #pragma once
-#include "../header/uMod_Main.h"
+#include <string>
+#include <vector>
+#include <Windows.h>
 
-/**
- * Load the official d3d9.dll from the system path.
- */
-void LoadOriginal_DX9_Dll(void);
-
-/**
- * Initialize dx9 -> loads d3d9.dll and set detour if this dll is compiled for "Direct Injection" or "Hook Injection"
- */
-void InitDX9();
-
-/**
- * Unload the d3d9.dll
- */
-void ExitDX9();
-
-#if INJECTION_METHOD==DIRECT_INJECTION || INJECTION_METHOD==HOOK_INJECTION
-
-/**
- * Direct3DCreate9 function must be exported if compiled for "No Injection"
- */
-IDirect3D9 *APIENTRY uMod_Direct3DCreate9(UINT SDKVersion);
-
-/**
- * Direct3DCreate9Ex function must be exported if compiled for "No Injection"
- */
-HRESULT APIENTRY uMod_Direct3DCreate9Ex( UINT SDKVersion, IDirect3D9Ex **ppD3D);
-
-#endif
+struct UModTexture {
+    std::vector<char> data;
+    std::wstring name;
+    DWORD64 hash;
+};

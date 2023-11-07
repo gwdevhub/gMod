@@ -43,9 +43,11 @@ target_compile_definitions(gMod PRIVATE
     INJECTION_METHOD=2
     DIRECT_INJECTION
     DEF_USE_DX9=true
+    _UNICODE=true
+    UNICODE=true
     DX_XX_File=9
     LOG_MESSAGE
 )
 
-target_precompile_headers(gMod PRIVATE "header/pch.h")
-target_include_directories(gMod PUBLIC "header")
+target_precompile_headers(uMod PRIVATE "header/pch.h")
+target_include_directories(uMod PUBLIC "header")
