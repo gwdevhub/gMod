@@ -22,7 +22,7 @@ along with Universal Modding Engine.  If not, see <http://www.gnu.org/licenses/>
 #include "../header/Server.h"
 #include "../header/uMod_File.h"
 
-uMod_TextureServer::uMod_TextureServer(char* game)
+uMod_TextureServer::uMod_TextureServer(char* game, char* uModName)
 {
     Message("uMod_TextureServer(void): %lu\n", this);
 
@@ -51,6 +51,11 @@ uMod_TextureServer::uMod_TextureServer(char* game)
 
     if (len < MAX_PATH) GameName[len] = 0;
     else GameName[0] = 0;
+
+    for (len = 0; len < MAX_PATH; len++)
+    {
+        UModName[len] = uModName[len];
+    }
 
     KeyBack = 0;
     KeySave = 0;
@@ -557,9 +562,41 @@ int uMod_TextureServer::UnlockMutex(void)
     return (RETURN_OK);
 }
 
+void uMod_TextureServer::LoadModsFromFile(char* source)
+{
+    Message("MainLoop: searching in %s\n", source);
+    // Attempt to open the file
+    FILE* file = fopen(source, "r");
+    if (file) {
+        Message("MainLoop: found modlist.txt. Reading\n");
+        // Read each line from the file
+        char line[MAX_PATH];
+        while (fgets(line, sizeof(line), file) != NULL) {
+            Message("MainLoop: loading file %s\n", line);
+            auto file = new uMod_File(line);
+            auto result = file->GetContent();
+            if (file->Textures.size() > 0) {
+                if (!result) {
+                    Message("MainLoop: WARNING! GetContent returned failure, but some textures have been loaded for %s\n", line);
+                }
+
+                Message("MainLoop: Texture count %d %s\n", file->Textures.size(), line);
+                for (auto& texture : file->Textures) {
+                    AddFile(texture.data.data(), static_cast<DWORD64>(texture.data.size()), texture.hash, true);
+                }
+
+                PropagateUpdate(NULL);
+            }
+            else {
+                Message("MainLoop: Failed to load any textures for %s\n", line);
+            }
+        }
+    }
+}
+
 int uMod_TextureServer::MainLoop(void) // run as a separated thread
 {
-    Message("MainLoop: searching for modlist.txt");
+    Message("MainLoop: searching for modlist.txt\n");
     char gwpath[MAX_PATH];
     GetModuleFileName(GetModuleHandle(NULL), gwpath, MAX_PATH); //ask for name and path of this executable
     char* last_backslash = strrchr(gwpath, '\\');
@@ -569,34 +606,19 @@ int uMod_TextureServer::MainLoop(void) // run as a separated thread
     }
 
     strcat(gwpath, "\\modlist.txt");
-    Message("MainLoop: searching in %s", gwpath);
-    // Attempt to open the file
-    FILE* file = fopen(gwpath, "r");
-    if (file) {
-        Message("MainLoop: found modlist.txt. Reading");
-        // Read each line from the file
-        char line[MAX_PATH];
-        while (fgets(line, sizeof(line), file) != NULL) {
-            Message("MainLoop: loading file %s", line);
-            auto file = new uMod_File(line);
-            auto result = file->GetContent();
-            if (file->Textures.size() > 0) {
-                if (!result) {
-                    Message("MainLoop: WARNING! GetContent returned failure, but some textures have been loaded for %s", line);
-                }
+    LoadModsFromFile(gwpath);
 
-                Message("MainLoop: Texture count %d %s", file->Textures.size(), line);
-                for (auto& texture : file->Textures) {
-                    AddFile(texture.data.data(), static_cast<DWORD64>(texture.data.size()), texture.hash, true);
-                }
+    char umodpath[MAX_PATH];
+    strcpy(umodpath, UModName);
 
-                PropagateUpdate(NULL);
-            }
-            else {
-                Message("MainLoop: Failed to load any textures for %s", line);
-            }
-        }
+    last_backslash = strrchr(umodpath, '\\');
+    if (last_backslash != NULL) {
+        // Terminate the string at the last backslash to remove the executable name
+        *last_backslash = '\0';
     }
+
+    strcat(umodpath, "\\modlist.txt");
+    LoadModsFromFile(umodpath);
 
     Message("MainLoop: begin\n");
     http::server::Get("/id", [](const httplib::Request&, httplib::Response& response) {

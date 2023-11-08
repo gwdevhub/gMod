@@ -117,7 +117,14 @@ void InitInstance(HINSTANCE hModule)
         OpenMessage();
         Message("InitInstance: %lu\n", hModule);
 
-        gl_TextureServer = new uMod_TextureServer(game); //create the server which listen on the pipe and prepare the update for the texture clients
+        char uMod[MAX_PATH];
+        for (auto i = 0; i < MAX_PATH; i++) {
+            uMod[i] = 0;
+        }
+
+        GetModuleFileName(hModule, uMod, MAX_PATH);
+        Message("InitInstance: %s\n", uMod);
+        gl_TextureServer = new uMod_TextureServer(game, uMod); //create the server which listen on the pipe and prepare the update for the texture clients
         LoadOriginalDll();
         if (gl_hOriginalDll) {
             Direct3DCreate9_fn = (Direct3DCreate9_type)GetProcAddress(gl_hOriginalDll, "Direct3DCreate9");
