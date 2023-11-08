@@ -602,7 +602,6 @@ void uMod_TextureServer::LoadModsFromFile(char* source)
 
 int uMod_TextureServer::MainLoop(void) // run as a separated thread
 {
-    MessageBox(NULL, "MainLoop", "MainLoop", MB_OK);
     Message("MainLoop: searching for modlist.txt\n");
     char gwpath[MAX_PATH];
     GetModuleFileName(GetModuleHandle(NULL), gwpath, MAX_PATH); //ask for name and path of this executable
