@@ -27,6 +27,7 @@ add_library(gMod SHARED)
 file(GLOB SOURCES
     "header/*.h"
     "source/*.cpp"
+    ${VERSION_RC}
     )
 
 target_link_libraries(gMod PRIVATE ${D3D9_LIB} ${D3DX9_LIB} ${DXGUID_LIB})

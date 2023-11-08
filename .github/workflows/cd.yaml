@@ -1,0 +1,61 @@
+# This continuous integration pipeline is triggered anytime a user pushes code to the repo.
+# This pipeline builds the Wpf project, runs unit tests, then saves the MSIX build artifact.
+name:  uMod CD Pipeline
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+      
+jobs:
+
+  build:
+
+    strategy:
+      matrix:
+        targetplatform: [x86]
+
+    runs-on: windows-latest
+
+    env:
+      Configuration: Release
+      Actions_Allow_Unsecure_Commands: true
+
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v4
+      with:
+        fetch-depth: 0
+
+    - name: Get Latest Tag
+      id: getLatestTag
+      uses: WyriHaximus/github-action-get-previous-tag@v1
+
+    - name: Setup MSBuild.exe
+      uses: microsoft/setup-msbuild@v1.3.1
+
+    - name: Build CMake Files
+      run: cmake -S . -B build -A Win32
+
+    - name: Build binaries
+      run: cmake --build build --config Release
+
+    - name: Retrieve version
+      run: |
+        $fileVersionInfo = (Get-ItemProperty -Path .\build\Release\uMod.dll).VersionInfo.FileVersion
+        echo "::set-env name=Version::fileVersionInfo"
+
+    - name: Publish release
+      uses: Xotl/cool-github-releases@v1.1.8
+      with:
+        mode: update
+        tag_name: v${{ env.Version }}
+        release_name: Daybreak v${{ env.Version }}
+        assets: .\build\Release\uMod.dll
+        github_token: ${{ env.GITHUB_TOKEN }}
+        replace_assets: true
+        body_mrkdwn: ${{ env.Changelog }}
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+    
