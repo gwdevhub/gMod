@@ -28,9 +28,27 @@ jobs:
       with:
         fetch-depth: 0
 
-    - name: Get Latest Tag
-      id: getLatestTag
-      uses: WyriHaximus/github-action-get-previous-tag@v1
+    #https://stackoverflow.com/questions/61037714/how-to-install-an-old-version-of-the-direct-x-api-in-github-actions
+    - name:  Config
+      run:   echo ::set-env name=DXSDK_DIR::$HOME/cache/
+      shell: bash
+
+    - name: Cache
+      id:   cache
+      uses: actions/cache@v1
+      with:
+        path: ~/cache
+        key:  cache
+
+    - name:  Cache create
+      if:    steps.cache.outputs.cache-hit != 'true'
+      run:   |
+        curl -L https://download.microsoft.com/download/a/e/7/ae743f1f-632b-4809-87a9-aa1bb3458e31/DXSDK_Jun10.exe -o _DX2010_.exe
+        7z x _DX2010_.exe DXSDK/Include -o_DX2010_
+        7z x _DX2010_.exe DXSDK/Lib/x86 -o_DX2010_
+        mv _DX2010_/DXSDK $HOME/cache
+        rm -fR _DX*_ _DX*_.exe
+      shell: bash
 
     - name: Setup MSBuild.exe
       uses: microsoft/setup-msbuild@v1.3.1
