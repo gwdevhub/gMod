@@ -1,9 +1,12 @@
 # This continuous integration pipeline is triggered anytime a user pushes code to the repo.
 # This pipeline builds the Wpf project, runs unit tests, then saves the MSIX build artifact.
-name:  uMod CD Pipeline
+name:  uMod CI Pipeline
 
 on:
   push:
+    branches:
+      - main
+  pull_request:
     branches:
       - main
   workflow_dispatch:
@@ -28,6 +31,7 @@ jobs:
       with:
         fetch-depth: 0
 
+    #https://stackoverflow.com/questions/61037714/how-to-install-an-old-version-of-the-direct-x-api-in-github-actions
     - name:  Config
       run:   echo "DXSDK_DIR=DXSDK" >> $GITHUB_ENV
       shell: bash
@@ -88,22 +92,4 @@ jobs:
       run: cmake --build build --config Release
       env:
         DXSDK_DIR: ${{ env.DXSDK_DIR }}
-    
-    - name: Retrieve version
-      run: |
-        $fileVersionInfo = (Get-ItemProperty -Path .\build\Release\uMod.dll).VersionInfo.FileVersion
-        echo "::set-env name=Version::fileVersionInfo"
-
-    - name: Publish release
-      uses: Xotl/cool-github-releases@v1.1.8
-      with:
-        mode: update
-        tag_name: v${{ env.Version }}
-        release_name: Daybreak v${{ env.Version }}
-        assets: .\build\Release\uMod.dll
-        github_token: ${{ env.GITHUB_TOKEN }}
-        replace_assets: true
-        body_mrkdwn: ${{ env.Changelog }}
-      env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
     
