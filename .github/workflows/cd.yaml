@@ -90,16 +90,24 @@ jobs:
         DXSDK_DIR: ${{ env.DXSDK_DIR }}
     
     - name: Retrieve version
+      id: set_version
       run: |
-        $fileVersionInfo = (Get-ItemProperty -Path .\build\Release\uMod.dll).VersionInfo.FileVersion
-        echo "Version=$fileVersionInfo" >> $GITHUB_ENV
+        $fileVersionInfo = (Get-Item -Path .\build\Release\uMod.dll).VersionInfo.FileVersion
+        if ([string]::IsNullOrEmpty($fileVersionInfo)) {
+            Write-Host "The DLL file version information could not be retrieved."
+            exit 1
+        } else {
+            Write-Host "FileVersionInfo: $fileVersionInfo"
+            echo "::set-output name=version::$fileVersionInfo"
+        }
+      shell: pwsh
 
     - name: Publish release
       uses: Xotl/cool-github-releases@v1.1.8
       with:
         mode: update
-        tag_name: v${{ env.Version }}
-        release_name: Daybreak v${{ env.Version }}
+        tag_name: v${{ steps.set_version.outputs.version }}
+        release_name: uMod v${{ steps.set_version.outputs.version }}
         assets: .\build\Release\uMod.dll
         github_token: ${{ env.GITHUB_TOKEN }}
         replace_assets: true
