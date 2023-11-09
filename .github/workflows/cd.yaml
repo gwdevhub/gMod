@@ -92,7 +92,7 @@ jobs:
     - name: Retrieve version
       run: |
         $fileVersionInfo = (Get-ItemProperty -Path .\build\Release\uMod.dll).VersionInfo.FileVersion
-        echo "::set-env name=Version::fileVersionInfo"
+        echo "Version=$fileVersionInfo" >> $GITHUB_ENV
 
     - name: Publish release
       uses: Xotl/cool-github-releases@v1.1.8
