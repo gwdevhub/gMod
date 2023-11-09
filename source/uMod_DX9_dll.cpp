@@ -24,8 +24,12 @@ along with Universal Modding Engine.  If not, see <http://www.gnu.org/licenses/>
 
 */
 
-
+#include "../header/uMod_DX9_dll.h"
 #include "uMod_Main.h"
+#include <Windows.h>
+#include <Psapi.h>
+#include <TlHelp32.h>
+#pragma comment(lib, "Psapi.lib")
 //#include "detours.h"
 //#include "detourxs/detourxs/detourxs.h"
 
@@ -44,12 +48,9 @@ HANDLE                gl_ServerThread = NULL;
 typedef IDirect3D9* (APIENTRY* Direct3DCreate9_type)(UINT);
 typedef HRESULT(APIENTRY* Direct3DCreate9Ex_type)(UINT SDKVersion, IDirect3D9Ex** ppD3D);
 
-#ifndef NO_INJECTION
 Direct3DCreate9_type Direct3DCreate9_fn; // we need to store the pointer to the original Direct3DCreate9 function after we have done a detour
 Direct3DCreate9Ex_type Direct3DCreate9Ex_fn; // we need to store the pointer to the original Direct3DCreate9 function after we have done a detour
 HHOOK gl_hHook = NULL;
-#endif
-
 
 static FILE* stdout_proxy;
 static FILE* stderr_proxy;
@@ -116,7 +117,6 @@ void InitInstance(HINSTANCE hModule)
     {
         OpenMessage();
         Message("InitInstance: %lu\n", hModule);
-
         char uMod[MAX_PATH];
         for (auto i = 0; i < MAX_PATH; i++) {
             uMod[i] = 0;
@@ -147,8 +147,69 @@ void InitInstance(HINSTANCE hModule)
     }
 }
 
+bool HasDesiredMethods(HMODULE hModule, HANDLE hProcess)
+{
+    const auto d3dcreate9Addr = GetProcAddress(hModule, "Direct3DCreate9");
+    if (!d3dcreate9Addr) {
+        return false;
+    }
+
+    const auto d3dcreate9ExAddr = GetProcAddress(hModule, "Direct3DCreate9Ex");
+    if (!d3dcreate9ExAddr) {
+        return false;
+    }
+
+    return true;
+}
+
+bool IsDesiredModule(HMODULE hModule, HANDLE hProcess)
+{
+    TCHAR szModuleName[MAX_PATH];
+    GetModuleBaseName(hProcess, hModule, szModuleName, sizeof(szModuleName) / sizeof(TCHAR));
+    return strcmp(szModuleName, TEXT("d3d9.dll")) == 0;
+}
+
+bool FindLoadedDll(void)
+{
+    HMODULE hModules[1024];
+    HANDLE hProcess;
+    DWORD cbNeeded;
+    unsigned int i;
+
+    // Get a handle to the current process.
+    hProcess = GetCurrentProcess();
+    if (EnumProcessModules(hProcess, hModules, sizeof(hModules), &cbNeeded))
+    {
+        for (i = 0; i < (cbNeeded / sizeof(HMODULE)); i++)
+        {
+            if (IsDesiredModule(hModules[i], hProcess))
+            {
+                // If the module is d3d9.dll, store the handle or do your hooking here.
+                gl_hOriginalDll = hModules[i];
+                break;
+            }
+            else if (HasDesiredMethods(hModules[i], hProcess))
+            {
+                // If the module has the two specific methods, store the handle or do your hooking here.
+                gl_hOriginalDll = hModules[i];
+                break;
+            }
+        }
+    }
+
+    if (gl_hOriginalDll) {
+        return true;
+    }
+
+    return false;
+}
+
 void LoadOriginalDll(void)
 {
+    if (FindLoadedDll()) {
+        return;
+    }
+
     char buffer[MAX_PATH];
     GetSystemDirectory(buffer, MAX_PATH); //get the system directory, we need to open the original d3d9.dll
 
@@ -193,82 +254,6 @@ void ExitInstance()
 #endif
     CloseMessage();
 }
-
-#ifdef NO_INJECTION
-/*
- * We do not inject, the game loads this dll by itself thus we must include the Direct3DCreate9 function
- */
-
-IDirect3D9* WINAPI  Direct3DCreate9(UINT SDKVersion)
-{
-    Message("WINAPI  Direct3DCreate9\n");
-
-    if (!gl_hOriginalDll) LoadOriginalDll(); // looking for the "right d3d9.dll"
-
-    // find original function in original d3d9.dll
-    Direct3DCreate9_type D3DCreate9_fn = (Direct3DCreate9_type)GetProcAddress(gl_hOriginalDll, "Direct3DCreate9");
-
-
-    if (!D3DCreate9_fn)
-    {
-        Message("Direct3DCreate9: original function not found in dll\n");
-        return (NULL);
-    }
-
-
-    //Create originale IDirect3D9 object
-    IDirect3D9* pIDirect3D9_orig = D3DCreate9_fn(SDKVersion);
-
-    //create our uMod_IDirect3D9 object
-    uMod_IDirect3D9* pIDirect3D9 = new uMod_IDirect3D9(pIDirect3D9_orig, gl_TextureServer);
-
-    // Return pointer to our object instead of "real one"
-    return (pIDirect3D9);
-}
-
-HRESULT WINAPI  Direct3DCreate9Ex(UINT SDKVersion, IDirect3D9Ex** ppD3D)
-{
-    Message("WINAPI  Direct3DCreate9Ex\n");
-
-    if (!gl_hOriginalDll) LoadOriginalDll(); // looking for the "right d3d9.dll"
-
-    // find original function in original d3d9.dll
-    Direct3DCreate9Ex_type D3DCreate9Ex_fn = (Direct3DCreate9Ex_type)GetProcAddress(gl_hOriginalDll, "Direct3DCreate9Ex");
-
-
-    if (!D3DCreate9Ex_fn)
-    {
-        Message("Direct3DCreate9Ex: original function not found in dll\n");
-        return (D3DERR_NOTAVAILABLE);
-    }
-
-
-    //Create originale IDirect3D9 object
-    IDirect3D9Ex* pIDirect3D9Ex_orig;
-    HRESULT ret = D3DCreate9Ex_fn(SDKVersion, &pIDirect3D9Ex_orig);
-    if (ret != S_OK) return (ret);
-
-    //create our uMod_IDirect3D9 object
-    uMod_IDirect3D9Ex* pIDirect3D9Ex = new uMod_IDirect3D9Ex(pIDirect3D9Ex_orig, gl_TextureServer);
-
-    ppD3D = &pIDirect3D9Ex_orig; // Return pointer to our object instead of "real one"
-    return (ret);
-}
-
-bool HookThisProgram(wchar_t* ret) //this function always return true, it is needed for the name and path of the executable
-{
-    wchar_t Executable[MAX_PATH];
-    GetModuleFileNameW(GetModuleHandle(NULL), Executable, MAX_PATH); //ask for name and path of this executable
-
-    int len = 0;
-    while (Executable[len]) { ret[len] = Executable[len]; len++; }
-    ret[len] = 0;
-    return (true);
-}
-
-
-
-#else
 
 /*
  * We inject the dll into the game, thus we retour the original Direct3DCreate9 function to our MyDirect3DCreate9 function
@@ -374,47 +359,11 @@ bool HookThisProgram(char* ret)
     char Game[MAX_PATH];
     GetModuleFileName(GetModuleHandle(NULL), Game, MAX_PATH); //ask for name and path of this executable
 
-#ifdef HOOK_INJECTION
-    //we use the gloabal hook
-
-    FILE* file;
-    wchar_t* app_path = _wgetenv(L"APPDATA"); //asc for the user application directory
-    wchar_t file_name[MAX_PATH];
-    swprintf_s(file_name, MAX_PATH, L"%ls\\%ls\\%ls", app_path, uMod_APP_DIR, uMod_APP_DX9);
-    if (_wfopen_s(&file, file_name, L"rt,ccs=UTF-16LE")) return (false); // open the file in utf-16 LE mode
-
-
-    //MessageBoxW( NULL, Executable, L"test", 0);
-    while (!feof(file))
-    {
-        if (fgetws(Game, MAX_PATH, file) != NULL) //get each line of the file
-        {
-            //MessageBoxW( NULL, Game, L"test", 0);
-            int len = 0;
-            while (Game[len])
-            {
-                if (Game[len] == L'\r' || Game[len] == L'\n') { Game[len] = 0; break; } //removing the new line symbols
-                len++;
-            }
-            if (_wcsicmp(Executable, Game) == 0) //compare both strings
-            {
-                for (int i = 0; i < len; i++) ret[i] = Game[i];
-                ret[len] = 0;
-                fclose(file);
-                return (true);
-            }
-        }
-    }
-    fclose(file);
-    return (false);
-#endif
-#ifdef DIRECT_INJECTION
     // we inject directly
     int i = 0;
     while (Game[i]) { ret[i] = Game[i]; i++; }
     ret[i] = 0;
     return true;
-#endif
 }
 
 void* DetourFunc(BYTE* src, const BYTE* dst, const int len)
@@ -444,24 +393,3 @@ bool RetourFunc(BYTE* src, BYTE* restore, const int len)
     return (true);
 }
 
-#ifdef HOOK_INJECTION
-/*
- * We do not change something, if our hook function is called.
- * We need this hook only to get our dll loaded into a starting program.
- */
-LRESULT CALLBACK HookProc(int nCode, WPARAM wParam, LPARAM lParam)
-{
-    return (CallNextHookEx(gl_hHook, nCode, wParam, lParam));
-}
-
-void InstallHook(void)
-{
-    gl_hHook = SetWindowsHookEx(WH_CBT, HookProc, gl_hThisInstance, 0);
-}
-
-void RemoveHook(void)
-{
-    UnhookWindowsHookEx(gl_hHook);
-}
-#endif
-#endif
