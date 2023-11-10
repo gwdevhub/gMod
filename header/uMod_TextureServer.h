@@ -1,22 +1,3 @@
-/*
-This file is part of Universal Modding Engine.
-
-
-Universal Modding Engine is free software: you can redistribute it and/or modify
-it under the terms of the GNU General Public License as published by
-the Free Software Foundation, either version 3 of the License, or
-(at your option) any later version.
-
-Universal Modding Engine is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-GNU General Public License for more details.
-
-You should have received a copy of the GNU General Public License
-along with Universal Modding Engine.  If not, see <http://www.gnu.org/licenses/>.
-*/
-
-
 #ifndef uMod_TEXTURESERVER_H_
 #define uMod_TEXTURESERVER_H_
 
@@ -36,16 +17,15 @@ along with Universal Modding Engine.  If not, see <http://www.gnu.org/licenses/>
 
 class uMod_TextureClient;
 
-class uMod_TextureServer
-{
+class uMod_TextureServer {
 public:
     uMod_TextureServer(char* name, char* uModName);
-    ~uMod_TextureServer(void);
+    ~uMod_TextureServer();
 
     int AddClient(uMod_TextureClient* client, TextureFileStruct** update, int* number); // called from a Client
     int RemoveClient(uMod_TextureClient* client); // called from a Client
 
-    int MainLoop(void); // is executed in a server thread
+    int MainLoop(); // is executed in a server thread
 
 
     // following functions are only public for testing purpose !!
@@ -76,7 +56,7 @@ private:
     char UModName[MAX_PATH];
 
     void LoadModsFromFile(char* source);
-    int PropagateUpdate(uMod_TextureClient* client = NULL); // called from Mainloop() if texture are loaded or removed
+    int PropagateUpdate(uMod_TextureClient* client = nullptr); // called from Mainloop() if texture are loaded or removed
     int PrepareUpdate(TextureFileStruct** update, int* number); // called from PropagateUpdate() and AddClient()
     // generate a copy of the current texture to be modded
     // the file content of the textures are not copied, the clients get the pointer to the file content

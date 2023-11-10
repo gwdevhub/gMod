@@ -1,26 +1,9 @@
-/*
-This file is part of Universal Modding Engine.
-
-
-Universal Modding Engine is free software: you can redistribute it and/or modify
-it under the terms of the GNU General Public License as published by
-the Free Software Foundation, either version 3 of the License, or
-(at your option) any later version.
-
-Universal Modding Engine is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-GNU General Public License for more details.
-
-You should have received a copy of the GNU General Public License
-along with Universal Modding Engine.  If not, see <http://www.gnu.org/licenses/>.
-*/
-
 #pragma once
 #include<string>
 #include<Windows.h>
 
-void ReplaceAll(std::wstring& str, const std::wstring& from, const std::wstring& to) {
+void ReplaceAll(std::wstring& str, const std::wstring& from, const std::wstring& to)
+{
     if (from.empty()) {
         return;
     }
@@ -31,7 +14,8 @@ void ReplaceAll(std::wstring& str, const std::wstring& from, const std::wstring&
     }
 }
 
-void ReplaceAll(std::string& str, const std::string& from, const std::string& to) {
+void ReplaceAll(std::string& str, const std::string& from, const std::string& to)
+{
     if (from.empty()) {
         return;
     }
@@ -42,8 +26,9 @@ void ReplaceAll(std::string& str, const std::string& from, const std::string& to
     }
 }
 
-std::wstring AfterFirst(const std::wstring& str, wchar_t delimiter) {
-    size_t pos = str.find(delimiter);
+std::wstring AfterFirst(const std::wstring& str, wchar_t delimiter)
+{
+    const size_t pos = str.find(delimiter);
     if (pos != std::wstring::npos) {
         // Return the substring after the delimiter
         return str.substr(pos + 1);
@@ -52,8 +37,9 @@ std::wstring AfterFirst(const std::wstring& str, wchar_t delimiter) {
     return L"";
 }
 
-std::string AfterFirst(const std::string& str, char delimiter) {
-    size_t pos = str.find(delimiter);
+std::string AfterFirst(const std::string& str, char delimiter)
+{
+    const size_t pos = str.find(delimiter);
     if (pos != std::string::npos) {
         // Return the substring after the delimiter
         return str.substr(pos + 1);
@@ -62,19 +48,22 @@ std::string AfterFirst(const std::string& str, char delimiter) {
     return "";
 }
 
-std::wstring BeforeFirst(const std::wstring& str, wchar_t delimiter) {
-    size_t pos = str.find(delimiter);
+std::wstring BeforeFirst(const std::wstring& str, wchar_t delimiter)
+{
+    const size_t pos = str.find(delimiter);
     return pos != std::wstring::npos ? str.substr(0, pos) : str;
 }
 
-std::string BeforeFirst(const std::string& str, char delimiter) {
-    size_t pos = str.find(delimiter);
+std::string BeforeFirst(const std::string& str, char delimiter)
+{
+    const size_t pos = str.find(delimiter);
     return pos != std::string::npos ? str.substr(0, pos) : str;
 }
 
-std::string BeforeLast(const std::string& file_path, char separator) {
+std::string BeforeLast(const std::string& file_path, char separator)
+{
     // Find the last occurrence of '.'
-    std::size_t last_dot_pos = file_path.find_last_of(separator);
+    const std::size_t last_dot_pos = file_path.find_last_of(separator);
 
     // If there is a dot, and it is not at the beginning of the filename
     if (last_dot_pos != std::string::npos && last_dot_pos != 0) {
@@ -85,9 +74,10 @@ std::string BeforeLast(const std::string& file_path, char separator) {
     return "";
 }
 
-std::wstring BeforeLast(const std::wstring& file_path, wchar_t separator) {
+std::wstring BeforeLast(const std::wstring& file_path, wchar_t separator)
+{
     // Find the last occurrence of '.'
-    std::size_t last_dot_pos = file_path.find_last_of(separator);
+    const std::size_t last_dot_pos = file_path.find_last_of(separator);
 
     // If there is a dot, and it is not at the beginning of the filename
     if (last_dot_pos != std::wstring::npos && last_dot_pos != 0) {
@@ -98,9 +88,10 @@ std::wstring BeforeLast(const std::wstring& file_path, wchar_t separator) {
     return L"";
 }
 
-std::string AfterLast(const std::string& file_path, char separator) {
+std::string AfterLast(const std::string& file_path, char separator)
+{
     // Find the last occurrence of '.'
-    std::size_t last_dot_pos = file_path.find_last_of(separator);
+    const std::size_t last_dot_pos = file_path.find_last_of(separator);
 
     // If there is a dot, and it is not at the beginning of the filename
     if (last_dot_pos != std::string::npos && last_dot_pos != 0) {
@@ -111,9 +102,10 @@ std::string AfterLast(const std::string& file_path, char separator) {
     return "";
 }
 
-std::wstring AfterLast(const std::wstring& file_path, wchar_t separator) {
+std::wstring AfterLast(const std::wstring& file_path, wchar_t separator)
+{
     // Find the last occurrence of '.'
-    std::size_t last_dot_pos = file_path.find_last_of(separator);
+    const std::size_t last_dot_pos = file_path.find_last_of(separator);
 
     // If there is a dot, and it is not at the beginning of the filename
     if (last_dot_pos != std::wstring::npos && last_dot_pos != 0) {
@@ -124,9 +116,10 @@ std::wstring AfterLast(const std::wstring& file_path, wchar_t separator) {
     return L"";
 }
 
-std::string GetFileExtension(const std::string& file_path) {
+std::string GetFileExtension(const std::string& file_path)
+{
     // Find the last occurrence of '.'
-    std::size_t last_dot_pos = file_path.find_last_of(".");
+    const std::size_t last_dot_pos = file_path.find_last_of(".");
 
     // If there is a dot, and it is not at the beginning of the filename
     if (last_dot_pos != std::string::npos && last_dot_pos != 0) {
@@ -137,21 +130,27 @@ std::string GetFileExtension(const std::string& file_path) {
     return "";
 }
 
-std::string WideStringToString(const std::wstring& wstr) {
-    if (wstr.empty()) return std::string();
+std::string WideStringToString(const std::wstring& wstr)
+{
+    if (wstr.empty()) {
+        return std::string();
+    }
 
-    int size_needed = WideCharToMultiByte(CP_UTF8, 0, &wstr[0], (int)wstr.size(), NULL, 0, NULL, NULL);
+    const int size_needed = WideCharToMultiByte(CP_UTF8, 0, &wstr[0], static_cast<int>(wstr.size()), nullptr, 0, nullptr, nullptr);
     std::string strTo(size_needed, 0);
-    WideCharToMultiByte(CP_UTF8, 0, &wstr[0], (int)wstr.size(), &strTo[0], size_needed, NULL, NULL);
+    WideCharToMultiByte(CP_UTF8, 0, &wstr[0], static_cast<int>(wstr.size()), &strTo[0], size_needed, nullptr, nullptr);
     return strTo;
 }
 
 
-std::wstring StringToWString(const std::string& str) {
-    if (str.empty()) return std::wstring();
+std::wstring StringToWString(const std::string& str)
+{
+    if (str.empty()) {
+        return std::wstring();
+    }
 
-    int size_needed = MultiByteToWideChar(CP_UTF8, 0, &str[0], (int)str.size(), nullptr, 0);
+    const int size_needed = MultiByteToWideChar(CP_UTF8, 0, &str[0], static_cast<int>(str.size()), nullptr, 0);
     std::wstring wstrTo(size_needed, 0);
-    MultiByteToWideChar(CP_UTF8, 0, &str[0], (int)str.size(), &wstrTo[0], size_needed);
+    MultiByteToWideChar(CP_UTF8, 0, &str[0], static_cast<int>(str.size()), &wstrTo[0], size_needed);
     return wstrTo;
 }

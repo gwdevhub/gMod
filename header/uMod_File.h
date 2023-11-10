@@ -1,20 +1,3 @@
-/*
-This file is part of Universal Modding Engine.
-
-
-Universal Modding Engine is free software: you can redistribute it and/or modify
-it under the terms of the GNU General Public License as published by
-the Free Software Foundation, either version 3 of the License, or
-(at your option) any later version.
-
-Universal Modding Engine is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-GNU General Public License for more details.
-
-You should have received a copy of the GNU General Public License
-along with Universal Modding Engine.  If not, see <http://www.gnu.org/licenses/>.
-*/
 #pragma once
 
 #include "uMod_Main.h"
@@ -22,16 +5,15 @@ along with Universal Modding Engine.  If not, see <http://www.gnu.org/licenses/>
 #include <vector>
 #include "uMod_Texture.h"
 
-class uMod_File
-{
+class uMod_File {
 public:
-    uMod_File(void);
-    uMod_File(const std::string file);
-    ~uMod_File(void);
+    uMod_File();
+    uMod_File(std::string file);
+    ~uMod_File();
 
-    bool FileSupported(void);
-    bool PackageFile(void);
-    bool SingleFile(void);
+    bool FileSupported();
+    bool PackageFile();
+    bool SingleFile();
     //int AddSingleFileToNode( uMod_TreeViewNode* node);
     int GetContentTemplate(const std::string& content);
 
@@ -41,14 +23,20 @@ public:
   */
     int GetContent();
 
-    int SetFile(const std::string file) { FileName = file; Loaded = false; return 0; }
-    std::string GetFile(void) { return FileName; }
+    int SetFile(const std::string file)
+    {
+        FileName = file;
+        Loaded = false;
+        return 0;
+    }
+
+    std::string GetFile() { return FileName; }
     std::vector<UModTexture> Textures;
 
 private:
-    int ReadFile(void);
+    int ReadFile();
 
-    int UnXOR(void);
+    int UnXOR();
     /*
     int GetCommentZip( wxString &tool_tip);
     int GetCommentTpf( wxString &tool_tip);
