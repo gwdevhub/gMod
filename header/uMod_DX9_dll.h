@@ -17,7 +17,7 @@ along with Universal Modding Engine.  If not, see <http://www.gnu.org/licenses/>
 */
 
 #pragma once
-#include "../header/uMod_Main.h"
+#include "uMod_Main.h"
 
 /**
  * Load the official d3d9.dll from the system path.

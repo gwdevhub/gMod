@@ -30,8 +30,8 @@ along with Universal Modding Engine.  If not, see <http://www.gnu.org/licenses/>
 
 
 
-#include "../header/uMod_Main.h"
-#include "../header/uMod_DX9_dll.h"
+#include "uMod_Main.h"
+#include "uMod_DX9_dll.h"
 /*
  * global variable which are not linked external
  */

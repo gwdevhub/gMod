@@ -1,7 +1,7 @@
 #include <windows.h>
 #include <stdio.h>
 #include <tchar.h>
-#include "../header/zip.h"
+#include "zip.h"
 
 
 // THIS FILE is almost entirely based upon code by info-zip.

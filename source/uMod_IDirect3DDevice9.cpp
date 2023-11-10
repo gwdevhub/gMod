@@ -18,7 +18,7 @@ along with Universal Modding Engine.  If not, see <http://www.gnu.org/licenses/>
 
 
 
-#include "../header/uMod_Main.h"
+#include "uMod_Main.h"
 #include "uMod_IDirect3DDevice9.h"
 #include "uMod_IDirect3DSurface9.h"
 

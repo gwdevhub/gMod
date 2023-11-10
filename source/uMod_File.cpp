@@ -16,12 +16,12 @@ You should have received a copy of the GNU General Public License
 along with Universal Modding Engine.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-#include "../header/uMod_Main.h"
+#include "uMod_Main.h"
 #include "unzip.h"
-#include "../header/uMod_File.h"
-#include "../header/uMod_Utils.h"
-#include "../header/utils.h"
-#include "../header/uMod_Texture.h"
+#include "uMod_File.h"
+#include "uMod_Utils.h"
+#include "utils.h"
+#include "uMod_Texture.h"
 #include <fstream>
 #include <sstream>
 #include <iostream>

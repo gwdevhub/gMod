@@ -20,11 +20,11 @@ along with Universal Modding Engine.  If not, see <http://www.gnu.org/licenses/>
 
 #pragma once
 #ifdef DEF_USE_DX9
-#include "../header/uMod_DX9_dll.h"
+#include "uMod_DX9_dll.h"
 #endif
 
 #ifdef DEF_USE_DX10
-#include "../uMod_DX10/uMod_DX10_dll.h"
+#include "uMod_DX10/uMod_DX10_dll.h"
 #endif
 
 /**

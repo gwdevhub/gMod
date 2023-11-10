@@ -19,8 +19,8 @@ along with Universal Modding Engine.  If not, see <http://www.gnu.org/licenses/>
 
 
 #include "uMod_Main.h"
-#include "../header/Server.h"
-#include "../header/uMod_File.h"
+#include "Server.h"
+#include "uMod_File.h"
 
 std::wstring MakeWString(const std::string& str) {
     if (str.empty()) return std::wstring();

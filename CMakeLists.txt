@@ -31,6 +31,7 @@ file(GLOB SOURCES
     )
 
 target_link_libraries(gMod PRIVATE ${D3D9_LIB} ${D3DX9_LIB} ${DXGUID_LIB})
+target_include_directories(gMod PRIVATE $ENV{DXSDK_DIR}/Include)
 source_group(TREE "${CMAKE_CURRENT_SOURCE_DIR}" FILES ${SOURCES})
 target_sources(gMod PRIVATE ${SOURCES})
 target_compile_definitions(gMod PRIVATE
@@ -49,5 +50,5 @@ target_compile_definitions(gMod PRIVATE
     LOG_MESSAGE
 )
 
-target_precompile_headers(uMod PRIVATE "header/pch.h")
-target_include_directories(uMod PUBLIC "header")
+target_precompile_headers(gMod PRIVATE "header/pch.h")
+target_include_directories(gMod PUBLIC "header")

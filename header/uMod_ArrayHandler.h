@@ -18,7 +18,7 @@ along with Universal Modding Engine.  If not, see <http://www.gnu.org/licenses/>
 
 #pragma once
 
-#include "..\header\uMod_GlobalDefines.h"
+#include "uMod_GlobalDefines.h"
 #include <Windows.h>
 
 /**

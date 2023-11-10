@@ -40,8 +40,8 @@ along with Universal Modding Engine.  If not, see <http://www.gnu.org/licenses/>
 
 
 
-#include "../uMod_GlobalDefines.h"
-#include "../uMod_Error.h"
+#include "uMod_GlobalDefines.h"
+#include "uMod_Error.h"
 #include "uMod_Defines.h"
 #include "uMod_DX9_dll.h"
 #include "uMod_TextureFunction.h"
