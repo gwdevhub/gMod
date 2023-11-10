@@ -23,7 +23,8 @@ along with Universal Modding Engine.  If not, see <http://www.gnu.org/licenses/>
 
 #include "uMod_IDirect3DTexture9.h"
 #include "uMod_IDirect3DDevice9.h"
-#include "..\uMod_Error.h"
+#include "uMod_Error.h"
+#include "uMod_ArrayHandler.h"
 
 
 class uMod_TextureServer;

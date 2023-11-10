@@ -16,7 +16,11 @@ You should have received a copy of the GNU General Public License
 along with Universal Modding Engine.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-#pragma once
+
+#ifndef uMod_ERROR_H_
+#define uMod_ERROR_H_
+
+
 // define return values, a value less than zero indicates an error
 #define RETURN_OK 0
 
@@ -60,3 +64,10 @@ along with Universal Modding Engine.  If not, see <http://www.gnu.org/licenses/>
 #define uMod_ERROR_MULTIPLE_IDirect3DDevice9 1u<<6
 #define uMod_ERROR_UPDATE 1u<<7
 #define uMod_ERROR_SERVER 1u<<8
+
+
+
+
+
+
+#endif /* uMod_ERROR_H_ */

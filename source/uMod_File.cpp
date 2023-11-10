@@ -19,7 +19,6 @@ along with Universal Modding Engine.  If not, see <http://www.gnu.org/licenses/>
 #include "uMod_Main.h"
 #include "unzip.h"
 #include "uMod_File.h"
-#include "uMod_Utils.h"
 #include "utils.h"
 #include "uMod_Texture.h"
 #include <fstream>
@@ -45,7 +44,7 @@ uMod_File::uMod_File(void)
     FileLen = 0u;
 }
 
-uMod_File::uMod_File(const std::wstring file)
+uMod_File::uMod_File(const std::string file)
 {
     Loaded = false;
     XORed = false;
@@ -64,15 +63,15 @@ uMod_File::~uMod_File(void)
 
 bool uMod_File::FileSupported(void)
 {
-    std::wstring file_type = GetFileExtension(FileName);
-    if (file_type == L"zip") return true;
-    if (file_type == L"tpf") return true;
-    if (file_type == L"bmp") return true;
-    if (file_type == L"jpg") return true;
-    if (file_type == L"tga") return true;
-    if (file_type == L"png") return true;
-    if (file_type == L"dds") return true;
-    if (file_type == L"ppm") return true;
+    std::string file_type = GetFileExtension(FileName);
+    if (file_type == "zip") return true;
+    if (file_type == "tpf") return true;
+    if (file_type == "bmp") return true;
+    if (file_type == "jpg") return true;
+    if (file_type == "tga") return true;
+    if (file_type == "png") return true;
+    if (file_type == "dds") return true;
+    if (file_type == "ppm") return true;
 
     return false;
 }
@@ -80,33 +79,33 @@ bool uMod_File::FileSupported(void)
 
 bool uMod_File::PackageFile(void)
 {
-    std::wstring file_type = GetFileExtension(FileName);
-    if (file_type == L"zip") return true;
-    if (file_type == L"tpf") return true;
+    std::string file_type = GetFileExtension(FileName);
+    if (file_type == "zip") return true;
+    if (file_type == "tpf") return true;
     return false;
 }
 
 bool uMod_File::SingleFile(void)
 {
-    std::wstring file_type = GetFileExtension(FileName);
-    if (file_type == L"bmp") return true;
-    if (file_type == L"jpg") return true;
-    if (file_type == L"tga") return true;
-    if (file_type == L"png") return true;
-    if (file_type == L"dds") return true;
-    if (file_type == L"ppm") return true;
+    std::string file_type = GetFileExtension(FileName);
+    if (file_type == "bmp") return true;
+    if (file_type == "jpg") return true;
+    if (file_type == "tga") return true;
+    if (file_type == "png") return true;
+    if (file_type == "dds") return true;
+    if (file_type == "ppm") return true;
     return false;
 }
 
 
 int uMod_File::GetContent()
 {
-    std::wstring file_type = GetFileExtension(FileName);
-    if (file_type == L"zip")
+    std::string file_type = GetFileExtension(FileName);
+    if (file_type == "zip")
     {
         AddZip();
     }
-    else if (file_type == L"tpf")
+    else if (file_type == "tpf")
     {
         AddTpf();
     }
@@ -116,7 +115,7 @@ int uMod_File::GetContent()
     }
     else
     {
-        printf(WideStringToString(FileName).c_str());
+        printf(FileName.c_str());
         printf(" Not supported\n");
         return -1;
     }
@@ -129,7 +128,7 @@ int uMod_File::ReadFile(void)
     if (Loaded) return 0;
     XORed = false;
 
-    auto name = WideStringToString(FileName);
+    auto name = FileName;
     std::ifstream inputFile(name, std::ios::binary);
     if (!inputFile ||
         !inputFile.is_open()) {
@@ -206,7 +205,7 @@ int uMod_File::AddFile()
 {
     DWORD64 temp_hash;
 
-    std::wstring name = AfterLast(FileName, '_');
+    std::string name = AfterLast(FileName, '_');
     name = BeforeLast(name, '.');
 
     try {
@@ -264,12 +263,12 @@ int uMod_File::AddContent(const char* pw)
     // closing and reopen the zip handle did the trick.
     //
 
-    const auto name = WideStringToString(FileName);
+    const auto& name = FileName;
     HZIP ZIP_Handle = OpenZip(FileInMemory, FileLen, pw);
     if (ZIP_Handle == (HZIP)0) { printf(name.c_str()); printf(" Failed to unzip file\n"); return -1; }
     ZIPENTRY ze;
     int index;
-    FindZipItem(ZIP_Handle, L"texmod.def", false, &index, &ze);
+    FindZipItem(ZIP_Handle, "texmod.def", false, &index, &ze);
     if (index >= 0) //if texmod.def is present in the zip file
     {
         printf(name.c_str()); printf(" Unzipping based on texmod.def of size %d\n", ze.unc_size);
@@ -318,8 +317,7 @@ int uMod_File::AddContent(const char* pw)
                 file.erase(0, 1);
             }
 
-            auto wFile = StringToWString(file);
-            FindZipItem(ZIP_Handle, wFile.c_str(), false, &index, &ze); // look for texture
+            FindZipItem(ZIP_Handle, file.c_str(), false, &index, &ze); // look for texture
             if (index >= 0)
             {
                 std::vector<char> data;
@@ -336,9 +334,9 @@ int uMod_File::AddContent(const char* pw)
                 {
                     texture.hash = temp_hash;
                     texture.data = data;
-                    texture.name = wFile;
+                    texture.name = file;
                     Textures.push_back(texture);
-                    printf(name.c_str()); wprintf(L" Added texture of size %d %s\n", data.size(), wFile.c_str());
+                    printf(name.c_str()); printf(" Added texture of size %d %s\n", data.size(), file.c_str());
                 }
             }
             else
@@ -368,7 +366,7 @@ int uMod_File::AddContent(const char* pw)
         CloseZip(ZIP_Handle); //somehow we need to close and to reopen the zip handle, otherwise the program crashes
         ZIP_Handle = OpenZip(FileInMemory, FileLen, pw);
         if (ZIP_Handle == (HZIP)0) { printf(name.c_str()); printf(" Failed to unzip file"); return -1; }
-        std::wstring file;
+        std::string file;
         GetZipItem(ZIP_Handle, -1, &ze); //ask for number of entries
         int num = ze.index;
         DWORD64 temp_hash;
@@ -377,7 +375,7 @@ int uMod_File::AddContent(const char* pw)
             if (GetZipItem(ZIP_Handle, i, &ze) != ZR_OK) continue; //ask for name and size
             int len = ze.unc_size;
 
-            printf(name.c_str()); wprintf(L" Parsing token %s\n", ze.name);
+            printf(name.c_str()); printf(" Parsing token %s\n", ze.name);
             std::vector<char> data;
             UModTexture texture;
             data.resize(ze.unc_size);
@@ -396,13 +394,13 @@ int uMod_File::AddContent(const char* pw)
                 continue;
             }
 
-            if (file == L"Comment.txt") // skip comment
+            if (file == "Comment.txt") // skip comment
             {
                 continue;
             }
 
             auto entryName = AfterLast(file, '.');
-            if (entryName != L"dds")
+            if (entryName != "dds")
             {
                 continue;
             }
@@ -428,7 +426,7 @@ int uMod_File::AddContent(const char* pw)
             texture.name = entryName;
             texture.data = data;
             Textures.push_back(texture);
-            printf(name.c_str()); wprintf(L" Added texture of size %d %s\n", data.size(), entryName.c_str());
+            printf(name.c_str()); printf(" Added texture of size %d %s\n", data.size(), entryName.c_str());
         }
 
         CloseZip(ZIP_Handle);

@@ -16,76 +16,71 @@ You should have received a copy of the GNU General Public License
 along with Universal Modding Engine.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-#pragma once
+
+#ifndef uMod_FIELDHANDLER_H_
+#define uMod_FIELDHANDLER_H_
 
 #include "uMod_GlobalDefines.h"
-#include <Windows.h>
+#include "uMod_IDirect3DTexture9.h"
+extern unsigned int gl_ErrorState;
 
-/**
- * On entry hold the pointer to the fake texture data (file content)
- * and the pointer to all game texture which are replaced by this texture.
- */
 typedef struct
 {
-  bool ForceReload; //!< to force a reload of the texture (only important, if it is already modded)
-  char* pData; //!<  store texture file as file in memory
-  unsigned int Size; //!< size of file (\a pData)
-  int NumberOfTextures; //!< Number of textures loaded by the game, which match the hash and thus are switched
-  int Reference; //!< for a fast delete in the FileHandler
-  void **Textures; //!< pointer to all texture loade by the game, which match the hash and thus are switched
-  DWORD64 Hash; //!< hash value
+  bool ForceReload; // to force a reload of the texture (if it is already modded)
+  char* pData; // store texture file as file in memory
+  unsigned int Size; // size of file
+  int NumberOfTextures;
+  int Reference; // for a fast delete in the FileHandler
+  IDirect3DBaseTexture9 **Textures; // pointer to the fake textures
+  MyTypeHash Hash; // hash value
 } TextureFileStruct;
 
 
 
-/**
- * A simple vector class for pointers. The Object or struct must have a member variable \a int \a Reference.
- * This class stores the entries in chunks of memory. The address of each chunk is stored in \a Content.
- */
+class uMod_FileHandler  // array to store TextureFileStruct
+{
+public:
+  uMod_FileHandler(void);
+  ~uMod_FileHandler(void);
+
+  int Add( TextureFileStruct* file);
+  int Remove( TextureFileStruct* file);
+
+  int GetNumber(void) {return (Number);}
+
+  TextureFileStruct *operator [] (int i) {if (i<0||i>=Number) return (NULL); else return (Files[i/FieldLength][i%FieldLength]);}
+
+protected:
+  static const int FieldLength = 1024;
+  long Number;
+  int FieldCounter;
+  TextureFileStruct*** Files;
+};
+
+
+
 template <class T>
-class uMod_TextureHandler
+class uMod_TextureHandler  // array to store uMod_IDirect3DTexture9, uMod_IDirect3DVolumeTexture9 or uMod_IDirect3DCubeTexture9
 {
 public:
   uMod_TextureHandler(void);
   ~uMod_TextureHandler(void);
 
-  /**
-   * Append an entry at the end of the vector
-   * @param entry
-   * @return RETURN_OK on success
-   */
-  int Add( T* entry);
+  int Add( T* texture);
+  int Remove( T* texture);
 
-  /**
-   * Remove this entry from the vector
-   * @param entry
-   * @return RETURN_OK on success
-   */
-  int Remove( T* entry);
-
-  /**
-   * Returns the number of entries.
-   * @return
-   */
   int GetNumber(void) {return (Number);}
-
-  /**
-   * Return the pointer to the \a i the object
-   * @param i index
-   * @return
-   */
-  T *operator [] (int i) {if (i<0||i>=Number) return (NULL); else return (Content[i/FieldLength][i%FieldLength]);}
+  T *operator [] (int i) {if (i<0||i>=Number) return (NULL); else return (Textures[i/FieldLength][i%FieldLength]);}
 
 private:
-  static const int FieldLength = 1024; //!< size of one chunk of memory
-  long Number; //!< Number of entries.
-  int FieldCounter; //!< Number of allocated chunks.
-  T*** Content;//!< vector of pointers, which point to the chunks
+  static const int FieldLength = 1024;
+  long Number;
+  int FieldCounter;
+  T*** Textures;
 };
 
 
 
-typedef uMod_TextureHandler<TextureFileStruct> uMod_FileHandler;
 
 
 
@@ -103,27 +98,27 @@ uMod_TextureHandler<T>::uMod_TextureHandler(void)
   Number = 0;
   FieldCounter = 0;
 
-  Content = NULL;
+  Textures = NULL;
 }
 
 template <class T>
 uMod_TextureHandler<T>::~uMod_TextureHandler(void)
 {
   Message("~uMod_TextureHandler(void): %lu\n", this);
-  if (Content!=NULL)
+  if (Textures!=NULL)
   {
-    for (int i=0; i<FieldCounter; i++) if (Content[i] != NULL) delete [] Content[i];
-    delete [] Content;
+    for (int i=0; i<FieldCounter; i++) if (Textures[i] != NULL) delete [] Textures[i];
+    delete [] Textures;
   }
 }
 
 template <class T>
-int uMod_TextureHandler<T>::Add(T* entry)
+int uMod_TextureHandler<T>::Add(T* pTexture)
 {
-  Message("uMod_TextureHandler::Add( %lu): %lu\n", entry, this);
+  Message("uMod_TextureHandler::Add( %lu): %lu\n", pTexture, this);
   if (gl_ErrorState & uMod_ERROR_FATAL) return (RETURN_FATAL_ERROR);
 
-  if (entry->Reference>=0) return (RETURN_TEXTURE_ALLREADY_ADDED);
+  if (pTexture->Reference>=0) return (RETURN_TEXTURE_ALLREADY_ADDED);
 
   if (Number/FieldLength==FieldCounter)
   {
@@ -135,49 +130,54 @@ int uMod_TextureHandler<T>::Add(T* entry)
       return (RETURN_NO_MEMORY);
     }
 
-    for (int i=0; i<FieldCounter; i++) temp[i] = Content[i];
+    for (int i=0; i<FieldCounter; i++) temp[i] = Textures[i];
 
     for (int i=FieldCounter; i<FieldCounter+10; i++) temp[i] = NULL;
 
     FieldCounter += 10;
 
-    if (Content!=NULL) delete [] Content;
+    if (Textures!=NULL) delete [] Textures;
 
-    Content = temp;
+    Textures = temp;
   }
   if (Number%FieldLength==0)
   {
-    try {if (Content[Number/FieldLength]==NULL) Content[Number/FieldLength] = new T*[FieldLength];}
+    try {if (Textures[Number/FieldLength]==NULL) Textures[Number/FieldLength] = new T*[FieldLength];}
     catch (...)
     {
-      Content[Number/FieldLength]=NULL;
+      Textures[Number/FieldLength]=NULL;
       gl_ErrorState |= uMod_ERROR_MEMORY | uMod_ERROR_TEXTURE;
       return (RETURN_NO_MEMORY);
     }
   }
 
-  Content[Number/FieldLength][Number%FieldLength] = entry;
-  entry->Reference = Number++;
+  Textures[Number/FieldLength][Number%FieldLength] = pTexture;
+  pTexture->Reference = Number++;
 
   return (RETURN_OK);
 }
 
 
 template <class T>
-int uMod_TextureHandler<T>::Remove(T* entry) //will be called, if a texture is completely released
+int uMod_TextureHandler<T>::Remove(T* pTexture) //will be called, if a texture is completely released
 {
-  Message("uMod_TextureHandler::Remove( %lu): %lu\n", entry, this);
+  Message("uMod_TextureHandler::Remove( %lu): %lu\n", pTexture, this);
   if (gl_ErrorState & uMod_ERROR_FATAL) return (RETURN_FATAL_ERROR);
 
-  int ref = entry->Reference;
-  if (ref<0|| ref>=Number) return (RETURN_OK); // it is not in this list
-  if (Content[ref/FieldLength][ref%FieldLength]!=entry) return (RETURN_OK); // it is not in this list
+  int ref = pTexture->Reference;
+  if (ref<0) return (RETURN_OK); // returning if no TextureHandlerRef is set
 
   if (ref<(--Number))
   {
-    Content[ref/FieldLength][ref%FieldLength] = Content[Number/FieldLength][Number%FieldLength];
-    Content[ref/FieldLength][ref%FieldLength]->Reference = ref;
+    Textures[ref/FieldLength][ref%FieldLength] = Textures[Number/FieldLength][Number%FieldLength];
+    Textures[ref/FieldLength][ref%FieldLength]->Reference = ref;
   }
-  entry->Reference = -1;
   return (RETURN_OK);
 }
+
+
+
+
+
+
+#endif /* uMod_FIELDHANDLER_H_ */

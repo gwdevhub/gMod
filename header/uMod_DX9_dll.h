@@ -16,34 +16,30 @@ You should have received a copy of the GNU General Public License
 along with Universal Modding Engine.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-#pragma once
-#include "uMod_Main.h"
 
-/**
- * Load the official d3d9.dll from the system path.
- */
-void LoadOriginal_DX9_Dll(void);
 
-/**
- * Initialize dx9 -> loads d3d9.dll and set detour if this dll is compiled for "Direct Injection" or "Hook Injection"
- */
-void InitDX9();
+#ifndef uMod_DX9_DLL_H_
+#define uMod_DX9_DLL_H_
 
-/**
- * Unload the d3d9.dll
- */
-void ExitDX9();
+#include <d3d9.h>
 
-#if INJECTION_METHOD==DIRECT_INJECTION || INJECTION_METHOD==HOOK_INJECTION
+void InitInstance(HINSTANCE hModule);
+void ExitInstance(void);
+void LoadOriginalDll(void);
+bool FindLoadedDll(void);
+bool IsDesiredModule(HMODULE hModule, HANDLE hProcess);
+bool HasDesiredMethods(HMODULE hModule, HANDLE hProcess);
+bool HookThisProgram( char *ret);
+DWORD WINAPI ServerThread( LPVOID lpParam);
 
-/**
- * Direct3DCreate9 function must be exported if compiled for "No Injection"
- */
+void *DetourFunc(BYTE *src, const BYTE *dst, const int len);
+bool RetourFunc(BYTE *src, BYTE *restore, const int len);
 IDirect3D9 *APIENTRY uMod_Direct3DCreate9(UINT SDKVersion);
-
-/**
- * Direct3DCreate9Ex function must be exported if compiled for "No Injection"
- */
 HRESULT APIENTRY uMod_Direct3DCreate9Ex( UINT SDKVersion, IDirect3D9Ex **ppD3D);
+
+
+#ifdef DIRECT_INJECTION
+void Nothing(void);
+#endif
 
 #endif

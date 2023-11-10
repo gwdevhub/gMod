@@ -26,14 +26,14 @@ class uMod_File
 {
 public:
     uMod_File(void);
-    uMod_File(const std::wstring file);
+    uMod_File(const std::string file);
     ~uMod_File(void);
 
     bool FileSupported(void);
     bool PackageFile(void);
     bool SingleFile(void);
     //int AddSingleFileToNode( uMod_TreeViewNode* node);
-    int GetContentTemplate(const std::wstring& content);
+    int GetContentTemplate(const std::string& content);
 
     /*
     int GetComment( wxString &tool_tip);
@@ -41,8 +41,8 @@ public:
   */
     int GetContent();
 
-    int SetFile(const std::wstring file) { FileName = file; Loaded = false; return 0; }
-    std::wstring GetFile(void) { return FileName; }
+    int SetFile(const std::string file) { FileName = file; Loaded = false; return 0; }
+    std::string GetFile(void) { return FileName; }
     std::vector<UModTexture> Textures;
 
 private:
@@ -58,7 +58,7 @@ private:
     int AddTpf();
     int AddContent(const char* pw);
 
-    std::wstring FileName;
+    std::string FileName;
     bool Loaded;
     bool XORed;
     char* FileInMemory;

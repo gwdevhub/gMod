@@ -124,9 +124,9 @@ std::wstring AfterLast(const std::wstring& file_path, wchar_t separator) {
     return L"";
 }
 
-std::wstring GetFileExtension(const std::wstring& file_path) {
+std::string GetFileExtension(const std::string& file_path) {
     // Find the last occurrence of '.'
-    std::size_t last_dot_pos = file_path.find_last_of(L".");
+    std::size_t last_dot_pos = file_path.find_last_of(".");
 
     // If there is a dot, and it is not at the beginning of the filename
     if (last_dot_pos != std::string::npos && last_dot_pos != 0) {
@@ -134,7 +134,7 @@ std::wstring GetFileExtension(const std::wstring& file_path) {
         return file_path.substr(last_dot_pos + 1);
     }
     // If the dot is not found, or is the first character, return an empty string
-    return L"";
+    return "";
 }
 
 std::string WideStringToString(const std::wstring& wstr) {

@@ -23,6 +23,6 @@ along with Universal Modding Engine.  If not, see <http://www.gnu.org/licenses/>
 
 struct UModTexture {
     std::vector<char> data;
-    std::wstring name;
+    std::string name;
     DWORD64 hash;
 };

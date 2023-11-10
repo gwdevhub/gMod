@@ -16,27 +16,30 @@ You should have received a copy of the GNU General Public License
 along with Universal Modding Engine.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-#pragma once
 
 
+#ifndef uMod_DEFINES_H_
+#define uMod_DEFINES_H_
+
+#include <iostream>
 
 #ifdef LOG_MESSAGE
 extern FILE *gl_File;
 
-#define Message(...) {if (gl_File!=NULL) {fprintf( gl_File, __VA_ARGS__); fflush(gl_File);}}
+#define Message(...) { printf(__VA_ARGS__); }
 #ifdef HOOK_INJECTION
 #define OpenMessage(...) {if (fopen_s( &gl_File, "uMod_log.txt", "wt")) gl_File=NULL; else fprintf( gl_File, "HI R40: 0000000\n");}
 #endif
 
 #ifdef DIRECT_INJECTION
-#define OpenMessage(...) {if (fopen_s( &gl_File, "uMod_log.txt", "wt")) gl_File=NULL; else fprintf( gl_File, "DI 40: 0000000\n");}
+#define OpenMessage(...)
 #endif
 
 #ifdef NO_INJECTION
 #define OpenMessage(...) {if (fopen_s( &gl_File, "uMod_log.txt", "wt")) gl_File=NULL; else fprintf( gl_File, "NI R40: 0000000\n");}
 #endif
 
-#define CloseMessage(...) {if (gl_File!=NULL) fclose(gl_File);}
+#define CloseMessage(...)
 
 
 #else
@@ -62,3 +65,6 @@ typedef LONG HRESULT;
 
 #define UNREFERENCED_PARAMETER(...)
 #endif
+
+
+#endif /* uMod_DEFINES_H_ */
