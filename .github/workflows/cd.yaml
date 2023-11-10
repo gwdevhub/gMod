@@ -92,7 +92,7 @@ jobs:
     - name: Retrieve version
       id: set_version
       run: |
-        $fileVersionInfo = (Get-Item -Path .\build\Release\uMod.dll).VersionInfo.FileVersion
+        $fileVersionInfo = (Get-Item -Path .\bin\Release\gMod.dll).VersionInfo.FileVersion
         if ([string]::IsNullOrEmpty($fileVersionInfo)) {
             Write-Host "The DLL file version information could not be retrieved."
             exit 1
@@ -107,8 +107,8 @@ jobs:
       with:
         mode: update
         tag_name: v${{ steps.set_version.outputs.version }}
-        release_name: uMod v${{ steps.set_version.outputs.version }}
-        assets: .\build\Release\uMod.dll|.\build\Release\uMod_Listener.dll
+        release_name: gMod v${{ steps.set_version.outputs.version }}
+        assets: .\bin\Release\gMod.dll
         github_token: ${{ env.GITHUB_TOKEN }}
         replace_assets: true
         body_mrkdwn: ${{ env.Changelog }}
