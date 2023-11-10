@@ -627,6 +627,7 @@ int uMod_TextureServer::MainLoop(void) // run as a separated thread
     LoadModsFromFile(umodpath);
 
     Message("MainLoop: begin\n");
+#ifdef USE_LISTENER
     http::server::Get("/id", [](const httplib::Request&, httplib::Response& response) {
         auto processId = GetCurrentProcessId();
         response.set_content(std::to_string(processId), "text/plain");
@@ -662,5 +663,11 @@ int uMod_TextureServer::MainLoop(void) // run as a separated thread
         }
         });
     http::server::StartServer();
+#else
+    while (true) {
+    }
+#endif // USE_LISTENER
+
+    
     return (RETURN_OK);
 }
