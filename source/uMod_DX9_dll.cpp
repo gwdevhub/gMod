@@ -327,12 +327,7 @@ bool HookThisProgram(char* ret)
     GetModuleFileName(GetModuleHandle(nullptr), Game, MAX_PATH); //ask for name and path of this executable
 
     // we inject directly
-    int i = 0;
-    while (Game[i]) {
-        ret[i] = Game[i];
-        i++;
-    }
-    ret[i] = 0;
+    strcpy(ret, Game);
     return true;
 }
 
