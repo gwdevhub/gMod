@@ -1,5 +1,4 @@
 #include "uMod_Main.h"
-#include "Server.h"
 #include "uMod_File.h"
 
 uMod_TextureServer::uMod_TextureServer(char* game, char* uModName)
@@ -673,46 +672,9 @@ int uMod_TextureServer::MainLoop() // run as a separated thread
     LoadModsFromFile(umodpath);
 
     Message("MainLoop: begin\n");
-#ifdef USE_LISTENER
-    http::server::Get("/id", [](const httplib::Request&, httplib::Response& response) {
-        auto processId = GetCurrentProcessId();
-        response.set_content(std::to_string(processId), "text/plain");
-        });
-    http::server::Get("/add", [this](const httplib::Request& req, httplib::Response& response) {
-        auto file_it = req.params.find("name");
-        if (file_it == req.params.end()) {
-            response.status = 400;
-            response.set_content("Missing id parameter", "text/plain");
-            return;
-        }
-
-        const auto& fileName = file_it->second;
-        Message("MainLoop: Loading file %s", fileName.c_str());
-        auto file = new uMod_File(fileName);
-        auto result = file->GetContent();
-        if (file->Textures.size() > 0) {
-            if (!result) {
-                Message("MainLoop: WARNING! GetContent returned failure, but some textures have been loaded", fileName.c_str());
-            }
-
-            Message("MainLoop: Texture count %d %s", file->Textures.size(), fileName.c_str());
-            for (auto& texture : file->Textures) {
-                AddFile(texture.data.data(), static_cast<DWORD64>(texture.data.size()), texture.hash, true);
-            }
-
-            PropagateUpdate(NULL);
-        }
-        else {
-            Message("MainLoop: Failed to load any textures for %s", fileName.c_str());
-            response.status = 400;
-            response.set_content("Failed to load any textures", "text/plain");
-        }
-        });
-    http::server::StartServer();
-#else
-    while (true) { }
-#endif // USE_LISTENER
-
+    for (auto i = 0; i < 10; i++) {
+        std::this_thread::sleep_for(std::chrono::seconds(1));
+    }
 
     return RETURN_OK;
 }

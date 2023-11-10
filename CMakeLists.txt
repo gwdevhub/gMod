@@ -56,5 +56,4 @@ target_compile_definitions(gMod PRIVATE
     LOG_MESSAGE
 )
 
-target_precompile_headers(gMod PRIVATE "header/pch.h")
 target_include_directories(gMod PUBLIC "header")

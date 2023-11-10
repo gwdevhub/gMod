@@ -1,7 +1,5 @@
 #include "uMod_Main.h"
 
-
-
 #define IDirect3D9 IDirect3D9Ex
 #define uMod_IDirect3D9 uMod_IDirect3D9Ex
 #define m_pIDirect3D9 m_pIDirect3D9Ex
