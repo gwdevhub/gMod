@@ -3,6 +3,7 @@
 set(CMAKE_GENERATOR_PLATFORM win32)
 
 project(gMod)
+set_property(GLOBAL PROPERTY USE_FOLDERS OFF)
 
 if(NOT(CMAKE_SIZEOF_VOID_P EQUAL 4))
     message(FATAL_ERROR "You are configuring a non 32-bit build, this is not supported. Run cmake with `-A Win32`")
@@ -20,8 +21,6 @@ set(CMAKE_RUNTIME_OUTPUT_DIRECTORY "${PROJECT_SOURCE_DIR}/bin/")
 set(CMAKE_CXX_STANDARD 23)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>")
-
-set_property(GLOBAL PROPERTY USE_FOLDERS OFF)
 
 add_compile_options(/MP /permissive-)
 
