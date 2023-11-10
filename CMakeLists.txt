@@ -8,7 +8,13 @@ if(NOT(CMAKE_SIZEOF_VOID_P EQUAL 4))
     message(FATAL_ERROR "You are configuring a non 32-bit build, this is not supported. Run cmake with `-A Win32`")
 endif()
 
-set(VERSION "1.0")
+set(VERSION_MAJOR 1)
+set(VERSION_MINOR 5)
+set(VERSION_PATCH 3)
+set(VERSION_TWEAK 0)
+
+set(VERSION_RC "${CMAKE_CURRENT_BINARY_DIR}/version.rc")
+configure_file("${CMAKE_CURRENT_SOURCE_DIR}/version.rc.in" "${VERSION_RC}" @ONLY)
 
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY "${PROJECT_SOURCE_DIR}/bin/")
 set(CMAKE_CXX_STANDARD 23)

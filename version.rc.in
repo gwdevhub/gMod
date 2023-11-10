@@ -18,12 +18,12 @@ BEGIN
         BLOCK "040904b0"
         BEGIN
             VALUE "CompanyName", ""
-            VALUE "FileDescription", "uMod"
+            VALUE "FileDescription", "gMod"
             VALUE "FileVersion", "@VERSION_MAJOR@.@VERSION_MINOR@.@VERSION_PATCH@.@VERSION_TWEAK@"
-            VALUE "InternalName", "uMod"
+            VALUE "InternalName", "gMod"
             VALUE "LegalCopyright", ""
-            VALUE "OriginalFilename", "uMod.dll"
-            VALUE "ProductName", "uMod"
+            VALUE "OriginalFilename", "gMod.dll"
+            VALUE "ProductName", "gMod"
             VALUE "ProductVersion", "@VERSION_MAJOR@.@VERSION_MINOR@.@VERSION_PATCH@.@VERSION_TWEAK@"
         END
     END
