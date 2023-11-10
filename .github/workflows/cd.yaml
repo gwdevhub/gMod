@@ -1,6 +1,4 @@
-# This continuous integration pipeline is triggered anytime a user pushes code to the repo.
-# This pipeline builds the Wpf project, runs unit tests, then saves the MSIX build artifact.
-name:  uMod CD Pipeline
+name:  gMod CD Pipeline
 
 on:
   push:
@@ -114,4 +112,3 @@ jobs:
         body_mrkdwn: ${{ env.Changelog }}
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-    
