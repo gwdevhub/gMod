@@ -45,6 +45,7 @@ file(GLOB SOURCES
 
 target_link_libraries(gMod PRIVATE ${D3D9_LIB} ${D3DX9_LIB} ${DXGUID_LIB})
 target_include_directories(gMod PRIVATE $ENV{DXSDK_DIR}/Include)
+target_include_directories(gMod PUBLIC "header")
 source_group(TREE "${CMAKE_CURRENT_SOURCE_DIR}" FILES ${SOURCES})
 target_sources(gMod PRIVATE ${SOURCES})
 target_compile_definitions(gMod PRIVATE
@@ -55,5 +56,3 @@ target_compile_definitions(gMod PRIVATE
     DIRECT_INJECTION
     LOG_MESSAGE
 )
-
-target_include_directories(gMod PUBLIC "header")

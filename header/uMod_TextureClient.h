@@ -1,5 +1,4 @@
-#ifndef uMod_TEXTUREHANDLER_HPP
-#define uMod_TEXTUREHANDLER_HPP
+#pragma once
 
 #include "uMod_IDirect3DTexture9.h"
 #include "uMod_IDirect3DDevice9.h"
@@ -122,6 +121,3 @@ private:
     //unsigned int GetCRC32(char *pcDatabuf, unsigned int ulDatalen);
 };
 
-
-
-#endif /* uMod_TEXTUREHANDLER_HPP_ */

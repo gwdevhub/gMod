@@ -1,5 +1,4 @@
-#ifndef uMod_DX9_DLL_H_
-#define uMod_DX9_DLL_H_
+#pragma once
 
 #include <d3d9.h>
 
@@ -20,6 +19,4 @@ HRESULT APIENTRY uMod_Direct3DCreate9Ex(UINT SDKVersion, IDirect3D9Ex** ppD3D);
 
 #ifdef DIRECT_INJECTION
 void Nothing();
-#endif
-
 #endif

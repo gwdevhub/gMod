@@ -1,5 +1,4 @@
-#ifndef uMod_DEFINES_H_
-#define uMod_DEFINES_H_
+#pragma once
 
 #include <iostream>
 
@@ -45,6 +44,3 @@ typedef LONG HRESULT;
 
 #define UNREFERENCED_PARAMETER(...)
 #endif
-
-
-#endif /* uMod_DEFINES_H_ */

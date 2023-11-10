@@ -1,11 +1,7 @@
-#ifndef uMod_IDirect3D9Ex_H_
-#define uMod_IDirect3D9Ex_H_
-
+#pragma once
 
 #include <d3d9.h>
-#include <d3dx9.h>
 #include "uMod_TextureServer.h"
-#include "uMod_TextureClient.h"
 
 class uMod_IDirect3D9Ex : public IDirect3D9Ex {
 public:
@@ -43,4 +39,3 @@ private:
     uMod_TextureServer* uMod_Server;
 };
 
-#endif

@@ -1,13 +1,4 @@
-#ifndef uMod_MAIN_H_
-#define uMod_MAIN_H_
-
-#define WINVER _WIN32_WINNT_WINXP
-#define _WIN32_WINNT _WIN32_WINNT_WINXP
-#define _WIN32_WINDOWS _WIN32_WINNT_WINXP
-#define NTDDI_VERSION NTDDI_WINXP
-//#define NTDDI_LONGHORN NTDDI_WINXP
-#define WIN32_LEAN_AND_MEAN
-
+#pragma once
 
 #include <windows.h>
 
@@ -16,9 +7,6 @@
 
 #include <d3d9.h>
 #include <d3dx9.h>
-
-
-
 
 #include "uMod_GlobalDefines.h"
 #include "uMod_Error.h"
@@ -40,7 +28,6 @@
 #include "uMod_TextureServer.h"
 #include "uMod_TextureClient.h"
 
+#pragma warning(disable : 4477)
 
 extern unsigned int gl_ErrorState;
-
-#endif

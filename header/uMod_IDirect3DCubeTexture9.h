@@ -1,14 +1,8 @@
-#ifndef uMod_IDirect3DCubeTexture9_H
-#define uMod_IDirect3DCubeTexture9_H
+#pragma once
 
 #include <d3d9.h>
-#include <d3dx9.h>
 
-#include "uMod_Defines.h"
-
-
-
-interface uMod_IDirect3DCubeTexture9 : public IDirect3DCubeTexture9 {
+interface uMod_IDirect3DCubeTexture9 :  IDirect3DCubeTexture9 {
     uMod_IDirect3DCubeTexture9(IDirect3DCubeTexture9** ppTex, IDirect3DDevice9* pIDirect3DDevice9)
     {
         m_D3Dtex = *ppTex; //Texture which will be displayed and will be passed to the game
@@ -91,6 +85,3 @@ inline int SwitchTextures(uMod_IDirect3DCubeTexture9* pTexture1, uMod_IDirect3DC
     }
     return RETURN_TEXTURE_NOT_SWITCHED;
 }
-
-
-#endif

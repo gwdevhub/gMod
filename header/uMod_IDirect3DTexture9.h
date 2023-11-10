@@ -1,12 +1,6 @@
-#ifndef uMod_IDirect3DTexture9_H
-#define uMod_IDirect3DTexture9_H
+#pragma once
 
 #include <d3d9.h>
-#include <d3dx9.h>
-
-#include "uMod_Defines.h"
-
-
 
 interface uMod_IDirect3DTexture9 : public IDirect3DTexture9 {
     uMod_IDirect3DTexture9(IDirect3DTexture9** ppTex, IDirect3DDevice9* pIDirect3DDevice9)
@@ -91,4 +85,3 @@ inline int SwitchTextures(uMod_IDirect3DTexture9* pTexture1, uMod_IDirect3DTextu
 }
 
 
-#endif

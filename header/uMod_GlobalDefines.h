@@ -1,5 +1,4 @@
-#ifndef uMod_GlobalDefines_H_
-#define uMod_GlobalDefines_H_
+#pragma once
 
 //#define MyTypeHash DWORD64
 #define MyTypeHash DWORD32
@@ -44,8 +43,3 @@ using PipeStruct = struct {
 
 #define CONTROL_FONT_COLOUR 30
 #define CONTROL_TEXTURE_COLOUR 31
-
-
-
-
-#endif

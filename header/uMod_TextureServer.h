@@ -1,5 +1,4 @@
-#ifndef uMod_TEXTURESERVER_H_
-#define uMod_TEXTURESERVER_H_
+#pragma once
 
 #include "uMod_GlobalDefines.h"
 #include "uMod_ArrayHandler.h"
@@ -85,6 +84,3 @@ private:
     uMod_FileHandler OldMod; // hold the file content of texture which were added previously but are not needed any more
     // this is needed, because a texture clients might not have merged the last update and thus hold pointers to the file content of old textures
 };
-
-
-#endif /* uMod_TEXTURESERVER_H_ */

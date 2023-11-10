@@ -158,7 +158,7 @@ int uMod_TextureServer::AddClient(uMod_TextureClient* client, TextureFileStruct*
 
 int uMod_TextureServer::RemoveClient(uMod_TextureClient* client) // called from a client
 {
-    Message("RemoveClient(%lu): %lu\n", client);
+    Message("RemoveClient(): %lu\n", client);
     if (const int ret = LockMutex()) {
         gl_ErrorState |= uMod_ERROR_SERVER;
         return ret;

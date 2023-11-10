@@ -1,6 +1,4 @@
-#ifndef uMod_TEXTUREFUNCTION_H_
-#define uMod_TEXTUREFUNCTION_H_
-
+#pragma once
 
 unsigned int GetCRC32(char* pcDatabuf, unsigned int ulDatalen);
 /*
@@ -124,5 +122,3 @@ inline int GetBitsFromFormat(D3DFORMAT format)
         }
     }
 }
-
-#endif /* uMod_TEXTUREFUNCTION_H_ */

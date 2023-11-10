@@ -1,6 +1,4 @@
-#ifndef uMod_ERROR_H_
-#define uMod_ERROR_H_
-
+#pragma once
 
 // define return values, a value less than zero indicates an error
 #define RETURN_OK 0
@@ -32,9 +30,6 @@
 #define RETURN_PIPE_NOT_OPENED 60
 
 
-
-
-
 // define error states
 #define uMod_ERROR_FATAL 1u
 #define uMod_ERROR_MUTEX 1u<<1
@@ -46,9 +41,3 @@
 #define uMod_ERROR_UPDATE 1u<<7
 #define uMod_ERROR_SERVER 1u<<8
 
-
-
-
-
-
-#endif /* uMod_ERROR_H_ */

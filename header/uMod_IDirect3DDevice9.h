@@ -1,5 +1,4 @@
-#ifndef uMod_IDirect3DDevice9_H_
-#define uMod_IDirect3DDevice9_H_
+#pragma once
 
 #include <d3d9.h>
 #include <d3dx9.h>
@@ -194,5 +193,3 @@ private:
     uMod_TextureServer* uMod_Server;
     uMod_TextureClient* uMod_Client;
 };
-
-#endif

@@ -1,14 +1,8 @@
-#ifndef uMod_IDirect3DVolumeTexture9_H
-#define uMod_IDirect3DVolumeTexture9_H
+#pragma once
 
 #include <d3d9.h>
-#include <d3dx9.h>
 
-#include "uMod_Defines.h"
-
-
-
-interface uMod_IDirect3DVolumeTexture9 : public IDirect3DVolumeTexture9 {
+interface uMod_IDirect3DVolumeTexture9 : IDirect3DVolumeTexture9 {
     uMod_IDirect3DVolumeTexture9(IDirect3DVolumeTexture9** ppTex, IDirect3DDevice9* pIDirect3DDevice9)
     {
         m_D3Dtex = *ppTex; //Texture which will be displayed and will be passed to the game
@@ -91,5 +85,3 @@ inline int SwitchTextures(uMod_IDirect3DVolumeTexture9* pTexture1, uMod_IDirect3
     return RETURN_TEXTURE_NOT_SWITCHED;
 }
 
-
-#endif

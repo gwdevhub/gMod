@@ -1,6 +1,7 @@
 #pragma once
-#include<string>
-#include<Windows.h>
+
+#include <string>
+#include <Windows.h>
 
 void ReplaceAll(std::wstring& str, const std::wstring& from, const std::wstring& to)
 {
