@@ -23,6 +23,18 @@ find_library(D3D9_LIB NAMES d3d9 PATHS $ENV{DXSDK_DIR}/lib/x86 NO_DEFAULT_PATH)
 find_library(D3DX9_LIB NAMES d3dx9 PATHS $ENV{DXSDK_DIR}/lib/x86 NO_DEFAULT_PATH)
 find_library(DXGUID_LIB NAMES dxguid PATHS $ENV{DXSDK_DIR}/lib/x86 NO_DEFAULT_PATH)
 
+if(NOT D3D9_LIB)
+  find_library(D3D9_LIB NAMES d3d9 PATHS ${CMAKE_SOURCE_DIR}/Lib)
+endif()
+
+if(NOT D3DX9_LIB)
+  find_library(D3DX9_LIB NAMES d3dx9 PATHS ${CMAKE_SOURCE_DIR}/Lib)
+endif()
+
+if(NOT DXGUID_LIB)
+  find_library(DXGUID_LIB NAMES dxguid PATHS ${CMAKE_SOURCE_DIR}/Lib)
+endif()
+
 add_library(gMod SHARED)
 
 file(GLOB SOURCES
