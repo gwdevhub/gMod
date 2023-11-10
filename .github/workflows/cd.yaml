@@ -108,9 +108,7 @@ jobs:
         mode: update
         tag_name: v${{ steps.set_version.outputs.version }}
         release_name: uMod v${{ steps.set_version.outputs.version }}
-        assets: |
-            .\build\Release\uMod.dll,
-            .\build\Release\uMod_Listener.dll
+        assets: .\build\Release\uMod.dll|.\build\Release\uMod_Listener.dll
         github_token: ${{ env.GITHUB_TOKEN }}
         replace_assets: true
         body_mrkdwn: ${{ env.Changelog }}
