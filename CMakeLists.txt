@@ -41,7 +41,7 @@ if(NOT DXGUID_LIB)
 endif()
 
 list(APPEND CMAKE_MODULE_PATH "${PROJECT_SOURCE_DIR}/cmake")
-include(miniz)
+include(libzippp)
 
 add_library(gMod SHARED)
 
@@ -55,7 +55,7 @@ target_link_libraries(gMod PRIVATE
     ${D3D9_LIB}
     ${D3DX9_LIB}
     ${DXGUID_LIB}
-    miniz
+    libzippp
     )
 target_include_directories(gMod PRIVATE $ENV{DXSDK_DIR}/Include)
 target_include_directories(gMod PUBLIC "header")
@@ -68,4 +68,4 @@ target_compile_definitions(gMod PRIVATE
     "VC_EXTRALEAN"
     DIRECT_INJECTION
     LOG_MESSAGE
-)
+    )
