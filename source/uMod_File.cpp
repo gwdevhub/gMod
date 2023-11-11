@@ -390,7 +390,7 @@ int uMod_File::AddContent(const char* pw)
         delete[] def;
 
         CloseZip(ZIP_Handle);
-        if (Textures.size() == 0) {
+        if (Textures.empty()) {
             printf(name.c_str());
             printf(" No textures parsed\n");
             return -1;
@@ -434,7 +434,7 @@ int uMod_File::AddContent(const char* pw)
             }
 
             file = ze.name;
-            if (file.size() == 0) {
+            if (file.empty()) {
                 continue;
             }
 
@@ -474,7 +474,7 @@ int uMod_File::AddContent(const char* pw)
         }
 
         CloseZip(ZIP_Handle);
-        if (Textures.size() == 0) {
+        if (Textures.empty()) {
             printf(name.c_str());
             printf(" No textures parsed\n");
             return -1;

@@ -626,7 +626,7 @@ void uMod_TextureServer::LoadModsFromFile(char* source)
 
             const auto file = new uMod_File(line);
             const auto result = file->GetContent();
-            if (file->Textures.size() > 0) {
+            if (!file->Textures.empty()) {
                 if (!result) {
                     Message("MainLoop: WARNING! GetContent returned failure, but some textures have been loaded for %s\n", line);
                 }

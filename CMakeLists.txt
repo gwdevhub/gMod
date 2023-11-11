@@ -40,6 +40,9 @@ if(NOT DXGUID_LIB)
   find_library(DXGUID_LIB NAMES dxguid PATHS ${CMAKE_SOURCE_DIR}/Lib)
 endif()
 
+list(APPEND CMAKE_MODULE_PATH "${PROJECT_SOURCE_DIR}/cmake")
+include(miniz)
+
 add_library(gMod SHARED)
 
 file(GLOB SOURCES
@@ -48,7 +51,12 @@ file(GLOB SOURCES
     ${VERSION_RC}
     )
 
-target_link_libraries(gMod PRIVATE ${D3D9_LIB} ${D3DX9_LIB} ${DXGUID_LIB})
+target_link_libraries(gMod PRIVATE
+    ${D3D9_LIB}
+    ${D3DX9_LIB}
+    ${DXGUID_LIB}
+    miniz
+    )
 target_include_directories(gMod PRIVATE $ENV{DXSDK_DIR}/Include)
 target_include_directories(gMod PUBLIC "header")
 source_group(TREE "${CMAKE_CURRENT_SOURCE_DIR}" FILES ${SOURCES})
