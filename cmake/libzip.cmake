@@ -7,12 +7,17 @@ FetchContent_Declare(
     GIT_REPOSITORY https://github.com/nih-at/libzip
     GIT_TAG v1.10.1)
 FetchContent_GetProperties(libzip)
+
 if (libzip_POPULATED)
 	message(STATUS "Skipping libzip download")
     return()
 endif()
 
 FetchContent_Populate(libzip)
+if(EXISTS ${libzip_SOURCE_DIR})
+	message(STATUS "Skipping libzip build")
+	return()
+endif()
 
 execute_process(
     COMMAND ${CMAKE_COMMAND} -A Win32 -DZLIB_LIBRARY:PATH="${CMAKE_INSTALL_PREFIX}/lib/zlibstatic.lib" -DZLIB_INCLUDE_DIR:PATH="${CMAKE_INSTALL_PREFIX}/include" -DCMAKE_INSTALL_PREFIX=${CMAKE_INSTALL_PREFIX} .
@@ -26,3 +31,5 @@ execute_process(
     COMMAND ${CMAKE_COMMAND} --install . --config Release
     WORKING_DIRECTORY ${libzip_SOURCE_DIR}
 )
+
+message(STATUS "Finished libzip build")

@@ -12,12 +12,19 @@ FetchContent_Declare(
 )
 
 FetchContent_GetProperties(zlib)
+
 if(zlib_POPULATED)
 	message(STATUS "Skipping zlib download")
 	return()
 endif()
 
 FetchContent_Populate(zlib)
+
+if(EXISTS ${zlib_SOURCE_DIR})
+	message(STATUS "Skipping zlib build")
+	return()
+endif()
+
 
 execute_process(
     COMMAND ${CMAKE_COMMAND} -A Win32 -DCMAKE_INSTALL_PREFIX=${CMAKE_INSTALL_PREFIX}
@@ -31,3 +38,5 @@ execute_process(
     COMMAND ${CMAKE_COMMAND} --install . --config Release
     WORKING_DIRECTORY ${zlib_SOURCE_DIR}
 )
+
+message(STATUS "Finished zlib build")
