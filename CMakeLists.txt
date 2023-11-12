@@ -3,7 +3,7 @@
 set(CMAKE_GENERATOR_PLATFORM win32)
 
 project(gMod)
-set_property(GLOBAL PROPERTY USE_FOLDERS OFF)
+set_property(GLOBAL PROPERTY USE_FOLDERS ON)
 
 if(NOT(CMAKE_SIZEOF_VOID_P EQUAL 4))
     message(FATAL_ERROR "You are configuring a non 32-bit build, this is not supported. Run cmake with `-A Win32`")

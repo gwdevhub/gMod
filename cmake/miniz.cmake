@@ -26,3 +26,5 @@ add_library(miniz STATIC ${MINIZ_SOURCES})
 
 # Include directories for miniz
 target_include_directories(miniz PUBLIC ${MINIZ_SOURCE_DIR})
+
+set_target_properties(miniz PROPERTIES FOLDER "Dependencies/")

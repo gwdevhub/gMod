@@ -1,5 +1,6 @@
 include_guard()
 include(FetchContent)
+include(zlib)
 
 FetchContent_Declare(
     libzip
@@ -22,7 +23,7 @@ target_sources(libzip PRIVATE ${SOURCES})
 target_include_directories(libzip PRIVATE "${libzip_SOURCE_DIR}")
 target_compile_definitions(libzip PRIVATE
     "-DLIBZIP_DO_INSTALL=OFF"
+	"-DZLIB_LIBRARY=${libzip_BUILD_DIR}/"
     )
-
 
 set_target_properties(libzip PROPERTIES FOLDER "Dependencies/")
