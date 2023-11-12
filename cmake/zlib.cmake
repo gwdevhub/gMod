@@ -20,7 +20,7 @@ endif()
 
 FetchContent_Populate(zlib)
 
-if(EXISTS ${zlib_SOURCE_DIR})
+if(EXISTS ${CMAKE_INSTALL_PREFIX}/lib/zlibstatic.lib)
 	message(STATUS "Skipping zlib build")
 	return()
 endif()

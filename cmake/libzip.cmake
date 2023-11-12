@@ -14,13 +14,13 @@ if (libzip_POPULATED)
 endif()
 
 FetchContent_Populate(libzip)
-if(EXISTS ${libzip_SOURCE_DIR})
+if(EXISTS ${CMAKE_INSTALL_PREFIX}/lib/zip.lib)
 	message(STATUS "Skipping libzip build")
 	return()
 endif()
 
 execute_process(
-    COMMAND ${CMAKE_COMMAND} -A Win32 -DZLIB_LIBRARY:PATH="${CMAKE_INSTALL_PREFIX}/lib/zlibstatic.lib" -DZLIB_INCLUDE_DIR:PATH="${CMAKE_INSTALL_PREFIX}/include" -DCMAKE_INSTALL_PREFIX=${CMAKE_INSTALL_PREFIX} .
+    COMMAND ${CMAKE_COMMAND} -A Win32 -DZLIB_LIBRARY:PATH=${CMAKE_INSTALL_PREFIX}/lib/zlibstatic.lib -DZLIB_INCLUDE_DIR:PATH=${CMAKE_INSTALL_PREFIX}/include -DCMAKE_INSTALL_PREFIX=${CMAKE_INSTALL_PREFIX} .
     WORKING_DIRECTORY ${libzip_SOURCE_DIR}
 )
 execute_process(
