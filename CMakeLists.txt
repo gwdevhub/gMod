@@ -21,6 +21,7 @@ set(CMAKE_RUNTIME_OUTPUT_DIRECTORY "${PROJECT_SOURCE_DIR}/bin/")
 set(CMAKE_CXX_STANDARD 23)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>")
+set(CMAKE_INSTALL_PREFIX ${PROJECT_SOURCE_DIR}/bin/install)
 
 add_compile_options(/MP /permissive-)
 

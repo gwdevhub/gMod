@@ -3,7 +3,15 @@ include(FetchContent)
 include(libzip)
 
 # Find the libzip package after it's built
-# find_package(libzip REQUIRED)
+find_library(ZLIB_LIBRARY REQUIRED
+    NAMES zlibstatic zlib
+    PATHS ${CMAKE_INSTALL_PREFIX}/lib
+)
+find_library(LIBZIP REQUIRED
+    NAMES zip
+    PATHS ${CMAKE_INSTALL_PREFIX}/lib
+)
+
 
 FetchContent_Declare(
     libzippp
@@ -24,7 +32,7 @@ set(SOURCES
 source_group(TREE ${libzippp_SOURCE_DIR} FILES ${SOURCES})
 target_sources(libzippp PRIVATE ${SOURCES})
 target_include_directories(libzippp PUBLIC "${libzippp_SOURCE_DIR}")
-target_include_directories(libzippp PRIVATE "${libzip_SOURCE_DIR}")
+target_include_directories(libzippp PRIVATE "${CMAKE_INSTALL_PREFIX}/include")
 target_link_libraries(libzippp PRIVATE libzip)
 
 set_target_properties(libzippp PROPERTIES FOLDER "Dependencies/")

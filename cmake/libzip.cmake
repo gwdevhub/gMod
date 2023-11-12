@@ -8,22 +8,21 @@ FetchContent_Declare(
     GIT_TAG v1.10.1)
 FetchContent_GetProperties(libzip)
 if (libzip_POPULATED)
+	message(STATUS "Skipping libzip download")
     return()
 endif()
 
 FetchContent_Populate(libzip)
 
-add_library(libzip)
-file(GLOB SOURCES
-    "${libzip_SOURCE_DIR}/src/*.h"
-    "${libzip_SOURCE_DIR}/src/*.c"
-    )
-source_group(TREE ${libzip_SOURCE_DIR} FILES ${SOURCES})
-target_sources(libzip PRIVATE ${SOURCES})
-target_include_directories(libzip PRIVATE "${libzip_SOURCE_DIR}")
-target_compile_definitions(libzip PRIVATE
-    "-DLIBZIP_DO_INSTALL=OFF"
-	"-DZLIB_LIBRARY=${libzip_BUILD_DIR}/"
-    )
-
-set_target_properties(libzip PROPERTIES FOLDER "Dependencies/")
+execute_process(
+    COMMAND ${CMAKE_COMMAND} -A Win32 -DZLIB_LIBRARY:PATH="${CMAKE_INSTALL_PREFIX}/lib/zlibstatic.lib" -DZLIB_INCLUDE_DIR:PATH="${CMAKE_INSTALL_PREFIX}/include" -DCMAKE_INSTALL_PREFIX=${CMAKE_INSTALL_PREFIX} .
+    WORKING_DIRECTORY ${libzip_SOURCE_DIR}
+)
+execute_process(
+    COMMAND ${CMAKE_COMMAND} --build . --config Release
+    WORKING_DIRECTORY ${libzip_SOURCE_DIR}
+)
+execute_process(
+    COMMAND ${CMAKE_COMMAND} --install . --config Release
+    WORKING_DIRECTORY ${libzip_SOURCE_DIR}
+)

@@ -12,10 +12,22 @@ FetchContent_Declare(
 )
 
 FetchContent_GetProperties(zlib)
-if(NOT zlib_POPULATED)
-  FetchContent_Populate(zlib)
-  add_subdirectory(${zlib_SOURCE_DIR} ${zlib_BINARY_DIR})
+if(zlib_POPULATED)
+	message(STATUS "Skipping zlib download")
+	return()
 endif()
 
-set_target_properties(zlib PROPERTIES FOLDER "Dependencies/")
-set_target_properties(zlibstatic PROPERTIES FOLDER "Dependencies/")
+FetchContent_Populate(zlib)
+
+execute_process(
+    COMMAND ${CMAKE_COMMAND} -A Win32 -DCMAKE_INSTALL_PREFIX=${CMAKE_INSTALL_PREFIX}
+    WORKING_DIRECTORY ${zlib_SOURCE_DIR}
+)
+execute_process(
+    COMMAND ${CMAKE_COMMAND} --build . --config Release
+    WORKING_DIRECTORY ${zlib_SOURCE_DIR}
+)
+execute_process(
+    COMMAND ${CMAKE_COMMAND} --install . --config Release
+    WORKING_DIRECTORY ${zlib_SOURCE_DIR}
+)
