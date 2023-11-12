@@ -1,5 +1,5 @@
 #include "uMod_Main.h"
-#include "uMod_File.h"
+#include "gMod_FileLoader.h"
 
 uMod_TextureServer::uMod_TextureServer(char* game, char* uModName)
 {
@@ -624,7 +624,7 @@ void uMod_TextureServer::LoadModsFromFile(char* source)
                 }
             }
 
-            const auto file = new uMod_File(line);
+            const auto file = new gMod_FileLoader(line);
             const auto result = file->GetContent();
             if (!file->Textures.empty()) {
                 if (!result) {

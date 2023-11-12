@@ -31,7 +31,7 @@ set(SOURCES
     )
 source_group(TREE ${libzippp_SOURCE_DIR} FILES ${SOURCES})
 target_sources(libzippp PRIVATE ${SOURCES})
-target_include_directories(libzippp PUBLIC "${libzippp_SOURCE_DIR}")
+target_include_directories(libzippp PUBLIC "${libzippp_SOURCE_DIR}/src")
 target_include_directories(libzippp PRIVATE "${CMAKE_INSTALL_PREFIX}/include")
 target_link_libraries(libzippp PRIVATE libzip)
 

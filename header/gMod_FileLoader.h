@@ -1,10 +1,12 @@
 ﻿#pragma once
 
+#include <filesystem>
 #include <fstream>
 #include <vector>
 #include <string>
 #include <ranges>
-#include "zip.h"
+
+#include <libzippp.h>
 
 struct TpfEntry {
     std::string Name;
@@ -12,8 +14,7 @@ struct TpfEntry {
     uint32_t CrcHash;
 };
 
-class ZipLoader {
-private:
+class gMod_FileLoader {
     const std::string _fileName;
     std::ifstream _stream;
     const std::vector<uint8_t> _tpfPassword{
@@ -28,16 +29,14 @@ private:
     bool loaded;
 
 public:
-    ZipLoader(const std::string& fileName)
-        : _fileName(fs::absolute(fileName).string()), _stream(_fileName, std::ios::binary), loaded(false) {
+    gMod_FileLoader(const std::string& fileName)
+        : _fileName(std::filesystem::absolute(fileName).string()), _stream(_fileName, std::ios::binary), loaded(false) {
         if (!_stream) {
             throw std::runtime_error("Failed to open file: " + _fileName);
         }
     }
 
     std::vector<TpfEntry> Load() {
-        std::lock_guard lock(lockObject);
-
         if (!loaded) {
             entryCache = GetContents();
             loaded = true;
@@ -58,44 +57,40 @@ private:
     std::vector<TpfEntry> GetTpfContents() {
         std::vector<TpfEntry> entries;
 
-        zip_t* archive = zip_open(_fileName.c_str(), ZIP_RDONLY, nullptr);
-        if (archive == nullptr) {
+        try {
+            // Open the zip file using libzippp
+            libzippp::ZipArchive zipArchive(_fileName);
+
+            // Iterate over the files in the zip archive
+            for (auto entry : zipArchive) {
+                if (entry.isFile()) {
+                    entries.push_back({ entry.getName(), entry.getName(), 0 }); // Assuming ZipEntry is a string
+                }
+            }
+        } catch (const std::exception& e) {
             throw std::runtime_error("Failed to open zip file: " + _fileName);
         }
 
-        zip_source* source = zip_source_function(archive, nullptr, nullptr);
-        zip_password_set(source, reinterpret_cast<const char*>(_tpfPassword.data()));
-        zip_set_source(archive, source, 0);
-
-        zip_int64_t numEntries = zip_get_num_entries(archive, 0);
-        for (zip_int64_t i = 0; i < numEntries; ++i) {
-            struct zip_stat stats;
-            zip_stat_init(&stats);
-            zip_stat_index(archive, i, 0, &stats);
-            entries.push_back({ stats.name, stats.name, 0 }); // Assuming ZipEntry is a string
-        }
-
-        zip_close(archive);
         return entries;
     }
 
     std::vector<TpfEntry> GetFileContents() {
         std::vector<TpfEntry> entries;
 
-        zip_t* archive = zip_open(_fileName.c_str(), ZIP_RDONLY, nullptr);
-        if (archive == nullptr) {
+        try {
+            // Open the zip file using libzippp
+            libzippp::ZipArchive zipArchive(_fileName);
+
+            // Iterate over the files in the zip archive
+            for (auto entry : zipArchive) {
+                if (entry.isFile()) {
+                    entries.push_back({ entry.getName(), entry.getName(), 0 }); // Assuming ZipEntry is a string
+                }
+            }
+        } catch (const std::exception& e) {
             throw std::runtime_error("Failed to open zip file: " + _fileName);
         }
 
-        zip_int64_t numEntries = zip_get_num_entries(archive, 0);
-        for (zip_int64_t i = 0; i < numEntries; ++i) {
-            struct zip_stat stats;
-            zip_stat_init(&stats);
-            zip_stat_index(archive, i, 0, &stats);
-            entries.push_back({ stats.name, stats.name, 0 }); // Assuming ZipEntry is a string
-        }
-
-        zip_close(archive);
         return entries;
     }
 };
