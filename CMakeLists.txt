@@ -58,7 +58,6 @@ target_include_directories(gMod PUBLIC
 	"header"
 	${CMAKE_INSTALL_PREFIX}/include
 	)
-target_link_directories(gMod PRIVATE ${CMAKE_INSTALL_PREFIX}/lib)
 source_group(TREE "${CMAKE_CURRENT_SOURCE_DIR}" FILES ${SOURCES})
 target_sources(gMod PRIVATE ${SOURCES})
 
@@ -67,9 +66,6 @@ target_link_libraries(gMod PRIVATE
     ${D3DX9_LIB}
     ${DXGUID_LIB}
     libzippp
-	mbedtls
-	zip
-	zlibstatic
     )
 source_group(TREE "${CMAKE_CURRENT_SOURCE_DIR}" FILES ${SOURCES})
 target_sources(gMod PRIVATE ${SOURCES})
