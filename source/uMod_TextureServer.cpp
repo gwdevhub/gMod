@@ -174,9 +174,9 @@ int uMod_TextureServer::RemoveClient(uMod_TextureClient* client) // called from 
     return UnlockMutex();
 }
 
-int uMod_TextureServer::AddFile(char* buffer, unsigned int size, MyTypeHash hash, bool force) // called from Mainloop()
+int uMod_TextureServer::AddFile(char* dataPtr, unsigned int size, MyTypeHash hash, bool force) // called from Mainloop()
 {
-    Message("uMod_TextureServer::AddFile( %lu %lu, %#lX, %d): %lu\n", buffer, size, hash, force, this);
+    Message("uMod_TextureServer::AddFile( %lu %lu, %#lX, %d): %lu\n", dataPtr, size, hash, force, this);
 
     TextureFileStruct* temp = nullptr;
 
@@ -223,22 +223,7 @@ int uMod_TextureServer::AddFile(char* buffer, unsigned int size, MyTypeHash hash
         temp->Reference = -1;
     }
 
-    try {
-        temp->pData = new char[size];
-    }
-    catch (...) {
-        if (!new_file) {
-            CurrentMod.Remove(temp); // if this is a not a new file it is in the list of the CurrentMod
-        }
-        delete temp;
-        gl_ErrorState |= uMod_ERROR_MEMORY | uMod_ERROR_SERVER;
-        return RETURN_NO_MEMORY;
-    }
-
-    for (unsigned int i = 0; i < size; i++) {
-        temp->pData[i] = buffer[i];
-    }
-
+    temp->pData = dataPtr;
     temp->Size = size;
     temp->NumberOfTextures = 0;
     temp->Textures = nullptr;
@@ -251,103 +236,6 @@ int uMod_TextureServer::AddFile(char* buffer, unsigned int size, MyTypeHash hash
     Message("End AddFile(%#lX)\n", hash);
     if (new_file) {
         return CurrentMod.Add(temp); // new files must be added to the list of the CurrentMod
-    }
-    return RETURN_OK;
-}
-
-int uMod_TextureServer::AddFile(wchar_t* file_name, MyTypeHash hash, bool force) // called from Mainloop
-// this functions does the same, but loads the file content from disk
-{
-    Message("uMod_TextureServer::AddFile( %ls, %#lX, %d): %lu\n", file_name, hash, force, this);
-
-    TextureFileStruct* temp = nullptr;
-
-    int num = CurrentMod.GetNumber();
-    for (int i = 0; i < num; i++) {
-        if (CurrentMod[i]->Hash == hash) {
-            if (force) {
-                temp = CurrentMod[i];
-                break;
-            }
-            return RETURN_OK;
-        }
-    }
-    if (temp == nullptr) {
-        num = OldMod.GetNumber();
-        for (int i = 0; i < num; i++) {
-            if (OldMod[i]->Hash == hash) {
-                temp = OldMod[i];
-                OldMod.Remove(temp);
-                CurrentMod.Add(temp);
-                if (force) {
-                    break;
-                }
-                return RETURN_OK;
-            }
-        }
-    }
-
-    FILE* file;
-    if (_wfopen_s(&file, file_name, L"rb") != 0) {
-        Message("AddFile( ): file not found\n");
-        return RETURN_FILE_NOT_LOADED;
-    }
-
-    fseek(file, 0, SEEK_END);
-    const unsigned int size = ftell(file);
-    fseek(file, 0, SEEK_SET);
-
-    bool new_file = true;
-    if (temp != nullptr) {
-        new_file = false;
-
-        delete[] temp->pData;
-
-        temp->pData = nullptr;
-    }
-    else {
-        new_file = true;
-        temp = new TextureFileStruct;
-        temp->Reference = -1;
-    }
-
-    try {
-        temp->pData = new char[size];
-    }
-    catch (...) {
-        if (!new_file) {
-            CurrentMod.Remove(temp);
-        }
-        delete temp;
-        gl_ErrorState |= uMod_ERROR_MEMORY | uMod_ERROR_SERVER;
-        return RETURN_NO_MEMORY;
-    }
-    const int result = fread(temp->pData, 1, size, file);
-    fclose(file);
-    if (result != size) {
-        delete[] temp->pData;
-        if (!new_file) {
-            CurrentMod.Remove(temp);
-        }
-        delete temp;
-        return RETURN_FILE_NOT_LOADED;
-    }
-
-    temp->Size = size;
-    temp->NumberOfTextures = 0;
-    temp->Textures = nullptr;
-    temp->Hash = hash;
-
-    if (new_file) {
-        temp->ForceReload = false;
-    }
-    else {
-        temp->ForceReload = force;
-    }
-
-    Message("End AddFile(%#lX)\n", hash);
-    if (new_file) {
-        return CurrentMod.Add(temp);
     }
     return RETURN_OK;
 }
