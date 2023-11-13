@@ -1,6 +1,7 @@
 include_guard()
 include(FetchContent)
 include(zlib)
+include(mbedtls)
 
 FetchContent_Declare(
     libzip
@@ -20,7 +21,7 @@ if(EXISTS ${CMAKE_INSTALL_PREFIX}/lib/zip.lib)
 endif()
 
 execute_process(
-    COMMAND ${CMAKE_COMMAND} -A Win32 -DZLIB_LIBRARY:PATH=${CMAKE_INSTALL_PREFIX}/lib/zlibstatic.lib -DZLIB_INCLUDE_DIR:PATH=${CMAKE_INSTALL_PREFIX}/include -DCMAKE_INSTALL_PREFIX=${CMAKE_INSTALL_PREFIX} .
+    COMMAND ${CMAKE_COMMAND} -A Win32 -DZLIB_LIBRARY:PATH=${CMAKE_INSTALL_PREFIX}/lib/zlibstatic.lib -DZLIB_INCLUDE_DIR:PATH=${CMAKE_INSTALL_PREFIX}/include -DMbedTLS_INCLUDE_DIR:PATH=${CMAKE_INSTALL_PREFIX}/include -DMbedTLS_LIBRARY:PATH=${CMAKE_INSTALL_PREFIX}/lib/mbedtls.lib -DENABLE_MBEDTLS=ON -DENABLE_OPENSSL=OFF -DCMAKE_INSTALL_PREFIX=${CMAKE_INSTALL_PREFIX} .
     WORKING_DIRECTORY ${libzip_SOURCE_DIR}
 )
 execute_process(

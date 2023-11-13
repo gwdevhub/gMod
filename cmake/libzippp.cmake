@@ -11,6 +11,10 @@ find_library(LIBZIP REQUIRED
     NAMES zip
     PATHS ${CMAKE_INSTALL_PREFIX}/lib
 )
+find_library(MBEDTLS REQUIRED
+    NAMES mbedtls
+    PATHS ${CMAKE_INSTALL_PREFIX}/lib
+)
 
 
 FetchContent_Declare(

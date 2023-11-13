@@ -1,9 +1,6 @@
 include_guard()
 include(FetchContent)
 
-# Set the version of zlib you want to use
-set(ZLIB_VERSION "1.3")
-
 # Fetch zlib using FetchContent
 FetchContent_Declare(
   zlib

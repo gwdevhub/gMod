@@ -51,15 +51,26 @@ file(GLOB SOURCES
     "source/*.cpp"
     ${VERSION_RC}
     )
+
 target_compile_features(gMod PRIVATE cxx_std_23)
+target_include_directories(gMod PRIVATE $ENV{DXSDK_DIR}/Include)
+target_include_directories(gMod PUBLIC
+	"header"
+	${CMAKE_INSTALL_PREFIX}/include
+	)
+target_link_directories(gMod PRIVATE ${CMAKE_INSTALL_PREFIX}/lib)
+source_group(TREE "${CMAKE_CURRENT_SOURCE_DIR}" FILES ${SOURCES})
+target_sources(gMod PRIVATE ${SOURCES})
+
 target_link_libraries(gMod PRIVATE
     ${D3D9_LIB}
     ${D3DX9_LIB}
     ${DXGUID_LIB}
     libzippp
+	mbedtls
+	zip
+	zlibstatic
     )
-target_include_directories(gMod PRIVATE $ENV{DXSDK_DIR}/Include)
-target_include_directories(gMod PUBLIC "header")
 source_group(TREE "${CMAKE_CURRENT_SOURCE_DIR}" FILES ${SOURCES})
 target_sources(gMod PRIVATE ${SOURCES})
 target_compile_definitions(gMod PRIVATE
