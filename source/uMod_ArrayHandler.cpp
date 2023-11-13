@@ -1,15 +1,8 @@
 #include "uMod_Main.h"
 
-
-
-
-
 uMod_FileHandler::uMod_FileHandler()
 {
     Message("uMod_FileHandler(): %p\n", this);
-    Number = 0;
-    FieldCounter = 0;
-    Files = nullptr;
 }
 
 uMod_FileHandler::~uMod_FileHandler()

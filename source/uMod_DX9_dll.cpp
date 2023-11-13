@@ -2,7 +2,6 @@
 #include "uMod_Main.h"
 #include <Windows.h>
 #include <Psapi.h>
-#include <TlHelp32.h>
 #pragma comment(lib, "Psapi.lib")
 //#include "detours.h"
 //#include "detourxs/detourxs/detourxs.h"
@@ -51,7 +50,7 @@ BOOL WINAPI DllMain(HINSTANCE hModule, DWORD ul_reason_for_call, LPVOID lpReserv
 
     switch (ul_reason_for_call) {
         case DLL_PROCESS_ATTACH: {
-#ifdef BUILD_TYPE_DEBUG
+#ifdef _DEBUG
         AllocConsole();
         SetConsoleTitleA("uMod Console");
         freopen_s(&stdout_proxy, "CONOUT$", "w", stdout);
@@ -210,7 +209,7 @@ void ExitInstance()
         gl_hOriginalDll = nullptr;
     }
 
-#ifdef BUILD_TYPE_DEBUG
+#ifdef _DEBUG
     if (stdout_proxy)
         fclose(stdout_proxy);
     if (stderr_proxy)

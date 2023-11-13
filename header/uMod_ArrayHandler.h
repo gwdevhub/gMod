@@ -35,9 +35,9 @@ public:
 
 protected:
     static constexpr int FieldLength = 1024;
-    long Number;
-    int FieldCounter;
-    TextureFileStruct*** Files;
+    long Number = 0;
+    int FieldCounter = 0;
+    TextureFileStruct*** Files = nullptr;
 };
 
 
