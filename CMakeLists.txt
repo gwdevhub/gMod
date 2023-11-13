@@ -1,4 +1,4 @@
-﻿cmake_minimum_required(VERSION 3.16)
+cmake_minimum_required(VERSION 3.16)
 
 set(CMAKE_GENERATOR_PLATFORM win32)
 
@@ -51,7 +51,7 @@ file(GLOB SOURCES
     "source/*.cpp"
     ${VERSION_RC}
     )
-
+target_compile_features(gMod PRIVATE cxx_std_23)
 target_link_libraries(gMod PRIVATE
     ${D3D9_LIB}
     ${D3DX9_LIB}

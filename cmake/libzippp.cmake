@@ -25,6 +25,9 @@ endif()
 FetchContent_Populate(libzippp)
 
 add_library(libzippp)
+
+set(LIBZIPPP_ENABLE_ENCRYPTION ON)
+
 set(SOURCES
     "${libzippp_SOURCE_DIR}/src/libzippp.h"
     "${libzippp_SOURCE_DIR}/src/libzippp.cpp"

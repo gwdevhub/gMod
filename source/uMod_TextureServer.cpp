@@ -625,15 +625,11 @@ void uMod_TextureServer::LoadModsFromFile(char* source)
             }
 
             const auto file = new gMod_FileLoader(line);
-            const auto result = file->GetContent();
-            if (!file->Textures.empty()) {
-                if (!result) {
-                    Message("MainLoop: WARNING! GetContent returned failure, but some textures have been loaded for %s\n", line);
-                }
-
-                Message("MainLoop: Texture count %d %s\n", file->Textures.size(), line);
-                for (auto& texture : file->Textures) {
-                    AddFile(texture.data.data(), texture.data.size(), texture.hash, true);
+            const auto entries = file->Load();
+            if (!entries.empty()) {
+                Message("MainLoop: Texture count %d %s\n", entries.size(), line);
+                for (const auto& entry : entries) {
+                    //AddFile(static_cast<char*>(entry.Data), static_cast<unsigned int>(entry.Size), )
                 }
 
                 PropagateUpdate(nullptr);
