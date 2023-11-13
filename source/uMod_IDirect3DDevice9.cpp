@@ -111,7 +111,7 @@ int uMod_IDirect3DDevice9::CreateSingleTexture()
 
 uMod_IDirect3DDevice9::uMod_IDirect3DDevice9(IDirect3DDevice9* pOriginal, uMod_TextureServer* server, int back_buffer_count)
 {
-    Message(PRE_MESSAGE "::" PRE_MESSAGE "( %lu, %lu): %lu\n", pOriginal, server, this);
+    Message(PRE_MESSAGE "::" PRE_MESSAGE "( %p, %p): %p\n", pOriginal, server, this);
 
     BackBufferCount = back_buffer_count;
     NormalRendering = true;
@@ -137,7 +137,7 @@ uMod_IDirect3DDevice9::uMod_IDirect3DDevice9(IDirect3DDevice9* pOriginal, uMod_T
 
 uMod_IDirect3DDevice9::~uMod_IDirect3DDevice9()
 {
-    Message(PRE_MESSAGE "::~" PRE_MESSAGE "(): %lu\n", this);
+    Message(PRE_MESSAGE "::~" PRE_MESSAGE "(): %p\n", this);
 }
 
 HRESULT uMod_IDirect3DDevice9::QueryInterface(REFIID riid, void** ppvObj)
@@ -150,7 +150,7 @@ HRESULT uMod_IDirect3DDevice9::QueryInterface(REFIID riid, void** ppvObj)
     }
 
     *ppvObj = nullptr;
-    Message(PRE_MESSAGE "::QueryInterface(): %lu\n", this);
+    Message(PRE_MESSAGE "::QueryInterface(): %p\n", this);
     const HRESULT hRes = m_pIDirect3DDevice9->QueryInterface(riid, ppvObj);
 
     if (*ppvObj == m_pIDirect3DDevice9) {
@@ -164,7 +164,7 @@ HRESULT uMod_IDirect3DDevice9::QueryInterface(REFIID riid, void** ppvObj)
 ULONG uMod_IDirect3DDevice9::AddRef()
 {
     uMod_Reference++; //increasing our counter
-    Message("%lu = " PRE_MESSAGE "::AddRef(): %lu\n", uMod_Reference, this);
+    Message("%p = " PRE_MESSAGE "::AddRef(): %p\n", uMod_Reference, this);
     return m_pIDirect3DDevice9->AddRef();
 }
 
@@ -198,10 +198,10 @@ ULONG uMod_IDirect3DDevice9::Release()
     }
 
     const ULONG count = m_pIDirect3DDevice9->Release();
-    Message("%lu = " PRE_MESSAGE "::Release(): %lu\n", count, this);
+    Message("%p = " PRE_MESSAGE "::Release(): %p\n", count, this);
     if (uMod_Reference != count) //bug
     {
-        Message("Error in " PRE_MESSAGE "::Release(): %lu!=%lu\n", uMod_Reference, count);
+        Message("Error in " PRE_MESSAGE "::Release(): %p!=%p\n", uMod_Reference, count);
     }
 
     if (count == 0u) {
@@ -416,7 +416,7 @@ HRESULT uMod_IDirect3DDevice9::UpdateSurface(IDirect3DSurface9* pSourceSurface,C
 
 HRESULT uMod_IDirect3DDevice9::UpdateTexture(IDirect3DBaseTexture9* pSourceTexture, IDirect3DBaseTexture9* pDestinationTexture)
 {
-    Message(PRE_MESSAGE "::UpdateTexture( %lu, %lu): %lu\n", pSourceTexture, pDestinationTexture, this);
+    Message(PRE_MESSAGE "::UpdateTexture( %p, %p): %p\n", pSourceTexture, pDestinationTexture, this);
     // we must pass the real texture objects
 
 

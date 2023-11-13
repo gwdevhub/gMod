@@ -3,7 +3,7 @@
 
 uMod_TextureServer::uMod_TextureServer(char* game, char* uModName)
 {
-    Message("uMod_TextureServer(): %lu\n", this);
+    Message("uMod_TextureServer(): %p\n", this);
 
     Mutex = CreateMutex(nullptr, false, nullptr);
 
@@ -61,7 +61,7 @@ uMod_TextureServer::uMod_TextureServer(char* game, char* uModName)
 
 uMod_TextureServer::~uMod_TextureServer()
 {
-    Message("~uMod_TextureServer(): %lu\n", this);
+    Message("~uMod_TextureServer(): %p\n", this);
     if (Mutex != nullptr) {
         CloseHandle(Mutex);
     }
@@ -89,7 +89,7 @@ uMod_TextureServer::~uMod_TextureServer()
 
 int uMod_TextureServer::AddClient(uMod_TextureClient* client, TextureFileStruct** update, int* number) // called from a client
 {
-    Message("AddClient(%lu): %lu\n", client, this);
+    Message("AddClient(%p): %p\n", client, this);
     if (const int ret = LockMutex()) {
         gl_ErrorState |= uMod_ERROR_SERVER;
         return ret;
@@ -158,7 +158,7 @@ int uMod_TextureServer::AddClient(uMod_TextureClient* client, TextureFileStruct*
 
 int uMod_TextureServer::RemoveClient(uMod_TextureClient* client) // called from a client
 {
-    Message("RemoveClient(): %lu\n", client);
+    Message("RemoveClient(): %p\n", client);
     if (const int ret = LockMutex()) {
         gl_ErrorState |= uMod_ERROR_SERVER;
         return ret;
@@ -176,7 +176,7 @@ int uMod_TextureServer::RemoveClient(uMod_TextureClient* client) // called from 
 
 int uMod_TextureServer::AddFile(char* dataPtr, unsigned int size, MyTypeHash hash, bool force) // called from Mainloop()
 {
-    Message("uMod_TextureServer::AddFile( %lu %lu, %#lX, %d): %lu\n", dataPtr, size, hash, force, this);
+    Message("uMod_TextureServer::AddFile( %p %p, %#lX, %d): %p\n", dataPtr, size, hash, force, this);
 
     TextureFileStruct* temp = nullptr;
 
@@ -242,7 +242,7 @@ int uMod_TextureServer::AddFile(char* dataPtr, unsigned int size, MyTypeHash has
 
 int uMod_TextureServer::RemoveFile(MyTypeHash hash) // called from Mainloop()
 {
-    Message("RemoveFile( %lu): %lu\n", hash, this);
+    Message("RemoveFile( %p): %p\n", hash, this);
 
     const int num = CurrentMod.GetNumber();
     for (int i = 0; i < num; i++) {
@@ -291,7 +291,7 @@ int uMod_TextureServer::SaveSingleTexture(bool val) // called from Mainloop()
 
 int uMod_TextureServer::SetSaveDirectory(wchar_t* dir) // called from Mainloop()
 {
-    Message("uMod_TextureServer::SetSaveDirectory( %ls): %lu\n", dir, this);
+    Message("uMod_TextureServer::SetSaveDirectory( %ls): %p\n", dir, this);
     int i = 0;
     for (i = 0; i < MAX_PATH && dir[i]; i++) {
         SavePath[i] = dir[i];
@@ -373,7 +373,7 @@ int uMod_TextureServer::SetFontColour(DWORD colour) // called from Mainloop()
     const DWORD r = (FontColour >> 16) & 0xFF;
     const DWORD g = (FontColour >> 8) & 0xFF;
     const DWORD b = (FontColour) & 0xFF;
-    Message("uMod_TextureServer::SetFontColour( %u %u %u): %lu\n", r, g, b, this);
+    Message("uMod_TextureServer::SetFontColour( %u %u %u): %p\n", r, g, b, this);
     for (int i = 0; i < NumberOfClients; i++) {
         Clients[i]->SetFontColour(r, g, b);
     }
@@ -393,7 +393,7 @@ int uMod_TextureServer::SetTextureColour(DWORD colour) // called from Mainloop()
     const DWORD r = (TextureColour >> 16) & 0xFF;
     const DWORD g = (TextureColour >> 8) & 0xFF;
     const DWORD b = (TextureColour) & 0xFF;
-    Message("uMod_TextureServer::SetTextureColour( %u %u %u): %lu\n", r, g, b, this);
+    Message("uMod_TextureServer::SetTextureColour( %u %u %u): %p\n", r, g, b, this);
     for (int i = 0; i < NumberOfClients; i++) {
         Clients[i]->SetTextureColour(r, g, b);
     }
@@ -402,7 +402,7 @@ int uMod_TextureServer::SetTextureColour(DWORD colour) // called from Mainloop()
 
 int uMod_TextureServer::PropagateUpdate(uMod_TextureClient* client) // called from Mainloop(), send the update to all clients
 {
-    Message("PropagateUpdate(%lu): %lu\n", client, this);
+    Message("PropagateUpdate(%p): %p\n", client, this);
     if (const int ret = LockMutex()) {
         gl_ErrorState |= uMod_ERROR_TEXTURE;
         return ret;
@@ -454,7 +454,7 @@ int TextureFileStruct_Compare(const void* elem1, const void* elem2)
 int uMod_TextureServer::PrepareUpdate(TextureFileStruct** update, int* number) // called from the PropagateUpdate() and AddClient.
 // Prepare an update for one client. The allocated memory must deleted by the client.
 {
-    Message("PrepareUpdate(%lu, %d): %lu\n", update, number, this);
+    Message("PrepareUpdate(%p, %d): %p\n", update, number, this);
 
     TextureFileStruct* temp = nullptr;
     const int num = CurrentMod.GetNumber();

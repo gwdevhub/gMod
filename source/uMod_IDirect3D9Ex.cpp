@@ -11,7 +11,7 @@
 HRESULT __stdcall uMod_IDirect3D9Ex::CreateDeviceEx(UINT Adapter, D3DDEVTYPE DeviceType, HWND hFocusWindow, DWORD BehaviorFlags, D3DPRESENT_PARAMETERS* pPresentationParameters, D3DDISPLAYMODEEX* pFullscreenDisplayMode,
                                                     IDirect3DDevice9Ex** ppReturnedDeviceInterface)
 {
-    Message("uMod_IDirect3D9Ex::CreateDeviceEx: %lu\n", this);
+    Message("uMod_IDirect3D9Ex::CreateDeviceEx: %p\n", this);
     // we intercept this call and provide our own "fake" Device Object
     const HRESULT hres = m_pIDirect3D9Ex->CreateDeviceEx(Adapter, DeviceType, hFocusWindow, BehaviorFlags, pPresentationParameters, pFullscreenDisplayMode, ppReturnedDeviceInterface);
 

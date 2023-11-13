@@ -89,7 +89,7 @@ void InitInstance(HINSTANCE hModule)
     if (HookThisProgram(game)) //ask if we need to hook this program
     {
         OpenMessage();
-        Message("InitInstance: %lu\n", hModule);
+        Message("InitInstance: %p\n", hModule);
         char uMod[MAX_PATH];
         for (auto i = 0; i < MAX_PATH; i++) {
             uMod[i] = 0;
@@ -226,7 +226,7 @@ void ExitInstance()
 
 IDirect3D9* APIENTRY uMod_Direct3DCreate9(UINT SDKVersion)
 {
-    Message("uMod_Direct3DCreate9:  original %lu, uMod %lu\n", Direct3DCreate9_fn, uMod_Direct3DCreate9);
+    Message("uMod_Direct3DCreate9:  original %p, uMod %p\n", Direct3DCreate9_fn, uMod_Direct3DCreate9);
 
     // in the Internet are many tutorials for detouring functions and all of them will work without the following 5 marked lines
     // but somehow, for me it only works, if I retour the function and calling afterward the original function
@@ -272,7 +272,7 @@ IDirect3D9* APIENTRY uMod_Direct3DCreate9(UINT SDKVersion)
 
 HRESULT APIENTRY uMod_Direct3DCreate9Ex(UINT SDKVersion, IDirect3D9Ex** ppD3D)
 {
-    Message("uMod_Direct3DCreate9Ex:  original %lu, uMod %lu\n", Direct3DCreate9Ex_fn, uMod_Direct3DCreate9Ex);
+    Message("uMod_Direct3DCreate9Ex:  original %p, uMod %p\n", Direct3DCreate9Ex_fn, uMod_Direct3DCreate9Ex);
 
     // in the Internet are many tutorials for detouring functions and all of them will work without the following 5 marked lines
     // but somehow, for me it only works, if I retour the function and calling afterward the original function

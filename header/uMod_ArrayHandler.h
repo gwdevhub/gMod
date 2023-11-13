@@ -71,7 +71,7 @@ private:
 template <class T>
 uMod_TextureHandler<T>::uMod_TextureHandler()
 {
-    Message("uMod_TextureHandler(): %lu\n", this);
+    Message("uMod_TextureHandler(): %p\n", this);
     Number = 0;
     FieldCounter = 0;
 
@@ -81,7 +81,7 @@ uMod_TextureHandler<T>::uMod_TextureHandler()
 template <class T>
 uMod_TextureHandler<T>::~uMod_TextureHandler()
 {
-    Message("~uMod_TextureHandler(): %lu\n", this);
+    Message("~uMod_TextureHandler(): %p\n", this);
     if (Textures != nullptr) {
         for (int i = 0; i < FieldCounter; i++) {
             delete [] Textures[i];
@@ -93,7 +93,7 @@ uMod_TextureHandler<T>::~uMod_TextureHandler()
 template <class T>
 int uMod_TextureHandler<T>::Add(T* pTexture)
 {
-    Message("uMod_TextureHandler::Add( %lu): %lu\n", pTexture, this);
+    Message("uMod_TextureHandler::Add( %p): %p\n", pTexture, this);
     if (gl_ErrorState & uMod_ERROR_FATAL) {
         return RETURN_FATAL_ERROR;
     }
@@ -147,7 +147,7 @@ int uMod_TextureHandler<T>::Add(T* pTexture)
 template <class T>
 int uMod_TextureHandler<T>::Remove(T* pTexture) //will be called, if a texture is completely released
 {
-    Message("uMod_TextureHandler::Remove( %lu): %lu\n", pTexture, this);
+    Message("uMod_TextureHandler::Remove(%p): %p\n", pTexture, this);
     if (gl_ErrorState & uMod_ERROR_FATAL) {
         return RETURN_FATAL_ERROR;
     }
