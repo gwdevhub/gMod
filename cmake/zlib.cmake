@@ -11,15 +11,15 @@ FetchContent_Declare(
 FetchContent_GetProperties(zlib)
 
 if(zlib_POPULATED)
-	message(STATUS "Skipping zlib download")
-	return()
+    message(STATUS "Skipping zlib download")
+    return()
 endif()
 
 FetchContent_Populate(zlib)
 
 if(EXISTS ${CMAKE_INSTALL_PREFIX}/lib/zlibstatic.lib)
-	message(STATUS "Skipping zlib build")
-	return()
+    message(STATUS "Skipping zlib build")
+    return()
 endif()
 
 set(OPTIONS
@@ -28,7 +28,7 @@ set(OPTIONS
     "-DCMAKE_INSTALL_PREFIX=${CMAKE_INSTALL_PREFIX}"
     "-DCMAKE_MSVC_RUNTIME_LIBRARY=${CMAKE_MSVC_RUNTIME_LIBRARY}"
 )
-	
+    
 message("Building zlib with OPTIONS:\n${OPTIONS}")
 
 execute_process(

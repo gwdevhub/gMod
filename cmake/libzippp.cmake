@@ -33,10 +33,10 @@ target_include_directories(libzippp PUBLIC "${libzippp_SOURCE_DIR}/src")
 target_include_directories(libzippp PRIVATE "${CMAKE_INSTALL_PREFIX}/include")
 target_compile_definitions(libzippp PUBLIC
     LIBZIPPP_WITH_ENCRYPTION
-	)
+    )
 target_link_libraries(libzippp PRIVATE
-	${LIBZIP_LIBRARY}
-	${ZLIB_LIBRARY}
-	)
+    ${LIBZIP_LIBRARY}
+    ${ZLIB_LIBRARY}
+    )
 
 set_target_properties(libzippp PROPERTIES FOLDER "Dependencies/")
