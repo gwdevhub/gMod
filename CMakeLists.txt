@@ -28,8 +28,6 @@ set(CMAKE_CXX_STANDARD 23)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>")
 set(CMAKE_INSTALL_PREFIX ${PROJECT_SOURCE_DIR}/bin/install)
-set(CMAKE_SHARED_LINKER_FLAGS
-    "${CMAKE_SHARED_LINKER_FLAGS} /NODEFAULTLIB:LIBCMT")
 
 add_compile_options(/MP /permissive-)
 
@@ -74,6 +72,9 @@ target_link_libraries(gMod PRIVATE
     ${D3DX9_LIB}
     ${DXGUID_LIB}
     libzippp
+    )
+target_link_options(gMod PRIVATE
+    "$<$<CONFIG:DEBUG>:/NODEFAULTLIB:LIBCMT>"
     )
 source_group(TREE "${CMAKE_CURRENT_SOURCE_DIR}" FILES ${SOURCES})
 target_sources(gMod PRIVATE ${SOURCES})
