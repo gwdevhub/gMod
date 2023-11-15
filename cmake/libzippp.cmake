@@ -10,10 +10,6 @@ find_library(LIBZIP_LIBRARY REQUIRED
     NAMES zip
     PATHS ${CMAKE_INSTALL_PREFIX}/lib
 )
-find_library(MBEDTLS_LIBRARY REQUIRED
-    NAMES mbedtls
-    PATHS ${CMAKE_INSTALL_PREFIX}/lib
-)
 
 FetchContent_Declare(
     libzippp
@@ -40,7 +36,6 @@ target_compile_definitions(libzippp PUBLIC
 	)
 target_link_libraries(libzippp PRIVATE
 	${LIBZIP_LIBRARY}
-	${MBEDTLS_LIBRARY}
 	${ZLIB_LIBRARY}
 	)
 

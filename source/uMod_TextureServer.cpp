@@ -506,9 +506,9 @@ void uMod_TextureServer::LoadModsFromFile(char* source)
         char line[MAX_PATH];
         while (fgets(line, sizeof(line), file) != nullptr) {
             Message("MainLoop: loading file %s\n", line);
-            for (auto i = 0; i < MAX_PATH; i++) {
-                if (line[i] == '\n') {
-                    line[i] = 0;
+            for (char& i : line) {
+                if (i == '\n') {
+                    i = 0;
                 }
             }
 
@@ -531,6 +531,7 @@ void uMod_TextureServer::LoadModsFromFile(char* source)
 
 int uMod_TextureServer::MainLoop() // run as a separated thread
 {
+    Message("MainLoop: begin\n");
     Message("MainLoop: searching for modlist.txt\n");
     char gwpath[MAX_PATH];
     GetModuleFileName(GetModuleHandle(nullptr), gwpath, MAX_PATH); //ask for name and path of this executable
@@ -555,10 +556,7 @@ int uMod_TextureServer::MainLoop() // run as a separated thread
     strcat(umodpath, "\\modlist.txt");
     LoadModsFromFile(umodpath);
 
-    Message("MainLoop: begin\n");
-    for (auto i = 0; i < 10; i++) {
-        std::this_thread::sleep_for(std::chrono::seconds(1));
-    }
+    Message("MainLoop: end\n");
 
     return RETURN_OK;
 }

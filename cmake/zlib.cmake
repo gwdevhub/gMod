@@ -22,9 +22,17 @@ if(EXISTS ${CMAKE_INSTALL_PREFIX}/lib/zlibstatic.lib)
 	return()
 endif()
 
+set(OPTIONS
+    "-A" "Win32"
+    "-DBUILD_SHARED_LIBS=OFF"
+    "-DCMAKE_INSTALL_PREFIX=${CMAKE_INSTALL_PREFIX}"
+    "-DCMAKE_MSVC_RUNTIME_LIBRARY=${CMAKE_MSVC_RUNTIME_LIBRARY}"
+)
+	
+message("Building zlib with OPTIONS:\n${OPTIONS}")
 
 execute_process(
-    COMMAND ${CMAKE_COMMAND} -A Win32 -DCMAKE_INSTALL_PREFIX=${CMAKE_INSTALL_PREFIX}
+    COMMAND ${CMAKE_COMMAND} ${OPTIONS} .
     WORKING_DIRECTORY ${zlib_SOURCE_DIR}
 )
 execute_process(
