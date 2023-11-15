@@ -9,7 +9,7 @@
 
 struct TpfEntry {
     std::string name;
-    std::string entry; // Assuming ZipEntry is a string in your original code
+    std::string entry;
     uint32_t crc_hash;
     void* data;
     unsigned long long size;

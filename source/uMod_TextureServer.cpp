@@ -497,42 +497,39 @@ int uMod_TextureServer::UnlockMutex()
 
 void uMod_TextureServer::LoadModsFromFile(char* source)
 {
-    Message("MainLoop: searching in %s\n", source);
-    // Attempt to open the file
-    FILE* file = fopen(source, "r");
-    if (file) {
-        Message("MainLoop: found modlist.txt. Reading\n");
-        // Read each line from the file
-        char line[MAX_PATH];
-        while (fgets(line, sizeof(line), file) != nullptr) {
-            Message("MainLoop: loading file %s\n", line);
-            for (char& i : line) {
-                if (i == '\n') {
-                    i = 0;
-                }
-            }
+    Message("Initialize: searching in %s\n", source);
 
-            const auto file = new gMod_FileLoader(line);
-            const auto entries = file->Load();
+    std::ifstream file(source);
+    if (file.is_open()) {
+        Message("Initialize: found modlist.txt. Reading\n");
+        std::string line;
+        while (std::getline(file, line)) {
+            Message("Initialize: loading file %s\n", line.c_str());
+
+            // Remove newline character
+            line.erase(std::ranges::remove(line, '\n').begin(), line.end());
+
+            auto file_loader = gMod_FileLoader(line);
+            const auto entries = file_loader.Load();
             if (!entries.empty()) {
-                Message("MainLoop: Texture count %d %s\n", entries.size(), line);
-                for (const auto& entry : entries) {
-                    //AddFile(static_cast<char*>(entry.Data), static_cast<unsigned int>(entry.Size), )
+                Message("Initialize: Texture count %zu %s\n", entries.size(), line.c_str());
+                for (const auto& tpf_entry : entries) {
+                    AddFile(static_cast<char*>(tpf_entry.data), static_cast<unsigned int>(tpf_entry.size), tpf_entry.crc_hash, false);
                 }
 
                 PropagateUpdate(nullptr);
             }
             else {
-                Message("MainLoop: Failed to load any textures for %s\n", line);
+                Message("Initialize: Failed to load any textures for %s\n", line.c_str());
             }
         }
     }
 }
 
-int uMod_TextureServer::MainLoop() // run as a separated thread
+int uMod_TextureServer::Initialize()
 {
-    Message("MainLoop: begin\n");
-    Message("MainLoop: searching for modlist.txt\n");
+    Message("Initialize: begin\n");
+    Message("Initialize: searching for modlist.txt\n");
     char gwpath[MAX_PATH];
     GetModuleFileName(GetModuleHandle(nullptr), gwpath, MAX_PATH); //ask for name and path of this executable
     char* last_backslash = strrchr(gwpath, '\\');
@@ -556,7 +553,7 @@ int uMod_TextureServer::MainLoop() // run as a separated thread
     strcat(umodpath, "\\modlist.txt");
     LoadModsFromFile(umodpath);
 
-    Message("MainLoop: end\n");
+    Message("Initialize: end\n");
 
     return RETURN_OK;
 }

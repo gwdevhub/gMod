@@ -72,6 +72,7 @@ target_link_libraries(gMod PRIVATE
     ${D3DX9_LIB}
     ${DXGUID_LIB}
     libzippp
+	psapi
     )
 target_link_options(gMod PRIVATE
     "$<$<CONFIG:DEBUG>:/NODEFAULTLIB:LIBCMT>"

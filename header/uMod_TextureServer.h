@@ -24,7 +24,7 @@ public:
     int AddClient(uMod_TextureClient* client, TextureFileStruct** update, int* number); // called from a Client
     int RemoveClient(uMod_TextureClient* client); // called from a Client
 
-    int MainLoop(); // is executed in a server thread
+    int Initialize(); // is executed in a server thread
 
 
     // following functions are only public for testing purpose !!

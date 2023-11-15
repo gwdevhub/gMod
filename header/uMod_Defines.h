@@ -5,7 +5,11 @@
 #ifdef LOG_MESSAGE
 extern FILE* gl_File;
 
+#ifdef _DEBUG
 #define Message(...) { printf(__VA_ARGS__); }
+#else
+#define Message(...)
+#endif
 #ifdef HOOK_INJECTION
 #define OpenMessage(...) {if (fopen_s( &gl_File, "uMod_log.txt", "wt")) gl_File=NULL; else fprintf( gl_File, "HI R40: 0000000\n");}
 #endif
