@@ -3,9 +3,9 @@
 #include <iostream>
 #include <fstream>
 
-class XORStream : public std::streambuf {
+class gMod_XorStream : public std::streambuf {
 public:
-    XORStream(std::istream& stream) : innerStream(stream) {
+    gMod_XorStream(std::istream& stream) : innerStream(stream) {
         if (!innerStream.seekg(0, std::ios::end).good() || !innerStream.seekg(0, std::ios::beg).good()) {
             throw std::invalid_argument("Provided stream needs to have SEEK set to True");
         }
@@ -22,7 +22,7 @@ public:
             innerStream.seekg(-2, std::ios::cur);
         }
 
-        auto lastZeroPosition = innerStream.tellg() - 1;
+        const auto lastZeroPosition = innerStream.tellg() - std::fpos<int>(1);
         innerStream.seekg(0);
         length = lastZeroPosition;
         setg(nullptr, nullptr, nullptr);
@@ -37,7 +37,7 @@ public:
             buffer[i] = XOR(buffer[i], i + startPosition);
         }
 
-        auto bytesOverLength = startPosition + bytesRead - length;
+        auto bytesOverLength = startPosition + bytesRead - std::fpos<int>(length);
         for (int i = 0; i < bytesOverLength; i++) {
             if (bytesRead - i - 1 >= 0) {
                 buffer[bytesRead - i - 1] = 0;
