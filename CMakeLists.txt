@@ -58,7 +58,6 @@ file(GLOB SOURCES
     ${VERSION_RC}
     )
 
-target_compile_features(gMod PRIVATE cxx_std_23)
 target_include_directories(gMod PRIVATE $ENV{DXSDK_DIR}/Include)
 target_include_directories(gMod PUBLIC
     "header"
