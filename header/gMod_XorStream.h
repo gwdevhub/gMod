@@ -1,7 +1,8 @@
-﻿#pragma once
+#pragma once
 
 #include <iostream>
 #include <fstream>
+#include <vector>
 
 class gMod_XorStream : public std::streambuf {
 public:
@@ -10,7 +11,10 @@ public:
             throw std::invalid_argument("Provided stream needs to have SEEK set to True");
         }
 
-        originalStreamLength = innerStream.tellg();
+        innerStream.seekg(0, std::ios::end);
+        std::streampos file_size = innerStream.tellg();
+        innerStream.seekg(0, std::ios::beg);
+        originalStreamLength = file_size;
         innerStream.seekg(originalStreamLength - 1);
 
         while (innerStream.tellg() > 0) {
@@ -50,6 +54,15 @@ public:
         }
 
         return traits_type::eof();
+    }
+
+    std::vector<char> ReadToEnd() {
+        std::vector<char> buffer(length);
+        for (auto c = ReadByte(); c != traits_type::eof(); c = ReadByte()) {
+            buffer.push_back(static_cast<char>(c));
+        }
+
+        return buffer;
     }
 
 private:

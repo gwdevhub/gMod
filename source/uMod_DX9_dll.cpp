@@ -84,7 +84,7 @@ void InitInstance(HINSTANCE hModule)
         std::array<char, MAX_PATH> uMod{};
 
         GetModuleFileNameA(hModule, uMod.data(), MAX_PATH);
-        Message("InitInstance: %s\n", uMod);
+        Message("InitInstance: %s\n", uMod.data());
         gl_TextureServer = std::make_unique<uMod_TextureServer>(game, uMod.data()); //create the server which listen on the pipe and prepare the update for the texture clients
         LoadOriginalDll();
         if (gl_hOriginalDll) {

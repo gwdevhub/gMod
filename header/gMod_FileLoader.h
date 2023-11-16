@@ -18,7 +18,7 @@ struct TpfEntry {
 class gMod_FileLoader {
     std::string file_name;
     std::ifstream stream;
-    static constexpr std::vector<uint8_t> TPF_PASSWORD{
+    const std::vector<uint8_t> TPF_PASSWORD{
         0x73, 0x2A, 0x63, 0x7D, 0x5F, 0x0A, 0xA6, 0xBD,
         0x7D, 0x65, 0x7E, 0x67, 0x61, 0x2A, 0x7F, 0x7F,
         0x74, 0x61, 0x67, 0x5B, 0x60, 0x70, 0x45, 0x74,
@@ -26,7 +26,7 @@ class gMod_FileLoader {
         0x77, 0x6E, 0x46, 0x47, 0x77, 0x49, 0x0C, 0x4B,
         0x46, 0x6F
     };
-    static constexpr std::string ENCODED_PASSWORD = std::string(TPF_PASSWORD.begin(), TPF_PASSWORD.end());
+    const std::string ENCODED_PASSWORD = std::string(TPF_PASSWORD.begin(), TPF_PASSWORD.end());
     std::vector<TpfEntry> entry_cache{};
     bool loaded = false;
 

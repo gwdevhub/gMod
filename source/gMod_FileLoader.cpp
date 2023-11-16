@@ -1,3 +1,4 @@
+#include <uMod_Main.h>
 #include <filesystem>
 #include "gMod_FileLoader.h"
 #include "gMod_XorStream.h"
@@ -31,9 +32,13 @@ std::vector<TpfEntry> gMod_FileLoader::GetTpfContents()
     std::vector<TpfEntry> entries;
     try {
         auto istream = std::ifstream(file_name, std::ios::binary);
-        const auto xorstream = gMod_XorStream(istream);
-        // todo from xorstream
-        libzippp::ZipArchive zipArchive(file_name, ENCODED_PASSWORD);
+        auto xorstream = gMod_XorStream(istream);
+
+        const std::string password(TPF_PASSWORD.begin(), TPF_PASSWORD.end());
+        libzippp::ZipArchive zipArchive(file_name, password);
+        zipArchive.setErrorHandlerCallback([](const std::string& message, const std::string& strerror, int zip_error_code, int system_error_code) -> void {
+            Message("GetTpfContents: %s %s %d %d\n", message.c_str(), strerror.c_str(), zip_error_code, system_error_code);
+        });
         zipArchive.open();
         LoadEntries(zipArchive, entries);
     }
