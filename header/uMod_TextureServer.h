@@ -31,25 +31,8 @@ public:
     // they should be private and only be called from the Mainloop
 
     int AddFile(char* buffer, unsigned int size, MyTypeHash hash, bool force); // called from Mainloop(), if the content of the texture is sent
-    int AddFile(wchar_t* file_name, MyTypeHash hash, bool force); // called from Mainloop(), if the name and the path to the file is sent
-    int RemoveFile(MyTypeHash hash); // called from Mainloop()
-
-    int SaveAllTextures(bool val); // called from Mainloop()
-    int SaveSingleTexture(bool val); // called from Mainloop()
-
-    int SetSaveDirectory(wchar_t* dir); // called from Mainloop()
-
-
-    int SetKeyBack(int key); // called from Mainloop()
-    int SetKeySave(int key); // called from Mainloop()
-    int SetKeyNext(int key); // called from Mainloop()
-
-    int SetFontColour(DWORD colour); // called from Mainloop()
-    int SetTextureColour(DWORD colour); // called from Mainloop()
 
 private:
-    bool BoolSaveAllTextures;
-    bool BoolSaveSingleTexture;
     wchar_t SavePath[MAX_PATH];
     wchar_t GameName[MAX_PATH];
     char UModName[MAX_PATH];
@@ -64,15 +47,6 @@ private:
     int LockMutex();
     int UnlockMutex();
     HANDLE Mutex;
-
-
-    int KeyBack;
-    int KeySave;
-    int KeyNext;
-
-    DWORD FontColour;
-    DWORD TextureColour;
-
 
     PipeStruct Pipe;
 

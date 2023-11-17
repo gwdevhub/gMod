@@ -1,3 +1,6 @@
+#include <algorithm>
+#include <fstream>
+
 #include "uMod_Main.h"
 #include "gMod_FileLoader.h"
 
@@ -12,8 +15,6 @@ uMod_TextureServer::uMod_TextureServer(char* game, char* uModName)
     Clients = nullptr;
     NumberOfClients = 0;
     LenghtOfClients = 0;
-    BoolSaveAllTextures = false;
-    BoolSaveSingleTexture = false;
     SavePath[0] = 0;
 
     int len = 0;
@@ -49,13 +50,6 @@ uMod_TextureServer::uMod_TextureServer(char* game, char* uModName)
     for (len = 0; len < MAX_PATH; len++) {
         UModName[len] = uModName[len];
     }
-
-    KeyBack = 0;
-    KeySave = 0;
-    KeyNext = 0;
-
-    FontColour = 0u;
-    TextureColour = 0u;
 
     Pipe.In = INVALID_HANDLE_VALUE;
     Pipe.Out = INVALID_HANDLE_VALUE;
@@ -100,33 +94,6 @@ int uMod_TextureServer::AddClient(uMod_TextureClient* client, TextureFileStruct*
     // the following functions must not change the original uMod_IDirect3DDevice9 object
     // somehow on game start some uMod_IDirect3DDevice9 object are created, which must rest unchanged!!
     // these objects are released and are not used for rendering
-    client->SetGameName(GameName);
-    client->SaveAllTextures(BoolSaveAllTextures);
-    client->SaveSingleTexture(BoolSaveSingleTexture);
-    client->SetSaveDirectory(SavePath);
-    if (KeyBack > 0) {
-        client->SetKeyBack(KeyBack);
-    }
-    if (KeySave > 0) {
-        client->SetKeySave(KeySave);
-    }
-    if (KeyNext > 0) {
-        client->SetKeyNext(KeyNext);
-    }
-
-    if (FontColour > 0u) {
-        const DWORD r = FontColour >> 16 & 0xFF;
-        const DWORD g = FontColour >> 8 & 0xFF;
-        const DWORD b = FontColour & 0xFF;
-        client->SetFontColour(r, g, b);
-    }
-    if (TextureColour > 0u) {
-        const DWORD r = TextureColour >> 16 & 0xFF;
-        const DWORD g = TextureColour >> 8 & 0xFF;
-        const DWORD b = TextureColour & 0xFF;
-        client->SetTextureColour(r, g, b);
-    }
-
 
     if (const int ret = PrepareUpdate(update, number)) {
         return ret; // get a copy of all texture to be modded
@@ -245,166 +212,6 @@ int uMod_TextureServer::AddFile(char* dataPtr, unsigned int size, MyTypeHash has
     return RETURN_OK;
 }
 
-int uMod_TextureServer::RemoveFile(MyTypeHash hash) // called from Mainloop()
-{
-    Message("RemoveFile( %p): %p\n", hash, this);
-
-    const int num = CurrentMod.GetNumber();
-    for (int i = 0; i < num; i++) {
-        if (CurrentMod[i]->Hash == hash) {
-            TextureFileStruct* temp = CurrentMod[i];
-            CurrentMod.Remove(temp);
-            return OldMod.Add(temp);
-        }
-    }
-    return RETURN_OK;
-}
-
-int uMod_TextureServer::SaveAllTextures(bool val) // called from Mainloop()
-{
-    if (BoolSaveAllTextures == val) {
-        return RETURN_OK;
-    }
-    BoolSaveAllTextures = val;
-
-    if (const int ret = LockMutex()) {
-        gl_ErrorState |= uMod_ERROR_SERVER;
-        return ret;
-    }
-    for (int i = 0; i < NumberOfClients; i++) {
-        Clients[i]->SaveAllTextures(BoolSaveAllTextures);
-    }
-    return UnlockMutex();
-}
-
-int uMod_TextureServer::SaveSingleTexture(bool val) // called from Mainloop()
-{
-    if (BoolSaveSingleTexture == val) {
-        return RETURN_OK;
-    }
-    BoolSaveSingleTexture = val;
-
-    if (const int ret = LockMutex()) {
-        gl_ErrorState |= uMod_ERROR_SERVER;
-        return ret;
-    }
-    for (int i = 0; i < NumberOfClients; i++) {
-        Clients[i]->SaveSingleTexture(BoolSaveSingleTexture);
-    }
-    return UnlockMutex();
-}
-
-int uMod_TextureServer::SetSaveDirectory(wchar_t* dir) // called from Mainloop()
-{
-    Message("uMod_TextureServer::SetSaveDirectory( %ls): %p\n", dir, this);
-    int i = 0;
-    for (i = 0; i < MAX_PATH && dir[i]; i++) {
-        SavePath[i] = dir[i];
-    }
-    if (i == MAX_PATH) {
-        SavePath[0] = 0;
-        return RETURN_BAD_ARGUMENT;
-    }
-    SavePath[i] = 0;
-
-    if (const int ret = LockMutex()) {
-        gl_ErrorState |= uMod_ERROR_SERVER;
-        return ret;
-    }
-    for (int i = 0; i < NumberOfClients; i++) {
-        Clients[i]->SetSaveDirectory(SavePath);
-    }
-    return UnlockMutex();
-}
-
-int uMod_TextureServer::SetKeyBack(int key) // called from Mainloop()
-{
-    if (KeyBack == key || KeySave == key || KeyNext == key) {
-        return RETURN_OK;
-    }
-    if (const int ret = LockMutex()) {
-        gl_ErrorState |= uMod_ERROR_SERVER;
-        return ret;
-    }
-    KeyBack = key;
-    for (int i = 0; i < NumberOfClients; i++) {
-        Clients[i]->SetKeyBack(key);
-    }
-    return UnlockMutex();
-}
-
-int uMod_TextureServer::SetKeySave(int key) // called from Mainloop()
-{
-    if (KeyBack == key || KeySave == key || KeyNext == key) {
-        return RETURN_OK;
-    }
-    if (const int ret = LockMutex()) {
-        gl_ErrorState |= uMod_ERROR_SERVER;
-        return ret;
-    }
-    KeySave = key;
-    for (int i = 0; i < NumberOfClients; i++) {
-        Clients[i]->SetKeySave(key);
-    }
-    return UnlockMutex();
-}
-
-int uMod_TextureServer::SetKeyNext(int key) // called from Mainloop()
-{
-    if (KeyBack == key || KeySave == key || KeyNext == key) {
-        return RETURN_OK;
-    }
-    if (const int ret = LockMutex()) {
-        gl_ErrorState |= uMod_ERROR_SERVER;
-        return ret;
-    }
-    KeyNext = key;
-    for (int i = 0; i < NumberOfClients; i++) {
-        Clients[i]->SetKeyNext(key);
-    }
-    return UnlockMutex();
-}
-
-int uMod_TextureServer::SetFontColour(DWORD colour) // called from Mainloop()
-{
-    if (colour == 0u) {
-        return RETURN_OK;
-    }
-    if (const int ret = LockMutex()) {
-        gl_ErrorState |= uMod_ERROR_SERVER;
-        return ret;
-    }
-    FontColour = colour;
-    const DWORD r = (FontColour >> 16) & 0xFF;
-    const DWORD g = (FontColour >> 8) & 0xFF;
-    const DWORD b = (FontColour) & 0xFF;
-    Message("uMod_TextureServer::SetFontColour( %u %u %u): %p\n", r, g, b, this);
-    for (int i = 0; i < NumberOfClients; i++) {
-        Clients[i]->SetFontColour(r, g, b);
-    }
-    return UnlockMutex();
-}
-
-int uMod_TextureServer::SetTextureColour(DWORD colour) // called from Mainloop()
-{
-    if (colour == 0u) {
-        return RETURN_OK;
-    }
-    if (const int ret = LockMutex()) {
-        gl_ErrorState |= uMod_ERROR_SERVER;
-        return ret;
-    }
-    TextureColour = colour;
-    const DWORD r = (TextureColour >> 16) & 0xFF;
-    const DWORD g = (TextureColour >> 8) & 0xFF;
-    const DWORD b = (TextureColour) & 0xFF;
-    Message("uMod_TextureServer::SetTextureColour( %u %u %u): %p\n", r, g, b, this);
-    for (int i = 0; i < NumberOfClients; i++) {
-        Clients[i]->SetTextureColour(r, g, b);
-    }
-    return UnlockMutex();
-}
-
 int uMod_TextureServer::PropagateUpdate(uMod_TextureClient* client) // called from Mainloop(), send the update to all clients
 {
     Message("PropagateUpdate(%p): %p\n", client, this);
@@ -433,15 +240,16 @@ int uMod_TextureServer::PropagateUpdate(uMod_TextureClient* client) // called fr
     return UnlockMutex();
 }
 
-#define cpy_file_struct( a, b) \
-{  \
-  a.ForceReload = b.ForceReload; \
-  a.pData = b.pData; \
-  a.Size = b.Size; \
-  a.NumberOfTextures = b.NumberOfTextures; \
-  a.Reference = b.Reference; \
-  a.Textures = b.Textures; \
-  a.Hash = b.Hash; }
+void cpy_file_struct(TextureFileStruct& a,TextureFileStruct& b)
+{
+    a.ForceReload = b.ForceReload;
+    a.pData = b.pData;
+    a.Size = b.Size;
+    a.NumberOfTextures = b.NumberOfTextures;
+    a.Reference = b.Reference;
+    a.Textures = b.Textures;
+    a.Hash = b.Hash;
+}
 
 int TextureFileStruct_Compare(const void* elem1, const void* elem2)
 {
@@ -474,12 +282,10 @@ int uMod_TextureServer::PrepareUpdate(TextureFileStruct** update, int* number) /
         qsort(temp, num, sizeof(TextureFileStruct), TextureFileStruct_Compare);
     }
 
-
     *update = temp;
     *number = num;
     return RETURN_OK;
 }
-#undef cpy_file_struct
 
 int uMod_TextureServer::LockMutex()
 {
@@ -523,7 +329,6 @@ void uMod_TextureServer::LoadModsFromFile(char* source)
                     if (AddFile(static_cast<char*>(tpf_entry.data), static_cast<unsigned int>(tpf_entry.size), tpf_entry.crc_hash, false) == RETURN_EXISTS) {
                         //Texture is already loaded, so we need to clear our data
                         loadedSize -= tpf_entry.size;
-                        delete[](tpf_entry.data);
                     }
 
                     Message("LoadModsFromFile: Loaded %d bytes", loadedSize);

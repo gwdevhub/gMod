@@ -5,14 +5,6 @@ uMod_TextureClient::uMod_TextureClient(uMod_TextureServer* server, IDirect3DDevi
     Message("uMod_TextureClient::uMod_TextureClient(): %p\n", this);
     Server = server;
     D3D9Device = device;
-    BoolSaveAllTextures = false;
-    BoolSaveSingleTexture = false;
-    KeyBack = 0;
-    KeySave = 0;
-    KeyNext = 0;
-    SavePath[0] = 0;
-    GameName[0] = 0;
-
     NumberToMod = 0;
     FileToMod = nullptr;
 
@@ -85,10 +77,6 @@ int uMod_TextureClient::AddTexture(uMod_IDirect3DTexture9* pTexture)
 
     pTexture->Hash = hash;
 
-    if (BoolSaveAllTextures) {
-        SaveTexture(pTexture);
-    }
-
     if (gl_ErrorState & uMod_ERROR_FATAL) {
         return RETURN_FATAL_ERROR;
     }
@@ -122,10 +110,6 @@ int uMod_TextureClient::AddTexture(uMod_IDirect3DVolumeTexture9* pTexture)
 
     pTexture->Hash = hash;
 
-    if (BoolSaveAllTextures) {
-        SaveTexture(pTexture);
-    }
-
     if (gl_ErrorState & uMod_ERROR_FATAL) {
         return RETURN_FATAL_ERROR;
     }
@@ -158,10 +142,6 @@ int uMod_TextureClient::AddTexture(uMod_IDirect3DCubeTexture9* pTexture)
     }
 
     pTexture->Hash = hash;
-
-    if (BoolSaveAllTextures) {
-        SaveTexture(pTexture);
-    }
 
     if (gl_ErrorState & uMod_ERROR_FATAL) {
         return RETURN_FATAL_ERROR;
@@ -262,147 +242,6 @@ int uMod_TextureClient::RemoveTexture(uMod_IDirect3DCubeTexture9* pTexture) // i
 }
 
 
-int uMod_TextureClient::SaveAllTextures(bool val)
-{
-    Message("uMod_TextureClient::SaveAllTextures( %d): %p\n", val, this);
-    BoolSaveAllTextures = val;
-    return RETURN_OK;
-}
-
-int uMod_TextureClient::SaveSingleTexture(bool val)
-{
-    Message("uMod_TextureClient::SaveSingleTexture( %d): %p\n", val, this);
-    if (BoolSaveSingleTexture && !val) //if BoolSaveSingleTexture is set to false and was previously true we switch the SingleTexture back
-    {
-        uMod_IDirect3DTexture9* pTexture;
-        void* cpy;
-        const long ret = D3D9Device->QueryInterface(IID_IDirect3DTexture9, &cpy);
-        if (ret == 0x01000000L) {
-            pTexture = static_cast<uMod_IDirect3DDevice9*>(D3D9Device)->GetSingleTexture(); //this texture must no be added twice
-        }
-        else {
-            pTexture = static_cast<uMod_IDirect3DDevice9Ex*>(D3D9Device)->GetSingleTexture(); //this texture must no be added twice
-        }
-
-        if (pTexture != nullptr) {
-            UnswitchTextures(pTexture);
-        }
-    }
-    BoolSaveSingleTexture = val;
-    return RETURN_OK;
-}
-
-
-int uMod_TextureClient::SetSaveDirectory(wchar_t* dir)
-{
-    Message("uMod_TextureClient::SetSaveDirectory( %ls): %p\n", dir, this);
-    int i = 0;
-    for (i = 0; i < MAX_PATH && (dir[i]); i++) {
-        SavePath[i] = dir[i];
-    }
-    if (i == MAX_PATH) {
-        SavePath[0] = 0;
-        return RETURN_BAD_ARGUMENT;
-    }
-    SavePath[i] = 0;
-    return RETURN_OK;
-}
-
-int uMod_TextureClient::SetGameName(wchar_t* name)
-{
-    Message("uMod_TextureClient::SetGameName( %ls): %p\n", name, this);
-    int i = 0;
-    for (i = 0; i < MAX_PATH && (name[i]); i++) {
-        GameName[i] = name[i];
-    }
-    if (i == MAX_PATH) {
-        GameName[0] = 0;
-        return RETURN_BAD_ARGUMENT;
-    }
-    GameName[i] = 0;
-    return RETURN_OK;
-}
-
-
-
-int uMod_TextureClient::SaveTexture(uMod_IDirect3DTexture9* pTexture)
-{
-    if (pTexture == nullptr) {
-        return RETURN_BAD_ARGUMENT;
-    }
-    if (SavePath[0] == 0) {
-        Message("uMod_TextureClient::SaveTexture( %#lX, %p): %p,   SavePath not set\n", pTexture->Hash, pTexture->m_D3Dtex, this);
-        return RETURN_TEXTURE_NOT_SAVED;
-    }
-
-    wchar_t file[MAX_PATH];
-    if (GameName[0]) {
-        swprintf_s(file, MAX_PATH, L"%ls\\%ls_T_%#lX.dds", SavePath, GameName, pTexture->Hash);
-    }
-    else {
-        swprintf_s(file, MAX_PATH, L"%ls\\T_%#lX.dds", SavePath, pTexture->Hash);
-    }
-    Message("uMod_TextureClient::SaveTexture( %ls): %p\n", file, this);
-
-    if (D3D_OK != D3DXSaveTextureToFileW(file, D3DXIFF_DDS, pTexture->m_D3Dtex, nullptr)) {
-        return RETURN_TEXTURE_NOT_SAVED;
-    }
-    return RETURN_OK;
-}
-
-int uMod_TextureClient::SaveTexture(uMod_IDirect3DVolumeTexture9* pTexture)
-{
-    if (pTexture == nullptr) {
-        return RETURN_BAD_ARGUMENT;
-    }
-    if (SavePath[0] == 0) {
-        Message("uMod_TextureClient::SaveTexture( %#lX, %p): %p,   SavePath not set\n", pTexture->Hash, pTexture->m_D3Dtex, this);
-        return RETURN_TEXTURE_NOT_SAVED;
-    }
-
-    wchar_t file[MAX_PATH];
-    if (GameName[0]) {
-        swprintf_s(file, MAX_PATH, L"%ls\\%ls_V_%#lX.dds", SavePath, GameName, pTexture->Hash);
-    }
-    else {
-        swprintf_s(file, MAX_PATH, L"%ls\\V_%#lX.dds", SavePath, pTexture->Hash);
-    }
-    Message("uMod_TextureClient::SaveTexture( %ls): %p\n", file, this);
-
-    if (D3D_OK != D3DXSaveTextureToFileW(file, D3DXIFF_DDS, pTexture->m_D3Dtex, nullptr)) {
-        return RETURN_TEXTURE_NOT_SAVED;
-    }
-    return RETURN_OK;
-}
-
-int uMod_TextureClient::SaveTexture(uMod_IDirect3DCubeTexture9* pTexture)
-{
-    if (pTexture == nullptr) {
-        return RETURN_BAD_ARGUMENT;
-    }
-    if (SavePath[0] == 0) {
-        Message("uMod_TextureClient::SaveTexture( %#lX, %p): %p,   SavePath not set\n", pTexture->Hash, pTexture->m_D3Dtex, this);
-        return RETURN_TEXTURE_NOT_SAVED;
-    }
-
-    wchar_t file[MAX_PATH];
-    if (GameName[0]) {
-        swprintf_s(file, MAX_PATH, L"%ls\\%ls_C_%#lX.dds", SavePath, GameName, pTexture->Hash);
-    }
-    else {
-        swprintf_s(file, MAX_PATH, L"%ls\\C_%#lX.dds", SavePath, pTexture->Hash);
-    }
-    Message("uMod_TextureClient::SaveTexture( %ls): %p\n", file, this);
-
-    if (D3D_OK != D3DXSaveTextureToFileW(file, D3DXIFF_DDS, pTexture->m_D3Dtex, nullptr)) {
-        return RETURN_TEXTURE_NOT_SAVED;
-    }
-    return RETURN_OK;
-}
-
-
-
-
 int uMod_TextureClient::AddUpdate(TextureFileStruct* update, int number)  //client must delete the update array
 {
     Message("AddUpdate( %p, %d): %p\n", update, number, this);
@@ -417,7 +256,6 @@ int uMod_TextureClient::AddUpdate(TextureFileStruct* update, int number)  //clie
     NumberOfUpdate = number;
     return UnlockMutex();
 }
-
 
 
 int uMod_TextureClient::MergeUpdate()
