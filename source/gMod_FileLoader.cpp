@@ -29,8 +29,7 @@ std::vector<TpfEntry> gMod_FileLoader::GetTpfContents()
     try {
         auto xorreader = XorStreamReader(file_name);
         const auto buffer = xorreader.ReadToEnd();
-        const std::string password(TPF_PASSWORD.begin(), TPF_PASSWORD.end());
-        const auto zip_archive = libzippp::ZipArchive::fromBuffer(buffer.data(), buffer.size(), false, password);
+        const auto zip_archive = libzippp::ZipArchive::fromBuffer(buffer.data(), buffer.size(), false, TPF_PASSWORD);
         zip_archive->setErrorHandlerCallback(
             [](const std::string& message, const std::string& strerror, int zip_error_code, int system_error_code) -> void {
                 Message("GetTpfContents: %s %s %d %d\n", message.c_str(), strerror.c_str(), zip_error_code, system_error_code);

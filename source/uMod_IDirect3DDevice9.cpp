@@ -188,10 +188,7 @@ ULONG uMod_IDirect3DDevice9::Release()
             OSD_Font->Release();
         }
 
-        if (uMod_Client != nullptr) {
-            delete uMod_Client; //must be deleted at the end, because other releases might call a function of this object
-        }
-
+        delete uMod_Client; //must be deleted at the end, because other releases might call a function of this object
         uMod_Client = nullptr;
         SingleTexture = nullptr;
         OSD_Font = nullptr;
