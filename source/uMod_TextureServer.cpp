@@ -1,4 +1,5 @@
 #include <algorithm>
+#include <filesystem>
 #include <fstream>
 
 #include "uMod_Main.h"
@@ -9,8 +10,6 @@ long long loadedSize = 0;
 uMod_TextureServer::uMod_TextureServer(char* game, char* uModName)
 {
     Message("uMod_TextureServer(): %p\n", this);
-
-    Mutex = CreateMutex(nullptr, false, nullptr);
 
     Clients = nullptr;
     NumberOfClients = 0;
@@ -47,21 +46,12 @@ uMod_TextureServer::uMod_TextureServer(char* game, char* uModName)
         GameName[0] = 0;
     }
 
-    for (len = 0; len < MAX_PATH; len++) {
-        UModName[len] = uModName[len];
-    }
-
-    Pipe.In = INVALID_HANDLE_VALUE;
-    Pipe.Out = INVALID_HANDLE_VALUE;
+    strcpy(UModName, uModName);
 }
 
 uMod_TextureServer::~uMod_TextureServer()
 {
     Message("~uMod_TextureServer(): %p\n", this);
-    if (Mutex != nullptr) {
-        CloseHandle(Mutex);
-    }
-
     //delete the files in memory
     int num = CurrentMod.GetNumber();
     for (int i = 0; i < num; i++) {
@@ -72,25 +62,11 @@ uMod_TextureServer::~uMod_TextureServer()
     for (int i = 0; i < num; i++) {
         delete[] OldMod[i]->pData; //delete the file content of the texture
     }
-
-    if (Pipe.In != INVALID_HANDLE_VALUE) {
-        CloseHandle(Pipe.In);
-    }
-    Pipe.In = INVALID_HANDLE_VALUE;
-    if (Pipe.Out != INVALID_HANDLE_VALUE) {
-        CloseHandle(Pipe.Out);
-    }
-    Pipe.Out = INVALID_HANDLE_VALUE;
 }
 
 int uMod_TextureServer::AddClient(uMod_TextureClient* client, TextureFileStruct** update, int* number) // called from a client
 {
     Message("AddClient(%p): %p\n", client, this);
-    if (const int ret = LockMutex()) {
-        gl_ErrorState |= uMod_ERROR_SERVER;
-        return ret;
-    }
-
     // the following functions must not change the original uMod_IDirect3DDevice9 object
     // somehow on game start some uMod_IDirect3DDevice9 object are created, which must rest unchanged!!
     // these objects are released and are not used for rendering
@@ -106,9 +82,6 @@ int uMod_TextureServer::AddClient(uMod_TextureClient* client, TextureFileStruct*
         try { temp = new uMod_TextureClient*[LenghtOfClients + 10]; }
         catch (...) {
             gl_ErrorState |= uMod_ERROR_MEMORY | uMod_ERROR_SERVER;
-            if (const int ret = UnlockMutex()) {
-                return ret;
-            }
             return RETURN_NO_MEMORY;
         }
         for (int i = 0; i < LenghtOfClients; i++) {
@@ -122,17 +95,12 @@ int uMod_TextureServer::AddClient(uMod_TextureClient* client, TextureFileStruct*
     }
     Clients[NumberOfClients++] = client;
 
-    return UnlockMutex();
+    return RETURN_OK;
 }
 
 int uMod_TextureServer::RemoveClient(uMod_TextureClient* client) // called from a client
 {
     Message("RemoveClient(): %p\n", client);
-    if (const int ret = LockMutex()) {
-        gl_ErrorState |= uMod_ERROR_SERVER;
-        return ret;
-    }
-
     for (int i = 0; i < NumberOfClients; i++) {
         if (client == Clients[i]) {
             NumberOfClients--;
@@ -140,7 +108,7 @@ int uMod_TextureServer::RemoveClient(uMod_TextureClient* client) // called from 
             break;
         }
     }
-    return UnlockMutex();
+    return RETURN_OK;
 }
 
 int uMod_TextureServer::AddFile(char* dataPtr, unsigned int size, MyTypeHash hash, bool force) // called from Mainloop()
@@ -215,10 +183,6 @@ int uMod_TextureServer::AddFile(char* dataPtr, unsigned int size, MyTypeHash has
 int uMod_TextureServer::PropagateUpdate(uMod_TextureClient* client) // called from Mainloop(), send the update to all clients
 {
     Message("PropagateUpdate(%p): %p\n", client, this);
-    if (const int ret = LockMutex()) {
-        gl_ErrorState |= uMod_ERROR_TEXTURE;
-        return ret;
-    }
     if (client != nullptr) {
         TextureFileStruct* update;
         int number;
@@ -237,7 +201,7 @@ int uMod_TextureServer::PropagateUpdate(uMod_TextureClient* client) // called fr
             Clients[i]->AddUpdate(update, number);
         }
     }
-    return UnlockMutex();
+    return RETURN_OK;
 }
 
 void cpy_file_struct(TextureFileStruct& a,TextureFileStruct& b)
@@ -287,26 +251,7 @@ int uMod_TextureServer::PrepareUpdate(TextureFileStruct** update, int* number) /
     return RETURN_OK;
 }
 
-int uMod_TextureServer::LockMutex()
-{
-    if ((gl_ErrorState & (uMod_ERROR_FATAL | uMod_ERROR_MUTEX))) {
-        return RETURN_NO_MUTEX;
-    }
-    if (WAIT_OBJECT_0 != WaitForSingleObject(Mutex, 100)) {
-        return RETURN_MUTEX_LOCK; //waiting 100ms, to wait infinite pass INFINITE
-    }
-    return RETURN_OK;
-}
-
-int uMod_TextureServer::UnlockMutex()
-{
-    if (ReleaseMutex(Mutex) == 0) {
-        return RETURN_MUTEX_UNLOCK;
-    }
-    return RETURN_OK;
-}
-
-void uMod_TextureServer::LoadModsFromFile(char* source)
+void uMod_TextureServer::LoadModsFromFile(const char* source)
 {
     Message("Initialize: searching in %s\n", source);
 
@@ -349,26 +294,14 @@ int uMod_TextureServer::Initialize()
     Message("Initialize: searching for modlist.txt\n");
     char gwpath[MAX_PATH];
     GetModuleFileName(GetModuleHandle(nullptr), gwpath, MAX_PATH); //ask for name and path of this executable
-    char* last_backslash = strrchr(gwpath, '\\');
-    if (last_backslash != nullptr) {
-        // Terminate the string at the last backslash to remove the executable name
-        *last_backslash = '\0';
+    const auto exe = std::filesystem::path(gwpath).parent_path();
+    const auto dll = std::filesystem::path(UModName).parent_path();
+    for (const auto& path : {exe, dll}) {
+        const auto modlist = path / "modlist.txt";
+        if (std::filesystem::exists(modlist)) {
+            LoadModsFromFile(modlist.string().c_str());
+        }
     }
-
-    strcat(gwpath, "\\modlist.txt");
-    LoadModsFromFile(gwpath);
-
-    char umodpath[MAX_PATH];
-    strcpy(umodpath, UModName);
-
-    last_backslash = strrchr(umodpath, '\\');
-    if (last_backslash != nullptr) {
-        // Terminate the string at the last backslash to remove the executable name
-        *last_backslash = '\0';
-    }
-
-    strcat(umodpath, "\\modlist.txt");
-    LoadModsFromFile(umodpath);
 
     Message("Initialize: end\n");
 

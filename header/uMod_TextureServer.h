@@ -37,18 +37,12 @@ private:
     wchar_t GameName[MAX_PATH];
     char UModName[MAX_PATH];
 
-    void LoadModsFromFile(char* source);
+    void LoadModsFromFile(const char* source);
     int PropagateUpdate(uMod_TextureClient* client = nullptr); // called from Mainloop() if texture are loaded or removed
     int PrepareUpdate(TextureFileStruct** update, int* number); // called from PropagateUpdate() and AddClient()
     // generate a copy of the current texture to be modded
     // the file content of the textures are not copied, the clients get the pointer to the file content
     // but the arrays allocate by this function, must be deleted by the client
-
-    int LockMutex();
-    int UnlockMutex();
-    HANDLE Mutex;
-
-    PipeStruct Pipe;
 
     uMod_TextureClient** Clients;
     int NumberOfClients;

@@ -46,6 +46,6 @@ private:
         return position % 2 == 0 ? b ^ TPF_XOREven : b ^ TPF_XOROdd;
     }
 
-    static const char TPF_XOROdd = 0x3F;
-    static const char TPF_XOREven = 0xA4;
+    static constexpr char TPF_XOROdd = 0x3F;
+    static constexpr char TPF_XOREven = static_cast<char>(0xA4);
 };
