@@ -6,7 +6,7 @@
 
 class gMod_XorStream : public std::streambuf {
 public:
-    gMod_XorStream(std::istream& stream) : innerStream(stream) {
+    gMod_XorStream(std::ifstream& stream) : innerStream(stream) {
         if (!innerStream.seekg(0, std::ios::end).good() || !innerStream.seekg(0, std::ios::beg).good()) {
             throw std::invalid_argument("Provided stream needs to have SEEK set to True");
         }
@@ -57,16 +57,34 @@ public:
     }
 
     std::vector<char> ReadToEnd() {
-        std::vector<char> buffer(length);
-        for (auto c = ReadByte(); c != traits_type::eof(); c = ReadByte()) {
-            buffer.push_back(static_cast<char>(c));
+        const size_t bufferSize = 1024;
+        char buffer[bufferSize];
+        std::vector<char> streamData;
+        streamData.reserve(length); // Reserve memory to avoid frequent reallocations
+
+        innerStream.clear(); // Clear any error state of the stream
+        innerStream.seekg(0, std::ios::beg); // Go to the beginning of the stream
+
+        while(true) {
+            innerStream.read(buffer, bufferSize);
+            auto readBytes = innerStream.gcount();
+            if (readBytes == 0) {
+                break;
+            }
+
+            const auto readBytesSize = static_cast<size_t>(readBytes);
+            for (auto i = 0; i < readBytes; i++) {
+                buffer[i] = XOR(buffer[i], streamData.size() + i);
+            }
+
+            streamData.insert(streamData.end(), buffer, buffer + readBytes);
         }
 
-        return buffer;
+        return streamData;
     }
 
 private:
-    std::istream& innerStream;
+    std::ifstream& innerStream;
     long originalStreamLength;
     long length;
 
@@ -80,9 +98,11 @@ private:
 
     char_type ReadByte() {
         char_type byte;
+        auto position = innerStream.tellg();
         if (innerStream.get(byte)) {
-            return XOR(byte, innerStream.tellg());
+            return XOR(byte, position);
         }
+
         return traits_type::eof();
     }
 
