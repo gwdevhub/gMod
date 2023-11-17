@@ -1,20 +1,13 @@
 #include "uMod_Main.h"
 
-
-
-
-
 uMod_FileHandler::uMod_FileHandler()
 {
-    Message("uMod_FileHandler(): %lu\n", this);
-    Number = 0;
-    FieldCounter = 0;
-    Files = nullptr;
+    Message("uMod_FileHandler(): %p\n", this);
 }
 
 uMod_FileHandler::~uMod_FileHandler()
 {
-    Message("~uMod_FileHandler(): %lu\n", this);
+    Message("~uMod_FileHandler(): %p\n", this);
     if (Files != nullptr) {
         for (int i = 0; i < FieldCounter; i++) {
             delete [] Files[i];
@@ -25,7 +18,7 @@ uMod_FileHandler::~uMod_FileHandler()
 
 int uMod_FileHandler::Add(TextureFileStruct* file)
 {
-    Message("uMod_FileHandler::Add(%lu): %lu\n", file, this);
+    Message("uMod_FileHandler::Add(%p): %p\n", file, this);
     if (gl_ErrorState & uMod_ERROR_FATAL) {
         return RETURN_FATAL_ERROR;
     }
@@ -80,7 +73,7 @@ int uMod_FileHandler::Add(TextureFileStruct* file)
 
 int uMod_FileHandler::Remove(TextureFileStruct* file)
 {
-    Message("uMod_FileHandler::Remove(%lu): %lu\n", file, this);
+    Message("uMod_FileHandler::Remove(%p): %p\n", file, this);
     if (gl_ErrorState & uMod_ERROR_FATAL) {
         return RETURN_FATAL_ERROR;
     }

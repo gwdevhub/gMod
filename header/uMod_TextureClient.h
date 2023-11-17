@@ -27,52 +27,6 @@ public:
     int RemoveTexture(uMod_IDirect3DVolumeTexture9* tex); //called from  uMod_IDirect3DVolumeTexture9::Release()
     int RemoveTexture(uMod_IDirect3DCubeTexture9* tex); //called from  uMod_IDirect3DCubeTexture9::Release()
 
-    int SaveAllTextures(bool val); //called from the Server
-    int SaveSingleTexture(bool val); //called from the Server
-
-    int SetSaveDirectory(wchar_t* dir); //called from the Server
-    int SetGameName(wchar_t* dir); //called from the Server
-
-    int SaveTexture(uMod_IDirect3DTexture9* pTexture); //called from uMod_IDirect3DDevice9::BeginScene() (save button) or from AddTexture(...) (SaveAllTextures)
-    int SaveTexture(uMod_IDirect3DVolumeTexture9* pTexture); //called from uMod_IDirect3DDevice9::BeginScene() (save button) or from AddTexture(...) (SaveAllTextures)
-    int SaveTexture(uMod_IDirect3DCubeTexture9* pTexture); //called from uMod_IDirect3DDevice9::BeginScene() (save button) or from AddTexture(...) (SaveAllTextures)
-
-
-
-    int SetKeyBack(int key)
-    {
-        if (key > 0) {
-            KeyBack = key;
-        }
-        return RETURN_OK;
-    } //called from the Server
-    int SetKeySave(int key)
-    {
-        if (key > 0) {
-            KeySave = key;
-        }
-        return RETURN_OK;
-    } //called from the Server
-    int SetKeyNext(int key)
-    {
-        if (key > 0) {
-            KeyNext = key;
-        }
-        return RETURN_OK;
-    } //called from the Server
-
-    int SetFontColour(DWORD r, DWORD g, DWORD b)
-    {
-        FontColour = D3DCOLOR_ARGB(255, r, g, b);
-        return RETURN_OK;
-    } //called from the Server
-    int SetTextureColour(DWORD r, DWORD g, DWORD b)
-    {
-        TextureColour = D3DCOLOR_ARGB(255, r, g, b);
-        return RETURN_OK;
-    } //called from the Server
-
-
     int AddUpdate(TextureFileStruct* update, int number);  //called from the Server, client object must delete update array
     int MergeUpdate(); //called from uMod_IDirect3DDevice9::BeginScene()
 
@@ -84,20 +38,12 @@ public:
     uMod_TextureHandler<uMod_IDirect3DVolumeTexture9> OriginalVolumeTextures; // stores the pointer to the uMod_IDirect3DVolumeTexture9 objects created by the game
     uMod_TextureHandler<uMod_IDirect3DCubeTexture9> OriginalCubeTextures; // stores the pointer to the uMod_IDirect3DCubeTexture9 objects created by the game
 
-    bool BoolSaveAllTextures;
-    bool BoolSaveSingleTexture;
-    int KeyBack;
-    int KeySave;
-    int KeyNext;
-
     D3DCOLOR FontColour;
     D3DCOLOR TextureColour;
 
 private:
     uMod_TextureServer* Server;
     IDirect3DDevice9* D3D9Device;
-    wchar_t SavePath[MAX_PATH];
-    wchar_t GameName[MAX_PATH];
 
     TextureFileStruct* Update;
     int NumberOfUpdate;

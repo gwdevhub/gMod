@@ -44,7 +44,7 @@ ULONG APIENTRY uMod_IDirect3DTexture9::AddRef()
 //this function yields for the non switched texture object
 ULONG APIENTRY uMod_IDirect3DTexture9::Release()
 {
-    Message("uMod_IDirect3DTexture9::Release(): %lu\n", this);
+    Message("uMod_IDirect3DTexture9::Release(): %p\n", this);
 
     void* cpy;
     const long ret = m_D3Ddev->QueryInterface(IID_IDirect3DTexture9, &cpy);
@@ -103,7 +103,7 @@ ULONG APIENTRY uMod_IDirect3DTexture9::Release()
         delete(this);
     }
 
-    Message("uMod_IDirect3DTexture9::Release() end: %lu\n", this);
+    Message("uMod_IDirect3DTexture9::Release() end: %p\n", this);
     return count;
 }
 

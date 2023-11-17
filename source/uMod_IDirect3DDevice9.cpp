@@ -111,7 +111,7 @@ int uMod_IDirect3DDevice9::CreateSingleTexture()
 
 uMod_IDirect3DDevice9::uMod_IDirect3DDevice9(IDirect3DDevice9* pOriginal, uMod_TextureServer* server, int back_buffer_count)
 {
-    Message(PRE_MESSAGE "::" PRE_MESSAGE "( %lu, %lu): %lu\n", pOriginal, server, this);
+    Message(PRE_MESSAGE "::" PRE_MESSAGE "( %p, %p): %p\n", pOriginal, server, this);
 
     BackBufferCount = back_buffer_count;
     NormalRendering = true;
@@ -137,7 +137,7 @@ uMod_IDirect3DDevice9::uMod_IDirect3DDevice9(IDirect3DDevice9* pOriginal, uMod_T
 
 uMod_IDirect3DDevice9::~uMod_IDirect3DDevice9()
 {
-    Message(PRE_MESSAGE "::~" PRE_MESSAGE "(): %lu\n", this);
+    Message(PRE_MESSAGE "::~" PRE_MESSAGE "(): %p\n", this);
 }
 
 HRESULT uMod_IDirect3DDevice9::QueryInterface(REFIID riid, void** ppvObj)
@@ -150,7 +150,7 @@ HRESULT uMod_IDirect3DDevice9::QueryInterface(REFIID riid, void** ppvObj)
     }
 
     *ppvObj = nullptr;
-    Message(PRE_MESSAGE "::QueryInterface(): %lu\n", this);
+    Message(PRE_MESSAGE "::QueryInterface(): %p\n", this);
     const HRESULT hRes = m_pIDirect3DDevice9->QueryInterface(riid, ppvObj);
 
     if (*ppvObj == m_pIDirect3DDevice9) {
@@ -164,7 +164,7 @@ HRESULT uMod_IDirect3DDevice9::QueryInterface(REFIID riid, void** ppvObj)
 ULONG uMod_IDirect3DDevice9::AddRef()
 {
     uMod_Reference++; //increasing our counter
-    Message("%lu = " PRE_MESSAGE "::AddRef(): %lu\n", uMod_Reference, this);
+    Message("%p = " PRE_MESSAGE "::AddRef(): %p\n", uMod_Reference, this);
     return m_pIDirect3DDevice9->AddRef();
 }
 
@@ -188,20 +188,17 @@ ULONG uMod_IDirect3DDevice9::Release()
             OSD_Font->Release();
         }
 
-        if (uMod_Client != nullptr) {
-            delete uMod_Client; //must be deleted at the end, because other releases might call a function of this object
-        }
-
+        delete uMod_Client; //must be deleted at the end, because other releases might call a function of this object
         uMod_Client = nullptr;
         SingleTexture = nullptr;
         OSD_Font = nullptr;
     }
 
     const ULONG count = m_pIDirect3DDevice9->Release();
-    Message("%lu = " PRE_MESSAGE "::Release(): %lu\n", count, this);
+    Message("%p = " PRE_MESSAGE "::Release(): %p\n", count, this);
     if (uMod_Reference != count) //bug
     {
-        Message("Error in " PRE_MESSAGE "::Release(): %lu!=%lu\n", uMod_Reference, count);
+        Message("Error in " PRE_MESSAGE "::Release(): %p!=%p\n", uMod_Reference, count);
     }
 
     if (count == 0u) {
@@ -416,7 +413,7 @@ HRESULT uMod_IDirect3DDevice9::UpdateSurface(IDirect3DSurface9* pSourceSurface,C
 
 HRESULT uMod_IDirect3DDevice9::UpdateTexture(IDirect3DBaseTexture9* pSourceTexture, IDirect3DBaseTexture9* pDestinationTexture)
 {
-    Message(PRE_MESSAGE "::UpdateTexture( %lu, %lu): %lu\n", pSourceTexture, pDestinationTexture, this);
+    Message(PRE_MESSAGE "::UpdateTexture( %p, %p): %p\n", pSourceTexture, pDestinationTexture, this);
     // we must pass the real texture objects
 
 
@@ -637,215 +634,25 @@ HRESULT uMod_IDirect3DDevice9::GetDepthStencilSurface(IDirect3DSurface9** ppZSte
 
 HRESULT uMod_IDirect3DDevice9::BeginScene()
 {
-    //if ( NormalRendering )
+    if (LastCreatedTexture != nullptr) // add the last created texture
     {
-        if (LastCreatedTexture != nullptr) // add the last created texture
-        {
-            uMod_Client->AddTexture(LastCreatedTexture);
-        }
-        if (LastCreatedVolumeTexture != nullptr) // add the last created texture
-        {
-            uMod_Client->AddTexture(LastCreatedVolumeTexture);
-        }
-        if (LastCreatedCubeTexture != nullptr) // add the last created texture
-        {
-            uMod_Client->AddTexture(LastCreatedCubeTexture);
-        }
-        uMod_Client->MergeUpdate(); // merge an update, if present
-
-        if (uMod_Client->BoolSaveSingleTexture) {
-            if (CreateSingleTexture() == 0) {
-                if (uMod_Client->KeyBack > 0 && (GetAsyncKeyState(uMod_Client->KeyBack) & 1)) //ask for the status of the back key
-                {
-                    UnswitchTextures(SingleTexture); // can be called, even if texture is not switched
-                    UnswitchTextures(SingleVolumeTexture); // can be called, even if texture is not switched
-                    UnswitchTextures(SingleCubeTexture); // can be called, even if texture is not switched
-
-                    if (CounterSaveSingleTexture < -10) {
-                        CounterSaveSingleTexture = 0;
-                        SingleTextureMod = 0;
-                    } //first initialization of the counter
-                    else if (--CounterSaveSingleTexture < 0) {
-                        if (--SingleTextureMod < 0) {
-                            SingleTextureMod = 2;
-                        }
-                        switch (SingleTextureMod) {
-                            case 0:
-                                CounterSaveSingleTexture = uMod_Client->OriginalTextures.GetNumber() - 1;
-                                break;
-                            case 1:
-                                CounterSaveSingleTexture = uMod_Client->OriginalVolumeTextures.GetNumber() - 1;
-                                break;
-                            case 2:
-                                CounterSaveSingleTexture = uMod_Client->OriginalCubeTextures.GetNumber() - 1;
-                                break;
-                        }
-                    }
-
-                    if (CounterSaveSingleTexture >= 0) {
-                        switch (SingleTextureMod) {
-                            case 0:
-                                SwitchTextures(SingleTexture, uMod_Client->OriginalTextures[CounterSaveSingleTexture]);
-                                SingleTexture->Hash = uMod_Client->OriginalTextures[CounterSaveSingleTexture]->Hash; //set the hash for the display
-                                break;
-                            case 1:
-                                SwitchTextures(SingleVolumeTexture, uMod_Client->OriginalVolumeTextures[CounterSaveSingleTexture]);
-                                SingleVolumeTexture->Hash = uMod_Client->OriginalVolumeTextures[CounterSaveSingleTexture]->Hash; //set the hash for the display
-                                break;
-                            case 2:
-                                SwitchTextures(SingleCubeTexture, uMod_Client->OriginalCubeTextures[CounterSaveSingleTexture]);
-                                SingleCubeTexture->Hash = uMod_Client->OriginalCubeTextures[CounterSaveSingleTexture]->Hash; //set the hash for the display
-                                break;
-                        }
-                    }
-                }
-
-                if (uMod_Client->KeySave > 0 && (GetAsyncKeyState(uMod_Client->KeySave) & 1)) //ask for the status of the save key
-                {
-                    switch (SingleTextureMod) {
-                        case 0:
-                            uMod_Client->SaveTexture(SingleTexture); //after switching the SingleTexture holds the pointer to the original texture object
-                            break;
-                        case 1:
-                            uMod_Client->SaveTexture(SingleVolumeTexture); //after switching the SingleTexture holds the pointer to the original texture object
-                            break;
-                        case 2:
-                            uMod_Client->SaveTexture(SingleCubeTexture); //after switching the SingleTexture holds the pointer to the original texture object
-                            break;
-                    }
-                }
-
-                if (uMod_Client->KeyNext > 0 && (GetAsyncKeyState(uMod_Client->KeyNext) & 1)) //ask for the status of the next key
-                {
-                    UnswitchTextures(SingleTexture); // can be called, even if texture is not switched
-                    UnswitchTextures(SingleVolumeTexture); // can be called, even if texture is not switched
-                    UnswitchTextures(SingleCubeTexture); // can be called, even if texture is not switched
-
-                    if (CounterSaveSingleTexture < -10) {
-                        CounterSaveSingleTexture = 0;
-                        SingleTextureMod = 0;
-                    } //first initialization of the counter
-                    else {
-                        int num = 0;
-                        switch (SingleTextureMod) {
-                            case 0:
-                                num = uMod_Client->OriginalTextures.GetNumber();
-                                break;
-                            case 1:
-                                num = uMod_Client->OriginalVolumeTextures.GetNumber();
-                                break;
-                            case 2:
-                                num = uMod_Client->OriginalCubeTextures.GetNumber();
-                                break;
-                        }
-                        if (++CounterSaveSingleTexture >= num) {
-                            if (++SingleTextureMod > 2) {
-                                SingleTextureMod = 0;
-                            }
-                            switch (SingleTextureMod) {
-                                case 0:
-                                    CounterSaveSingleTexture = uMod_Client->OriginalTextures.GetNumber() > 0 ? 0 : -1;
-                                    break;
-                                case 1:
-                                    CounterSaveSingleTexture = uMod_Client->OriginalVolumeTextures.GetNumber() > 0 ? 0 : -1;
-                                    break;
-                                case 2:
-                                    CounterSaveSingleTexture = uMod_Client->OriginalCubeTextures.GetNumber() > 0 ? 0 : -1;
-                                    break;
-                            }
-                        }
-                    }
-
-                    if (CounterSaveSingleTexture >= 0) {
-                        switch (SingleTextureMod) {
-                            case 0:
-                                SwitchTextures(SingleTexture, uMod_Client->OriginalTextures[CounterSaveSingleTexture]);
-                                SingleTexture->Hash = uMod_Client->OriginalTextures[CounterSaveSingleTexture]->Hash; //set the hash for the display
-                                break;
-                            case 1:
-                                SwitchTextures(SingleVolumeTexture, uMod_Client->OriginalVolumeTextures[CounterSaveSingleTexture]);
-                                SingleVolumeTexture->Hash = uMod_Client->OriginalVolumeTextures[CounterSaveSingleTexture]->Hash; //set the hash for the display
-                                break;
-                            case 2:
-                                SwitchTextures(SingleCubeTexture, uMod_Client->OriginalCubeTextures[CounterSaveSingleTexture]);
-                                SingleCubeTexture->Hash = uMod_Client->OriginalCubeTextures[CounterSaveSingleTexture]->Hash; //set the hash for the display
-                                break;
-                        }
-                    }
-                }
-            }
-        }
+        uMod_Client->AddTexture(LastCreatedTexture);
     }
+    if (LastCreatedVolumeTexture != nullptr) // add the last created texture
+    {
+        uMod_Client->AddTexture(LastCreatedVolumeTexture);
+    }
+    if (LastCreatedCubeTexture != nullptr) // add the last created texture
+    {
+        uMod_Client->AddTexture(LastCreatedCubeTexture);
+    }
+    uMod_Client->MergeUpdate(); // merge an update, if present
 
     return m_pIDirect3DDevice9->BeginScene();
 }
 
 HRESULT uMod_IDirect3DDevice9::EndScene()
 {
-    if (NormalRendering && uMod_Client->BoolSaveSingleTexture && SingleTexture != nullptr && SingleVolumeTexture != nullptr && SingleCubeTexture != nullptr) {
-        if (OSD_Font == nullptr) // create the font
-        {
-            if (D3D_OK != D3DXCreateFontA(m_pIDirect3DDevice9, 20, 0, FW_BOLD, 0, FALSE, DEFAULT_CHARSET, OUT_DEFAULT_PRECIS, DEFAULT_QUALITY, DEFAULT_PITCH | FF_DONTCARE, TEXT("Arial"), &OSD_Font)) {
-                OSD_Font = nullptr;
-                return m_pIDirect3DDevice9->EndScene();
-            }
-        }
-
-        char buffer[100];
-        buffer[0] = 0;
-        switch (SingleTextureMod) {
-            case 0: {
-                if (SingleTexture->CrossRef_D3Dtex != nullptr) {
-                    sprintf_s(buffer, 100, "normal texture: %4d (1..%d): %#lX", CounterSaveSingleTexture + 1, uMod_Client->OriginalTextures.GetNumber(), SingleTexture->Hash);
-                }
-                else {
-                    if (uMod_Client->OriginalTextures.GetNumber() > 0) {
-                        sprintf_s(buffer, 100, "normal texture: nothing selected (1..%d)", uMod_Client->OriginalTextures.GetNumber());
-                    }
-                    else {
-                        sprintf_s(buffer, 100, "normal texture: nothing loaded");
-                    }
-                }
-                break;
-            }
-            case 1: {
-                if (SingleVolumeTexture->CrossRef_D3Dtex != nullptr) {
-                    sprintf_s(buffer, 100, "volume texture: %4d (1..%d): %#lX", CounterSaveSingleTexture + 1, uMod_Client->OriginalVolumeTextures.GetNumber(), SingleVolumeTexture->Hash);
-                }
-                else {
-                    if (uMod_Client->OriginalVolumeTextures.GetNumber() > 0) {
-                        sprintf_s(buffer, 100, "volume texture: nothing selected (1..%d)", uMod_Client->OriginalVolumeTextures.GetNumber());
-                    }
-                    else {
-                        sprintf_s(buffer, 100, "volume texture: nothing loaded");
-                    }
-                }
-                break;
-            }
-            case 2: {
-                if (SingleCubeTexture->CrossRef_D3Dtex != nullptr) {
-                    sprintf_s(buffer, 100, "cube texture: %4d (1..%d): %#lX", CounterSaveSingleTexture + 1, uMod_Client->OriginalCubeTextures.GetNumber(), SingleCubeTexture->Hash);
-                }
-                else {
-                    if (uMod_Client->OriginalCubeTextures.GetNumber() > 0) {
-                        sprintf_s(buffer, 100, "cube texture: nothing selected (1..%d)", uMod_Client->OriginalCubeTextures.GetNumber());
-                    }
-                    else {
-                        sprintf_s(buffer, 100, "cube   texture: nothing loaded");
-                    }
-                }
-                break;
-            }
-        }
-        D3DVIEWPORT9 viewport;
-        GetViewport(&viewport);
-        RECT rct;
-        rct.left = viewport.X + 10;
-        rct.right = 0; //size of box is calculated automatically (DT_NOCLIP)
-        rct.top = viewport.Y + 10;
-        rct.bottom = 0; //size of box is calculated automatically (DT_NOCLIP)
-        OSD_Font->DrawTextA(nullptr, buffer, -1, &rct, DT_NOCLIP, uMod_Client->FontColour);
-    }
     return m_pIDirect3DDevice9->EndScene();
 }
 

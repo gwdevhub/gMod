@@ -1,22 +1,13 @@
 #include "uMod_DX9_dll.h"
-#include "uMod_Main.h"
-#include <Windows.h>
-#include <Psapi.h>
-#include <TlHelp32.h>
-#pragma comment(lib, "Psapi.lib")
-//#include "detours.h"
-//#include "detourxs/detourxs/detourxs.h"
 
-/*
-#include "detourxs/detourxs/ADE32.cpp"
-#include "detourxs/detourxs/detourxs.cpp"
-*/
-/*
- * global variable which are not linked external
- */
+#include <array>
+#include <Windows.h>
+#include "uMod_Main.h"
+#include <Psapi.h>
+
 HINSTANCE gl_hOriginalDll = nullptr;
 HINSTANCE gl_hThisInstance = nullptr;
-uMod_TextureServer* gl_TextureServer = nullptr;
+std::unique_ptr<uMod_TextureServer> gl_TextureServer = nullptr;
 HANDLE gl_ServerThread = nullptr;
 
 using Direct3DCreate9_type = IDirect3D9* (APIENTRY*)(UINT);
@@ -51,9 +42,9 @@ BOOL WINAPI DllMain(HINSTANCE hModule, DWORD ul_reason_for_call, LPVOID lpReserv
 
     switch (ul_reason_for_call) {
         case DLL_PROCESS_ATTACH: {
-#ifdef BUILD_TYPE_DEBUG
+#ifdef _DEBUG
         AllocConsole();
-        SetConsoleTitleA("uMod Console");
+        SetConsoleTitleA("gMod Console");
         freopen_s(&stdout_proxy, "CONOUT$", "w", stdout);
         freopen_s(&stderr_proxy, "CONOUT$", "w", stderr);
 #endif
@@ -75,7 +66,7 @@ DWORD WINAPI ServerThread(LPVOID lpParam)
 {
     UNREFERENCED_PARAMETER(lpParam);
     if (gl_TextureServer != nullptr) {
-        gl_TextureServer->MainLoop(); //This is and endless mainloop, it sleep till something is written into the pipe.
+        gl_TextureServer->Initialize(); //This is and endless mainloop, it sleep till something is written into the pipe.
     }
     return 0;
 }
@@ -89,32 +80,27 @@ void InitInstance(HINSTANCE hModule)
     if (HookThisProgram(game)) //ask if we need to hook this program
     {
         OpenMessage();
-        Message("InitInstance: %lu\n", hModule);
-        char uMod[MAX_PATH];
-        for (auto i = 0; i < MAX_PATH; i++) {
-            uMod[i] = 0;
-        }
+        Message("InitInstance: %p\n", hModule);
+        std::array<char, MAX_PATH> uMod{};
 
-        GetModuleFileNameA(hModule, uMod, MAX_PATH);
-        Message("InitInstance: %s\n", uMod);
-        gl_TextureServer = new uMod_TextureServer(game, uMod); //create the server which listen on the pipe and prepare the update for the texture clients
+        GetModuleFileNameA(hModule, uMod.data(), MAX_PATH);
+        Message("InitInstance: %s\n", uMod.data());
+        gl_TextureServer = std::make_unique<uMod_TextureServer>(game, uMod.data()); //create the server which listen on the pipe and prepare the update for the texture clients
         LoadOriginalDll();
         if (gl_hOriginalDll) {
-            Direct3DCreate9_fn = (Direct3DCreate9_type)GetProcAddress(gl_hOriginalDll, "Direct3DCreate9");
+            Direct3DCreate9_fn = reinterpret_cast<Direct3DCreate9_type>(GetProcAddress(gl_hOriginalDll, "Direct3DCreate9"));
             if (Direct3DCreate9_fn != nullptr) {
                 Message("Detour: Direct3DCreate9\n");
                 Direct3DCreate9_fn = static_cast<Direct3DCreate9_type>(DetourFunc((BYTE*)Direct3DCreate9_fn, (BYTE*)uMod_Direct3DCreate9, 5));
             }
 
-            Direct3DCreate9Ex_fn = (Direct3DCreate9Ex_type)GetProcAddress(gl_hOriginalDll, "Direct3DCreate9Ex");
+            Direct3DCreate9Ex_fn = reinterpret_cast<Direct3DCreate9Ex_type>(GetProcAddress(gl_hOriginalDll, "Direct3DCreate9Ex"));
             if (Direct3DCreate9Ex_fn != nullptr) {
                 Message("Detour: Direct3DCreate9Ex\n");
                 Direct3DCreate9Ex_fn = static_cast<Direct3DCreate9Ex_type>(DetourFunc((BYTE*)Direct3DCreate9Ex_fn, (BYTE*)uMod_Direct3DCreate9Ex, 7));
             }
         }
-        gl_ServerThread = CreateThread(nullptr, 0, ServerThread, nullptr, 0, nullptr); //creating a thread for the mainloop
-        if (gl_ServerThread == nullptr) { Message("InitInstance: Serverthread not started\n"); }
-
+        gl_TextureServer->Initialize();
     }
 }
 
@@ -195,22 +181,13 @@ void LoadOriginalDll()
 
 void ExitInstance()
 {
-    if (gl_ServerThread != nullptr) {
-        CloseHandle(gl_ServerThread); // kill the server thread
-        gl_ServerThread = nullptr;
-    }
-    if (gl_TextureServer != nullptr) {
-        delete gl_TextureServer; //delete the texture server
-        gl_TextureServer = nullptr;
-    }
-
     // Release the system's d3d9.dll
     if (gl_hOriginalDll != nullptr) {
         FreeLibrary(gl_hOriginalDll);
         gl_hOriginalDll = nullptr;
     }
 
-#ifdef BUILD_TYPE_DEBUG
+#ifdef _DEBUG
     if (stdout_proxy)
         fclose(stdout_proxy);
     if (stderr_proxy)
@@ -226,7 +203,7 @@ void ExitInstance()
 
 IDirect3D9* APIENTRY uMod_Direct3DCreate9(UINT SDKVersion)
 {
-    Message("uMod_Direct3DCreate9:  original %lu, uMod %lu\n", Direct3DCreate9_fn, uMod_Direct3DCreate9);
+    Message("uMod_Direct3DCreate9:  original %p, uMod %p\n", Direct3DCreate9_fn, uMod_Direct3DCreate9);
 
     // in the Internet are many tutorials for detouring functions and all of them will work without the following 5 marked lines
     // but somehow, for me it only works, if I retour the function and calling afterward the original function
@@ -256,7 +233,7 @@ IDirect3D9* APIENTRY uMod_Direct3DCreate9(UINT SDKVersion)
     }
     uMod_IDirect3D9* pIDirect3D9;
     if (pIDirect3D9_orig) {
-        pIDirect3D9 = new uMod_IDirect3D9(pIDirect3D9_orig, gl_TextureServer); //creating our uMod_IDirect3D9 object
+        pIDirect3D9 = new uMod_IDirect3D9(pIDirect3D9_orig, gl_TextureServer.get()); //creating our uMod_IDirect3D9 object
     }
 
     // we detour again
@@ -272,7 +249,7 @@ IDirect3D9* APIENTRY uMod_Direct3DCreate9(UINT SDKVersion)
 
 HRESULT APIENTRY uMod_Direct3DCreate9Ex(UINT SDKVersion, IDirect3D9Ex** ppD3D)
 {
-    Message("uMod_Direct3DCreate9Ex:  original %lu, uMod %lu\n", Direct3DCreate9Ex_fn, uMod_Direct3DCreate9Ex);
+    Message("uMod_Direct3DCreate9Ex:  original %p, uMod %p\n", Direct3DCreate9Ex_fn, uMod_Direct3DCreate9Ex);
 
     // in the Internet are many tutorials for detouring functions and all of them will work without the following 5 marked lines
     // but somehow, for me it only works, if I retour the function and calling afterward the original function
@@ -306,7 +283,7 @@ HRESULT APIENTRY uMod_Direct3DCreate9Ex(UINT SDKVersion, IDirect3D9Ex** ppD3D)
 
     uMod_IDirect3D9Ex* pIDirect3D9Ex;
     if (pIDirect3D9Ex_orig) {
-        pIDirect3D9Ex = new uMod_IDirect3D9Ex(pIDirect3D9Ex_orig, gl_TextureServer); //creating our uMod_IDirect3D9 object
+        pIDirect3D9Ex = new uMod_IDirect3D9Ex(pIDirect3D9Ex_orig, gl_TextureServer.get()); //creating our uMod_IDirect3D9 object
     }
 
     // we detour again
@@ -327,12 +304,7 @@ bool HookThisProgram(char* ret)
     GetModuleFileName(GetModuleHandle(nullptr), Game, MAX_PATH); //ask for name and path of this executable
 
     // we inject directly
-    int i = 0;
-    while (Game[i]) {
-        ret[i] = Game[i];
-        i++;
-    }
-    ret[i] = 0;
+    strcpy(ret, Game);
     return true;
 }
 
