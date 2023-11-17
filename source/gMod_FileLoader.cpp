@@ -6,10 +6,6 @@
 gMod_FileLoader::gMod_FileLoader(const std::string& fileName)
 {
     file_name = std::filesystem::absolute(fileName).string();
-    stream = std::ifstream(file_name, std::ios::binary);
-    if (!stream) {
-        throw std::runtime_error("Failed to open file: " + file_name);
-    }
 }
 
 std::vector<TpfEntry> gMod_FileLoader::Load()
@@ -41,6 +37,9 @@ std::vector<TpfEntry> gMod_FileLoader::GetTpfContents()
             });
         zipArchive->open();
         LoadEntries(*zipArchive, entries);
+        zipArchive->close();
+        istream.close();
+        delete(zipArchive);
     }
     catch (const std::exception& e) {
         throw std::runtime_error("Failed to open zip file: " + file_name + "\n" + e.what());
@@ -57,6 +56,7 @@ std::vector<TpfEntry> gMod_FileLoader::GetFileContents()
         libzippp::ZipArchive zipArchive(file_name);
         zipArchive.open();
         LoadEntries(zipArchive, entries);
+        zipArchive.close();
     }
     catch (const std::exception& e) {
         throw std::runtime_error("Failed to open zip file: " + file_name);

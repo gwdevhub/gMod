@@ -1,6 +1,8 @@
 #include "uMod_Main.h"
 #include "gMod_FileLoader.h"
 
+long long loadedSize = 0;
+
 uMod_TextureServer::uMod_TextureServer(char* game, char* uModName)
 {
     Message("uMod_TextureServer(): %p\n", this);
@@ -188,7 +190,9 @@ int uMod_TextureServer::AddFile(char* dataPtr, unsigned int size, MyTypeHash has
                 temp = CurrentMod[i];
                 break;
             } // we need to reload it
-            return RETURN_OK; // we still have added this texture
+
+
+            return RETURN_EXISTS; // we still have added this texture
         }
     }
     if (temp == nullptr) // if not found, look through all old textures
@@ -202,7 +206,8 @@ int uMod_TextureServer::AddFile(char* dataPtr, unsigned int size, MyTypeHash has
                 if (force) {
                     break; // we must reload it
                 }
-                return RETURN_OK; // we should not reload it
+
+                return RETURN_EXISTS; // we should not reload it
             }
         }
     }
@@ -514,7 +519,14 @@ void uMod_TextureServer::LoadModsFromFile(char* source)
             if (!entries.empty()) {
                 Message("Initialize: Texture count %zu %s\n", entries.size(), line.c_str());
                 for (const auto& tpf_entry : entries) {
-                    AddFile(static_cast<char*>(tpf_entry.data), static_cast<unsigned int>(tpf_entry.size), tpf_entry.crc_hash, false);
+                    loadedSize += tpf_entry.size;
+                    if (AddFile(static_cast<char*>(tpf_entry.data), static_cast<unsigned int>(tpf_entry.size), tpf_entry.crc_hash, false) == RETURN_EXISTS) {
+                        //Texture is already loaded, so we need to clear our data
+                        loadedSize -= tpf_entry.size;
+                        delete[](tpf_entry.data);
+                    }
+
+                    Message("LoadModsFromFile: Loaded %d bytes", loadedSize);
                 }
 
                 PropagateUpdate(nullptr);
