@@ -1,7 +1,7 @@
 #include <uMod_Main.h>
 #include <filesystem>
 #include "gMod_FileLoader.h"
-#include "gMod_XorStream.h"
+#include "XorStreamReader.h"
 
 gMod_FileLoader::gMod_FileLoader(const std::string& fileName)
 {
@@ -27,19 +27,18 @@ std::vector<TpfEntry> gMod_FileLoader::GetTpfContents()
 {
     std::vector<TpfEntry> entries;
     try {
-        auto istream = std::ifstream(file_name, std::ios::binary);
-        auto xorstream = gMod_XorStream(istream);
-        const auto buffer = xorstream.ReadToEnd();
+        auto xorreader = XorStreamReader(file_name);
+        const auto buffer = xorreader.ReadToEnd();
         const std::string password(TPF_PASSWORD.begin(), TPF_PASSWORD.end());
-        auto zipArchive = libzippp::ZipArchive::fromBuffer(buffer.data(), buffer.size(), false, password);
-        zipArchive->setErrorHandlerCallback([](const std::string& message, const std::string& strerror, int zip_error_code, int system_error_code) -> void {
-            Message("GetTpfContents: %s %s %d %d\n", message.c_str(), strerror.c_str(), zip_error_code, system_error_code);
+        const auto zip_archive = libzippp::ZipArchive::fromBuffer(buffer.data(), buffer.size(), false, password);
+        zip_archive->setErrorHandlerCallback(
+            [](const std::string& message, const std::string& strerror, int zip_error_code, int system_error_code) -> void {
+                Message("GetTpfContents: %s %s %d %d\n", message.c_str(), strerror.c_str(), zip_error_code, system_error_code);
             });
-        zipArchive->open();
-        LoadEntries(*zipArchive, entries);
-        zipArchive->close();
-        istream.close();
-        delete(zipArchive);
+        zip_archive->open();
+        LoadEntries(*zip_archive, entries);
+        zip_archive->close();
+        libzippp::ZipArchive::free(zip_archive);
     }
     catch (const std::exception& e) {
         throw std::runtime_error("Failed to open zip file: " + file_name + "\n" + e.what());
@@ -53,10 +52,10 @@ std::vector<TpfEntry> gMod_FileLoader::GetFileContents()
     std::vector<TpfEntry> entries;
 
     try {
-        libzippp::ZipArchive zipArchive(file_name);
-        zipArchive.open();
-        LoadEntries(zipArchive, entries);
-        zipArchive.close();
+        libzippp::ZipArchive zip_archive(file_name);
+        zip_archive.open();
+        LoadEntries(zip_archive, entries);
+        zip_archive.close();
     }
     catch (const std::exception& e) {
         throw std::runtime_error("Failed to open zip file: " + file_name);
@@ -65,7 +64,8 @@ std::vector<TpfEntry> gMod_FileLoader::GetFileContents()
     return entries;
 }
 
-void ParseSimpleArchive(libzippp::ZipArchive& archive, std::vector<TpfEntry>& entries) {
+void ParseSimpleArchive(const libzippp::ZipArchive& archive, std::vector<TpfEntry>& entries)
+{
     for (const auto& entry : archive.getEntries()) {
         if (entry.isFile()) {
             //TODO: #6 - Implement regex search
@@ -105,12 +105,13 @@ void ParseSimpleArchive(libzippp::ZipArchive& archive, std::vector<TpfEntry>& en
                 continue;
             }
 
-            entries.push_back({ name, entry.getName(), crcHash, dataPtr, size });
+            entries.push_back({name, entry.getName(), crcHash, dataPtr, size});
         }
     }
 }
 
-void ParseTexmodArchive(std::vector<std::string>& lines, libzippp::ZipArchive& archive, std::vector<TpfEntry>& entries) {
+void ParseTexmodArchive(std::vector<std::string>& lines, libzippp::ZipArchive& archive, std::vector<TpfEntry>& entries)
+{
     for (const auto& line : lines) {
         std::istringstream iss(line);
         std::string part;
@@ -134,7 +135,7 @@ void ParseTexmodArchive(std::vector<std::string>& lines, libzippp::ZipArchive& a
         }
 
         // Remove trailing newline and carriage return characters
-        size_t endpos = path.find_last_not_of("\r\n");
+        const size_t endpos = path.find_last_not_of("\r\n");
         if (endpos != std::string::npos) {
             path.erase(endpos + 1);
         }
@@ -151,7 +152,7 @@ void ParseTexmodArchive(std::vector<std::string>& lines, libzippp::ZipArchive& a
             continue;
         }
 
-        const auto dataPtr = entry.readAsBinary();
+        const auto data_ptr= entry.readAsBinary();
         const auto size = entry.getSize();
         uint32_t crcHash;
         try {
@@ -166,19 +167,19 @@ void ParseTexmodArchive(std::vector<std::string>& lines, libzippp::ZipArchive& a
             continue;
         }
 
-        entries.push_back({ addrstr, entry.getName(), crcHash, dataPtr, size });
+        entries.push_back({addrstr, entry.getName(), crcHash, data_ptr, size});
     }
 }
 
 void gMod_FileLoader::LoadEntries(libzippp::ZipArchive& archive, std::vector<TpfEntry>& entries)
 {
     // Iterate over the files in the zip archive
-    auto maybeDefiniton = archive.getEntry("texmod.def");
-    if (maybeDefiniton.isNull() || !maybeDefiniton.isFile()) {
+    const auto def_file = archive.getEntry("texmod.def");
+    if (def_file.isNull() || !def_file.isFile()) {
         ParseSimpleArchive(archive, entries);
     }
     else {
-        const auto def = maybeDefiniton.readAsText();
+        const auto def = def_file.readAsText();
         std::istringstream iss(def);
         std::vector<std::string> lines;
         std::string line;
@@ -190,5 +191,3 @@ void gMod_FileLoader::LoadEntries(libzippp::ZipArchive& archive, std::vector<Tpf
         ParseTexmodArchive(lines, archive, entries);
     }
 }
-
-
