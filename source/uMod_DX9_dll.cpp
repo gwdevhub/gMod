@@ -13,6 +13,8 @@ HANDLE gl_ServerThread = nullptr;
 using Direct3DCreate9_type = IDirect3D9* (APIENTRY*)(UINT);
 using Direct3DCreate9Ex_type = HRESULT(APIENTRY*)(UINT SDKVersion, IDirect3D9Ex** ppD3D);
 
+Direct3DCreate9_type OriginalDirect3DCreate9Trampoline = nullptr;
+Direct3DCreate9Ex_type OriginalDirect3DCreate9ExTrampoline = nullptr;
 Direct3DCreate9_type Direct3DCreate9_fn; // we need to store the pointer to the original Direct3DCreate9 function after we have done a detour
 Direct3DCreate9Ex_type Direct3DCreate9Ex_fn; // we need to store the pointer to the original Direct3DCreate9 function after we have done a detour
 HHOOK gl_hHook = nullptr;
@@ -88,16 +90,19 @@ void InitInstance(HINSTANCE hModule)
         gl_TextureServer = std::make_unique<uMod_TextureServer>(game, uMod.data()); //create the server which listen on the pipe and prepare the update for the texture clients
         LoadOriginalDll();
         if (gl_hOriginalDll) {
-            Direct3DCreate9_fn = reinterpret_cast<Direct3DCreate9_type>(GetProcAddress(gl_hOriginalDll, "Direct3DCreate9"));
-            if (Direct3DCreate9_fn != nullptr) {
+            // we detour the original Direct3DCreate9 to our MyDirect3DCreate9
+            Direct3DCreate9_fn = (Direct3DCreate9_type)GetProcAddress(gl_hOriginalDll, "Direct3DCreate9");
+            if (Direct3DCreate9_fn != NULL)
+            {
                 Message("Detour: Direct3DCreate9\n");
-                Direct3DCreate9_fn = static_cast<Direct3DCreate9_type>(DetourFunc((BYTE*)Direct3DCreate9_fn, (BYTE*)uMod_Direct3DCreate9, 5));
+                OriginalDirect3DCreate9Trampoline = (Direct3DCreate9_type)DetourFunc((BYTE*)Direct3DCreate9_fn, (BYTE*)uMod_Direct3DCreate9, 5);
             }
 
-            Direct3DCreate9Ex_fn = reinterpret_cast<Direct3DCreate9Ex_type>(GetProcAddress(gl_hOriginalDll, "Direct3DCreate9Ex"));
-            if (Direct3DCreate9Ex_fn != nullptr) {
+            Direct3DCreate9Ex_fn = (Direct3DCreate9Ex_type)GetProcAddress(gl_hOriginalDll, "Direct3DCreate9Ex");
+            if (Direct3DCreate9Ex_fn != NULL)
+            {
                 Message("Detour: Direct3DCreate9Ex\n");
-                Direct3DCreate9Ex_fn = static_cast<Direct3DCreate9Ex_type>(DetourFunc((BYTE*)Direct3DCreate9Ex_fn, (BYTE*)uMod_Direct3DCreate9Ex, 7));
+                OriginalDirect3DCreate9ExTrampoline = (Direct3DCreate9Ex_type)DetourFunc((BYTE*)Direct3DCreate9Ex_fn, (BYTE*)uMod_Direct3DCreate9Ex, 7);
             }
         }
         gl_TextureServer->Initialize();
@@ -201,101 +206,42 @@ void ExitInstance()
  * We inject the dll into the game, thus we retour the original Direct3DCreate9 function to our MyDirect3DCreate9 function
  */
 
-IDirect3D9* APIENTRY uMod_Direct3DCreate9(UINT SDKVersion)
+IDirect3D9* WINAPI uMod_Direct3DCreate9(UINT SDKVersion)
 {
-    Message("uMod_Direct3DCreate9:  original %p, uMod %p\n", Direct3DCreate9_fn, uMod_Direct3DCreate9);
+    Message("WINAPI  Direct3DCreate9\n");
 
-    // in the Internet are many tutorials for detouring functions and all of them will work without the following 5 marked lines
-    // but somehow, for me it only works, if I retour the function and calling afterward the original function
+    if (!gl_hOriginalDll) LoadOriginalDll(); // looking for the "right d3d9.dll"
 
-    // BEGIN
+    // find original function in original d3d9.dll
+    
+    //Create originale IDirect3D9 object
+    IDirect3D9* pIDirect3D9_orig = OriginalDirect3DCreate9Trampoline(SDKVersion);
 
-    LoadOriginalDll();
+    //create our uMod_IDirect3D9 object
+    uMod_IDirect3D9* pIDirect3D9 = new uMod_IDirect3D9(pIDirect3D9_orig, gl_TextureServer.get());
 
-    RetourFunc((BYTE*)GetProcAddress(gl_hOriginalDll, "Direct3DCreate9"), (BYTE*)Direct3DCreate9_fn, 5);
-    Direct3DCreate9_fn = (Direct3DCreate9_type)GetProcAddress(gl_hOriginalDll, "Direct3DCreate9");
-
-    /*
-      if (Direct3DCreate9Ex_fn!=NULL)
-      {
-        RetourFunc((BYTE*) GetProcAddress( gl_hOriginalDll, "Direct3DCreate9Ex"), (BYTE*)Direct3DCreate9Ex_fn, 7);
-        Direct3DCreate9Ex_fn = (Direct3DCreate9Ex_type) GetProcAddress( gl_hOriginalDll, "Direct3DCreate9Ex");
-      }
-      */
-    // END
-
-    IDirect3D9* pIDirect3D9_orig = nullptr;
-    if (Direct3DCreate9_fn) {
-        pIDirect3D9_orig = Direct3DCreate9_fn(SDKVersion); //creating the original IDirect3D9 object
-    }
-    else {
-        return nullptr;
-    }
-    uMod_IDirect3D9* pIDirect3D9;
-    if (pIDirect3D9_orig) {
-        pIDirect3D9 = new uMod_IDirect3D9(pIDirect3D9_orig, gl_TextureServer.get()); //creating our uMod_IDirect3D9 object
-    }
-
-    // we detour again
-    Direct3DCreate9_fn = static_cast<Direct3DCreate9_type>(DetourFunc((BYTE*)Direct3DCreate9_fn, (BYTE*)uMod_Direct3DCreate9, 5));
-    /*
-    if (Direct3DCreate9Ex_fn!=NULL)
-    {
-      Direct3DCreate9Ex_fn = (Direct3DCreate9Ex_type)DetourFunc( (BYTE*) Direct3DCreate9Ex_fn, (BYTE*)uMod_Direct3DCreate9Ex,7);
-    }
-  */
-    return pIDirect3D9; //return our object instead of the "real one"
+    // Return pointer to our object instead of "real one"
+    return (pIDirect3D9);
 }
 
-HRESULT APIENTRY uMod_Direct3DCreate9Ex(UINT SDKVersion, IDirect3D9Ex** ppD3D)
+HRESULT WINAPI uMod_Direct3DCreate9Ex(UINT SDKVersion, IDirect3D9Ex** ppD3D)
 {
-    Message("uMod_Direct3DCreate9Ex:  original %p, uMod %p\n", Direct3DCreate9Ex_fn, uMod_Direct3DCreate9Ex);
+    Message("WINAPI  Direct3DCreate9Ex\n");
 
-    // in the Internet are many tutorials for detouring functions and all of them will work without the following 5 marked lines
-    // but somehow, for me it only works, if I retour the function and calling afterward the original function
+    if (!gl_hOriginalDll) LoadOriginalDll(); // looking for the "right d3d9.dll"
 
-    // BEGIN
+    // find original function in original d3d9.dll
 
-    LoadOriginalDll();
-    /*
-    if (Direct3DCreate9_fn!=NULL)
-    {
-      RetourFunc((BYTE*) GetProcAddress( gl_hOriginalDll, "Direct3DCreate9"), (BYTE*)Direct3DCreate9_fn, 5);
-      Direct3DCreate9_fn = (Direct3DCreate9_type) GetProcAddress( gl_hOriginalDll, "Direct3DCreate9");
-    }
-  */
-    RetourFunc((BYTE*)GetProcAddress(gl_hOriginalDll, "Direct3DCreate9Ex"), (BYTE*)Direct3DCreate9Ex_fn, 7);
-    Direct3DCreate9Ex_fn = (Direct3DCreate9Ex_type)GetProcAddress(gl_hOriginalDll, "Direct3DCreate9Ex");
-    // END
+    //Create originale IDirect3D9 object
+    IDirect3D9Ex* pIDirect3D9Ex_orig;
+    HRESULT ret = OriginalDirect3DCreate9ExTrampoline(SDKVersion, &pIDirect3D9Ex_orig);
+    if (ret != S_OK) return (ret);
 
-    IDirect3D9Ex* pIDirect3D9Ex_orig = nullptr;
-    HRESULT ret;
-    if (Direct3DCreate9Ex_fn) {
-        ret = Direct3DCreate9Ex_fn(SDKVersion, &pIDirect3D9Ex_orig); //creating the original IDirect3D9 object
-    }
-    else {
-        return D3DERR_NOTAVAILABLE;
-    }
+    //create our uMod_IDirect3D9 object
+    uMod_IDirect3D9Ex* pIDirect3D9Ex = new uMod_IDirect3D9Ex(pIDirect3D9Ex_orig, gl_TextureServer.get());
 
-    if (ret != S_OK) {
-        return ret;
-    }
-
-    uMod_IDirect3D9Ex* pIDirect3D9Ex;
-    if (pIDirect3D9Ex_orig) {
-        pIDirect3D9Ex = new uMod_IDirect3D9Ex(pIDirect3D9Ex_orig, gl_TextureServer.get()); //creating our uMod_IDirect3D9 object
-    }
-
-    // we detour again
-    /*
-      if (Direct3DCreate9_fn!=NULL)
-      {
-        Direct3DCreate9_fn = (Direct3DCreate9_type)DetourFunc( (BYTE*) Direct3DCreate9_fn, (BYTE*)uMod_Direct3DCreate9,5);
-      }
-      */
-    Direct3DCreate9Ex_fn = static_cast<Direct3DCreate9Ex_type>(DetourFunc((BYTE*)Direct3DCreate9Ex_fn, (BYTE*)uMod_Direct3DCreate9Ex, 7));
-    ppD3D = (IDirect3D9Ex**)&pIDirect3D9Ex; //return our object instead of the "real one"
-    return ret;
+    ppD3D = &pIDirect3D9Ex_orig; // Return pointer to our object instead of "real one"
+    return (ret);
 }
 
 bool HookThisProgram(char* ret)
