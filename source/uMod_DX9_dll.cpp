@@ -44,7 +44,7 @@ BOOL WINAPI DllMain(HINSTANCE hModule, DWORD ul_reason_for_call, LPVOID lpReserv
         case DLL_PROCESS_ATTACH: {
 #ifdef _DEBUG
         AllocConsole();
-        SetConsoleTitleA("uMod Console");
+        SetConsoleTitleA("gMod Console");
         freopen_s(&stdout_proxy, "CONOUT$", "w", stdout);
         freopen_s(&stderr_proxy, "CONOUT$", "w", stderr);
 #endif

@@ -21,15 +21,11 @@ public:
     std::vector<char> ReadToEnd()
     {
         file_stream.seekg(0, std::ios::end);
-        originalStreamLength = file_stream.tellg();
-        file_stream.seekg(0);
-        file_stream.clear(); // Clear any error state of the stream
+        line_length = file_stream.tellg();
         file_stream.seekg(0, std::ios::beg); // Go to the beginning of the stream
 
-        std::vector<char> data(originalStreamLength);
-        file_stream.read(data.data(), originalStreamLength);
-        const auto read = file_stream.gcount();
-        Message("Read %d bytes\n", read);
+        std::vector<char> data(line_length);
+        file_stream.read(data.data(), line_length);
         for (auto i = 0; i < data.size(); i++) {
             data[i] = XOR(data[i], i);
         }
@@ -39,12 +35,11 @@ public:
 
 private:
     std::ifstream file_stream;
-    long originalStreamLength;
-    long length;
+    long line_length;
 
-    char XOR(char b, long position) const
+    [[nodiscard]] char XOR(const char b, const long position) const
     {
-        if (position > originalStreamLength - 4) {
+        if (position > line_length - 4) {
             return b ^ TPF_XOREven;
         }
 
