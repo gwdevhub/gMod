@@ -4,7 +4,7 @@
 #include "uMod_IDirect3DTexture9.h"
 extern unsigned int gl_ErrorState;
 
-using TextureFileStruct = struct {
+struct TextureFileStruct {
     bool ForceReload; // to force a reload of the texture (if it is already modded)
     char* pData; // store texture file as file in memory
     unsigned int Size; // size of file
