@@ -118,7 +118,8 @@ int uMod_TextureServer::AddFile(char* dataPtr, unsigned int size, MyTypeHash has
     {
         new_file = false;
 
-        delete[] temp->pData;
+        delete[] temp->pData;   // todo: this tries deleting memory out of a vector of tpfentries, which won't do anything
+                                // todo: therefore we don't get out memory back here
 
         temp->pData = nullptr;
     }
@@ -156,14 +157,6 @@ int uMod_TextureServer::PropagateUpdate(uMod_TextureClient* client) // called fr
             return ret;
         }
         client->AddUpdate(update, number);
-    }
-    else {
-        TextureFileStruct* update;
-        int number;
-        if (const int ret = PrepareUpdate(&update, &number)) {
-            return ret;
-        }
-        Client->AddUpdate(update, number);
     }
     return RETURN_OK;
 }
@@ -206,7 +199,7 @@ int uMod_TextureServer::PrepareUpdate(TextureFileStruct** update, int* number) /
             return RETURN_NO_MEMORY;
         }
 
-        for (int i = 0; i < num; i++) cpy_file_struct(temp[i], (*(CurrentMod[i])));
+        for (int i = 0; i < num; i++) cpy_file_struct(temp[i], *CurrentMod[i]);
         qsort(temp, num, sizeof(TextureFileStruct), TextureFileStruct_Compare);
     }
 
@@ -247,7 +240,7 @@ void uMod_TextureServer::LoadModsFromFile(const char* source)
                     Message("LoadModsFromFile: Loaded %d bytes", loadedSize);
                 }
 
-                PropagateUpdate(nullptr);
+                PropagateUpdate(Client);
             }
             else {
                 Message("Initialize: Failed to load any textures for %s\n", line.c_str());

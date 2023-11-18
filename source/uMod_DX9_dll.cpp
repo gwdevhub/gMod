@@ -8,7 +8,6 @@
 HINSTANCE gl_hOriginalDll = nullptr;
 HINSTANCE gl_hThisInstance = nullptr;
 std::unique_ptr<uMod_TextureServer> gl_TextureServer = nullptr;
-HANDLE gl_ServerThread = nullptr;
 
 using Direct3DCreate9_type = IDirect3D9* (APIENTRY*)(UINT);
 using Direct3DCreate9Ex_type = HRESULT(APIENTRY*)(UINT SDKVersion, IDirect3D9Ex** ppD3D);
@@ -59,16 +58,6 @@ BOOL WINAPI DllMain(HINSTANCE hModule, DWORD ul_reason_for_call, LPVOID lpReserv
     }
 
     return true;
-}
-
-
-DWORD WINAPI ServerThread(LPVOID lpParam)
-{
-    UNREFERENCED_PARAMETER(lpParam);
-    if (gl_TextureServer != nullptr) {
-        gl_TextureServer->Initialize(); //This is and endless mainloop, it sleep till something is written into the pipe.
-    }
-    return 0;
 }
 
 void InitInstance(HINSTANCE hModule)
