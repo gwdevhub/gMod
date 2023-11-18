@@ -22,8 +22,6 @@ public:
     ~uMod_TextureServer();
 
     int AddClient(uMod_TextureClient* client, TextureFileStruct** update, int* number); // called from a Client
-    int RemoveClient(uMod_TextureClient* client); // called from a Client
-
     int Initialize(); // is executed in a server thread
 
 
@@ -33,7 +31,6 @@ public:
     int AddFile(char* buffer, unsigned int size, MyTypeHash hash, bool force); // called from Mainloop(), if the content of the texture is sent
 
 private:
-    wchar_t SavePath[MAX_PATH];
     wchar_t GameName[MAX_PATH];
     char UModName[MAX_PATH];
 
@@ -44,10 +41,7 @@ private:
     // the file content of the textures are not copied, the clients get the pointer to the file content
     // but the arrays allocate by this function, must be deleted by the client
 
-    uMod_TextureClient** Clients;
-    int NumberOfClients;
-    int LenghtOfClients;
-
+    uMod_TextureClient* Client;
     uMod_FileHandler CurrentMod;  // hold the file content of texture
     uMod_FileHandler OldMod; // hold the file content of texture which were added previously but are not needed any more
     // this is needed, because a texture clients might not have merged the last update and thus hold pointers to the file content of old textures

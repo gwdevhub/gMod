@@ -8,40 +8,35 @@ gMod_FileLoader::gMod_FileLoader(const std::string& fileName)
     file_name = std::filesystem::absolute(fileName).string();
 }
 
-std::vector<TpfEntry> gMod_FileLoader::Load()
-{
-    if (!loaded) {
-        entry_cache = GetContents();
-        loaded = true;
-    }
-
-    return entry_cache;
-}
-
 std::vector<TpfEntry> gMod_FileLoader::GetContents()
 {
-    return file_name.ends_with(".tpf") ? GetTpfContents() : GetFileContents();
+    try {
+        return file_name.ends_with(".tpf") ? GetTpfContents() : GetFileContents();
+    }
+    catch (const std::exception&) {
+        Message("Failed to open mod file: %s\n", file_name.c_str());
+    }
+    return {};
 }
 
 std::vector<TpfEntry> gMod_FileLoader::GetTpfContents()
 {
     std::vector<TpfEntry> entries;
-    try {
-        auto xorreader = XorStreamReader(file_name);
-        const auto buffer = xorreader.ReadToEnd();
-        const auto zip_archive = libzippp::ZipArchive::fromBuffer(buffer.data(), buffer.size(), false, TPF_PASSWORD);
-        zip_archive->setErrorHandlerCallback(
-            [](const std::string& message, const std::string& strerror, int zip_error_code, int system_error_code) -> void {
-                Message("GetTpfContents: %s %s %d %d\n", message.c_str(), strerror.c_str(), zip_error_code, system_error_code);
-            });
-        zip_archive->open();
-        LoadEntries(*zip_archive, entries);
-        zip_archive->close();
-        libzippp::ZipArchive::free(zip_archive);
+    auto xorreader = XorStreamReader(file_name);
+    const auto buffer = xorreader.ReadToEnd();
+    const auto zip_archive = libzippp::ZipArchive::fromBuffer(buffer.data(), buffer.size(), false, TPF_PASSWORD);
+    if (!zip_archive) {
+        Message("Failed to open tpf file: %s - %u bytes!", file_name.c_str(), buffer.size());
+        return {};
     }
-    catch (const std::exception& e) {
-        throw std::runtime_error("Failed to open zip file: " + file_name + "\n" + e.what());
-    }
+    zip_archive->setErrorHandlerCallback(
+        [](const std::string& message, const std::string& strerror, int zip_error_code, int system_error_code) -> void {
+            Message("GetTpfContents: %s %s %d %d\n", message.c_str(), strerror.c_str(), zip_error_code, system_error_code);
+        });
+    zip_archive->open();
+    LoadEntries(*zip_archive, entries);
+    zip_archive->close();
+    libzippp::ZipArchive::free(zip_archive);
 
     return entries;
 }
@@ -50,15 +45,10 @@ std::vector<TpfEntry> gMod_FileLoader::GetFileContents()
 {
     std::vector<TpfEntry> entries;
 
-    try {
-        libzippp::ZipArchive zip_archive(file_name);
-        zip_archive.open();
-        LoadEntries(zip_archive, entries);
-        zip_archive.close();
-    }
-    catch (const std::exception& e) {
-        throw std::runtime_error("Failed to open zip file: " + file_name);
-    }
+    libzippp::ZipArchive zip_archive(file_name);
+    zip_archive.open();
+    LoadEntries(zip_archive, entries);
+    zip_archive.close();
 
     return entries;
 }
@@ -151,7 +141,7 @@ void ParseTexmodArchive(std::vector<std::string>& lines, libzippp::ZipArchive& a
             continue;
         }
 
-        const auto data_ptr= entry.readAsBinary();
+        const auto data_ptr = entry.readAsBinary();
         const auto size = entry.getSize();
         uint32_t crcHash;
         try {

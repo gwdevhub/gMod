@@ -30,6 +30,14 @@ public:
             data[i] = XOR(data[i], i);
         }
 
+        for (int i = data.size() - 1; i > 0 && data[i] != 0; i--) {
+            data[i] = 0;
+        }
+
+        // in the other zip libraries, these had to be cut off, with libzip we need to zero them out
+        // cutting them off makes the archive invalid
+        //data.resize(last_zero);
+
         return data;
     }
 
