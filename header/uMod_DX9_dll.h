@@ -9,7 +9,6 @@ bool FindLoadedDll();
 bool IsDesiredModule(HMODULE hModule, HANDLE hProcess);
 bool HasDesiredMethods(HMODULE hModule, HANDLE hProcess);
 bool HookThisProgram(char* ret);
-DWORD WINAPI ServerThread(LPVOID lpParam);
 
 void* DetourFunc(BYTE* src, const BYTE* dst, int len);
 bool RetourFunc(BYTE* src, BYTE* restore, int len);

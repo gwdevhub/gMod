@@ -5,16 +5,13 @@
 #include "uMod_Main.h"
 #include "gMod_FileLoader.h"
 
-long long loadedSize = 0;
+unsigned long loadedSize = 0;
 
 uMod_TextureServer::uMod_TextureServer(char* game, char* uModName)
 {
     Message("uMod_TextureServer(): %p\n", this);
 
-    Clients = nullptr;
-    NumberOfClients = 0;
-    LenghtOfClients = 0;
-    SavePath[0] = 0;
+    Client = nullptr;
 
     int len = 0;
     int path_pos = 0;
@@ -75,39 +72,8 @@ int uMod_TextureServer::AddClient(uMod_TextureClient* client, TextureFileStruct*
         return ret; // get a copy of all texture to be modded
     }
 
+    Client = client;
 
-    if (NumberOfClients == LenghtOfClients) //allocate more memory
-    {
-        uMod_TextureClient** temp = nullptr;
-        try { temp = new uMod_TextureClient*[LenghtOfClients + 10]; }
-        catch (...) {
-            gl_ErrorState |= uMod_ERROR_MEMORY | uMod_ERROR_SERVER;
-            return RETURN_NO_MEMORY;
-        }
-        for (int i = 0; i < LenghtOfClients; i++) {
-            temp[i] = Clients[i];
-        }
-
-        delete[] Clients;
-
-        Clients = temp;
-        LenghtOfClients += 10;
-    }
-    Clients[NumberOfClients++] = client;
-
-    return RETURN_OK;
-}
-
-int uMod_TextureServer::RemoveClient(uMod_TextureClient* client) // called from a client
-{
-    Message("RemoveClient(): %p\n", client);
-    for (int i = 0; i < NumberOfClients; i++) {
-        if (client == Clients[i]) {
-            NumberOfClients--;
-            Clients[i] = Clients[NumberOfClients];
-            break;
-        }
-    }
     return RETURN_OK;
 }
 
@@ -152,7 +118,8 @@ int uMod_TextureServer::AddFile(char* dataPtr, unsigned int size, MyTypeHash has
     {
         new_file = false;
 
-        delete[] temp->pData;
+        delete[] temp->pData;   // todo: this tries deleting memory out of a vector of tpfentries, which won't do anything
+                                // todo: therefore we don't get out memory back here
 
         temp->pData = nullptr;
     }
@@ -190,16 +157,6 @@ int uMod_TextureServer::PropagateUpdate(uMod_TextureClient* client) // called fr
             return ret;
         }
         client->AddUpdate(update, number);
-    }
-    else {
-        for (int i = 0; i < NumberOfClients; i++) {
-            TextureFileStruct* update;
-            int number;
-            if (const int ret = PrepareUpdate(&update, &number)) {
-                return ret;
-            }
-            Clients[i]->AddUpdate(update, number);
-        }
     }
     return RETURN_OK;
 }
@@ -242,7 +199,7 @@ int uMod_TextureServer::PrepareUpdate(TextureFileStruct** update, int* number) /
             return RETURN_NO_MEMORY;
         }
 
-        for (int i = 0; i < num; i++) cpy_file_struct(temp[i], (*(CurrentMod[i])));
+        for (int i = 0; i < num; i++) cpy_file_struct(temp[i], *CurrentMod[i]);
         qsort(temp, num, sizeof(TextureFileStruct), TextureFileStruct_Compare);
     }
 
@@ -266,7 +223,11 @@ void uMod_TextureServer::LoadModsFromFile(const char* source)
             line.erase(std::ranges::remove(line, '\n').begin(), line.end());
 
             auto file_loader = gMod_FileLoader(line);
-            const auto entries = file_loader.Load();
+            const auto entries = file_loader.GetContents();
+            if (loadedSize > 1'500'000'000) {
+                Message("LoadModsFromFile: Loaded %d bytes, aborting!!!", loadedSize);
+                return;
+            }
             if (!entries.empty()) {
                 Message("Initialize: Texture count %zu %s\n", entries.size(), line.c_str());
                 for (const auto& tpf_entry : entries) {
@@ -279,12 +240,13 @@ void uMod_TextureServer::LoadModsFromFile(const char* source)
                     Message("LoadModsFromFile: Loaded %d bytes", loadedSize);
                 }
 
-                PropagateUpdate(nullptr);
+                PropagateUpdate(Client);
             }
             else {
                 Message("Initialize: Failed to load any textures for %s\n", line.c_str());
             }
         }
+        Message("Finished loading mods: Loaded %u bytes (%u mb)", loadedSize, loadedSize / 1024 / 1024);
     }
 }
 
