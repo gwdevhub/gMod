@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.16)
+﻿cmake_minimum_required(VERSION 3.16)
 
 set(CMAKE_GENERATOR_PLATFORM win32)
 
@@ -17,7 +17,7 @@ endif()
 
 set(VERSION_MAJOR 1)
 set(VERSION_MINOR 5)
-set(VERSION_PATCH 4)
+set(VERSION_PATCH 5)
 set(VERSION_TWEAK 0)
 
 set(VERSION_RC "${CMAKE_CURRENT_BINARY_DIR}/version.rc")
