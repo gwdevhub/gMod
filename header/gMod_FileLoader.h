@@ -23,16 +23,13 @@ class gMod_FileLoader {
         0x77, 0x6E, 0x46, 0x47, 0x77, 0x49, 0x0C, 0x4B,
         0x46, 0x6F
     };
-    std::vector<TpfEntry> entry_cache{};
-    bool loaded = false;
 
 public:
     gMod_FileLoader(const std::string& fileName);
 
-    std::vector<TpfEntry> Load();
+    std::vector<TpfEntry> GetContents();
 
 private:
-    std::vector<TpfEntry> GetContents();
 
     std::vector<TpfEntry> GetTpfContents();
 

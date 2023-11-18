@@ -32,10 +32,6 @@ uMod_TextureClient::uMod_TextureClient(uMod_TextureServer* server, IDirect3DDevi
 uMod_TextureClient::~uMod_TextureClient()
 {
     Message("uMod_TextureClient::~uMod_TextureClient(): %p\n", this);
-    if (Server != nullptr) {
-        Server->RemoveClient(this);
-    }
-
     if (Mutex != nullptr) {
         CloseHandle(Mutex);
     }
