@@ -611,7 +611,8 @@ int uMod_TextureClient::LoadTexture(TextureFileStruct* file_in_memory, uMod_IDir
 int uMod_TextureClient::LoadTexture(TextureFileStruct* file_in_memory, uMod_IDirect3DVolumeTexture9** ppTexture) // to load fake texture from a file in memory
 {
     Message("LoadTexture( Volume %p, %p, %#lX): %p\n", file_in_memory, ppTexture, file_in_memory->crc_hash, this);
-    if (D3D_OK != D3DXCreateVolumeTextureFromFileInMemoryEx(D3D9Device, file_in_memory->data.data(), file_in_memory->data.size(), D3DX_DEFAULT, D3DX_DEFAULT, D3DX_DEFAULT, D3DX_DEFAULT, 0, D3DFMT_UNKNOWN, D3DPOOL_MANAGED, D3DX_DEFAULT, D3DX_DEFAULT, 0, nullptr,
+    if (D3D_OK != D3DXCreateVolumeTextureFromFileInMemoryEx(D3D9Device, file_in_memory->data.data(), file_in_memory->data.size(), D3DX_DEFAULT, D3DX_DEFAULT, D3DX_DEFAULT, D3DX_DEFAULT, 0, D3DFMT_UNKNOWN, D3DPOOL_MANAGED, D3DX_DEFAULT, D3DX_DEFAULT, 0,
+                                                            nullptr,
                                                             nullptr,
                                                             (IDirect3DVolumeTexture9**)ppTexture))
     //if (D3D_OK != D3DXCreateVolumeTextureFromFileInMemory( D3D9Device, file_in_memory->pData, file_in_memory->Size, (IDirect3DVolumeTexture9 **) ppTexture))
@@ -717,15 +718,16 @@ void uMod_TextureClient::Initialize()
 {
     Message("Initialize: begin\n");
     Message("Initialize: searching for modlist.txt\n");
-    char gwpath[MAX_PATH];
+    char gwpath[MAX_PATH]{};
     GetModuleFileName(GetModuleHandle(nullptr), gwpath, MAX_PATH); //ask for name and path of this executable
-    char dllpath[MAX_PATH];
-    GetModuleFileName(gl_hThisInstance, gwpath, MAX_PATH); //ask for name and path of this executable
+    char dllpath[MAX_PATH]{};
+    GetModuleFileName(gl_hThisInstance, dllpath, MAX_PATH); //ask for name and path of this dll
     const auto exe = std::filesystem::path(gwpath).parent_path();
     const auto dll = std::filesystem::path(dllpath).parent_path();
     for (const auto& path : {exe, dll}) {
         const auto modlist = path / "modlist.txt";
         if (std::filesystem::exists(modlist)) {
+            Message("Initialize: found %s\n", modlist.string().c_str());
             LoadModsFromFile(modlist.string().c_str());
         }
     }
