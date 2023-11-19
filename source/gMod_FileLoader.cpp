@@ -58,8 +58,6 @@ void ParseSimpleArchive(const libzippp::ZipArchive& archive, std::vector<TpfEntr
     for (const auto& entry : archive.getEntries()) {
         if (entry.isFile()) {
             //TODO: #6 - Implement regex search
-            const auto dataPtr = entry.readAsBinary();
-            const auto size = entry.getSize();
             auto name = entry.getName();
 
             // Remove the part before the last underscore (if any)
@@ -81,9 +79,9 @@ void ParseSimpleArchive(const libzippp::ZipArchive& archive, std::vector<TpfEntr
                 name = name.substr(0, lastIndex);
             }
 
-            uint32_t crcHash;
+            uint32_t crc_hash;
             try {
-                crcHash = std::stoul(name, nullptr, 16);
+                crc_hash = std::stoul(name, nullptr, 16);
             }
             catch (const std::invalid_argument& e) {
                 Message("Failed to parse %s as a hash", name.c_str());
@@ -94,7 +92,11 @@ void ParseSimpleArchive(const libzippp::ZipArchive& archive, std::vector<TpfEntr
                 continue;
             }
 
-            entries.push_back({name, entry.getName(), crcHash, dataPtr, size});
+            const auto data_ptr = static_cast<char*>(entry.readAsBinary());
+            const auto size = entry.getSize();
+            std::vector<char> vec;
+            vec.assign(data_ptr, data_ptr + size);
+            entries.emplace_back(name, entry.getName(), crc_hash, std::move(vec));
         }
     }
 }
@@ -141,8 +143,6 @@ void ParseTexmodArchive(std::vector<std::string>& lines, libzippp::ZipArchive& a
             continue;
         }
 
-        const auto data_ptr = entry.readAsBinary();
-        const auto size = entry.getSize();
         uint32_t crcHash;
         try {
             crcHash = std::stoul(addrstr, nullptr, 16);
@@ -156,7 +156,11 @@ void ParseTexmodArchive(std::vector<std::string>& lines, libzippp::ZipArchive& a
             continue;
         }
 
-        entries.push_back({addrstr, entry.getName(), crcHash, data_ptr, size});
+        const auto data_ptr = static_cast<char*>(entry.readAsBinary());
+        const auto size = entry.getSize();
+        std::vector<char> vec;
+        vec.assign(data_ptr, data_ptr + size);
+        entries.emplace_back(addrstr, entry.getName(), crcHash, std::move(vec));
     }
 }
 

@@ -1,12 +1,10 @@
 #pragma once
 
+#include <map>
+
+#include "gMod_FileLoader.h"
 #include "uMod_IDirect3DTexture9.h"
-#include "uMod_IDirect3DDevice9.h"
-#include "uMod_Error.h"
 #include "uMod_ArrayHandler.h"
-
-
-class uMod_TextureServer;
 
 /*
  *  An object of this class is owned by each d3d9 device.
@@ -16,7 +14,7 @@ class uMod_TextureServer;
 
 class uMod_TextureClient {
 public:
-    uMod_TextureClient(uMod_TextureServer* server, IDirect3DDevice9* device);
+    uMod_TextureClient(IDirect3DDevice9* device);
     ~uMod_TextureClient();
 
     int AddTexture(uMod_IDirect3DTexture9* tex); //called from uMod_IDirect3DDevice9::CreateTexture(...) or uMod_IDirect3DDevice9::BeginScene()
@@ -33,6 +31,7 @@ public:
     int LookUpToMod(uMod_IDirect3DTexture9* pTexture, int num_index_list = 0, int* index_list = nullptr); // called at the end AddTexture(...) and from Device->UpdateTexture(...)
     int LookUpToMod(uMod_IDirect3DVolumeTexture9* pTexture, int num_index_list = 0, int* index_list = nullptr); // called at the end AddTexture(...) and from Device->UpdateTexture(...)
     int LookUpToMod(uMod_IDirect3DCubeTexture9* pTexture, int num_index_list = 0, int* index_list = nullptr); // called at the end AddTexture(...) and from Device->UpdateTexture(...)
+    bool AddFile(TpfEntry entry);
 
     uMod_TextureHandler<uMod_IDirect3DTexture9> OriginalTextures; // stores the pointer to the uMod_IDirect3DTexture9 objects created by the game
     uMod_TextureHandler<uMod_IDirect3DVolumeTexture9> OriginalVolumeTextures; // stores the pointer to the uMod_IDirect3DVolumeTexture9 objects created by the game
@@ -41,8 +40,9 @@ public:
     D3DCOLOR FontColour;
     D3DCOLOR TextureColour;
 
+    void Initialize();
+
 private:
-    uMod_TextureServer* Server;
     IDirect3DDevice9* D3D9Device;
 
     TextureFileStruct* Update;
@@ -54,12 +54,13 @@ private:
 
     int NumberToMod; // number of texture to be modded
     TextureFileStruct* FileToMod; // array which stores the file in memory and the hash of each texture to be modded
-
+    std::map<HashType, TextureFileStruct> modded_textures; // array which stores the file in memory and the hash of each texture to be modded
 
     int LookUpToMod(HashType hash, int num_index_list, int* index_list); // called from LookUpToMod(...);
     int LoadTexture(TextureFileStruct* file_in_memory, uMod_IDirect3DTexture9** ppTexture); // called if a target texture is found
     int LoadTexture(TextureFileStruct* file_in_memory, uMod_IDirect3DVolumeTexture9** ppTexture); // called if a target texture is found
     int LoadTexture(TextureFileStruct* file_in_memory, uMod_IDirect3DCubeTexture9** ppTexture); // called if a target texture is found
+    void LoadModsFromFile(const char* source);
 
     // and the corresponding fake texture should be loaded
 

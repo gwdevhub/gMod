@@ -5,11 +5,12 @@
 #include "uMod_IDirect3DTexture9.h"
 #include "uMod_IDirect3DVolumeTexture9.h"
 #include "uMod_IDirect3DCubeTexture9.h"
+#include "uMod_TextureClient.h"
 
 
 class uMod_IDirect3DDevice9 : public IDirect3DDevice9 {
 public:
-    uMod_IDirect3DDevice9(IDirect3DDevice9* pOriginal, uMod_TextureServer* server, int back_buffer_count);
+    uMod_IDirect3DDevice9(IDirect3DDevice9* pOriginal, int back_buffer_count);
     virtual ~uMod_IDirect3DDevice9();
 
     // START: The original DX9 function definitions
@@ -135,8 +136,6 @@ public:
     HRESULT __stdcall CreateQuery(D3DQUERYTYPE Type, IDirect3DQuery9** ppQuery) override;
     // END: The original DX9 function definitions
 
-
-
     uMod_TextureClient* GetuMod_Client() { return uMod_Client; }
 
     uMod_IDirect3DTexture9* GetLastCreatedTexture() { return LastCreatedTexture; }
@@ -190,6 +189,5 @@ private:
     uMod_IDirect3DVolumeTexture9* LastCreatedVolumeTexture;
     uMod_IDirect3DCubeTexture9* LastCreatedCubeTexture;
 
-    uMod_TextureServer* uMod_Server;
     uMod_TextureClient* uMod_Client;
 };

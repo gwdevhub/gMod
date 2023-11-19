@@ -4,11 +4,10 @@
 #define PRE_MESSAGE "uMod_IDirect3D9"
 #endif
 
-uMod_IDirect3D9::uMod_IDirect3D9(IDirect3D9* pOriginal, uMod_TextureServer* server)
+uMod_IDirect3D9::uMod_IDirect3D9(IDirect3D9* pOriginal)
 {
     Message(PRE_MESSAGE "::" PRE_MESSAGE "( %p, %p): %p\n", pOriginal, server, this);
     m_pIDirect3D9 = pOriginal;
-    uMod_Server = server;
 }
 
 uMod_IDirect3D9::~uMod_IDirect3D9()
@@ -126,7 +125,7 @@ HRESULT __stdcall uMod_IDirect3D9::CreateDevice(UINT Adapter, D3DDEVTYPE DeviceT
     if (pPresentationParameters != nullptr) {
         count = pPresentationParameters->BackBufferCount;
     }
-    const auto pIDirect3DDevice9 = new uMod_IDirect3DDevice9(*ppReturnedDeviceInterface, uMod_Server, count);
+    const auto pIDirect3DDevice9 = new uMod_IDirect3DDevice9(*ppReturnedDeviceInterface, count);
 
     // store our pointer (the fake one) for returning it to the calling program
     *ppReturnedDeviceInterface = pIDirect3DDevice9;

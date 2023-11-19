@@ -109,15 +109,15 @@ int uMod_IDirect3DDevice9::CreateSingleTexture()
     return RETURN_OK;
 }
 
-uMod_IDirect3DDevice9::uMod_IDirect3DDevice9(IDirect3DDevice9* pOriginal, uMod_TextureServer* server, int back_buffer_count)
+uMod_IDirect3DDevice9::uMod_IDirect3DDevice9(IDirect3DDevice9* pOriginal, int back_buffer_count)
 {
     Message(PRE_MESSAGE "::" PRE_MESSAGE "( %p, %p): %p\n", pOriginal, server, this);
 
     BackBufferCount = back_buffer_count;
     NormalRendering = true;
 
-    uMod_Server = server;
-    uMod_Client = new uMod_TextureClient(uMod_Server, this); //get a new texture client for this device
+    uMod_Client = new uMod_TextureClient(this); //get a new texture client for this device
+    uMod_Client->Initialize();
 
     LastCreatedTexture = nullptr;
     LastCreatedVolumeTexture = nullptr;

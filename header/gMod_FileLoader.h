@@ -9,8 +9,7 @@ struct TpfEntry {
     std::string name;
     std::string entry;
     uint32_t crc_hash;
-    void* data;
-    unsigned long long size;
+    std::vector<char> data;
 };
 
 class gMod_FileLoader {

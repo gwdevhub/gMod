@@ -1,25 +1,18 @@
+#include <filesystem>
+#include <fstream>
+
 #include "uMod_Main.h"
 
-uMod_TextureClient::uMod_TextureClient(uMod_TextureServer* server, IDirect3DDevice9* device)
+uMod_TextureClient::uMod_TextureClient(IDirect3DDevice9* device)
 {
     Message("uMod_TextureClient::uMod_TextureClient(): %p\n", this);
-    Server = server;
     D3D9Device = device;
     NumberToMod = 0;
     FileToMod = nullptr;
 
-    if (Server != nullptr) {
-        if (Server->AddClient(this, &FileToMod, &NumberToMod)) {
-            Server = nullptr;
-            NumberToMod = 0;
-            FileToMod = nullptr;
-        }
-        else {
-            for (int i = 0; i < NumberToMod; i++) {
-                FileToMod[i].NumberOfTextures = 0;
-                FileToMod[i].Textures = nullptr;
-            }
-        }
+    for (int i = 0; i < NumberToMod; i++) {
+        FileToMod[i].NumberOfTextures = 0;
+        FileToMod[i].Textures = nullptr;
     }
     Mutex = CreateMutex(nullptr, false, nullptr);
 
@@ -141,7 +134,6 @@ int uMod_TextureClient::AddTexture(uMod_IDirect3DCubeTexture9* pTexture)
 
     return LookUpToMod(pTexture); // check if this texture should be modded
 }
-
 
 
 int uMod_TextureClient::RemoveTexture(uMod_IDirect3DTexture9* pTexture) // is called from a texture, if it is finally released
@@ -284,12 +276,12 @@ int uMod_TextureClient::MergeUpdate()
      */
 
     while (pos_old < NumberToMod && pos_new < NumberOfUpdate) {
-        if (FileToMod[pos_old].Hash > Update[pos_new].Hash) // this fake texture is new
+        if (FileToMod[pos_old].crc_hash > Update[pos_new].crc_hash) // this fake texture is new
         {
             to_lookup[num_to_lookup++] = pos_new++; // keep this fake texture in mind, we must search later for it through all original textures
             // we increase only the new counter by one
         }
-        else if (FileToMod[pos_old].Hash < Update[pos_new].Hash) // this fake texture is not in the update
+        else if (FileToMod[pos_old].crc_hash < Update[pos_new].crc_hash) // this fake texture is not in the update
         {
             for (int i = FileToMod[pos_old].NumberOfTextures - 1; i >= 0; i--) {
                 FileToMod[pos_old].Textures[i]->Release(); // we release the fake textures
@@ -332,87 +324,7 @@ int uMod_TextureClient::MergeUpdate()
         to_lookup[num_to_lookup++] = pos_new++; //keep this fake texture in mind, we must search later for it through all original textures
     }
 
-
-    /*
-     * if (num_to_lookup>0) we need to look through all original textures
-     * because there were newly added textures and we don't know
-     * if the corresponding target textures are loaded by the game or not.
-     *
-     * Note: to_lookup[num_to_lookup++] = pos_new++; is in ascending order,
-     * thus Update[to_lookup[pos]].Hash is also sorted ascending!
-     */
-/*
-  uMod_IDirect3DTexture9 *single_texture = ((uMod_IDirect3DDevice9*)D3D9Device)->GetSingleTexture();
-  if (num_to_lookup>0)
-  {
-    int num = OriginalTextures.GetNumber();
-    for (int i=0; i<num; i++)
-      if (OriginalTextures[i]->CrossRef_D3Dtex==NULL || OriginalTextures[i]->CrossRef_D3Dtex==single_texture)
-      // We need look only for textures, that are not switched or switched with the single_texture.
-      // The single_texture is a special texture, which you can toggle through all original texture, if save single texture is turned on.
-    {
-      HashType hash = OriginalTextures[i]->Hash;
-
-      if (hash<Update[to_lookup[0]].Hash || hash>Update[to_lookup[num_to_lookup-1]].Hash) continue;
-
-      int index = -1;
-      int pos = num_to_lookup/2;
-      int begin = 0;
-      int end = num_to_lookup-1;
-
-      // We look in the middle of the interval and each step we halve the interval,
-      // unless we find the texture or the size of the interval is less than 3.
-      // Note: contradicting to normal C-code here the interval includes the index "begin" and "end"!
-      while (begin+1<end) // as long as the interval is longer than two
-      {
-        if (hash > Update[to_lookup[pos]].Hash) // the new interval is the right half of the actual interval
-        {
-          begin = pos+1; // the new interval does not contain the index "pos"
-          pos = (begin + end)/2; // set "pos" somewhere inside the new intervall
-        }
-        else if (hash < Update[to_lookup[pos]].Hash) // the new interval is the left half of the actual interval
-        {
-          end = pos-1; // the new interval does not contain the index "pos"
-          pos = (begin + end)/2; // set "pos" somewhere inside the new intervall
-        }
-        else {index = to_lookup[pos]; break;} // we hit the correct hash
-      }
-      if (index<0) // if we did not find the hash, it might be in the last interval
-      {
-        for (int i=begin; i<=end; i++) if (Update[to_lookup[i]].Hash==hash) index = to_lookup[i];
-      }
-
-      if (index>=0) // target texture is loaded by the game
-      {
-        if (OriginalTextures[i]->CrossRef_D3Dtex!=NULL) UnswitchTextures(OriginalTextures[i]); // this texture was switched with the single texture
-
-        uMod_IDirect3DTexture9 *fake_Texture;
-        if (int ret = LoadTexture( & (Update[index]), &fake_Texture)) return ret;
-        if (SwitchTextures( fake_Texture, OriginalTextures[i]))
-        {
-          Message("uMod_TextureClient::LookUpToMod(): textures not switched %#lX\n", FileToMod[index].Hash);
-          fake_Texture->Release();
-        }
-        else
-        {
-          IDirect3DBaseTexture9 **temp = new IDirect3DBaseTexture9*[Update[index].NumberOfTextures+1];
-          for (int j=0; j<Update[index].NumberOfTextures; j++) temp[j] = Update[index].Textures[j];
-
-          if (Update[index].Textures!=NULL) delete [] Update[index].Textures;
-          Update[index].Textures = temp;
-
-          Update[index].Textures[Update[index].NumberOfTextures++] = fake_Texture;
-          fake_Texture->Reference = index;
-        }
-      }
-    }
-  }
-*/
-
-
-    //for (int i=0; i<NumberToMod; i++) if (FileToMod[i].Textures!=NULL) delete [] FileToMod[i].Textures;
     delete [] FileToMod;
-
 
     FileToMod = Update;
     NumberToMod = NumberOfUpdate;
@@ -502,7 +414,7 @@ int uMod_TextureClient::LookUpToMod(HashType hash, int num_index_list, int* inde
 {
     if (NumberToMod > 0) {
         if (index_list == nullptr || num_index_list == 0) {
-            if (hash < FileToMod[0].Hash || hash > FileToMod[NumberToMod - 1].Hash) {
+            if (hash < FileToMod[0].crc_hash || hash > FileToMod[NumberToMod - 1].crc_hash) {
                 return -1;
             }
             int pos = NumberToMod / 2;
@@ -514,12 +426,12 @@ int uMod_TextureClient::LookUpToMod(HashType hash, int num_index_list, int* inde
             // Note: contradicting to normal C-code here the interval includes the index "begin" and "end"!
             while (begin + 1 < end) // as long as the interval is longer than two
             {
-                if (hash > FileToMod[pos].Hash) // the new interval is the right half of the actual interval
+                if (hash > FileToMod[pos].crc_hash) // the new interval is the right half of the actual interval
                 {
                     begin = pos + 1; // the new interval does not contain the index "pos"
                     pos = (begin + end) / 2; // set "pos" somewhere inside the new interval
                 }
-                else if (hash < FileToMod[pos].Hash) // the new interval is the left half of the actual interval
+                else if (hash < FileToMod[pos].crc_hash) // the new interval is the left half of the actual interval
                 {
                     end = pos - 1; // the new interval does not contain the index "pos"
                     pos = (begin + end) / 2; // set "pos" somewhere inside the new interval
@@ -530,13 +442,13 @@ int uMod_TextureClient::LookUpToMod(HashType hash, int num_index_list, int* inde
                 } // we hit the correct hash
             }
             for (pos = begin; pos <= end; pos++) {
-                if (FileToMod[pos].Hash == hash) {
+                if (FileToMod[pos].crc_hash == hash) {
                     return pos;
                 }
             }
         }
         else {
-            if (hash < FileToMod[index_list[0]].Hash || hash > FileToMod[index_list[num_index_list - 1]].Hash) {
+            if (hash < FileToMod[index_list[0]].crc_hash || hash > FileToMod[index_list[num_index_list - 1]].crc_hash) {
                 return -1;
             }
             int pos = num_index_list / 2;
@@ -548,12 +460,12 @@ int uMod_TextureClient::LookUpToMod(HashType hash, int num_index_list, int* inde
             // Note: contradicting to normal C-code here the interval includes the index "begin" and "end"!
             while (begin + 1 < end) // as long as the interval is longer than two
             {
-                if (hash > FileToMod[index_list[pos]].Hash) // the new interval is the right half of the actual interval
+                if (hash > FileToMod[index_list[pos]].crc_hash) // the new interval is the right half of the actual interval
                 {
                     begin = pos + 1; // the new interval does not contain the index "pos"
                     pos = (begin + end) / 2; // set "pos" somewhere inside the new interval
                 }
-                else if (hash < FileToMod[index_list[pos]].Hash) // the new interval is the left half of the actual interval
+                else if (hash < FileToMod[index_list[pos]].crc_hash) // the new interval is the left half of the actual interval
                 {
                     end = pos - 1; // the new interval does not contain the index "pos"
                     pos = (begin + end) / 2; // set "pos" somewhere inside the new interval
@@ -564,7 +476,7 @@ int uMod_TextureClient::LookUpToMod(HashType hash, int num_index_list, int* inde
                 } // we hit the correct hash
             }
             for (pos = begin; pos <= end; pos++) {
-                if (FileToMod[index_list[pos]].Hash == hash) {
+                if (FileToMod[index_list[pos]].crc_hash == hash) {
                     return index_list[pos];
                 }
             }
@@ -674,7 +586,7 @@ int uMod_TextureClient::LookUpToMod(uMod_IDirect3DCubeTexture9* pTexture, int nu
 int uMod_TextureClient::LoadTexture(TextureFileStruct* file_in_memory, uMod_IDirect3DTexture9** ppTexture) // to load fake texture from a file in memory
 {
     Message("LoadTexture( %p, %p, %#lX): %p\n", file_in_memory, ppTexture, file_in_memory->Hash, this);
-    if (D3D_OK != D3DXCreateTextureFromFileInMemoryEx(D3D9Device, file_in_memory->pData, file_in_memory->Size, D3DX_DEFAULT, D3DX_DEFAULT, D3DX_DEFAULT, 0, D3DFMT_UNKNOWN, D3DPOOL_MANAGED, D3DX_DEFAULT, D3DX_DEFAULT, 0, nullptr, nullptr,
+    if (D3D_OK != D3DXCreateTextureFromFileInMemoryEx(D3D9Device, file_in_memory->data.data(), file_in_memory->data.size(), D3DX_DEFAULT, D3DX_DEFAULT, D3DX_DEFAULT, 0, D3DFMT_UNKNOWN, D3DPOOL_MANAGED, D3DX_DEFAULT, D3DX_DEFAULT, 0, nullptr, nullptr,
                                                       (IDirect3DTexture9**)ppTexture))
     //if (D3D_OK != D3DXCreateTextureFromFileInMemory( D3D9Device, file_in_memory->pData, file_in_memory->Size, (IDirect3DTexture9 **) ppTexture))
     {
@@ -699,7 +611,7 @@ int uMod_TextureClient::LoadTexture(TextureFileStruct* file_in_memory, uMod_IDir
 int uMod_TextureClient::LoadTexture(TextureFileStruct* file_in_memory, uMod_IDirect3DVolumeTexture9** ppTexture) // to load fake texture from a file in memory
 {
     Message("LoadTexture( Volume %p, %p, %#lX): %p\n", file_in_memory, ppTexture, file_in_memory->Hash, this);
-    if (D3D_OK != D3DXCreateVolumeTextureFromFileInMemoryEx(D3D9Device, file_in_memory->pData, file_in_memory->Size, D3DX_DEFAULT, D3DX_DEFAULT, D3DX_DEFAULT, D3DX_DEFAULT, 0, D3DFMT_UNKNOWN, D3DPOOL_MANAGED, D3DX_DEFAULT, D3DX_DEFAULT, 0, nullptr,
+    if (D3D_OK != D3DXCreateVolumeTextureFromFileInMemoryEx(D3D9Device, file_in_memory->data.data(), file_in_memory->data.size(), D3DX_DEFAULT, D3DX_DEFAULT, D3DX_DEFAULT, D3DX_DEFAULT, 0, D3DFMT_UNKNOWN, D3DPOOL_MANAGED, D3DX_DEFAULT, D3DX_DEFAULT, 0, nullptr,
                                                             nullptr,
                                                             (IDirect3DVolumeTexture9**)ppTexture))
     //if (D3D_OK != D3DXCreateVolumeTextureFromFileInMemory( D3D9Device, file_in_memory->pData, file_in_memory->Size, (IDirect3DVolumeTexture9 **) ppTexture))
@@ -725,7 +637,7 @@ int uMod_TextureClient::LoadTexture(TextureFileStruct* file_in_memory, uMod_IDir
 int uMod_TextureClient::LoadTexture(TextureFileStruct* file_in_memory, uMod_IDirect3DCubeTexture9** ppTexture) // to load fake texture from a file in memory
 {
     Message("LoadTexture( Cube %p, %p, %#lX): %p\n", file_in_memory, ppTexture, file_in_memory->Hash, this);
-    if (D3D_OK != D3DXCreateCubeTextureFromFileInMemoryEx(D3D9Device, file_in_memory->pData, file_in_memory->Size, D3DX_DEFAULT, D3DX_DEFAULT, 0, D3DFMT_UNKNOWN, D3DPOOL_MANAGED, D3DX_DEFAULT, D3DX_DEFAULT, 0, nullptr, nullptr,
+    if (D3D_OK != D3DXCreateCubeTextureFromFileInMemoryEx(D3D9Device, file_in_memory->data.data(), file_in_memory->data.size(), D3DX_DEFAULT, D3DX_DEFAULT, 0, D3DFMT_UNKNOWN, D3DPOOL_MANAGED, D3DX_DEFAULT, D3DX_DEFAULT, 0, nullptr, nullptr,
                                                           (IDirect3DCubeTexture9**)ppTexture))
     //if (D3D_OK != D3DXCreateCubeTextureFromFileInMemory( D3D9Device, file_in_memory->pData, file_in_memory->Size, (IDirect3DCubeTexture9 **) ppTexture))
     {
@@ -745,4 +657,78 @@ int uMod_TextureClient::LoadTexture(TextureFileStruct* file_in_memory, uMod_IDir
 
     Message("LoadTexture( Cube %p, %#lX): DONE\n", *ppTexture, file_in_memory->Hash);
     return RETURN_OK;
+}
+
+bool uMod_TextureClient::AddFile(TpfEntry entry)
+{
+    TextureFileStruct texture_file_struct;
+    if (modded_textures.contains(entry.crc_hash)) {
+        return false;
+    }
+    texture_file_struct.data = std::move(entry.data);
+    texture_file_struct.crc_hash = entry.crc_hash;
+    texture_file_struct.NumberOfTextures = 0;
+    texture_file_struct.Reference = -1;
+    modded_textures.emplace(entry.crc_hash, texture_file_struct);
+    return true;
+}
+
+unsigned long loaded_size = 0;
+
+void uMod_TextureClient::LoadModsFromFile(const char* source)
+{
+    Message("Initialize: searching in %s\n", source);
+
+    std::ifstream file(source);
+    if (file.is_open()) {
+        Message("Initialize: found modlist.txt. Reading\n");
+        std::string line;
+        while (std::getline(file, line)) {
+            Message("Initialize: loading file %s\n", line.c_str());
+
+            // Remove newline character
+            line.erase(std::ranges::remove(line, '\n').begin(), line.end());
+
+            auto file_loader = gMod_FileLoader(line);
+            const auto entries = file_loader.GetContents();
+            if (loaded_size > 1'500'000'000) {
+                Message("LoadModsFromFile: Loaded %d bytes, aborting!!!", loaded_size);
+                return;
+            }
+            if (!entries.empty()) {
+                Message("Initialize: Texture count %zu %s\n", entries.size(), line.c_str());
+                for (const auto& tpf_entry : entries) {
+                    if (AddFile(tpf_entry)) {
+                        loaded_size += tpf_entry.data.size();
+                    }
+
+                    Message("LoadModsFromFile: Loaded %d bytes", loaded_size);
+                }
+            }
+            else {
+                Message("Initialize: Failed to load any textures for %s\n", line.c_str());
+            }
+        }
+        Message("Finished loading mods: Loaded %u bytes (%u mb)", loaded_size, loaded_size / 1024 / 1024);
+    }
+}
+
+void uMod_TextureClient::Initialize()
+{
+    Message("Initialize: begin\n");
+    Message("Initialize: searching for modlist.txt\n");
+    char gwpath[MAX_PATH];
+    GetModuleFileName(GetModuleHandle(nullptr), gwpath, MAX_PATH); //ask for name and path of this executable
+    char dllpath[MAX_PATH];
+    GetModuleFileName(gl_hThisInstance, gwpath, MAX_PATH); //ask for name and path of this executable
+    const auto exe = std::filesystem::path(gwpath).parent_path();
+    const auto dll = std::filesystem::path(dllpath).parent_path();
+    for (const auto& path : {exe, dll}) {
+        const auto modlist = path / "modlist.txt";
+        if (std::filesystem::exists(modlist)) {
+            LoadModsFromFile(modlist.string().c_str());
+        }
+    }
+
+    Message("Initialize: end\n");
 }

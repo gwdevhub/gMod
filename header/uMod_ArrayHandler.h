@@ -1,16 +1,18 @@
 #pragma once
 
+#include <vector>
 #include "uMod_GlobalDefines.h"
 #include "uMod_IDirect3DTexture9.h"
 extern unsigned int gl_ErrorState;
 
 struct TextureFileStruct {
+    std::vector<char> data{};
     char* pData; // store texture file as file in memory
     unsigned int Size; // size of file
-    int NumberOfTextures;
-    int Reference; // for a fast delete in the FileHandler
-    IDirect3DBaseTexture9** Textures; // pointer to the fake textures
-    HashType Hash; // hash value
+    int NumberOfTextures = 0;
+    int Reference = -1; // for a fast delete in the FileHandler
+    IDirect3DBaseTexture9** Textures = nullptr; // pointer to the fake textures
+    HashType crc_hash = 0; // hash value
 };
 
 class uMod_FileHandler  // array to store TextureFileStruct

@@ -7,7 +7,6 @@
 
 HINSTANCE gl_hOriginalDll = nullptr;
 HINSTANCE gl_hThisInstance = nullptr;
-std::unique_ptr<uMod_TextureServer> gl_TextureServer = nullptr;
 
 using Direct3DCreate9_type = IDirect3D9* (APIENTRY*)(UINT);
 using Direct3DCreate9Ex_type = HRESULT(APIENTRY*)(UINT SDKVersion, IDirect3D9Ex** ppD3D);
@@ -74,7 +73,6 @@ void InitInstance(HINSTANCE hModule)
 
         GetModuleFileNameA(hModule, uMod.data(), MAX_PATH);
         Message("InitInstance: %s\n", uMod.data());
-        gl_TextureServer = std::make_unique<uMod_TextureServer>(game, uMod.data()); //create the server which listen on the pipe and prepare the update for the texture clients
         LoadOriginalDll();
         if (gl_hOriginalDll) {
             Direct3DCreate9_fn = reinterpret_cast<Direct3DCreate9_type>(GetProcAddress(gl_hOriginalDll, "Direct3DCreate9"));
@@ -89,7 +87,6 @@ void InitInstance(HINSTANCE hModule)
                 Direct3DCreate9Ex_fn = static_cast<Direct3DCreate9Ex_type>(DetourFunc((BYTE*)Direct3DCreate9Ex_fn, (BYTE*)uMod_Direct3DCreate9Ex, 7));
             }
         }
-        gl_TextureServer->Initialize();
     }
 }
 
@@ -222,7 +219,7 @@ IDirect3D9* APIENTRY uMod_Direct3DCreate9(UINT SDKVersion)
     }
     uMod_IDirect3D9* pIDirect3D9;
     if (pIDirect3D9_orig) {
-        pIDirect3D9 = new uMod_IDirect3D9(pIDirect3D9_orig, gl_TextureServer.get()); //creating our uMod_IDirect3D9 object
+        pIDirect3D9 = new uMod_IDirect3D9(pIDirect3D9_orig); //creating our uMod_IDirect3D9 object
     }
 
     // we detour again
@@ -272,7 +269,7 @@ HRESULT APIENTRY uMod_Direct3DCreate9Ex(UINT SDKVersion, IDirect3D9Ex** ppD3D)
 
     uMod_IDirect3D9Ex* pIDirect3D9Ex;
     if (pIDirect3D9Ex_orig) {
-        pIDirect3D9Ex = new uMod_IDirect3D9Ex(pIDirect3D9Ex_orig, gl_TextureServer.get()); //creating our uMod_IDirect3D9 object
+        pIDirect3D9Ex = new uMod_IDirect3D9Ex(pIDirect3D9Ex_orig); //creating our uMod_IDirect3D9 object
     }
 
     // we detour again

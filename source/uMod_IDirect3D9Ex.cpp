@@ -19,7 +19,7 @@ HRESULT __stdcall uMod_IDirect3D9Ex::CreateDeviceEx(UINT Adapter, D3DDEVTYPE Dev
     if (pPresentationParameters != nullptr) {
         count = pPresentationParameters->BackBufferCount;
     }
-    const auto pIDirect3DDevice9Ex = new uMod_IDirect3DDevice9Ex(*ppReturnedDeviceInterface, uMod_Server, count);
+    const auto pIDirect3DDevice9Ex = new uMod_IDirect3DDevice9Ex(*ppReturnedDeviceInterface, count);
 
     // store our pointer (the fake one) for returning it to the calling program
     *ppReturnedDeviceInterface = pIDirect3DDevice9Ex;

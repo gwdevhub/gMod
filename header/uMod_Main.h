@@ -25,9 +25,10 @@
 #include "uMod_IDirect3DVolumeTexture9.h"
 
 #include "uMod_ArrayHandler.h"
-#include "uMod_TextureServer.h"
 #include "uMod_TextureClient.h"
 
 #pragma warning(disable : 4477)
 
 extern unsigned int gl_ErrorState;
+extern HINSTANCE gl_hOriginalDll;
+extern HINSTANCE gl_hThisInstance;
