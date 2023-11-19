@@ -136,10 +136,6 @@ int uMod_TextureServer::AddFile(char* dataPtr, unsigned int size, HashType hash,
     temp->Textures = nullptr;
     temp->Hash = hash;
 
-    //if (new_file) temp->ForceReload = false; // no need to force a load of the texture
-    //else
-    temp->ForceReload = force;
-
     Message("End AddFile(%#lX)\n", hash);
     if (new_file) {
         return CurrentMod.Add(temp); // new files must be added to the list of the CurrentMod
@@ -163,7 +159,6 @@ int uMod_TextureServer::PropagateUpdate(uMod_TextureClient* client) // called fr
 
 void cpy_file_struct(TextureFileStruct& a,TextureFileStruct& b)
 {
-    a.ForceReload = b.ForceReload;
     a.pData = b.pData;
     a.Size = b.Size;
     a.NumberOfTextures = b.NumberOfTextures;

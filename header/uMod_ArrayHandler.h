@@ -5,7 +5,6 @@
 extern unsigned int gl_ErrorState;
 
 struct TextureFileStruct {
-    bool ForceReload; // to force a reload of the texture (if it is already modded)
     char* pData; // store texture file as file in memory
     unsigned int Size; // size of file
     int NumberOfTextures;

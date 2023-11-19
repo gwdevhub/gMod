@@ -304,86 +304,11 @@ int uMod_TextureClient::MergeUpdate()
         }
         else // the hash value is the same, thus this texture is in the array FileToMod as well as in the array Update
         {
-            if (Update[pos_new].ForceReload) {
-                if (FileToMod[pos_old].NumberOfTextures > 0) {
-                    Update[pos_new].Textures = new IDirect3DBaseTexture9*[FileToMod[pos_old].NumberOfTextures];
-                }
-                for (int i = 0; i < FileToMod[pos_old].NumberOfTextures; i++) {
-                    IDirect3DBaseTexture9* base_texture;
-                    int ret = FileToMod[pos_old].Textures[i]->QueryInterface(IID_IDirect3D9, (void**)&base_texture);
-                    switch (ret) {
-                        case 0x01000000L: {
-                            auto pTexture = static_cast<uMod_IDirect3DTexture9*>(FileToMod[pos_old].Textures[i]);//
-                            uMod_IDirect3DTexture9* pRefTexture = pTexture->CrossRef_D3Dtex;
-                            pTexture->Release();
-                            i--; //after the Release of the old fake texture FileToMod[pos_old].Textures[i] is overwritten by entries with index greater than i
-
-                            uMod_IDirect3DTexture9* fake_Texture;
-                            if (int ret = LoadTexture(&(Update[pos_new]), &fake_Texture)) {
-                                return ret;
-                            }
-                            if (SwitchTextures(fake_Texture, pRefTexture)) {
-                                Message("MergeUpdate(): textures not switched %#lX\n", pRefTexture->Hash);
-                                fake_Texture->Release();
-                            }
-                            else {
-                                Update[pos_new].Textures[Update[pos_new].NumberOfTextures++] = fake_Texture;
-                                fake_Texture->Reference = pos_new;
-                            }
-                            break;
-                        }
-                        case 0x01000001L: {
-                            auto pTexture = static_cast<uMod_IDirect3DVolumeTexture9*>(FileToMod[pos_old].Textures[i]);//
-                            uMod_IDirect3DVolumeTexture9* pRefTexture = pTexture->CrossRef_D3Dtex;
-                            pTexture->Release();
-                            i--; //after the Release of the old fake texture FileToMod[pos_old].Textures[i] is overwritten by entries with index greater than i
-
-                            uMod_IDirect3DVolumeTexture9* fake_Texture;
-                            if (int ret = LoadTexture(&(Update[pos_new]), &fake_Texture)) {
-                                return ret;
-                            }
-                            if (SwitchTextures(fake_Texture, pRefTexture)) {
-                                Message("MergeUpdate(): textures not switched %#lX\n", pRefTexture->Hash);
-                                fake_Texture->Release();
-                            }
-                            else {
-                                Update[pos_new].Textures[Update[pos_new].NumberOfTextures++] = fake_Texture;
-                                fake_Texture->Reference = pos_new;
-                            }
-                            break;
-                        }
-                        case 0x01000002L: {
-                            auto pTexture = static_cast<uMod_IDirect3DCubeTexture9*>(FileToMod[pos_old].Textures[i]);//
-                            uMod_IDirect3DCubeTexture9* pRefTexture = pTexture->CrossRef_D3Dtex;
-                            pTexture->Release();
-                            i--; //after the Release of the old fake texture FileToMod[pos_old].Textures[i] is overwritten by entries with index greater than i
-
-                            uMod_IDirect3DCubeTexture9* fake_Texture;
-                            if (int ret = LoadTexture(&Update[pos_new], &fake_Texture)) {
-                                return ret;
-                            }
-                            if (SwitchTextures(fake_Texture, pRefTexture)) {
-                                Message("MergeUpdate(): textures not switched %#lX\n", pRefTexture->Hash);
-                                fake_Texture->Release();
-                            }
-                            else {
-                                Update[pos_new].Textures[Update[pos_new].NumberOfTextures++] = fake_Texture;
-                                fake_Texture->Reference = pos_new;
-                            }
-                            break;
-                        }
-                        default:
-                            break; // this is no fake texture and QueryInterface failed, because IDirect3DBaseTexture9 object cannot be a IDirect3D9 object ;)
-                    }
-                }
-            }
-            else // the texture might be loaded or not
-            {
-                Update[pos_new].NumberOfTextures = FileToMod[pos_old].NumberOfTextures;
-                Update[pos_new].Textures = FileToMod[pos_old].Textures;
-                FileToMod[pos_old].NumberOfTextures = 0;
-                FileToMod[pos_old].Textures = nullptr;
-            }
+            // the texture might be loaded or not
+            Update[pos_new].NumberOfTextures = FileToMod[pos_old].NumberOfTextures;
+            Update[pos_new].Textures = FileToMod[pos_old].Textures;
+            FileToMod[pos_old].NumberOfTextures = 0;
+            FileToMod[pos_old].Textures = nullptr;
             // we increase both counters by one
             pos_old++;
             pos_new++;
