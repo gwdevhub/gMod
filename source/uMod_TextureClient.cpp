@@ -498,7 +498,7 @@ int uMod_TextureClient::LookUpToMod(uMod_IDirect3DTexture9* pTexture, int num_in
             return ret;
         }
         if (SwitchTextures(fake_Texture, pTexture)) {
-            Message("uMod_TextureClient::LookUpToMod(): textures not switched %#lX\n", FileToMod[index].Hash);
+            Message("uMod_TextureClient::LookUpToMod(): textures not switched %#lX\n", FileToMod[index].crc_hash);
             fake_Texture->Release();
         }
         else {
@@ -531,7 +531,7 @@ int uMod_TextureClient::LookUpToMod(uMod_IDirect3DVolumeTexture9* pTexture, int 
             return ret;
         }
         if (SwitchTextures(fake_Texture, pTexture)) {
-            Message("uMod_TextureClient::LookUpToMod(): textures not switched %#lX\n", FileToMod[index].Hash);
+            Message("uMod_TextureClient::LookUpToMod(): textures not switched %#lX\n", FileToMod[index].crc_hash);
             fake_Texture->Release();
         }
         else {
@@ -564,7 +564,7 @@ int uMod_TextureClient::LookUpToMod(uMod_IDirect3DCubeTexture9* pTexture, int nu
             return ret;
         }
         if (SwitchTextures(fake_Texture, pTexture)) {
-            Message("uMod_TextureClient::LookUpToMod(): textures not switched %#lX\n", FileToMod[index].Hash);
+            Message("uMod_TextureClient::LookUpToMod(): textures not switched %#lX\n", FileToMod[index].crc_hash);
             fake_Texture->Release();
         }
         else {
@@ -585,7 +585,7 @@ int uMod_TextureClient::LookUpToMod(uMod_IDirect3DCubeTexture9* pTexture, int nu
 
 int uMod_TextureClient::LoadTexture(TextureFileStruct* file_in_memory, uMod_IDirect3DTexture9** ppTexture) // to load fake texture from a file in memory
 {
-    Message("LoadTexture( %p, %p, %#lX): %p\n", file_in_memory, ppTexture, file_in_memory->Hash, this);
+    Message("LoadTexture( %p, %p, %#lX): %p\n", file_in_memory, ppTexture, file_in_memory->crc_hash, this);
     if (D3D_OK != D3DXCreateTextureFromFileInMemoryEx(D3D9Device, file_in_memory->data.data(), file_in_memory->data.size(), D3DX_DEFAULT, D3DX_DEFAULT, D3DX_DEFAULT, 0, D3DFMT_UNKNOWN, D3DPOOL_MANAGED, D3DX_DEFAULT, D3DX_DEFAULT, 0, nullptr, nullptr,
                                                       (IDirect3DTexture9**)ppTexture))
     //if (D3D_OK != D3DXCreateTextureFromFileInMemory( D3D9Device, file_in_memory->pData, file_in_memory->Size, (IDirect3DTexture9 **) ppTexture))
@@ -604,13 +604,13 @@ int uMod_TextureClient::LoadTexture(TextureFileStruct* file_in_memory, uMod_IDir
         static_cast<uMod_IDirect3DDevice9Ex*>(D3D9Device)->SetLastCreatedTexture(nullptr); //this texture must no be added twice
     }
 
-    Message("LoadTexture( %p, %#lX): DONE\n", *ppTexture, file_in_memory->Hash);
+    Message("LoadTexture( %p, %#lX): DONE\n", *ppTexture, file_in_memory->crc_hash);
     return RETURN_OK;
 }
 
 int uMod_TextureClient::LoadTexture(TextureFileStruct* file_in_memory, uMod_IDirect3DVolumeTexture9** ppTexture) // to load fake texture from a file in memory
 {
-    Message("LoadTexture( Volume %p, %p, %#lX): %p\n", file_in_memory, ppTexture, file_in_memory->Hash, this);
+    Message("LoadTexture( Volume %p, %p, %#lX): %p\n", file_in_memory, ppTexture, file_in_memory->crc_hash, this);
     if (D3D_OK != D3DXCreateVolumeTextureFromFileInMemoryEx(D3D9Device, file_in_memory->data.data(), file_in_memory->data.size(), D3DX_DEFAULT, D3DX_DEFAULT, D3DX_DEFAULT, D3DX_DEFAULT, 0, D3DFMT_UNKNOWN, D3DPOOL_MANAGED, D3DX_DEFAULT, D3DX_DEFAULT, 0, nullptr,
                                                             nullptr,
                                                             (IDirect3DVolumeTexture9**)ppTexture))
@@ -630,13 +630,13 @@ int uMod_TextureClient::LoadTexture(TextureFileStruct* file_in_memory, uMod_IDir
         static_cast<uMod_IDirect3DDevice9Ex*>(D3D9Device)->SetLastCreatedVolumeTexture(nullptr); //this texture must no be added twice
     }
 
-    Message("LoadTexture( Volume %p, %#lX): DONE\n", *ppTexture, file_in_memory->Hash);
+    Message("LoadTexture( Volume %p, %#lX): DONE\n", *ppTexture, file_in_memory->crc_hash);
     return RETURN_OK;
 }
 
 int uMod_TextureClient::LoadTexture(TextureFileStruct* file_in_memory, uMod_IDirect3DCubeTexture9** ppTexture) // to load fake texture from a file in memory
 {
-    Message("LoadTexture( Cube %p, %p, %#lX): %p\n", file_in_memory, ppTexture, file_in_memory->Hash, this);
+    Message("LoadTexture( Cube %p, %p, %#lX): %p\n", file_in_memory, ppTexture, file_in_memory->crc_hash, this);
     if (D3D_OK != D3DXCreateCubeTextureFromFileInMemoryEx(D3D9Device, file_in_memory->data.data(), file_in_memory->data.size(), D3DX_DEFAULT, D3DX_DEFAULT, 0, D3DFMT_UNKNOWN, D3DPOOL_MANAGED, D3DX_DEFAULT, D3DX_DEFAULT, 0, nullptr, nullptr,
                                                           (IDirect3DCubeTexture9**)ppTexture))
     //if (D3D_OK != D3DXCreateCubeTextureFromFileInMemory( D3D9Device, file_in_memory->pData, file_in_memory->Size, (IDirect3DCubeTexture9 **) ppTexture))
@@ -655,7 +655,7 @@ int uMod_TextureClient::LoadTexture(TextureFileStruct* file_in_memory, uMod_IDir
         static_cast<uMod_IDirect3DDevice9Ex*>(D3D9Device)->SetLastCreatedCubeTexture(nullptr); //this texture must no be added twice
     }
 
-    Message("LoadTexture( Cube %p, %#lX): DONE\n", *ppTexture, file_in_memory->Hash);
+    Message("LoadTexture( Cube %p, %#lX): DONE\n", *ppTexture, file_in_memory->crc_hash);
     return RETURN_OK;
 }
 

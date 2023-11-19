@@ -111,7 +111,7 @@ int uMod_IDirect3DDevice9::CreateSingleTexture()
 
 uMod_IDirect3DDevice9::uMod_IDirect3DDevice9(IDirect3DDevice9* pOriginal, int back_buffer_count)
 {
-    Message(PRE_MESSAGE "::" PRE_MESSAGE "( %p, %p): %p\n", pOriginal, server, this);
+    Message(PRE_MESSAGE "::" PRE_MESSAGE " (%p): %p\n", pOriginal, this);
 
     BackBufferCount = back_buffer_count;
     NormalRendering = true;

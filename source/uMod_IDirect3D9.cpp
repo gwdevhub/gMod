@@ -6,7 +6,7 @@
 
 uMod_IDirect3D9::uMod_IDirect3D9(IDirect3D9* pOriginal)
 {
-    Message(PRE_MESSAGE "::" PRE_MESSAGE "( %p, %p): %p\n", pOriginal, server, this);
+    Message(PRE_MESSAGE "::" PRE_MESSAGE " (%p): %p\n", pOriginal, this);
     m_pIDirect3D9 = pOriginal;
 }
 
