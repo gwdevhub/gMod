@@ -21,7 +21,7 @@ interface uMod_IDirect3DVolumeTexture9 : IDirect3DVolumeTexture9 {
     uMod_IDirect3DVolumeTexture9* CrossRef_D3Dtex;
     IDirect3DDevice9* m_D3Ddev;
     int Reference;
-    MyTypeHash Hash;
+    HashType Hash;
     bool FAKE;
 
     // original interface
@@ -49,7 +49,7 @@ interface uMod_IDirect3DVolumeTexture9 : IDirect3DVolumeTexture9 {
     STDMETHOD(UnlockBox)(UINT Level) override;
 
 
-    int GetHash(MyTypeHash& hash);
+    [[nodiscard]] HashType GetHash() const;
 };
 
 

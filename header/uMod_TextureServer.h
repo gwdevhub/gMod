@@ -28,7 +28,7 @@ public:
     // following functions are only public for testing purpose !!
     // they should be private and only be called from the Mainloop
 
-    int AddFile(char* buffer, unsigned int size, MyTypeHash hash, bool force); // called from Mainloop(), if the content of the texture is sent
+    int AddFile(char* buffer, unsigned int size, HashType hash, bool force); // called from Mainloop(), if the content of the texture is sent
 
 private:
     wchar_t GameName[MAX_PATH];

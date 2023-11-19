@@ -21,7 +21,7 @@ interface uMod_IDirect3DCubeTexture9 :  IDirect3DCubeTexture9 {
     uMod_IDirect3DCubeTexture9* CrossRef_D3Dtex;
     IDirect3DDevice9* m_D3Ddev;
     int Reference;
-    MyTypeHash Hash;
+    HashType Hash;
     bool FAKE;
 
     // original interface
@@ -50,7 +50,7 @@ interface uMod_IDirect3DCubeTexture9 :  IDirect3DCubeTexture9 {
     STDMETHOD(UnlockRect)(D3DCUBEMAP_FACES FaceType, UINT Level) override;
 
 
-    int GetHash(MyTypeHash& hash);
+    [[nodiscard]] HashType GetHash() const;
 };
 
 

@@ -66,12 +66,10 @@ int uMod_TextureClient::AddTexture(uMod_IDirect3DTexture9* pTexture)
 
     Message("uMod_TextureClient::AddTexture( %p): %p (thread: %p)\n", pTexture, this, GetCurrentThreadId());
 
-    MyTypeHash hash;
-    if (const int ret = pTexture->GetHash(hash)) {
-        return ret;
+    pTexture->Hash = pTexture->GetHash();
+    if (!pTexture->Hash) {
+        return RETURN_FATAL_ERROR;
     }
-
-    pTexture->Hash = hash;
 
     if (gl_ErrorState & uMod_ERROR_FATAL) {
         return RETURN_FATAL_ERROR;
@@ -99,12 +97,10 @@ int uMod_TextureClient::AddTexture(uMod_IDirect3DVolumeTexture9* pTexture)
 
     Message("uMod_TextureClient::AddTexture( Volume: %p): %p (thread: %p)\n", pTexture, this, GetCurrentThreadId());
 
-    MyTypeHash hash;
-    if (const int ret = pTexture->GetHash(hash)) {
-        return ret;
+    pTexture->Hash = pTexture->GetHash();
+    if (!pTexture->Hash) {
+        return RETURN_FATAL_ERROR;
     }
-
-    pTexture->Hash = hash;
 
     if (gl_ErrorState & uMod_ERROR_FATAL) {
         return RETURN_FATAL_ERROR;
@@ -132,12 +128,10 @@ int uMod_TextureClient::AddTexture(uMod_IDirect3DCubeTexture9* pTexture)
 
     Message("uMod_TextureClient::AddTexture( Cube: %p): %p (thread: %p)\n", pTexture, this, GetCurrentThreadId());
 
-    MyTypeHash hash;
-    if (const int ret = pTexture->GetHash(hash)) {
-        return ret;
+    pTexture->Hash = pTexture->GetHash();
+    if (!pTexture->Hash) {
+        return RETURN_FATAL_ERROR;
     }
-
-    pTexture->Hash = hash;
 
     if (gl_ErrorState & uMod_ERROR_FATAL) {
         return RETURN_FATAL_ERROR;
@@ -432,7 +426,7 @@ int uMod_TextureClient::MergeUpdate()
       // We need look only for textures, that are not switched or switched with the single_texture.
       // The single_texture is a special texture, which you can toggle through all original texture, if save single texture is turned on.
     {
-      MyTypeHash hash = OriginalTextures[i]->Hash;
+      HashType hash = OriginalTextures[i]->Hash;
 
       if (hash<Update[to_lookup[0]].Hash || hash>Update[to_lookup[num_to_lookup-1]].Hash) continue;
 
@@ -579,7 +573,7 @@ int uMod_TextureClient::UnlockMutex()
 }
 
 
-int uMod_TextureClient::LookUpToMod(MyTypeHash hash, int num_index_list, int* index_list)
+int uMod_TextureClient::LookUpToMod(HashType hash, int num_index_list, int* index_list)
 {
     if (NumberToMod > 0) {
         if (index_list == nullptr || num_index_list == 0) {

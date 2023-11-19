@@ -425,9 +425,8 @@ HRESULT uMod_IDirect3DDevice9::UpdateTexture(IDirect3DBaseTexture9* pSourceTextu
         long int ret = pSourceTexture->QueryInterface(IID_IDirect3D9, (void**)&cpy);
         switch (ret) {
             case 0x01000000L: {
-                MyTypeHash hash;
                 pSource = static_cast<uMod_IDirect3DTexture9*>(pSourceTexture);
-                if (pSource->GetHash(hash) == RETURN_OK) {
+                if (const auto hash = pSource->GetHash()) {
                     if (hash != pSource->Hash) // this hash has changed !!
                     {
                         pSource->Hash = hash;
@@ -451,10 +450,9 @@ HRESULT uMod_IDirect3DDevice9::UpdateTexture(IDirect3DBaseTexture9* pSourceTextu
                 break;
             }
             case 0x01000001L: {
-                MyTypeHash hash;
                 pSourceVolume = static_cast<uMod_IDirect3DVolumeTexture9*>(pSourceTexture);
-                if (pSourceVolume->GetHash(hash) == RETURN_OK) {
-                    if (hash != pSourceVolume->Hash) // this hash has changed !!
+                if (pSourceVolume->GetHash()) {
+                    if (const auto hash = pSourceVolume->Hash) // this hash has changed !!
                     {
                         pSourceVolume->Hash = hash;
                         if (pSourceVolume->CrossRef_D3Dtex != nullptr) {
@@ -477,9 +475,8 @@ HRESULT uMod_IDirect3DDevice9::UpdateTexture(IDirect3DBaseTexture9* pSourceTextu
                 break;
             }
             case 0x01000002L: {
-                MyTypeHash hash;
                 pSourceCube = static_cast<uMod_IDirect3DCubeTexture9*>(pSourceTexture);
-                if (pSourceCube->GetHash(hash) == RETURN_OK) {
+                if (const auto hash = pSourceCube->GetHash()) {
                     if (hash != pSourceCube->Hash) // this hash has changed !!
                     {
                         pSourceCube->Hash = hash;

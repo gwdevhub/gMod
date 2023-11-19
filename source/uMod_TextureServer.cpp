@@ -77,7 +77,7 @@ int uMod_TextureServer::AddClient(uMod_TextureClient* client, TextureFileStruct*
     return RETURN_OK;
 }
 
-int uMod_TextureServer::AddFile(char* dataPtr, unsigned int size, MyTypeHash hash, bool force) // called from Mainloop()
+int uMod_TextureServer::AddFile(char* dataPtr, unsigned int size, HashType hash, bool force) // called from Mainloop()
 {
     Message("uMod_TextureServer::AddFile( %p %p, %#lX, %d): %p\n", dataPtr, size, hash, force, this);
 

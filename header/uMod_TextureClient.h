@@ -56,14 +56,14 @@ private:
     TextureFileStruct* FileToMod; // array which stores the file in memory and the hash of each texture to be modded
 
 
-    int LookUpToMod(MyTypeHash hash, int num_index_list, int* index_list); // called from LookUpToMod(...);
+    int LookUpToMod(HashType hash, int num_index_list, int* index_list); // called from LookUpToMod(...);
     int LoadTexture(TextureFileStruct* file_in_memory, uMod_IDirect3DTexture9** ppTexture); // called if a target texture is found
     int LoadTexture(TextureFileStruct* file_in_memory, uMod_IDirect3DVolumeTexture9** ppTexture); // called if a target texture is found
     int LoadTexture(TextureFileStruct* file_in_memory, uMod_IDirect3DCubeTexture9** ppTexture); // called if a target texture is found
 
     // and the corresponding fake texture should be loaded
 
-    //MyTypeHash GetHash(unsigned char *str, int len);
+    //HashType GetHash(unsigned char *str, int len);
     //unsigned int GetCRC32(char *pcDatabuf, unsigned int ulDatalen);
 };
 

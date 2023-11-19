@@ -1,9 +1,9 @@
 #include "uMod_Main.h"
 
 /*
-MyTypeHash GetHash(unsigned char *str, int len) // estimate the hash
+HashType GetHash(unsigned char *str, int len) // estimate the hash
 {
-  MyTypeHash hash = 0;
+  HashType hash = 0;
   for (int i=0; i<len; i++) hash = str[i] + (hash << 6) + (hash << 16) - hash;
   return hash);
 }

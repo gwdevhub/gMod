@@ -1,7 +1,7 @@
 #pragma once
 
-//#define MyTypeHash DWORD64
-#define MyTypeHash DWORD32
+//#define HashType DWORD64
+using HashType = DWORD32;
 
 #define BIG_BUFSIZE 1<<24
 #define SMALL_BUFSIZE 1<<10
@@ -9,7 +9,7 @@
 using MsgStruct = struct {
     unsigned int Control;
     unsigned int Value;
-    MyTypeHash Hash;
+    HashType Hash;
 };
 
 using PipeStruct = struct {

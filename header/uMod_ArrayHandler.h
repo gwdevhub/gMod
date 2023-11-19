@@ -11,7 +11,7 @@ struct TextureFileStruct {
     int NumberOfTextures;
     int Reference; // for a fast delete in the FileHandler
     IDirect3DBaseTexture9** Textures; // pointer to the fake textures
-    MyTypeHash Hash; // hash value
+    HashType Hash; // hash value
 };
 
 class uMod_FileHandler  // array to store TextureFileStruct
