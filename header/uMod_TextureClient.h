@@ -25,13 +25,12 @@ public:
     int RemoveTexture(uMod_IDirect3DVolumeTexture9* tex); //called from  uMod_IDirect3DVolumeTexture9::Release()
     int RemoveTexture(uMod_IDirect3DCubeTexture9* tex); //called from  uMod_IDirect3DCubeTexture9::Release()
 
-    int AddUpdate(TextureFileStruct* update, int number);  //called from the Server, client object must delete update array
     int MergeUpdate(); //called from uMod_IDirect3DDevice9::BeginScene()
 
     int LookUpToMod(uMod_IDirect3DTexture9* pTexture, int num_index_list = 0, int* index_list = nullptr); // called at the end AddTexture(...) and from Device->UpdateTexture(...)
     int LookUpToMod(uMod_IDirect3DVolumeTexture9* pTexture, int num_index_list = 0, int* index_list = nullptr); // called at the end AddTexture(...) and from Device->UpdateTexture(...)
     int LookUpToMod(uMod_IDirect3DCubeTexture9* pTexture, int num_index_list = 0, int* index_list = nullptr); // called at the end AddTexture(...) and from Device->UpdateTexture(...)
-    bool AddFile(TpfEntry entry);
+    bool AddFile(TpfEntry& entry);
 
     uMod_TextureHandler<uMod_IDirect3DTexture9> OriginalTextures; // stores the pointer to the uMod_IDirect3DTexture9 objects created by the game
     uMod_TextureHandler<uMod_IDirect3DVolumeTexture9> OriginalVolumeTextures; // stores the pointer to the uMod_IDirect3DVolumeTexture9 objects created by the game
@@ -47,6 +46,7 @@ private:
 
     TextureFileStruct* Update;
     int NumberOfUpdate;
+    bool should_update = false;
 
     int LockMutex();
     int UnlockMutex();

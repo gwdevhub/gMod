@@ -223,26 +223,9 @@ int uMod_TextureClient::RemoveTexture(uMod_IDirect3DCubeTexture9* pTexture) // i
     return RETURN_OK;
 }
 
-
-int uMod_TextureClient::AddUpdate(TextureFileStruct* update, int number)  //client must delete the update array
-{
-    Message("AddUpdate( %p, %d): %p\n", update, number, this);
-    if (const int ret = LockMutex()) {
-        gl_ErrorState |= uMod_ERROR_TEXTURE;
-        return ret;
-    }
-
-    delete [] Update;
-
-    Update = update;
-    NumberOfUpdate = number;
-    return UnlockMutex();
-}
-
-
 int uMod_TextureClient::MergeUpdate()
 {
-    if (NumberOfUpdate < 0) { return RETURN_OK; }
+    if (!should_update) return RETURN_OK;
     if (const int ret = LockMutex()) {
         gl_ErrorState |= uMod_ERROR_TEXTURE;
         return ret;
@@ -250,14 +233,10 @@ int uMod_TextureClient::MergeUpdate()
 
     Message("MergeUpdate(): %p\n", this);
 
-    for (int i = 0; i < NumberOfUpdate; i++) {
-        Update[i].NumberOfTextures = 0;
-        Update[i].Textures = nullptr;
-    } // this is already done, but safety comes first ^^
-
     int pos_old = 0;
     int pos_new = 0;
     int* to_lookup = nullptr;
+    NumberOfUpdate = static_cast<int>(modded_textures.size());
     if (NumberOfUpdate > 0) {
         to_lookup = new int[NumberOfUpdate];
     }
@@ -660,17 +639,18 @@ int uMod_TextureClient::LoadTexture(TextureFileStruct* file_in_memory, uMod_IDir
     return RETURN_OK;
 }
 
-bool uMod_TextureClient::AddFile(TpfEntry entry)
+bool uMod_TextureClient::AddFile(TpfEntry& entry)
 {
     TextureFileStruct texture_file_struct;
     if (modded_textures.contains(entry.crc_hash)) {
         return false;
     }
     texture_file_struct.data = std::move(entry.data);
+    texture_file_struct.pData = texture_file_struct.data.data();
+    texture_file_struct.Size = texture_file_struct.data.size();
     texture_file_struct.crc_hash = entry.crc_hash;
-    texture_file_struct.NumberOfTextures = 0;
-    texture_file_struct.Reference = -1;
-    modded_textures.emplace(entry.crc_hash, texture_file_struct);
+    modded_textures.emplace(entry.crc_hash, std::move(texture_file_struct));
+    should_update = true;
     return true;
 }
 
@@ -698,7 +678,7 @@ void uMod_TextureClient::LoadModsFromFile(const char* source)
             }
             if (!entries.empty()) {
                 Message("Initialize: Texture count %zu %s\n", entries.size(), line.c_str());
-                for (const auto& tpf_entry : entries) {
+                for (auto tpf_entry : entries) {
                     if (AddFile(tpf_entry)) {
                         loaded_size += tpf_entry.data.size();
                     }
