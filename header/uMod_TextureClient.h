@@ -27,14 +27,15 @@ public:
 
     int MergeUpdate(); //called from uMod_IDirect3DDevice9::BeginScene()
 
-    int LookUpToMod(uMod_IDirect3DTexture9* pTexture, int num_index_list = 0, int* index_list = nullptr); // called at the end AddTexture(...) and from Device->UpdateTexture(...)
-    int LookUpToMod(uMod_IDirect3DVolumeTexture9* pTexture, int num_index_list = 0, int* index_list = nullptr); // called at the end AddTexture(...) and from Device->UpdateTexture(...)
-    int LookUpToMod(uMod_IDirect3DCubeTexture9* pTexture, int num_index_list = 0, int* index_list = nullptr); // called at the end AddTexture(...) and from Device->UpdateTexture(...)
-    bool AddFile(TpfEntry& entry);
+    int LookUpToMod(uMod_IDirect3DTexture9* pTexture); // called at the end AddTexture(...) and from Device->UpdateTexture(...)
+    int LookUpToMod(uMod_IDirect3DVolumeTexture9* pTexture); // called at the end AddTexture(...) and from Device->UpdateTexture(...)
+    int LookUpToMod(uMod_IDirect3DCubeTexture9* pTexture); // called at the end AddTexture(...) and from Device->UpdateTexture(...)
+    // Add TpfEntry data, return size of data added. 0 on failure.
+    unsigned long AddFile(TpfEntry& entry);
 
-    uMod_TextureHandler<uMod_IDirect3DTexture9> OriginalTextures; // stores the pointer to the uMod_IDirect3DTexture9 objects created by the game
-    uMod_TextureHandler<uMod_IDirect3DVolumeTexture9> OriginalVolumeTextures; // stores the pointer to the uMod_IDirect3DVolumeTexture9 objects created by the game
-    uMod_TextureHandler<uMod_IDirect3DCubeTexture9> OriginalCubeTextures; // stores the pointer to the uMod_IDirect3DCubeTexture9 objects created by the game
+    std::vector<uMod_IDirect3DTexture9*> OriginalTextures; // stores the pointer to the uMod_IDirect3DTexture9 objects created by the game
+    std::vector<uMod_IDirect3DVolumeTexture9*> OriginalVolumeTextures; // stores the pointer to the uMod_IDirect3DVolumeTexture9 objects created by the game
+    std::vector<uMod_IDirect3DCubeTexture9*> OriginalCubeTextures; // stores the pointer to the uMod_IDirect3DCubeTexture9 objects created by the game
 
     D3DCOLOR FontColour;
     D3DCOLOR TextureColour;
@@ -54,20 +55,15 @@ private:
     int SetLastCreatedVolumeTexture(uMod_IDirect3DVolumeTexture9*);
     int SetLastCreatedCubeTexture(uMod_IDirect3DCubeTexture9*);
 
-
-    TextureFileStruct* Update;
-    int NumberOfUpdate;
     bool should_update = false;
 
     int LockMutex();
     int UnlockMutex();
     HANDLE Mutex;
 
-    int NumberToMod; // number of texture to be modded
-    TextureFileStruct* FileToMod; // array which stores the file in memory and the hash of each texture to be modded
-    std::map<HashType, TextureFileStruct> modded_textures; // array which stores the file in memory and the hash of each texture to be modded
+    std::map<HashType, TextureFileStruct*> modded_textures; // array which stores the file in memory and the hash of each texture to be modded
 
-    int LookUpToMod(HashType hash, int num_index_list, int* index_list); // called from LookUpToMod(...);
+    TextureFileStruct* LookUpToMod(HashType hash); // called from LookUpToMod(...);
     int LoadTexture(TextureFileStruct* file_in_memory, uMod_IDirect3DTexture9** ppTexture); // called if a target texture is found
     int LoadTexture(TextureFileStruct* file_in_memory, uMod_IDirect3DVolumeTexture9** ppTexture); // called if a target texture is found
     int LoadTexture(TextureFileStruct* file_in_memory, uMod_IDirect3DCubeTexture9** ppTexture); // called if a target texture is found

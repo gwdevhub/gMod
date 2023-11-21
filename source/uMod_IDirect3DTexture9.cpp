@@ -238,9 +238,7 @@ HRESULT APIENTRY uMod_IDirect3DTexture9::AddDirtyRect(CONST RECT* pDirtyRect)
 
 HashType uMod_IDirect3DTexture9::GetHash() const
 {
-    if (FAKE) {
-        return RETURN_BAD_ARGUMENT;
-    }
+    ASSERT(!FAKE);
     IDirect3DTexture9* pTexture = m_D3Dtex;
     if (CrossRef_D3Dtex != nullptr) {
         pTexture = CrossRef_D3Dtex->m_D3Dtex;
@@ -329,6 +327,10 @@ HashType uMod_IDirect3DTexture9::GetHash() const
         }
     }
 
+    const int size = (GetBitsFromFormat(desc.Format) * desc.Width * desc.Height) / 8;
+    const auto hash = GetCRC32(static_cast<char*>(d3dlr.pBits), size); //calculate the crc32 of the texture
+
+    // Only release surfaces after we're finished with d3dlr
     if (pOffscreenSurface != nullptr) {
         pOffscreenSurface->UnlockRect();
         pOffscreenSurface->Release();
@@ -343,9 +345,6 @@ HashType uMod_IDirect3DTexture9::GetHash() const
     else {
         pTexture->UnlockRect(0);
     }
-
-    const int size = (GetBitsFromFormat(desc.Format) * desc.Width * desc.Height) / 8;
-    const auto hash = GetCRC32(static_cast<char*>(d3dlr.pBits), size); //calculate the crc32 of the texture
     Message("uMod_IDirect3DTexture9::GetHash() %#lX (%d %d) %d = %d\n", hash, desc.Width, desc.Height, desc.Format, size);
     return hash;
 }

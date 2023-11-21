@@ -169,12 +169,12 @@ public:
 
 private:
     int CreateSingleTexture();
-    IDirect3DDevice9* m_pIDirect3DDevice9;
+    IDirect3DDevice9* m_pIDirect3DDevice9 = nullptr;
 
     int CounterSaveSingleTexture;
-    uMod_IDirect3DTexture9* SingleTexture;
-    uMod_IDirect3DVolumeTexture9* SingleVolumeTexture;
-    uMod_IDirect3DCubeTexture9* SingleCubeTexture;
+    uMod_IDirect3DTexture9* SingleTexture = nullptr;
+    uMod_IDirect3DVolumeTexture9* SingleVolumeTexture = nullptr;
+    uMod_IDirect3DCubeTexture9* SingleCubeTexture = nullptr;
     char SingleTextureMod;
 
     D3DCOLOR TextureColour;
@@ -185,9 +185,9 @@ private:
 
     int uMod_Reference;
 
-    uMod_IDirect3DTexture9* LastCreatedTexture;
-    uMod_IDirect3DVolumeTexture9* LastCreatedVolumeTexture;
-    uMod_IDirect3DCubeTexture9* LastCreatedCubeTexture;
+    uMod_IDirect3DTexture9* LastCreatedTexture = nullptr;
+    uMod_IDirect3DVolumeTexture9* LastCreatedVolumeTexture = nullptr;
+    uMod_IDirect3DCubeTexture9* LastCreatedCubeTexture = nullptr;
 
     uMod_TextureClient* uMod_Client;
 };

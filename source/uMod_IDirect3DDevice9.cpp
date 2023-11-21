@@ -24,7 +24,6 @@ int uMod_IDirect3DDevice9::CreateSingleTexture()
         }
         LastCreatedTexture = nullptr; // set LastCreatedTexture to NULL, cause LastCreatedTexture is equal SingleTexture
         SingleTexture->FAKE = true; //this is no texture created from by game
-        SingleTexture->Reference = -2;
     }
 
     {
@@ -54,7 +53,6 @@ int uMod_IDirect3DDevice9::CreateSingleTexture()
         }
         LastCreatedVolumeTexture = nullptr; // set LastCreatedTexture to NULL, cause LastCreatedTexture is equal SingleTexture
         SingleVolumeTexture->FAKE = true; //this is no texture created from by game
-        SingleVolumeTexture->Reference = -2;
     }
 
     {
@@ -83,7 +81,6 @@ int uMod_IDirect3DDevice9::CreateSingleTexture()
         }
         LastCreatedCubeTexture = nullptr; // set LastCreatedTexture to NULL, cause LastCreatedTexture is equal SingleTexture
         SingleCubeTexture->FAKE = true; //this is no texture created from by game
-        SingleCubeTexture->Reference = -2;
     }
 
     {

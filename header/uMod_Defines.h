@@ -18,6 +18,8 @@ extern FILE* gl_File;
 #define OpenMessage(...)
 #endif
 
+#define ERASE_FIRST(vector,element)  { const auto found = std::ranges::find(vector, element); if (found != vector.end()) vector.erase(found); } 
+
 #ifdef NO_INJECTION
 #define OpenMessage(...) {if (fopen_s( &gl_File, "uMod_log.txt", "wt")) gl_File=NULL; else fprintf( gl_File, "NI R40: 0000000\n");}
 #endif

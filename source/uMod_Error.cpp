@@ -11,7 +11,7 @@ unsigned int line,
 const char *function)
 {
     const char* fmt = "%s\n%s\n%s line %d";
-    int len = sprintf(0, fmt, expr, file, function, line);
+    int len = snprintf(NULL, 0, fmt, expr, file, function, line);
 
     char* buf = new char[len + 1];
     snprintf(buf,len + 1, fmt, expr, file, function, line);

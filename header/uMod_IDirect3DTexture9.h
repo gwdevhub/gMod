@@ -1,7 +1,7 @@
 #pragma once
 
 #include <d3d9.h>
-
+struct TextureFileStruct;
 interface uMod_IDirect3DTexture9 : public IDirect3DTexture9 {
     uMod_IDirect3DTexture9(IDirect3DTexture9** ppTex, IDirect3DDevice9* pIDirect3DDevice9)
     {
@@ -11,18 +11,15 @@ interface uMod_IDirect3DTexture9 : public IDirect3DTexture9 {
         // fake texture: store the pointer to the original uMod_IDirect3DTexture9 object, needed if a fake texture is unselected
         // original texture: stores the pointer to the fake texture object, is needed if original texture is deleted,
         // thus the fake texture can also be deleted
-        Reference = -1; //need for fast deleting
-        Hash = 0u;
-        FAKE = false;
     }
 
     // callback interface
-    IDirect3DTexture9* m_D3Dtex;
-    uMod_IDirect3DTexture9* CrossRef_D3Dtex;
-    IDirect3DDevice9* m_D3Ddev;
-    int Reference;
-    HashType Hash;
-    bool FAKE;
+    IDirect3DTexture9* m_D3Dtex = nullptr;
+    uMod_IDirect3DTexture9* CrossRef_D3Dtex = nullptr;
+    IDirect3DDevice9* m_D3Ddev = nullptr;
+    TextureFileStruct* Reference = nullptr;
+    HashType Hash = 0u;
+    bool FAKE = false;
 
     // original interface
     STDMETHOD(QueryInterface)(REFIID riid, void** ppvObj) override;
