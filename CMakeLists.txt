@@ -31,6 +31,8 @@ set(CMAKE_INSTALL_PREFIX ${PROJECT_SOURCE_DIR}/bin/install)
 
 add_compile_options(/MP /permissive-)
 
+add_subdirectory(Dependencies)
+
 find_library(D3D9_LIB NAMES d3d9 PATHS $ENV{DXSDK_DIR}/lib/x86 NO_DEFAULT_PATH)
 find_library(D3DX9_LIB NAMES d3dx9 PATHS $ENV{DXSDK_DIR}/lib/x86 NO_DEFAULT_PATH)
 find_library(DXGUID_LIB NAMES dxguid PATHS $ENV{DXSDK_DIR}/lib/x86 NO_DEFAULT_PATH)
@@ -72,6 +74,7 @@ target_link_libraries(gMod PRIVATE
     ${DXGUID_LIB}
     libzippp
 	psapi
+	minhook
     )
 target_link_options(gMod PRIVATE
     "$<$<CONFIG:DEBUG>:/NODEFAULTLIB:LIBCMT>"

@@ -30,5 +30,4 @@
 #pragma warning(disable : 4477)
 
 extern unsigned int gl_ErrorState;
-extern HINSTANCE gl_hOriginalDll;
 extern HINSTANCE gl_hThisInstance;
