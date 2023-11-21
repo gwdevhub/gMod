@@ -151,6 +151,7 @@ int uMod_TextureClient::RemoveTexture(uMod_IDirect3DCubeTexture9* pTexture) // i
 int uMod_TextureClient::MergeUpdate()
 {
     if (!should_update) return RETURN_OK;
+    should_update = false;
     if (const int ret = LockMutex()) {
         gl_ErrorState |= uMod_ERROR_TEXTURE;
         return ret;
