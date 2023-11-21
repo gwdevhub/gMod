@@ -43,6 +43,17 @@ public:
 
 private:
     IDirect3DDevice9* D3D9Device;
+    // Cached info about whether this id a dx9ex device or not; used for proxy functions
+    bool isDirectXExDevice = false;
+
+    // DX9 proxy functions
+    uMod_IDirect3DTexture9* GetSingleTexture();
+    uMod_IDirect3DVolumeTexture9* GetSingleVolumeTexture();
+    uMod_IDirect3DCubeTexture9* GetSingleCubeTexture();
+    int SetLastCreatedTexture(uMod_IDirect3DTexture9*);
+    int SetLastCreatedVolumeTexture(uMod_IDirect3DVolumeTexture9*);
+    int SetLastCreatedCubeTexture(uMod_IDirect3DCubeTexture9*);
+
 
     TextureFileStruct* Update;
     int NumberOfUpdate;

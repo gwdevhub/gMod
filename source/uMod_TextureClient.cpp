@@ -7,6 +7,10 @@ uMod_TextureClient::uMod_TextureClient(IDirect3DDevice9* device)
 {
     Message("uMod_TextureClient::uMod_TextureClient(): %p\n", this);
     D3D9Device = device;
+
+    void* cpy;
+    isDirectXExDevice = D3D9Device->QueryInterface(IID_IDirect3DTexture9, &cpy) == 0x01000000L;
+
     NumberToMod = 0;
     FileToMod = nullptr;
 
@@ -44,14 +48,7 @@ uMod_TextureClient::~uMod_TextureClient()
 
 int uMod_TextureClient::AddTexture(uMod_IDirect3DTexture9* pTexture)
 {
-    void* cpy;
-    const long ret = D3D9Device->QueryInterface(IID_IDirect3DTexture9, &cpy);
-    if (ret == 0x01000000L) {
-        static_cast<uMod_IDirect3DDevice9*>(D3D9Device)->SetLastCreatedTexture(nullptr); //this texture must no be added twice
-    }
-    else {
-        static_cast<uMod_IDirect3DDevice9Ex*>(D3D9Device)->SetLastCreatedTexture(nullptr); //this texture must no be added twice
-    }
+    SetLastCreatedTexture(nullptr);
 
     if (pTexture->FAKE) {
         return RETURN_OK; // this is a fake texture
@@ -75,14 +72,7 @@ int uMod_TextureClient::AddTexture(uMod_IDirect3DTexture9* pTexture)
 
 int uMod_TextureClient::AddTexture(uMod_IDirect3DVolumeTexture9* pTexture)
 {
-    void* cpy;
-    const long ret = D3D9Device->QueryInterface(IID_IDirect3DTexture9, &cpy);
-    if (ret == 0x01000000L) {
-        static_cast<uMod_IDirect3DDevice9*>(D3D9Device)->SetLastCreatedVolumeTexture(nullptr); //this texture must no be added twice
-    }
-    else {
-        static_cast<uMod_IDirect3DDevice9Ex*>(D3D9Device)->SetLastCreatedVolumeTexture(nullptr); //this texture must no be added twice
-    }
+    SetLastCreatedVolumeTexture(nullptr);
 
     if (pTexture->FAKE) {
         return RETURN_OK; // this is a fake texture
@@ -106,14 +96,7 @@ int uMod_TextureClient::AddTexture(uMod_IDirect3DVolumeTexture9* pTexture)
 
 int uMod_TextureClient::AddTexture(uMod_IDirect3DCubeTexture9* pTexture)
 {
-    void* cpy;
-    const long ret = D3D9Device->QueryInterface(IID_IDirect3DTexture9, &cpy);
-    if (ret == 0x01000000L) {
-        static_cast<uMod_IDirect3DDevice9*>(D3D9Device)->SetLastCreatedCubeTexture(nullptr); //this texture must no be added twice
-    }
-    else {
-        static_cast<uMod_IDirect3DDevice9Ex*>(D3D9Device)->SetLastCreatedCubeTexture(nullptr); //this texture must no be added twice
-    }
+    SetLastCreatedCubeTexture(nullptr);
 
     if (pTexture->FAKE) {
         return RETURN_OK; // this is a fake texture
@@ -313,15 +296,7 @@ int uMod_TextureClient::MergeUpdate()
 
 
     if (num_to_lookup > 0) {
-        uMod_IDirect3DTexture9* single_texture;
-        void* cpy;
-        const long ret = D3D9Device->QueryInterface(IID_IDirect3DTexture9, &cpy);
-        if (ret == 0x01000000L) {
-            single_texture = static_cast<uMod_IDirect3DDevice9*>(D3D9Device)->GetSingleTexture(); //this texture must no be added twice
-        }
-        else {
-            single_texture = static_cast<uMod_IDirect3DDevice9Ex*>(D3D9Device)->GetSingleTexture(); //this texture must no be added twice
-        }
+
 
         int num = OriginalTextures.GetNumber();
         for (int i = 0; i < num; i++) {
@@ -330,14 +305,7 @@ int uMod_TextureClient::MergeUpdate()
                 LookUpToMod(OriginalTextures[i], num_to_lookup, to_lookup);
             }
         }
-
-        uMod_IDirect3DVolumeTexture9* single_volume_texture;
-        if (ret == 0x01000000L) {
-            single_volume_texture = static_cast<uMod_IDirect3DDevice9*>(D3D9Device)->GetSingleVolumeTexture(); //this texture must no be added twice
-        }
-        else {
-            single_volume_texture = static_cast<uMod_IDirect3DDevice9Ex*>(D3D9Device)->GetSingleVolumeTexture(); //this texture must no be added twice
-        }
+        const auto single_volume_texture = GetSingleVolumeTexture();
         num = OriginalVolumeTextures.GetNumber();
         for (int i = 0; i < num; i++) {
             if (OriginalVolumeTextures[i]->CrossRef_D3Dtex == nullptr || OriginalVolumeTextures[i]->CrossRef_D3Dtex == single_volume_texture) {
@@ -346,13 +314,7 @@ int uMod_TextureClient::MergeUpdate()
             }
         }
 
-        uMod_IDirect3DCubeTexture9* single_cube_texture;
-        if (ret == 0x01000000L) {
-            single_cube_texture = static_cast<uMod_IDirect3DDevice9*>(D3D9Device)->GetSingleCubeTexture(); //this texture must no be added twice
-        }
-        else {
-            single_cube_texture = static_cast<uMod_IDirect3DDevice9Ex*>(D3D9Device)->GetSingleCubeTexture(); //this texture must no be added twice
-        }
+        const auto single_cube_texture = GetSingleCubeTexture();
         num = OriginalCubeTextures.GetNumber();
         for (int i = 0; i < num; i++) {
             if (OriginalCubeTextures[i]->CrossRef_D3Dtex == nullptr || OriginalCubeTextures[i]->CrossRef_D3Dtex == single_cube_texture) {
@@ -366,6 +328,38 @@ int uMod_TextureClient::MergeUpdate()
 
     return UnlockMutex();
 }
+
+uMod_IDirect3DTexture9* uMod_TextureClient::GetSingleTexture() {
+    if (isDirectXExDevice)
+        return static_cast<uMod_IDirect3DDevice9Ex*>(D3D9Device)->GetSingleTexture(); //this texture must no be added twice
+    return static_cast<uMod_IDirect3DDevice9*>(D3D9Device)->GetSingleTexture();
+}
+uMod_IDirect3DVolumeTexture9* uMod_TextureClient::GetSingleVolumeTexture() {
+    if (isDirectXExDevice)
+        return static_cast<uMod_IDirect3DDevice9Ex*>(D3D9Device)->GetSingleVolumeTexture(); //this texture must no be added twice
+    return static_cast<uMod_IDirect3DDevice9*>(D3D9Device)->GetSingleVolumeTexture();
+}
+uMod_IDirect3DCubeTexture9* uMod_TextureClient::GetSingleCubeTexture() {
+    if (isDirectXExDevice)
+        return static_cast<uMod_IDirect3DDevice9Ex*>(D3D9Device)->GetSingleCubeTexture(); //this texture must no be added twice
+    return static_cast<uMod_IDirect3DDevice9*>(D3D9Device)->GetSingleCubeTexture();
+}
+int uMod_TextureClient::SetLastCreatedTexture(uMod_IDirect3DTexture9* texture) {
+    if (isDirectXExDevice)
+        return static_cast<uMod_IDirect3DDevice9Ex*>(D3D9Device)->SetLastCreatedTexture(texture); //this texture must no be added twice
+    return static_cast<uMod_IDirect3DDevice9*>(D3D9Device)->SetLastCreatedTexture(texture);
+}
+int uMod_TextureClient::SetLastCreatedVolumeTexture(uMod_IDirect3DVolumeTexture9* texture) {
+    if (isDirectXExDevice)
+        return static_cast<uMod_IDirect3DDevice9Ex*>(D3D9Device)->SetLastCreatedVolumeTexture(texture); //this texture must no be added twice
+    return static_cast<uMod_IDirect3DDevice9*>(D3D9Device)->SetLastCreatedVolumeTexture(texture);
+}
+int uMod_TextureClient::SetLastCreatedCubeTexture(uMod_IDirect3DCubeTexture9* texture) {
+    if (isDirectXExDevice)
+        return static_cast<uMod_IDirect3DDevice9Ex*>(D3D9Device)->SetLastCreatedCubeTexture(texture); //this texture must no be added twice
+    return static_cast<uMod_IDirect3DDevice9*>(D3D9Device)->SetLastCreatedCubeTexture(texture);
+}
+
 
 
 
@@ -574,14 +568,7 @@ int uMod_TextureClient::LoadTexture(TextureFileStruct* file_in_memory, uMod_IDir
     }
     (*ppTexture)->FAKE = true;
 
-    void* cpy;
-    const long ret = D3D9Device->QueryInterface(IID_IDirect3DTexture9, &cpy);
-    if (ret == 0x01000000L) {
-        static_cast<uMod_IDirect3DDevice9*>(D3D9Device)->SetLastCreatedTexture(nullptr); //this texture must no be added twice
-    }
-    else {
-        static_cast<uMod_IDirect3DDevice9Ex*>(D3D9Device)->SetLastCreatedTexture(nullptr); //this texture must no be added twice
-    }
+    SetLastCreatedTexture(nullptr);
 
     Message("LoadTexture( %p, %#lX): DONE\n", *ppTexture, file_in_memory->crc_hash);
     return RETURN_OK;
@@ -601,14 +588,7 @@ int uMod_TextureClient::LoadTexture(TextureFileStruct* file_in_memory, uMod_IDir
     }
     (*ppTexture)->FAKE = true;
 
-    void* cpy;
-    const long ret = D3D9Device->QueryInterface(IID_IDirect3DTexture9, &cpy);
-    if (ret == 0x01000000L) {
-        static_cast<uMod_IDirect3DDevice9*>(D3D9Device)->SetLastCreatedVolumeTexture(nullptr); //this texture must no be added twice
-    }
-    else {
-        static_cast<uMod_IDirect3DDevice9Ex*>(D3D9Device)->SetLastCreatedVolumeTexture(nullptr); //this texture must no be added twice
-    }
+    SetLastCreatedVolumeTexture(nullptr);
 
     Message("LoadTexture( Volume %p, %#lX): DONE\n", *ppTexture, file_in_memory->crc_hash);
     return RETURN_OK;
@@ -626,14 +606,7 @@ int uMod_TextureClient::LoadTexture(TextureFileStruct* file_in_memory, uMod_IDir
     }
     (*ppTexture)->FAKE = true;
 
-    void* cpy;
-    const long ret = D3D9Device->QueryInterface(IID_IDirect3DTexture9, &cpy);
-    if (ret == 0x01000000L) {
-        static_cast<uMod_IDirect3DDevice9*>(D3D9Device)->SetLastCreatedCubeTexture(nullptr); //this texture must no be added twice
-    }
-    else {
-        static_cast<uMod_IDirect3DDevice9Ex*>(D3D9Device)->SetLastCreatedCubeTexture(nullptr); //this texture must no be added twice
-    }
+    SetLastCreatedCubeTexture(nullptr);
 
     Message("LoadTexture( Cube %p, %#lX): DONE\n", *ppTexture, file_in_memory->crc_hash);
     return RETURN_OK;
