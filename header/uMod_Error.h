@@ -42,3 +42,11 @@
 #define uMod_ERROR_UPDATE 1u<<7
 #define uMod_ERROR_SERVER 1u<<8
 
+__declspec(noreturn) void FatalAssert(
+    const char* expr,
+    const char* file,
+    unsigned int line,
+    const char* function);
+
+#define ASSERT(expr) ((void)(!!(expr) || (FatalAssert(#expr, __FILE__, (unsigned)__LINE__, __FUNCTION__), 0)))
+
