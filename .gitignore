@@ -5,6 +5,14 @@
 *.vscode
 *.project
 *.cproject
+*.vcproj
+*.vcxproj
+*.vcxproj.filters
+**/CMakeFiles/**
+cmake_install.cmake
+CMakeCache.txt
+*.sln
+*.rc
 
 # Build directories
 Release
@@ -48,5 +56,6 @@ bin/
 
 /out
 /build
+/_deps
 
 .idea
