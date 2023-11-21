@@ -9,7 +9,7 @@ uMod_TextureClient::uMod_TextureClient(IDirect3DDevice9* device)
     D3D9Device = device;
 
     void* cpy;
-    isDirectXExDevice = D3D9Device->QueryInterface(IID_IDirect3DTexture9, &cpy) == 0x01000000L;
+    isDirectXExDevice = D3D9Device->QueryInterface(IID_IDirect3DTexture9, &cpy) == 0x01000001L;
 
     Mutex = CreateMutex(nullptr, false, nullptr);
 
