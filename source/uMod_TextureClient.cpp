@@ -417,7 +417,7 @@ void uMod_TextureClient::LoadModsFromFile(const char* source)
     Message("Initialize: found modlist.txt. Reading\n");
     std::string line;
     while (std::getline(file, line)) {
-        Message("Initialize: loading file %s\n", line.c_str());
+        Message("Initialize: loading file %s... ", line.c_str());
 
         // Remove newline character
         line.erase(std::ranges::remove(line, '\n').begin(), line.end());
@@ -425,18 +425,20 @@ void uMod_TextureClient::LoadModsFromFile(const char* source)
         auto file_loader = gMod_FileLoader(line);
         auto entries = file_loader.GetContents();
         if (loaded_size > 1'500'000'000) {
-            Message("LoadModsFromFile: Loaded %d bytes, aborting!!!", loaded_size);
+            Message("LoadModsFromFile: Loaded %d bytes, aborting!!!\n", loaded_size);
             return;
         }
         if (entries.empty()) {
-            Message("Initialize: Failed to load any textures for %s\n", line.c_str());
+            Message("No entries found.\n");
             continue;
         }
-        Message("Initialize: Texture count %zu %s\n", entries.size(), line.c_str());
+        Message("%zu textures... ", entries.size());
+        unsigned long file_bytes_loaded = 0;
         for (auto& tpf_entry : entries) {
-            loaded_size += AddFile(tpf_entry);
-            Message("LoadModsFromFile: Loaded %d bytes", loaded_size);
+            file_bytes_loaded += AddFile(tpf_entry);
         }
+        Message("%d bytes loaded.\n", file_bytes_loaded);
+        loaded_size += file_bytes_loaded;
     }
     Message("Finished loading mods: Loaded %u bytes (%u mb)", loaded_size, loaded_size / 1024 / 1024);
 }
