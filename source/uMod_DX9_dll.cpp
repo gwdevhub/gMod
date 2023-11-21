@@ -197,7 +197,7 @@ HRESULT APIENTRY uMod_Direct3DCreate9Ex(UINT SDKVersion, IDirect3D9Ex** ppD3D)
     ASSERT(Direct3DCreate9Ex_ret);
 
     IDirect3D9Ex* pIDirect3D9Ex_orig = nullptr;
-    HRESULT ret = Direct3DCreate9Ex_fn(SDKVersion, &pIDirect3D9Ex_orig); //creating the original IDirect3D9 object
+    HRESULT ret = Direct3DCreate9Ex_ret(SDKVersion, &pIDirect3D9Ex_orig); //creating the original IDirect3D9 object
 
     if (ret != S_OK)
         return ret;
