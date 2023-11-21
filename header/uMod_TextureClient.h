@@ -61,7 +61,7 @@ private:
     int UnlockMutex();
     HANDLE Mutex;
 
-    std::map<HashType, TextureFileStruct*> modded_textures; // array which stores the file in memory and the hash of each texture to be modded
+    std::unordered_map<HashType, TextureFileStruct*> modded_textures; // array which stores the file in memory and the hash of each texture to be modded
 
     TextureFileStruct* LookUpToMod(HashType hash); // called from LookUpToMod(...);
     int LoadTexture(TextureFileStruct* file_in_memory, uMod_IDirect3DTexture9** ppTexture); // called if a target texture is found
