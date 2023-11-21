@@ -134,9 +134,9 @@ void InitInstance(HINSTANCE hModule)
 void ExitInstance()
 {
     if(Direct3DCreate9_fn)
-        MH_EnableHook(Direct3DCreate9_fn);
+        MH_DisableHook(Direct3DCreate9_fn);
     if(Direct3DCreate9Ex_fn)
-        MH_EnableHook(Direct3DCreate9Ex_fn);
+        MH_DisableHook(Direct3DCreate9Ex_fn);
 
     MH_Uninitialize();
 
@@ -169,7 +169,7 @@ HMODULE LoadOriginalDll()
     strcat_s(buffer, MAX_PATH, "\\d3d9.dll");
     gl_hOriginalDll = LoadLibrary(buffer);
     found = FindLoadedDll();
-    ASSERT(found == gl_hOriginalDll);
+    ASSERT(found && found == gl_hOriginalDll);
 
     return found;
 }
