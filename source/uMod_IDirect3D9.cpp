@@ -1,4 +1,4 @@
-#include "uMod_Main.h"
+#include "Main.h"
 
 #ifndef PRE_MESSAGE
 #define PRE_MESSAGE "uMod_IDirect3D9"

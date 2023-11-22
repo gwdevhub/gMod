@@ -50,16 +50,11 @@ interface uMod_IDirect3DCubeTexture9 :  IDirect3DCubeTexture9 {
     [[nodiscard]] HashType GetHash() const;
 };
 
-
-
 inline void UnswitchTextures(uMod_IDirect3DCubeTexture9* pTexture)
 {
     uMod_IDirect3DCubeTexture9* CrossRef = pTexture->CrossRef_D3Dtex;
     if (CrossRef != nullptr) {
-        // switch textures back
-        IDirect3DCubeTexture9* cpy = pTexture->m_D3Dtex;
-        pTexture->m_D3Dtex = CrossRef->m_D3Dtex;
-        CrossRef->m_D3Dtex = cpy;
+        std::swap(pTexture->m_D3Dtex, CrossRef->m_D3Dtex);
 
         // cancel the link
         CrossRef->CrossRef_D3Dtex = nullptr;
@@ -75,9 +70,7 @@ inline int SwitchTextures(uMod_IDirect3DCubeTexture9* pTexture1, uMod_IDirect3DC
         pTexture2->CrossRef_D3Dtex = pTexture1;
 
         // switch textures
-        IDirect3DCubeTexture9* cpy = pTexture2->m_D3Dtex;
-        pTexture2->m_D3Dtex = pTexture1->m_D3Dtex;
-        pTexture1->m_D3Dtex = cpy;
+        std::swap(pTexture1->m_D3Dtex, pTexture2->m_D3Dtex);
         return RETURN_OK;
     }
     return RETURN_TEXTURE_NOT_SWITCHED;

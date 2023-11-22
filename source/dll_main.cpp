@@ -1,8 +1,8 @@
-#include "uMod_DX9_dll.h"
+#include "dll_main.h"
 
 #include <array>
 #include <Windows.h>
-#include "uMod_Main.h"
+#include "Main.h"
 #include <Psapi.h>
 
 #include "MinHook.h"
@@ -27,10 +27,6 @@ namespace {
     * global variable which are linked external
     */
     unsigned int gl_ErrorState = 0u;
-
-#ifdef LOG_MESSAGE
-    FILE* gl_File = nullptr;
-#endif
 
     // If not nullptr, we're responsible for freeing this library on termination
     HMODULE gl_hOriginalDll = nullptr;
@@ -106,7 +102,6 @@ void InitInstance(HINSTANCE hModule)
 {
     DisableThreadLibraryCalls(hModule); //reduce overhead
     gl_hThisInstance = hModule;
-    OpenMessage();
     Message("InitInstance: %p\n", hModule);
 
     const auto d3d9_dll = LoadOriginalDll();
@@ -153,7 +148,6 @@ void ExitInstance()
         fclose(stderr_proxy);
     FreeConsole();
 #endif
-    CloseMessage();
 }
 
 HMODULE LoadOriginalDll()

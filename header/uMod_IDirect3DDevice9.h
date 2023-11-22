@@ -5,7 +5,7 @@
 #include "uMod_IDirect3DTexture9.h"
 #include "uMod_IDirect3DVolumeTexture9.h"
 #include "uMod_IDirect3DCubeTexture9.h"
-#include "uMod_TextureClient.h"
+#include "TextureClient.h"
 
 
 class uMod_IDirect3DDevice9 : public IDirect3DDevice9 {
@@ -136,7 +136,7 @@ public:
     HRESULT __stdcall CreateQuery(D3DQUERYTYPE Type, IDirect3DQuery9** ppQuery) override;
     // END: The original DX9 function definitions
 
-    uMod_TextureClient* GetuMod_Client() { return uMod_Client; }
+    TextureClient* GetuMod_Client() { return uMod_Client; }
 
     uMod_IDirect3DTexture9* GetLastCreatedTexture() { return LastCreatedTexture; }
 
@@ -189,5 +189,5 @@ private:
     uMod_IDirect3DVolumeTexture9* LastCreatedVolumeTexture = nullptr;
     uMod_IDirect3DCubeTexture9* LastCreatedCubeTexture = nullptr;
 
-    uMod_TextureClient* uMod_Client;
+    TextureClient* uMod_Client;
 };

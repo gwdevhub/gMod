@@ -1,4 +1,4 @@
-#include "uMod_Main.h"
+#include "Main.h"
 
 HRESULT APIENTRY uMod_IDirect3DVolumeTexture9::QueryInterface(REFIID riid, void** ppvObj)
 {
@@ -99,7 +99,7 @@ ULONG APIENTRY uMod_IDirect3DVolumeTexture9::Release()
             }
         }
 
-        delete(this);
+        delete this;
     }
     return count;
 }

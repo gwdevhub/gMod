@@ -1,6 +1,20 @@
 #pragma once
 
-unsigned int GetCRC32(char* pcDatabuf, unsigned int ulDatalen);
+constexpr auto crc32_poly = 0xEDB88320u;
+constexpr auto ul_crc_in = 0xffffffff;
+
+inline unsigned int GetCRC32(char* pcDatabuf, unsigned int ulDatalen)
+{
+    unsigned int crc = ul_crc_in;
+    for (unsigned int idx = 0u; idx < ulDatalen; idx++) {
+        unsigned int data = *pcDatabuf++;
+        for (unsigned int bit = 0u; bit < 8u; bit++, data >>= 1) {
+            crc = crc >> 1 ^ ((crc ^ data) & 1 ? crc32_poly : 0);
+        }
+    }
+    return crc;
+}
+
 /*
     case D3DFMT_MULTI2_ARGB8:
     case D3DFMT_VERTEXDATA:

@@ -1,4 +1,4 @@
-#include "uMod_Main.h"
+#include "Main.h"
 
 //this function yields for the non switched texture object
 HRESULT APIENTRY uMod_IDirect3DTexture9::QueryInterface(REFIID riid, void** ppvObj)
@@ -100,7 +100,7 @@ ULONG APIENTRY uMod_IDirect3DTexture9::Release()
             }
         }
 
-        delete(this);
+        delete this;
     }
 
     Message("uMod_IDirect3DTexture9::Release() end: %p\n", this);

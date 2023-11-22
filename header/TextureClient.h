@@ -2,7 +2,7 @@
 
 #include <map>
 
-#include "gMod_FileLoader.h"
+#include "FileLoader.h"
 #include "uMod_IDirect3DTexture9.h"
 
 
@@ -18,10 +18,10 @@ struct TextureFileStruct {
  *  functions called by the Server are called from the server thread instance.
  *  All other functions are called from the render thread instance of the game itself.
  */
-class uMod_TextureClient {
+class TextureClient {
 public:
-    uMod_TextureClient(IDirect3DDevice9* device);
-    ~uMod_TextureClient();
+    TextureClient(IDirect3DDevice9* device);
+    ~TextureClient();
 
     int AddTexture(uMod_IDirect3DTexture9* tex); //called from uMod_IDirect3DDevice9::CreateTexture(...) or uMod_IDirect3DDevice9::BeginScene()
     int AddTexture(uMod_IDirect3DVolumeTexture9* tex); //called from uMod_IDirect3DVolumeTexture9::CreateTexture(...) or uMod_IDirect3DDevice9::BeginScene()

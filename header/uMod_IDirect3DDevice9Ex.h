@@ -5,7 +5,7 @@
 #include "uMod_IDirect3DTexture9.h"
 #include "uMod_IDirect3DVolumeTexture9.h"
 #include "uMod_IDirect3DCubeTexture9.h"
-#include "uMod_TextureClient.h"
+#include "TextureClient.h"
 
 
 class uMod_IDirect3DDevice9Ex : public IDirect3DDevice9Ex {
@@ -158,7 +158,7 @@ public:
 
     // END: The original DX9 function definitions
 
-    uMod_TextureClient* GetuMod_Client() { return uMod_Client; }
+    TextureClient* GetuMod_Client() { return uMod_Client; }
 
     uMod_IDirect3DTexture9* GetLastCreatedTexture() { return LastCreatedTexture; }
 
@@ -211,5 +211,5 @@ private:
     uMod_IDirect3DVolumeTexture9* LastCreatedVolumeTexture;
     uMod_IDirect3DCubeTexture9* LastCreatedCubeTexture;
 
-    uMod_TextureClient* uMod_Client;
+    TextureClient* uMod_Client;
 };

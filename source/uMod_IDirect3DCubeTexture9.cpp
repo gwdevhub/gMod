@@ -1,4 +1,4 @@
-#include "uMod_Main.h"
+#include "Main.h"
 
 //this function yields for the non switched texture object
 HRESULT APIENTRY uMod_IDirect3DCubeTexture9::QueryInterface(REFIID riid, void** ppvObj)
@@ -100,7 +100,7 @@ ULONG APIENTRY uMod_IDirect3DCubeTexture9::Release()
             }
         }
 
-        delete(this);
+        delete this;
     }
     return count;
 }
@@ -257,7 +257,8 @@ HashType uMod_IDirect3DCubeTexture9::GetHash() const
 
     Message("uMod_IDirect3DCubeTexture9::GetHash() (%d %d) %d\n", desc.Width, desc.Height, desc.Format);
 
-    if (pTexture->LockRect(D3DCUBEMAP_FACE_POSITIVE_X, 0, &d3dlr, nullptr, D3DLOCK_READONLY) != D3D_OK) {
+    if (pTexture->LockRect(D3DCUBEMAP_FACE_POSITIVE_X, 0, &d3dlr, nullptr, D3DLOCK_READONLY) != D3D_OK)
+    {
         Message("uMod_IDirect3DCubeTexture9::GetHash() Failed: LockRect 1\n");
         if (pTexture->GetCubeMapSurface(D3DCUBEMAP_FACE_POSITIVE_X, 0, &pResolvedSurface) != D3D_OK) {
             Message("uMod_IDirect3DCubeTexture9::GetHash() Failed: GetSurfaceLevel\n");
@@ -269,8 +270,6 @@ HashType uMod_IDirect3DCubeTexture9::GetHash() const
             return 0;
         }
     }
-
-
 
     const int size = (GetBitsFromFormat(desc.Format) * desc.Width * desc.Height) / 8;
     const auto hash = GetCRC32(static_cast<char*>(d3dlr.pBits), size); //calculate the crc32 of the texture

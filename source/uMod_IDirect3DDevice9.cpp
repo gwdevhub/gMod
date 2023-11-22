@@ -1,4 +1,4 @@
-#include "uMod_Main.h"
+#include "Main.h"
 
 #ifndef RETURN_QueryInterface
 #define RETURN_QueryInterface 0x01000000L
@@ -113,7 +113,7 @@ uMod_IDirect3DDevice9::uMod_IDirect3DDevice9(IDirect3DDevice9* pOriginal, int ba
     BackBufferCount = back_buffer_count;
     NormalRendering = true;
 
-    uMod_Client = new uMod_TextureClient(this); //get a new texture client for this device
+    uMod_Client = new TextureClient(this); //get a new texture client for this device
     uMod_Client->Initialize();
 
     LastCreatedTexture = nullptr;

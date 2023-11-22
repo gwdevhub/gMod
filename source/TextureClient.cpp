@@ -1,9 +1,9 @@
 #include <filesystem>
 #include <fstream>
 
-#include "uMod_Main.h"
+#include "Main.h"
 
-uMod_TextureClient::uMod_TextureClient(IDirect3DDevice9* device)
+TextureClient::TextureClient(IDirect3DDevice9* device)
 {
     Message("uMod_TextureClient::uMod_TextureClient(): %p\n", this);
     D3D9Device = device;
@@ -17,7 +17,7 @@ uMod_TextureClient::uMod_TextureClient(IDirect3DDevice9* device)
     TextureColour = D3DCOLOR_ARGB(255, 0, 255, 0);
 }
 
-uMod_TextureClient::~uMod_TextureClient()
+TextureClient::~TextureClient()
 {
     Message("uMod_TextureClient::~uMod_TextureClient(): %p\n", this);
     if (Mutex != nullptr) {
@@ -30,7 +30,7 @@ uMod_TextureClient::~uMod_TextureClient()
 }
 
 
-int uMod_TextureClient::AddTexture(uMod_IDirect3DTexture9* pTexture)
+int TextureClient::AddTexture(uMod_IDirect3DTexture9* pTexture)
 {
     SetLastCreatedTexture(nullptr);
 
@@ -54,7 +54,7 @@ int uMod_TextureClient::AddTexture(uMod_IDirect3DTexture9* pTexture)
     return LookUpToMod(pTexture); // check if this texture should be modded
 }
 
-int uMod_TextureClient::AddTexture(uMod_IDirect3DVolumeTexture9* pTexture)
+int TextureClient::AddTexture(uMod_IDirect3DVolumeTexture9* pTexture)
 {
     SetLastCreatedVolumeTexture(nullptr);
 
@@ -78,7 +78,7 @@ int uMod_TextureClient::AddTexture(uMod_IDirect3DVolumeTexture9* pTexture)
     return LookUpToMod(pTexture); // check if this texture should be modded
 }
 
-int uMod_TextureClient::AddTexture(uMod_IDirect3DCubeTexture9* pTexture)
+int TextureClient::AddTexture(uMod_IDirect3DCubeTexture9* pTexture)
 {
     SetLastCreatedCubeTexture(nullptr);
 
@@ -103,7 +103,7 @@ int uMod_TextureClient::AddTexture(uMod_IDirect3DCubeTexture9* pTexture)
 }
 
 
-int uMod_TextureClient::RemoveTexture(uMod_IDirect3DTexture9* pTexture) // is called from a texture, if it is finally released
+int TextureClient::RemoveTexture(uMod_IDirect3DTexture9* pTexture) // is called from a texture, if it is finally released
 {
     Message("uMod_TextureClient::RemoveTexture( %p, %#lX): %p\n", pTexture, pTexture->Hash, this);
 
@@ -111,14 +111,14 @@ int uMod_TextureClient::RemoveTexture(uMod_IDirect3DTexture9* pTexture) // is ca
         return RETURN_FATAL_ERROR;
     }
     if (!pTexture->FAKE)
-        ERASE_FIRST(OriginalTextures, pTexture);
+        utils::erase_first(OriginalTextures, pTexture);
     if (!pTexture->Reference)
         return RETURN_OK; // Should this ever happen?
-    ERASE_FIRST(pTexture->Reference->Textures, pTexture);
+    utils::erase_first(pTexture->Reference->Textures, static_cast<IDirect3DBaseTexture9*>(pTexture));
     return RETURN_OK;
 }
 
-int uMod_TextureClient::RemoveTexture(uMod_IDirect3DVolumeTexture9* pTexture) // is called from a texture, if it is finally released
+int TextureClient::RemoveTexture(uMod_IDirect3DVolumeTexture9* pTexture) // is called from a texture, if it is finally released
 {
     Message("uMod_TextureClient::RemoveTexture( Volume %p, %#lX): %p\n", pTexture, pTexture->Hash, this);
 
@@ -126,14 +126,14 @@ int uMod_TextureClient::RemoveTexture(uMod_IDirect3DVolumeTexture9* pTexture) //
         return RETURN_FATAL_ERROR;
     }
     if (!pTexture->FAKE)
-        ERASE_FIRST(OriginalVolumeTextures, pTexture);
+        utils::erase_first(OriginalVolumeTextures, pTexture);
     if (!pTexture->Reference)
         return RETURN_OK; // Should this ever happen?
-    ERASE_FIRST(pTexture->Reference->Textures, pTexture);
+    utils::erase_first(pTexture->Reference->Textures, static_cast<IDirect3DBaseTexture9*>(pTexture));
     return RETURN_OK;
 }
 
-int uMod_TextureClient::RemoveTexture(uMod_IDirect3DCubeTexture9* pTexture) // is called from a texture, if it is finally released
+int TextureClient::RemoveTexture(uMod_IDirect3DCubeTexture9* pTexture) // is called from a texture, if it is finally released
 {
     Message("uMod_TextureClient::RemoveTexture( Cube %p, %#lX): %p\n", pTexture, pTexture->Hash, this);
 
@@ -141,14 +141,14 @@ int uMod_TextureClient::RemoveTexture(uMod_IDirect3DCubeTexture9* pTexture) // i
         return RETURN_FATAL_ERROR;
     }
     if (!pTexture->FAKE)
-        ERASE_FIRST(OriginalCubeTextures, pTexture);
+        utils::erase_first(OriginalCubeTextures, pTexture);
     if (!pTexture->Reference)
         return RETURN_OK; // Should this ever happen?
-    ERASE_FIRST(pTexture->Reference->Textures, pTexture);
+    utils::erase_first(pTexture->Reference->Textures, static_cast<IDirect3DBaseTexture9*>(pTexture));
     return RETURN_OK;
 }
 
-int uMod_TextureClient::MergeUpdate()
+int TextureClient::MergeUpdate()
 {
     if (!should_update) return RETURN_OK;
     should_update = false;
@@ -184,32 +184,32 @@ int uMod_TextureClient::MergeUpdate()
     return UnlockMutex();
 }
 
-uMod_IDirect3DTexture9* uMod_TextureClient::GetSingleTexture() {
+uMod_IDirect3DTexture9* TextureClient::GetSingleTexture() {
     if (isDirectXExDevice)
         return static_cast<uMod_IDirect3DDevice9Ex*>(D3D9Device)->GetSingleTexture(); //this texture must no be added twice
     return static_cast<uMod_IDirect3DDevice9*>(D3D9Device)->GetSingleTexture();
 }
-uMod_IDirect3DVolumeTexture9* uMod_TextureClient::GetSingleVolumeTexture() {
+uMod_IDirect3DVolumeTexture9* TextureClient::GetSingleVolumeTexture() {
     if (isDirectXExDevice)
         return static_cast<uMod_IDirect3DDevice9Ex*>(D3D9Device)->GetSingleVolumeTexture(); //this texture must no be added twice
     return static_cast<uMod_IDirect3DDevice9*>(D3D9Device)->GetSingleVolumeTexture();
 }
-uMod_IDirect3DCubeTexture9* uMod_TextureClient::GetSingleCubeTexture() {
+uMod_IDirect3DCubeTexture9* TextureClient::GetSingleCubeTexture() {
     if (isDirectXExDevice)
         return static_cast<uMod_IDirect3DDevice9Ex*>(D3D9Device)->GetSingleCubeTexture(); //this texture must no be added twice
     return static_cast<uMod_IDirect3DDevice9*>(D3D9Device)->GetSingleCubeTexture();
 }
-int uMod_TextureClient::SetLastCreatedTexture(uMod_IDirect3DTexture9* texture) {
+int TextureClient::SetLastCreatedTexture(uMod_IDirect3DTexture9* texture) {
     if (isDirectXExDevice)
         return static_cast<uMod_IDirect3DDevice9Ex*>(D3D9Device)->SetLastCreatedTexture(texture); //this texture must no be added twice
     return static_cast<uMod_IDirect3DDevice9*>(D3D9Device)->SetLastCreatedTexture(texture);
 }
-int uMod_TextureClient::SetLastCreatedVolumeTexture(uMod_IDirect3DVolumeTexture9* texture) {
+int TextureClient::SetLastCreatedVolumeTexture(uMod_IDirect3DVolumeTexture9* texture) {
     if (isDirectXExDevice)
         return static_cast<uMod_IDirect3DDevice9Ex*>(D3D9Device)->SetLastCreatedVolumeTexture(texture); //this texture must no be added twice
     return static_cast<uMod_IDirect3DDevice9*>(D3D9Device)->SetLastCreatedVolumeTexture(texture);
 }
-int uMod_TextureClient::SetLastCreatedCubeTexture(uMod_IDirect3DCubeTexture9* texture) {
+int TextureClient::SetLastCreatedCubeTexture(uMod_IDirect3DCubeTexture9* texture) {
     if (isDirectXExDevice)
         return static_cast<uMod_IDirect3DDevice9Ex*>(D3D9Device)->SetLastCreatedCubeTexture(texture); //this texture must no be added twice
     return static_cast<uMod_IDirect3DDevice9*>(D3D9Device)->SetLastCreatedCubeTexture(texture);
@@ -218,7 +218,7 @@ int uMod_TextureClient::SetLastCreatedCubeTexture(uMod_IDirect3DCubeTexture9* te
 
 
 
-int uMod_TextureClient::LockMutex()
+int TextureClient::LockMutex()
 {
     if ((gl_ErrorState & (uMod_ERROR_FATAL | uMod_ERROR_MUTEX))) {
         return RETURN_NO_MUTEX;
@@ -229,7 +229,7 @@ int uMod_TextureClient::LockMutex()
     return RETURN_OK;
 }
 
-int uMod_TextureClient::UnlockMutex()
+int TextureClient::UnlockMutex()
 {
     if (ReleaseMutex(Mutex) == 0) {
         return RETURN_MUTEX_UNLOCK;
@@ -238,13 +238,13 @@ int uMod_TextureClient::UnlockMutex()
 }
 
 
-TextureFileStruct* uMod_TextureClient::LookUpToMod(HashType hash)
+TextureFileStruct* TextureClient::LookUpToMod(HashType hash)
 {
     const auto found = modded_textures.find(hash);
     return found == modded_textures.end() ? nullptr : found->second;
 }
 
-int uMod_TextureClient::LookUpToMod(uMod_IDirect3DTexture9* pTexture)
+int TextureClient::LookUpToMod(uMod_IDirect3DTexture9* pTexture)
 {
     Message("uMod_TextureClient::LookUpToMod( %p): hash: %#lX,  %p\n", pTexture, pTexture->Hash, this);
     int ret = RETURN_OK;
@@ -274,7 +274,7 @@ int uMod_TextureClient::LookUpToMod(uMod_IDirect3DTexture9* pTexture)
     return ret;
 }
 
-int uMod_TextureClient::LookUpToMod(uMod_IDirect3DVolumeTexture9* pTexture) // should only be called for original textures
+int TextureClient::LookUpToMod(uMod_IDirect3DVolumeTexture9* pTexture) // should only be called for original textures
 {
     Message("uMod_TextureClient::LookUpToMod(Volume %p): hash: %#lX,  %p\n", pTexture, pTexture->Hash, this);
     int ret = RETURN_OK;
@@ -303,7 +303,7 @@ int uMod_TextureClient::LookUpToMod(uMod_IDirect3DVolumeTexture9* pTexture) // s
     return ret;
 }
 
-int uMod_TextureClient::LookUpToMod(uMod_IDirect3DCubeTexture9* pTexture) // should only be called for original textures
+int TextureClient::LookUpToMod(uMod_IDirect3DCubeTexture9* pTexture) // should only be called for original textures
 {
     Message("uMod_TextureClient::LookUpToMod(Cube %p): hash: %#lX,  %p\n", pTexture, pTexture->Hash, this);
     int ret = RETURN_OK;
@@ -332,7 +332,7 @@ int uMod_TextureClient::LookUpToMod(uMod_IDirect3DCubeTexture9* pTexture) // sho
     return ret;
 }
 
-int uMod_TextureClient::LoadTexture(TextureFileStruct* file_in_memory, uMod_IDirect3DTexture9** ppTexture) // to load fake texture from a file in memory
+int TextureClient::LoadTexture(TextureFileStruct* file_in_memory, uMod_IDirect3DTexture9** ppTexture) // to load fake texture from a file in memory
 {
     Message("LoadTexture( %p, %p, %#lX): %p\n", file_in_memory, ppTexture, file_in_memory->crc_hash, this);
     if (D3D_OK != D3DXCreateTextureFromFileInMemoryEx(D3D9Device, file_in_memory->data.data(), file_in_memory->data.size(), D3DX_DEFAULT, D3DX_DEFAULT, D3DX_DEFAULT, 0, D3DFMT_UNKNOWN, D3DPOOL_MANAGED, D3DX_DEFAULT, D3DX_DEFAULT, 0, nullptr, nullptr,
@@ -350,7 +350,7 @@ int uMod_TextureClient::LoadTexture(TextureFileStruct* file_in_memory, uMod_IDir
     return RETURN_OK;
 }
 
-int uMod_TextureClient::LoadTexture(TextureFileStruct* file_in_memory, uMod_IDirect3DVolumeTexture9** ppTexture) // to load fake texture from a file in memory
+int TextureClient::LoadTexture(TextureFileStruct* file_in_memory, uMod_IDirect3DVolumeTexture9** ppTexture) // to load fake texture from a file in memory
 {
     Message("LoadTexture( Volume %p, %p, %#lX): %p\n", file_in_memory, ppTexture, file_in_memory->crc_hash, this);
     if (D3D_OK != D3DXCreateVolumeTextureFromFileInMemoryEx(D3D9Device, file_in_memory->data.data(), file_in_memory->data.size(), D3DX_DEFAULT, D3DX_DEFAULT, D3DX_DEFAULT, D3DX_DEFAULT, 0, D3DFMT_UNKNOWN, D3DPOOL_MANAGED, D3DX_DEFAULT, D3DX_DEFAULT, 0,
@@ -370,7 +370,7 @@ int uMod_TextureClient::LoadTexture(TextureFileStruct* file_in_memory, uMod_IDir
     return RETURN_OK;
 }
 
-int uMod_TextureClient::LoadTexture(TextureFileStruct* file_in_memory, uMod_IDirect3DCubeTexture9** ppTexture) // to load fake texture from a file in memory
+int TextureClient::LoadTexture(TextureFileStruct* file_in_memory, uMod_IDirect3DCubeTexture9** ppTexture) // to load fake texture from a file in memory
 {
     Message("LoadTexture( Cube %p, %p, %#lX): %p\n", file_in_memory, ppTexture, file_in_memory->crc_hash, this);
     if (D3D_OK != D3DXCreateCubeTextureFromFileInMemoryEx(D3D9Device, file_in_memory->data.data(), file_in_memory->data.size(), D3DX_DEFAULT, D3DX_DEFAULT, 0, D3DFMT_UNKNOWN, D3DPOOL_MANAGED, D3DX_DEFAULT, D3DX_DEFAULT, 0, nullptr, nullptr,
@@ -388,7 +388,7 @@ int uMod_TextureClient::LoadTexture(TextureFileStruct* file_in_memory, uMod_IDir
     return RETURN_OK;
 }
 
-unsigned long uMod_TextureClient::AddFile(TpfEntry& entry)
+unsigned long TextureClient::AddFile(TpfEntry& entry)
 {
     
     if (modded_textures.contains(entry.crc_hash)) {
@@ -404,7 +404,7 @@ unsigned long uMod_TextureClient::AddFile(TpfEntry& entry)
 
 unsigned long loaded_size = 0;
 
-void uMod_TextureClient::LoadModsFromFile(const char* source)
+void TextureClient::LoadModsFromFile(const char* source)
 {
     Message("Initialize: searching in %s\n", source);
 
@@ -421,7 +421,7 @@ void uMod_TextureClient::LoadModsFromFile(const char* source)
         // Remove newline character
         line.erase(std::ranges::remove(line, '\n').begin(), line.end());
 
-        auto file_loader = gMod_FileLoader(line);
+        auto file_loader = FileLoader(line);
         auto entries = file_loader.GetContents();
         if (loaded_size > 1'500'000'000) {
             Message("LoadModsFromFile: Loaded %d bytes, aborting!!!\n", loaded_size);
@@ -436,13 +436,14 @@ void uMod_TextureClient::LoadModsFromFile(const char* source)
         for (auto& tpf_entry : entries) {
             file_bytes_loaded += AddFile(tpf_entry);
         }
+        entries.clear();
         Message("%d bytes loaded.\n", file_bytes_loaded);
         loaded_size += file_bytes_loaded;
     }
     Message("Finished loading mods: Loaded %u bytes (%u mb)", loaded_size, loaded_size / 1024 / 1024);
 }
 
-void uMod_TextureClient::Initialize()
+void TextureClient::Initialize()
 {
     Message("Initialize: begin\n");
     Message("Initialize: searching for modlist.txt\n");
