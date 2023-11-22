@@ -142,7 +142,7 @@ void ParseTexmodArchive(std::vector<std::string>& lines, libzippp::ZipArchive& a
             continue;
         }
 
-        uint32_t crc_hash;
+        uint32_t crc_hash{};
         try {
             crc_hash = std::stoul(addrstr, nullptr, 16);
         }
