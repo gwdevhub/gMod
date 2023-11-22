@@ -14,7 +14,12 @@ endif()
 
 option(CMAKE_PREFIX_PATH "" ${CMAKE_INSTALL_PREFIX})
 set(CMAKE_PREFIX_PATH ${CMAKE_INSTALL_PREFIX})
+option(LIBZIPPP_WITH_ENCRYPTION "" ON)
+set(LIBZIPPP_WITH_ENCRYPTION ON)
+option(BUILD_SHARED_LIBS "" OFF)
+set(BUILD_SHARED_LIBS OFF)
 
 add_subdirectory(${libzippp_SOURCE_DIR} EXCLUDE_FROM_ALL)
 
+target_compile_definitions(libzippp PRIVATE LIBZIPPP_WITH_ENCRYPTION=true)
 set_target_properties(libzippp PROPERTIES FOLDER "Dependencies/")
