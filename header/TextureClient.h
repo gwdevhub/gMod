@@ -103,7 +103,7 @@ int TextureClient::AddTexture(uModTexturePtr auto pTexture)
         return RETURN_FATAL_ERROR;
     }
 
-    Message("uMod_TextureClient::AddTexture( Cube: %p): %p (thread: %u)\n", pTexture, this, GetCurrentThreadId());
+    Message("TextureClient::AddTexture( Cube: %p): %p (thread: %u)\n", pTexture, this, GetCurrentThreadId());
 
     pTexture->Hash = pTexture->GetHash();
     if (!pTexture->Hash) {
@@ -125,7 +125,7 @@ int TextureClient::AddTexture(uModTexturePtr auto pTexture)
 
 int TextureClient::RemoveTexture(uModTexturePtr auto pTexture)
 {
-    Message("uMod_TextureClient::RemoveTexture( %p, %#lX): %p\n", pTexture, pTexture->Hash, this);
+    Message("TextureClient::RemoveTexture( %p, %#lX): %p\n", pTexture, pTexture->Hash, this);
 
     if (gl_ErrorState & uMod_ERROR_FATAL) {
         return RETURN_FATAL_ERROR;
@@ -149,7 +149,7 @@ int TextureClient::RemoveTexture(uModTexturePtr auto pTexture)
 
 int TextureClient::LookUpToMod(uModTexturePtr auto pTexture)
 {
-    Message("uMod_TextureClient::LookUpToMod( %p): hash: %#lX,  %p\n", pTexture, pTexture->Hash, this);
+    Message("TextureClient::LookUpToMod( %p): hash: %#lX,  %p\n", pTexture, pTexture->Hash, this);
     int ret = RETURN_OK;
 
     if (pTexture->CrossRef_D3Dtex != nullptr)
@@ -168,7 +168,7 @@ int TextureClient::LookUpToMod(uModTexturePtr auto pTexture)
 
     ret = SwitchTextures(fake_Texture, pTexture);
     if (ret != RETURN_OK) {
-        Message("uMod_TextureClient::LookUpToMod(): textures not switched %#lX\n", textureFileStruct->crc_hash);
+        Message("TextureClient::LookUpToMod(): textures not switched %#lX\n", textureFileStruct->crc_hash);
         fake_Texture->Release();
         return ret;
     }

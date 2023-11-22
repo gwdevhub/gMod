@@ -5,7 +5,7 @@
 
 TextureClient::TextureClient(IDirect3DDevice9* device)
 {
-    Message("uMod_TextureClient::uMod_TextureClient(): %p\n", this);
+    Message("TextureClient::TextureClient(): %p\n", this);
     D3D9Device = device;
 
     void* cpy;
@@ -19,7 +19,7 @@ TextureClient::TextureClient(IDirect3DDevice9* device)
 
 TextureClient::~TextureClient()
 {
-    Message("uMod_TextureClient::~uMod_TextureClient(): %p\n", this);
+    Message("TextureClient::~TextureClient(): %p\n", this);
     if (Mutex != nullptr) {
         CloseHandle(Mutex);
     }
