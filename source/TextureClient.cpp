@@ -146,10 +146,9 @@ unsigned long TextureClient::AddFile(TpfEntry& entry)
     return texture_file_struct->data.size();
 }
 
-unsigned long loaded_size = 0;
-
 void TextureClient::LoadModsFromFile(const char* source)
 {
+    static unsigned long loaded_size = 0;
     Message("Initialize: searching in %s\n", source);
 
     std::ifstream file(source);
@@ -184,7 +183,7 @@ void TextureClient::LoadModsFromFile(const char* source)
         Message("%d bytes loaded.\n", file_bytes_loaded);
         loaded_size += file_bytes_loaded;
     }
-    Message("Finished loading mods: Loaded %u bytes (%u mb)", loaded_size, loaded_size / 1024 / 1024);
+    Message("Finished loading mods from %s: Loaded %u bytes (%u mb)", source, loaded_size, loaded_size / 1024 / 1024);
 }
 
 void TextureClient::Initialize()
