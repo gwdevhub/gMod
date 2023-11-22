@@ -448,8 +448,8 @@ HRESULT uMod_IDirect3DDevice9::UpdateTexture(IDirect3DBaseTexture9* pSourceTextu
             }
             case 0x01000001L: {
                 pSourceVolume = static_cast<uMod_IDirect3DVolumeTexture9*>(pSourceTexture);
-                if (pSourceVolume->GetHash()) {
-                    if (const auto hash = pSourceVolume->Hash) // this hash has changed !!
+                if (const auto hash = pSource->GetHash()) {
+                    if (hash != pSourceVolume->Hash) // this hash has changed !!
                     {
                         pSourceVolume->Hash = hash;
                         if (pSourceVolume->CrossRef_D3Dtex != nullptr) {
