@@ -419,8 +419,7 @@ HRESULT uMod_IDirect3DDevice9::UpdateTexture(IDirect3DBaseTexture9* pSourceTextu
     uMod_IDirect3DCubeTexture9* pSourceCube = nullptr;
     IDirect3DBaseTexture9* cpy;
     if (pSourceTexture != nullptr) {
-        long int ret = pSourceTexture->QueryInterface(IID_IDirect3D9, (void**)&cpy);
-        switch (ret) {
+        switch (pSourceTexture->QueryInterface(IID_IDirect3D9, (void**)&cpy)) {
             case 0x01000000L: {
                 pSource = static_cast<uMod_IDirect3DTexture9*>(pSourceTexture);
                 if (const auto hash = pSource->GetHash()) {
@@ -503,10 +502,9 @@ HRESULT uMod_IDirect3DDevice9::UpdateTexture(IDirect3DBaseTexture9* pSourceTextu
 
 
     if (pDestinationTexture != nullptr) {
-        long int ret = pSourceTexture->QueryInterface(IID_IDirect3D9, (void**)&cpy);
-        switch (ret) {
+        switch (pSourceTexture->QueryInterface(IID_IDirect3D9, (void**)&cpy)) {
             case 0x01000000L: {
-                auto pDest = static_cast<uMod_IDirect3DTexture9*>(pDestinationTexture);
+                const auto pDest = static_cast<uMod_IDirect3DTexture9*>(pDestinationTexture);
 
                 if (pSource != nullptr && pDest->Hash != pSource->Hash) {
                     pDest->Hash = pSource->Hash; // take over the hash
@@ -526,7 +524,7 @@ HRESULT uMod_IDirect3DDevice9::UpdateTexture(IDirect3DBaseTexture9* pSourceTextu
                 break;
             }
             case 0x01000001L: {
-                auto pDest = static_cast<uMod_IDirect3DVolumeTexture9*>(pDestinationTexture);
+                const auto pDest = static_cast<uMod_IDirect3DVolumeTexture9*>(pDestinationTexture);
 
                 if (pSourceVolume != nullptr && pDest->Hash != pSourceVolume->Hash) {
                     pDest->Hash = pSourceVolume->Hash; // take over the hash
