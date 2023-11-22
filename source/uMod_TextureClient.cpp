@@ -396,12 +396,10 @@ unsigned long uMod_TextureClient::AddFile(TpfEntry& entry)
     }
     TextureFileStruct* texture_file_struct = new TextureFileStruct();
     texture_file_struct->data = std::move(entry.data);
-    texture_file_struct->pData = texture_file_struct->data.data();
-    texture_file_struct->Size = texture_file_struct->data.size();
     texture_file_struct->crc_hash = entry.crc_hash;
     modded_textures.emplace(entry.crc_hash, texture_file_struct);
     should_update = true;
-    return texture_file_struct->Size;
+    return texture_file_struct->data.size();
 }
 
 unsigned long loaded_size = 0;

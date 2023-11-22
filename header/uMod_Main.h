@@ -24,7 +24,6 @@
 #include "uMod_IDirect3DTexture9.h"
 #include "uMod_IDirect3DVolumeTexture9.h"
 
-#include "uMod_ArrayHandler.h"
 #include "uMod_TextureClient.h"
 
 #pragma warning(disable : 4477)

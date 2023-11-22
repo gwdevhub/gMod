@@ -4,14 +4,20 @@
 
 #include "gMod_FileLoader.h"
 #include "uMod_IDirect3DTexture9.h"
-#include "uMod_ArrayHandler.h"
+
+
+struct TextureFileStruct {
+    std::vector<char> data{};
+    int Reference = -1; // for a fast delete in the FileHandler
+    std::vector<IDirect3DBaseTexture9*> Textures;
+    HashType crc_hash = 0; // hash value
+};
 
 /*
  *  An object of this class is owned by each d3d9 device.
  *  functions called by the Server are called from the server thread instance.
  *  All other functions are called from the render thread instance of the game itself.
  */
-
 class uMod_TextureClient {
 public:
     uMod_TextureClient(IDirect3DDevice9* device);
