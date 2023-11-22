@@ -48,37 +48,3 @@ interface uMod_IDirect3DVolumeTexture9 : IDirect3DVolumeTexture9 {
 
     [[nodiscard]] HashType GetHash() const;
 };
-
-
-
-inline void UnswitchTextures(uMod_IDirect3DVolumeTexture9* pTexture)
-{
-    uMod_IDirect3DVolumeTexture9* CrossRef = pTexture->CrossRef_D3Dtex;
-    if (CrossRef != nullptr) {
-        // switch textures back
-        IDirect3DVolumeTexture9* cpy = pTexture->m_D3Dtex;
-        pTexture->m_D3Dtex = CrossRef->m_D3Dtex;
-        CrossRef->m_D3Dtex = cpy;
-
-        // cancel the link
-        CrossRef->CrossRef_D3Dtex = nullptr;
-        pTexture->CrossRef_D3Dtex = nullptr;
-    }
-}
-
-inline int SwitchTextures(uMod_IDirect3DVolumeTexture9* pTexture1, uMod_IDirect3DVolumeTexture9* pTexture2)
-{
-    if (pTexture1->m_D3Ddev == pTexture2->m_D3Ddev && pTexture1->CrossRef_D3Dtex == nullptr && pTexture2->CrossRef_D3Dtex == nullptr) {
-        // make cross reference
-        pTexture1->CrossRef_D3Dtex = pTexture2;
-        pTexture2->CrossRef_D3Dtex = pTexture1;
-
-        // switch textures
-        IDirect3DVolumeTexture9* cpy = pTexture2->m_D3Dtex;
-        pTexture2->m_D3Dtex = pTexture1->m_D3Dtex;
-        pTexture1->m_D3Dtex = cpy;
-        return RETURN_OK;
-    }
-    return RETURN_TEXTURE_NOT_SWITCHED;
-}
-

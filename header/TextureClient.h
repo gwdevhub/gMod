@@ -221,3 +221,31 @@ int TextureClient::LoadTexture(TextureFileStruct* file_in_memory, uModTexturePtr
     Message("LoadTexture( %p, %#lX): DONE\n", *ppTexture, file_in_memory->crc_hash);
     return RETURN_OK;
 }
+
+template<typename T> requires uModTexturePtr<T>
+void UnswitchTextures(T pTexture)
+{
+    decltype(pTexture) CrossRef = pTexture->CrossRef_D3Dtex;
+    if (CrossRef != nullptr) {
+        std::swap(pTexture->m_D3Dtex, CrossRef->m_D3Dtex);
+
+        // cancel the link
+        CrossRef->CrossRef_D3Dtex = nullptr;
+        pTexture->CrossRef_D3Dtex = nullptr;
+    }
+}
+
+template<typename T> requires uModTexturePtr<T>
+inline int SwitchTextures(T pTexture1, T pTexture2)
+{
+    if (pTexture1->m_D3Ddev == pTexture2->m_D3Ddev && pTexture1->CrossRef_D3Dtex == nullptr && pTexture2->CrossRef_D3Dtex == nullptr) {
+        // make cross reference
+        pTexture1->CrossRef_D3Dtex = pTexture2;
+        pTexture2->CrossRef_D3Dtex = pTexture1;
+
+        // switch textures
+        std::swap(pTexture1->m_D3Dtex, pTexture2->m_D3Dtex);
+        return RETURN_OK;
+    }
+    return RETURN_TEXTURE_NOT_SWITCHED;
+}
