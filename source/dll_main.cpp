@@ -201,7 +201,3 @@ HRESULT APIENTRY uMod_Direct3DCreate9Ex(UINT SDKVersion, IDirect3D9Ex** ppD3D)
     ppD3D = (IDirect3D9Ex**)&pIDirect3D9Ex;
     return ret;
 }
-
-#ifdef DIRECT_INJECTION
-void Nothing() { (void)NULL; }
-#endif
