@@ -156,10 +156,10 @@ void ParseTexmodArchive(std::vector<std::string>& lines, libzippp::ZipArchive& a
         }
 
         const auto data_ptr = static_cast<char*>(entry.readAsBinary());
-        const auto size = entry.getSize();
-        std::vector<char> vec;
-        vec.assign(data_ptr, data_ptr + size);
+        const auto size = static_cast<size_t>(entry.getSize());
+        std::vector vec(data_ptr, data_ptr + size);
         entries.emplace_back(addrstr, entry.getName(), crc_hash, std::move(vec));
+        delete[] data_ptr;
     }
 }
 

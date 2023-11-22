@@ -23,7 +23,7 @@ TextureClient::~TextureClient()
     if (Mutex != nullptr) {
         CloseHandle(Mutex);
     }
-    for (auto it : modded_textures) {
+    for (const auto& it : modded_textures) {
         delete it.second;
     }
     modded_textures.clear();
