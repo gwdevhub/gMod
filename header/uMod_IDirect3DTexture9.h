@@ -1,7 +1,7 @@
 #pragma once
 
 #include <d3d9.h>
-
+struct TextureFileStruct;
 interface uMod_IDirect3DTexture9 : public IDirect3DTexture9 {
     uMod_IDirect3DTexture9(IDirect3DTexture9** ppTex, IDirect3DDevice9* pIDirect3DDevice9)
     {
@@ -11,18 +11,15 @@ interface uMod_IDirect3DTexture9 : public IDirect3DTexture9 {
         // fake texture: store the pointer to the original uMod_IDirect3DTexture9 object, needed if a fake texture is unselected
         // original texture: stores the pointer to the fake texture object, is needed if original texture is deleted,
         // thus the fake texture can also be deleted
-        Reference = -1; //need for fast deleting
-        Hash = 0u;
-        FAKE = false;
     }
 
     // callback interface
-    IDirect3DTexture9* m_D3Dtex;
-    uMod_IDirect3DTexture9* CrossRef_D3Dtex;
-    IDirect3DDevice9* m_D3Ddev;
-    int Reference;
-    MyTypeHash Hash;
-    bool FAKE;
+    IDirect3DTexture9* m_D3Dtex = nullptr;
+    uMod_IDirect3DTexture9* CrossRef_D3Dtex = nullptr;
+    IDirect3DDevice9* m_D3Ddev = nullptr;
+    TextureFileStruct* Reference = nullptr;
+    HashType Hash = 0u;
+    bool FAKE = false;
 
     // original interface
     STDMETHOD(QueryInterface)(REFIID riid, void** ppvObj) override;
@@ -48,40 +45,5 @@ interface uMod_IDirect3DTexture9 : public IDirect3DTexture9 {
     STDMETHOD(UnlockRect)(UINT Level) override;
     STDMETHOD(AddDirtyRect)(CONST RECT* pDirtyRect) override;
 
-    int GetHash(MyTypeHash& hash);
+    [[nodiscard]] HashType GetHash() const;
 };
-
-
-
-inline void UnswitchTextures(uMod_IDirect3DTexture9* pTexture)
-{
-    uMod_IDirect3DTexture9* CrossRef = pTexture->CrossRef_D3Dtex;
-    if (CrossRef != nullptr) {
-        // switch textures back
-        IDirect3DTexture9* cpy = pTexture->m_D3Dtex;
-        pTexture->m_D3Dtex = CrossRef->m_D3Dtex;
-        CrossRef->m_D3Dtex = cpy;
-
-        // cancel the link
-        CrossRef->CrossRef_D3Dtex = nullptr;
-        pTexture->CrossRef_D3Dtex = nullptr;
-    }
-}
-
-inline int SwitchTextures(uMod_IDirect3DTexture9* pTexture1, uMod_IDirect3DTexture9* pTexture2)
-{
-    if (pTexture1->m_D3Ddev == pTexture2->m_D3Ddev && pTexture1->CrossRef_D3Dtex == nullptr && pTexture2->CrossRef_D3Dtex == nullptr) {
-        // make cross reference
-        pTexture1->CrossRef_D3Dtex = pTexture2;
-        pTexture2->CrossRef_D3Dtex = pTexture1;
-
-        // switch textures
-        IDirect3DTexture9* cpy = pTexture2->m_D3Dtex;
-        pTexture2->m_D3Dtex = pTexture1->m_D3Dtex;
-        pTexture1->m_D3Dtex = cpy;
-        return RETURN_OK;
-    }
-    return RETURN_TEXTURE_NOT_SWITCHED;
-}
-
-

@@ -21,7 +21,7 @@ if (NOT libzippp_POPULATED)
     FetchContent_Populate(libzippp)
 endif()
 
-add_library(libzippp)
+add_library(libzippp STATIC)
 
 set(SOURCES
     "${libzippp_SOURCE_DIR}/src/libzippp.h"

@@ -1,4 +1,4 @@
-#include "uMod_Main.h"
+#include "Main.h"
 
 #ifndef RETURN_QueryInterface
 #define RETURN_QueryInterface 0x01000000L
@@ -24,7 +24,6 @@ int uMod_IDirect3DDevice9::CreateSingleTexture()
         }
         LastCreatedTexture = nullptr; // set LastCreatedTexture to NULL, cause LastCreatedTexture is equal SingleTexture
         SingleTexture->FAKE = true; //this is no texture created from by game
-        SingleTexture->Reference = -2;
     }
 
     {
@@ -54,7 +53,6 @@ int uMod_IDirect3DDevice9::CreateSingleTexture()
         }
         LastCreatedVolumeTexture = nullptr; // set LastCreatedTexture to NULL, cause LastCreatedTexture is equal SingleTexture
         SingleVolumeTexture->FAKE = true; //this is no texture created from by game
-        SingleVolumeTexture->Reference = -2;
     }
 
     {
@@ -83,7 +81,6 @@ int uMod_IDirect3DDevice9::CreateSingleTexture()
         }
         LastCreatedCubeTexture = nullptr; // set LastCreatedTexture to NULL, cause LastCreatedTexture is equal SingleTexture
         SingleCubeTexture->FAKE = true; //this is no texture created from by game
-        SingleCubeTexture->Reference = -2;
     }
 
     {
@@ -109,15 +106,15 @@ int uMod_IDirect3DDevice9::CreateSingleTexture()
     return RETURN_OK;
 }
 
-uMod_IDirect3DDevice9::uMod_IDirect3DDevice9(IDirect3DDevice9* pOriginal, uMod_TextureServer* server, int back_buffer_count)
+uMod_IDirect3DDevice9::uMod_IDirect3DDevice9(IDirect3DDevice9* pOriginal, int back_buffer_count)
 {
-    Message(PRE_MESSAGE "::" PRE_MESSAGE "( %p, %p): %p\n", pOriginal, server, this);
+    Message(PRE_MESSAGE "::" PRE_MESSAGE " (%p): %p\n", pOriginal, this);
 
     BackBufferCount = back_buffer_count;
     NormalRendering = true;
 
-    uMod_Server = server;
-    uMod_Client = new uMod_TextureClient(uMod_Server, this); //get a new texture client for this device
+    uMod_Client = new TextureClient(this); //get a new texture client for this device
+    uMod_Client->Initialize();
 
     LastCreatedTexture = nullptr;
     LastCreatedVolumeTexture = nullptr;
@@ -422,12 +419,10 @@ HRESULT uMod_IDirect3DDevice9::UpdateTexture(IDirect3DBaseTexture9* pSourceTextu
     uMod_IDirect3DCubeTexture9* pSourceCube = nullptr;
     IDirect3DBaseTexture9* cpy;
     if (pSourceTexture != nullptr) {
-        long int ret = pSourceTexture->QueryInterface(IID_IDirect3D9, (void**)&cpy);
-        switch (ret) {
+        switch (pSourceTexture->QueryInterface(IID_IDirect3D9, (void**)&cpy)) {
             case 0x01000000L: {
-                MyTypeHash hash;
                 pSource = static_cast<uMod_IDirect3DTexture9*>(pSourceTexture);
-                if (pSource->GetHash(hash) == RETURN_OK) {
+                if (const auto hash = pSource->GetHash()) {
                     if (hash != pSource->Hash) // this hash has changed !!
                     {
                         pSource->Hash = hash;
@@ -451,9 +446,8 @@ HRESULT uMod_IDirect3DDevice9::UpdateTexture(IDirect3DBaseTexture9* pSourceTextu
                 break;
             }
             case 0x01000001L: {
-                MyTypeHash hash;
                 pSourceVolume = static_cast<uMod_IDirect3DVolumeTexture9*>(pSourceTexture);
-                if (pSourceVolume->GetHash(hash) == RETURN_OK) {
+                if (const auto hash = pSource->GetHash()) {
                     if (hash != pSourceVolume->Hash) // this hash has changed !!
                     {
                         pSourceVolume->Hash = hash;
@@ -477,9 +471,8 @@ HRESULT uMod_IDirect3DDevice9::UpdateTexture(IDirect3DBaseTexture9* pSourceTextu
                 break;
             }
             case 0x01000002L: {
-                MyTypeHash hash;
                 pSourceCube = static_cast<uMod_IDirect3DCubeTexture9*>(pSourceTexture);
-                if (pSourceCube->GetHash(hash) == RETURN_OK) {
+                if (const auto hash = pSourceCube->GetHash()) {
                     if (hash != pSourceCube->Hash) // this hash has changed !!
                     {
                         pSourceCube->Hash = hash;
@@ -509,10 +502,9 @@ HRESULT uMod_IDirect3DDevice9::UpdateTexture(IDirect3DBaseTexture9* pSourceTextu
 
 
     if (pDestinationTexture != nullptr) {
-        long int ret = pSourceTexture->QueryInterface(IID_IDirect3D9, (void**)&cpy);
-        switch (ret) {
+        switch (pSourceTexture->QueryInterface(IID_IDirect3D9, (void**)&cpy)) {
             case 0x01000000L: {
-                auto pDest = static_cast<uMod_IDirect3DTexture9*>(pDestinationTexture);
+                const auto pDest = static_cast<uMod_IDirect3DTexture9*>(pDestinationTexture);
 
                 if (pSource != nullptr && pDest->Hash != pSource->Hash) {
                     pDest->Hash = pSource->Hash; // take over the hash
@@ -532,7 +524,7 @@ HRESULT uMod_IDirect3DDevice9::UpdateTexture(IDirect3DBaseTexture9* pSourceTextu
                 break;
             }
             case 0x01000001L: {
-                auto pDest = static_cast<uMod_IDirect3DVolumeTexture9*>(pDestinationTexture);
+                const auto pDest = static_cast<uMod_IDirect3DVolumeTexture9*>(pDestinationTexture);
 
                 if (pSourceVolume != nullptr && pDest->Hash != pSourceVolume->Hash) {
                     pDest->Hash = pSourceVolume->Hash; // take over the hash

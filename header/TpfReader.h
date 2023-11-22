@@ -3,9 +3,9 @@
 #include <fstream>
 #include <vector>
 
-class XorStreamReader {
+class TpfReader {
 public:
-    XorStreamReader(const std::string& path)
+    TpfReader(const std::string& path)
     {
         file_stream = std::ifstream(path, std::ios::binary);
         if (!file_stream.seekg(0, std::ios::end).good() || !file_stream.seekg(0, std::ios::beg).good()) {
@@ -13,7 +13,7 @@ public:
         }
     }
 
-    ~XorStreamReader()
+    ~TpfReader()
     {
         file_stream.close();
     }

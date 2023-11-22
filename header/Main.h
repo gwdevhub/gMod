@@ -4,15 +4,16 @@
 
 #include <cstdlib>
 #include <cstdio>
+#include "Utils.h"
 
 #include <d3d9.h>
 #include <d3dx9.h>
 
-#include "uMod_GlobalDefines.h"
-#include "uMod_Error.h"
-#include "uMod_Defines.h"
-#include "uMod_DX9_dll.h"
-#include "uMod_TextureFunction.h"
+#include "Defines.h"
+#include "Error.h"
+#include "Defines.h"
+#include "dll_main.h"
+#include "TextureFunction.h"
 
 #include "uMod_IDirect3D9.h"
 #include "uMod_IDirect3D9Ex.h"
@@ -24,10 +25,9 @@
 #include "uMod_IDirect3DTexture9.h"
 #include "uMod_IDirect3DVolumeTexture9.h"
 
-#include "uMod_ArrayHandler.h"
-#include "uMod_TextureServer.h"
-#include "uMod_TextureClient.h"
+#include "TextureClient.h"
 
 #pragma warning(disable : 4477)
 
 extern unsigned int gl_ErrorState;
+extern HINSTANCE gl_hThisInstance;

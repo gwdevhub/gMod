@@ -17,7 +17,7 @@ endif()
 
 set(VERSION_MAJOR 1)
 set(VERSION_MINOR 5)
-set(VERSION_PATCH 5)
+set(VERSION_PATCH 6)
 set(VERSION_TWEAK 0)
 
 set(VERSION_RC "${CMAKE_CURRENT_BINARY_DIR}/version.rc")
@@ -49,6 +49,7 @@ endif()
 
 list(APPEND CMAKE_MODULE_PATH "${PROJECT_SOURCE_DIR}/cmake")
 include(libzippp)
+include(minhook)
 
 add_library(gMod SHARED)
 
@@ -72,6 +73,7 @@ target_link_libraries(gMod PRIVATE
     ${DXGUID_LIB}
     libzippp
 	psapi
+	minhook
     )
 target_link_options(gMod PRIVATE
     "$<$<CONFIG:DEBUG>:/NODEFAULTLIB:LIBCMT>"

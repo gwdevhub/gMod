@@ -5,6 +5,15 @@
 *.vscode
 *.project
 *.cproject
+*.vcproj
+*.vcxproj
+*.vcxproj.filters
+**/CMakeFiles/**
+cmake_install.cmake
+CMakeCache.txt
+*.sln
+*.rc
+/*.dir
 
 # Build directories
 Release
@@ -46,7 +55,12 @@ bin/
 *.opendb
 *.wixpdb
 
+**/RelWithDebInfo/
+**/Debug/
+/bin
+/win32
 /out
 /build
+/_deps
 
 .idea

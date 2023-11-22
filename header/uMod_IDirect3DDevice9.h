@@ -5,11 +5,12 @@
 #include "uMod_IDirect3DTexture9.h"
 #include "uMod_IDirect3DVolumeTexture9.h"
 #include "uMod_IDirect3DCubeTexture9.h"
+#include "TextureClient.h"
 
 
 class uMod_IDirect3DDevice9 : public IDirect3DDevice9 {
 public:
-    uMod_IDirect3DDevice9(IDirect3DDevice9* pOriginal, uMod_TextureServer* server, int back_buffer_count);
+    uMod_IDirect3DDevice9(IDirect3DDevice9* pOriginal, int back_buffer_count);
     virtual ~uMod_IDirect3DDevice9();
 
     // START: The original DX9 function definitions
@@ -135,9 +136,7 @@ public:
     HRESULT __stdcall CreateQuery(D3DQUERYTYPE Type, IDirect3DQuery9** ppQuery) override;
     // END: The original DX9 function definitions
 
-
-
-    uMod_TextureClient* GetuMod_Client() { return uMod_Client; }
+    TextureClient* GetuMod_Client() { return uMod_Client; }
 
     uMod_IDirect3DTexture9* GetLastCreatedTexture() { return LastCreatedTexture; }
 
@@ -170,12 +169,12 @@ public:
 
 private:
     int CreateSingleTexture();
-    IDirect3DDevice9* m_pIDirect3DDevice9;
+    IDirect3DDevice9* m_pIDirect3DDevice9 = nullptr;
 
     int CounterSaveSingleTexture;
-    uMod_IDirect3DTexture9* SingleTexture;
-    uMod_IDirect3DVolumeTexture9* SingleVolumeTexture;
-    uMod_IDirect3DCubeTexture9* SingleCubeTexture;
+    uMod_IDirect3DTexture9* SingleTexture = nullptr;
+    uMod_IDirect3DVolumeTexture9* SingleVolumeTexture = nullptr;
+    uMod_IDirect3DCubeTexture9* SingleCubeTexture = nullptr;
     char SingleTextureMod;
 
     D3DCOLOR TextureColour;
@@ -186,10 +185,9 @@ private:
 
     int uMod_Reference;
 
-    uMod_IDirect3DTexture9* LastCreatedTexture;
-    uMod_IDirect3DVolumeTexture9* LastCreatedVolumeTexture;
-    uMod_IDirect3DCubeTexture9* LastCreatedCubeTexture;
+    uMod_IDirect3DTexture9* LastCreatedTexture = nullptr;
+    uMod_IDirect3DVolumeTexture9* LastCreatedVolumeTexture = nullptr;
+    uMod_IDirect3DCubeTexture9* LastCreatedCubeTexture = nullptr;
 
-    uMod_TextureServer* uMod_Server;
-    uMod_TextureClient* uMod_Client;
+    TextureClient* uMod_Client;
 };

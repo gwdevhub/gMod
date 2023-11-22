@@ -1,11 +1,10 @@
 #pragma once
 
 #include <d3d9.h>
-#include "uMod_TextureServer.h"
 
 class uMod_IDirect3D9Ex : public IDirect3D9Ex {
 public:
-    uMod_IDirect3D9Ex(IDirect3D9Ex* pOriginal, uMod_TextureServer* server);
+    uMod_IDirect3D9Ex(IDirect3D9Ex* pOriginal);
     virtual ~uMod_IDirect3D9Ex();
 
     // The original DX9 function definitions
@@ -36,6 +35,5 @@ public:
 
 private:
     IDirect3D9Ex* m_pIDirect3D9Ex;
-    uMod_TextureServer* uMod_Server;
 };
 

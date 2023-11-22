@@ -9,11 +9,10 @@ struct TpfEntry {
     std::string name;
     std::string entry;
     uint32_t crc_hash;
-    void* data;
-    unsigned long long size;
+    std::vector<char> data;
 };
 
-class gMod_FileLoader {
+class FileLoader {
     std::string file_name;
     const std::string TPF_PASSWORD{
         0x73, 0x2A, 0x63, 0x7D, 0x5F, 0x0A, static_cast<char>(0xA6), static_cast<char>(0xBD),
@@ -25,7 +24,7 @@ class gMod_FileLoader {
     };
 
 public:
-    gMod_FileLoader(const std::string& fileName);
+    FileLoader(const std::string& fileName);
 
     std::vector<TpfEntry> GetContents();
 
