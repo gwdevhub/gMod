@@ -8,8 +8,6 @@
 
 struct TextureFileStruct {
     std::vector<char> data{};
-    int Reference = -1; // for a fast delete in the FileHandler
-    std::vector<IDirect3DBaseTexture9*> Textures;
     HashType crc_hash = 0; // hash value
 };
 
@@ -69,7 +67,6 @@ private:
 
     std::unordered_map<HashType, TextureFileStruct*> modded_textures; // array which stores the file in memory and the hash of each texture to be modded
 
-    TextureFileStruct* LookUpToMod(HashType hash); // called from LookUpToMod(...);
     int LoadTexture(TextureFileStruct* file_in_memory, uMod_IDirect3DTexture9** ppTexture); // called if a target texture is found
     int LoadTexture(TextureFileStruct* file_in_memory, uMod_IDirect3DVolumeTexture9** ppTexture); // called if a target texture is found
     int LoadTexture(TextureFileStruct* file_in_memory, uMod_IDirect3DCubeTexture9** ppTexture); // called if a target texture is found

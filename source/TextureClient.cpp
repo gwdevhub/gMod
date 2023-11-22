@@ -114,7 +114,6 @@ int TextureClient::RemoveTexture(uMod_IDirect3DTexture9* pTexture) // is called 
         utils::erase_first(OriginalTextures, pTexture);
     if (!pTexture->Reference)
         return RETURN_OK; // Should this ever happen?
-    utils::erase_first(pTexture->Reference->Textures, static_cast<IDirect3DBaseTexture9*>(pTexture));
     return RETURN_OK;
 }
 
@@ -129,7 +128,6 @@ int TextureClient::RemoveTexture(uMod_IDirect3DVolumeTexture9* pTexture) // is c
         utils::erase_first(OriginalVolumeTextures, pTexture);
     if (!pTexture->Reference)
         return RETURN_OK; // Should this ever happen?
-    utils::erase_first(pTexture->Reference->Textures, static_cast<IDirect3DBaseTexture9*>(pTexture));
     return RETURN_OK;
 }
 
@@ -144,7 +142,6 @@ int TextureClient::RemoveTexture(uMod_IDirect3DCubeTexture9* pTexture) // is cal
         utils::erase_first(OriginalCubeTextures, pTexture);
     if (!pTexture->Reference)
         return RETURN_OK; // Should this ever happen?
-    utils::erase_first(pTexture->Reference->Textures, static_cast<IDirect3DBaseTexture9*>(pTexture));
     return RETURN_OK;
 }
 
@@ -160,21 +157,21 @@ int TextureClient::MergeUpdate()
     Message("MergeUpdate(): %p\n", this);
 
     const auto single_texture = GetSingleTexture();
-    for (auto pTexture : OriginalTextures) {
+    for (const auto pTexture : OriginalTextures) {
         if (pTexture->CrossRef_D3Dtex == nullptr || pTexture->CrossRef_D3Dtex == single_texture) {
             UnswitchTextures(pTexture); //this we can do always, so we unswitch the single texture
             LookUpToMod(pTexture);
         }
     }
     const auto single_volume_texture = GetSingleVolumeTexture();
-    for (auto pTexture : OriginalVolumeTextures) {
+    for (const auto pTexture : OriginalVolumeTextures) {
         if (pTexture->CrossRef_D3Dtex == nullptr || pTexture->CrossRef_D3Dtex == single_volume_texture) {
             UnswitchTextures(pTexture); //this we can do always, so we unswitch the single texture
             LookUpToMod(pTexture);
         }
     }
     const auto single_cube_texture = GetSingleCubeTexture();
-    for (auto pTexture : OriginalCubeTextures) {
+    for (const auto pTexture : OriginalCubeTextures) {
         if (pTexture->CrossRef_D3Dtex == nullptr || pTexture->CrossRef_D3Dtex == single_cube_texture) {
             UnswitchTextures(pTexture); //this we can do always, so we unswitch the single texture
             LookUpToMod(pTexture);
@@ -237,13 +234,6 @@ int TextureClient::UnlockMutex()
     return RETURN_OK;
 }
 
-
-TextureFileStruct* TextureClient::LookUpToMod(HashType hash)
-{
-    const auto found = modded_textures.find(hash);
-    return found == modded_textures.end() ? nullptr : found->second;
-}
-
 int TextureClient::LookUpToMod(uMod_IDirect3DTexture9* pTexture)
 {
     Message("uMod_TextureClient::LookUpToMod( %p): hash: %#lX,  %p\n", pTexture, pTexture->Hash, this);
@@ -269,7 +259,6 @@ int TextureClient::LookUpToMod(uMod_IDirect3DTexture9* pTexture)
         fake_Texture->Release();
         return ret;
     }
-    textureFileStruct->Textures.push_back(fake_Texture);
     fake_Texture->Reference = textureFileStruct;
     return ret;
 }
@@ -299,7 +288,6 @@ int TextureClient::LookUpToMod(uMod_IDirect3DVolumeTexture9* pTexture) // should
         fake_Texture->Release();
         return ret;
     }
-    textureFileStruct->Textures.push_back(fake_Texture);
     return ret;
 }
 
@@ -328,7 +316,6 @@ int TextureClient::LookUpToMod(uMod_IDirect3DCubeTexture9* pTexture) // should o
         fake_Texture->Release();
         return ret;
     }
-    textureFileStruct->Textures.push_back(fake_Texture);
     return ret;
 }
 
