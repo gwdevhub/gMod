@@ -11,10 +11,9 @@
 
 int uMod_IDirect3DDevice9::CreateSingleTexture()
 {
-    if (SingleTexture != nullptr && SingleVolumeTexture != nullptr && SingleCubeTexture != nullptr && TextureColour == uMod_Client->TextureColour) {
+    if (SingleTexture != nullptr && SingleVolumeTexture != nullptr && SingleCubeTexture != nullptr) {
         return RETURN_OK;
     }
-    TextureColour = uMod_Client->TextureColour;
     if (SingleTexture == nullptr) //create texture
     {
         if (D3D_OK != CreateTexture(8, 8, 1, 0, D3DFMT_A8R8G8B8, D3DPOOL_MANAGED, (IDirect3DTexture9**)&SingleTexture, nullptr)) {

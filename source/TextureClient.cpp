@@ -11,17 +11,14 @@ TextureClient::TextureClient(IDirect3DDevice9* device)
     void* cpy;
     isDirectXExDevice = D3D9Device->QueryInterface(IID_IDirect3DTexture9, &cpy) == 0x01000001L;
 
-    Mutex = CreateMutex(nullptr, false, nullptr);
-
-    FontColour = D3DCOLOR_ARGB(255, 255, 0, 0);
-    TextureColour = D3DCOLOR_ARGB(255, 0, 255, 0);
+    mutex = CreateMutex(nullptr, false, nullptr);
 }
 
 TextureClient::~TextureClient()
 {
     Message("TextureClient::~TextureClient(): %p\n", this);
-    if (Mutex != nullptr) {
-        CloseHandle(Mutex);
+    if (mutex != nullptr) {
+        CloseHandle(mutex);
     }
     for (const auto& it : modded_textures) {
         delete it.second;
@@ -119,7 +116,7 @@ int TextureClient::LockMutex()
     if ((gl_ErrorState & (uMod_ERROR_FATAL | uMod_ERROR_MUTEX))) {
         return RETURN_NO_MUTEX;
     }
-    if (WAIT_OBJECT_0 != WaitForSingleObject(Mutex, 100)) {
+    if (WAIT_OBJECT_0 != WaitForSingleObject(mutex, 100)) {
         return RETURN_MUTEX_LOCK; //waiting 100ms, to wait infinite pass INFINITE
     }
     return RETURN_OK;
@@ -127,7 +124,7 @@ int TextureClient::LockMutex()
 
 int TextureClient::UnlockMutex()
 {
-    if (ReleaseMutex(Mutex) == 0) {
+    if (ReleaseMutex(mutex) == 0) {
         return RETURN_MUTEX_UNLOCK;
     }
     return RETURN_OK;

@@ -31,7 +31,17 @@ set(CMAKE_INSTALL_PREFIX ${PROJECT_SOURCE_DIR}/bin/install)
 
 add_compile_options(/MP /permissive-)
 
+find_library(D3D9_LIB NAMES d3d9 PATHS $ENV{DXSDK_DIR}/lib/x86 NO_DEFAULT_PATH)
+find_library(D3DX9_LIB NAMES d3dx9 PATHS $ENV{DXSDK_DIR}/lib/x86 NO_DEFAULT_PATH)
 find_library(DXGUID_LIB NAMES dxguid PATHS $ENV{DXSDK_DIR}/lib/x86 NO_DEFAULT_PATH)
+
+if(NOT D3D9_LIB)
+    find_library(D3D9_LIB NAMES d3d9 PATHS ${CMAKE_SOURCE_DIR}/Lib)
+endif()
+
+if(NOT D3DX9_LIB)
+    find_library(D3DX9_LIB NAMES d3dx9 PATHS ${CMAKE_SOURCE_DIR}/Lib)
+endif()
 
 if(NOT DXGUID_LIB)
     find_library(DXGUID_LIB NAMES dxguid PATHS ${CMAKE_SOURCE_DIR}/Lib)
@@ -53,11 +63,14 @@ file(GLOB SOURCES
 target_include_directories(gMod PRIVATE
     "header"
     ${CMAKE_INSTALL_PREFIX}/include
+	$ENV{DXSDK_DIR}/Include
     )
 source_group(TREE "${CMAKE_CURRENT_SOURCE_DIR}" FILES ${SOURCES})
 target_sources(gMod PRIVATE ${SOURCES})
 
 target_link_libraries(gMod PRIVATE
+    ${D3D9_LIB}
+    ${D3DX9_LIB}
     ${DXGUID_LIB}
     libzippp
 	psapi
