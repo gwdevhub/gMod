@@ -4,8 +4,8 @@
 
 #include "FileLoader.h"
 #include "uMod_IDirect3DTexture9.h"
-#include "../build/_deps/directxtex-src/DDSTextureLoader/DDSTextureLoader9.h"
-#include "../build/_deps/directxtex-src/WICTextureLoader/WICTextureLoader9.h"
+#include <DDSTextureLoader/DDSTextureLoader9.h>
+#include <WICTextureLoader/WICTextureLoader9.h>
 
 extern unsigned int gl_ErrorState;
 
@@ -200,7 +200,7 @@ int TextureClient::LoadTexture(TextureFileStruct* file_in_memory, uModTexturePtr
                  file_in_memory->data.size(),
                  0, D3DPOOL_MANAGED, false, reinterpret_cast<LPDIRECT3DTEXTURE9*>(ppTexture))) {
         *ppTexture = nullptr;
-        Message("LoadDDSTexture( %p, %#lX): FAILED\n", *ppTexture, file_in_memory->crc_hash);
+        Message("LoadDDSTexture( %p, 0x%#lX): FAILED\n", *ppTexture, file_in_memory->crc_hash);
         return RETURN_TEXTURE_NOT_LOADED;
     }
     SetLastCreatedTexture(nullptr);
