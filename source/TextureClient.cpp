@@ -133,7 +133,7 @@ int TextureClient::UnlockMutex()
     return RETURN_OK;
 }
 
-unsigned long TextureClient::AddFile(TpfEntry& entry)
+unsigned long TextureClient::AddFile(TextureFileStruct& entry)
 {
     if (modded_textures.contains(entry.crc_hash)) {
         return 0;

@@ -146,7 +146,11 @@ void ExitInstance()
         fclose(stdout_proxy);
     if (stderr_proxy)
         fclose(stderr_proxy);
-    FreeConsole();
+    __try {
+        FreeConsole();
+    }
+    __except(EXCEPTION_CONTINUE_EXECUTION) {
+    }
 #endif
 }
 

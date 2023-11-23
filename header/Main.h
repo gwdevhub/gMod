@@ -7,7 +7,6 @@
 #include "Utils.h"
 
 #include <d3d9.h>
-#include <d3dx9.h>
 
 #include "Defines.h"
 #include "Error.h"

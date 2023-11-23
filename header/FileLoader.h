@@ -2,15 +2,7 @@
 
 #include <vector>
 #include <string>
-#include <ranges>
 #include <libzippp.h>
-
-struct TpfEntry {
-    std::string name;
-    std::string entry;
-    uint32_t crc_hash;
-    std::vector<char> data;
-};
 
 class FileLoader {
     std::string file_name;
@@ -26,13 +18,13 @@ class FileLoader {
 public:
     FileLoader(const std::string& fileName);
 
-    std::vector<TpfEntry> GetContents();
+    std::vector<TextureFileStruct> GetContents();
 
 private:
 
-    std::vector<TpfEntry> GetTpfContents();
+    std::vector<TextureFileStruct> GetTpfContents();
 
-    std::vector<TpfEntry> GetFileContents();
+    std::vector<TextureFileStruct> GetFileContents();
 
-    void LoadEntries(libzippp::ZipArchive& archive, std::vector<TpfEntry>& entries);
+    void LoadEntries(libzippp::ZipArchive& archive, std::vector<TextureFileStruct>& entries);
 };
