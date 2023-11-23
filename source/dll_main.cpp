@@ -20,7 +20,7 @@ namespace {
     // Pointer to original address of Direct3DCreate9
     Direct3DCreate9Ex_type Direct3DCreate9Ex_fn = nullptr;
     Direct3DCreate9Ex_type Direct3DCreate9Ex_ret = nullptr;
-    
+
 
     static FILE* stdout_proxy;
     static FILE* stderr_proxy;
@@ -36,11 +36,12 @@ namespace {
         const auto basename = strrchr(szModuleName, '\\');
         return basename && strcmp(basename + 1, "d3d9.dll") == 0;
     }
+
     // Does this module contain exported function calls for creating a d3d9 device?
     bool HasD3d9Methods(HMODULE hModule)
     {
         return GetProcAddress(hModule, "Direct3DCreate9")
-            && GetProcAddress(hModule, "Direct3DCreate9Ex");
+               && GetProcAddress(hModule, "Direct3DCreate9Ex");
     }
 
     HMODULE FindLoadedDll()
@@ -55,7 +56,7 @@ namespace {
         if (!EnumProcessModules(hProcess, hModules, sizeof(hModules), &cbNeeded))
             return nullptr;
         for (i = 0; i < (cbNeeded / sizeof(HMODULE)); i++) {
-            if (hModules[i] == gMod_Module_Handle)
+            if (hModules[i] == gl_hThisInstance)
                 continue;
             if (IsD3d9Dll(hModules[i])) {
                 return hModules[i];
@@ -68,7 +69,7 @@ namespace {
 unsigned int gl_ErrorState = 0;
 HINSTANCE gl_hThisInstance = nullptr;
 
-IDirect3D9 * APIENTRY Direct3DCreate9(UINT SDKVersion)
+IDirect3D9* APIENTRY Direct3DCreate9(UINT SDKVersion)
 {
     Message("uMod_Direct3DCreate9:  original %p, uMod %p\n", Direct3DCreate9_fn, Direct3DCreate9);
 
@@ -79,6 +80,7 @@ IDirect3D9 * APIENTRY Direct3DCreate9(UINT SDKVersion)
 
     return new uMod_IDirect3D9(pIDirect3D9_orig); //return our object instead of the "real one"
 }
+
 HRESULT APIENTRY Direct3DCreate9Ex(UINT SDKVersion, IDirect3D9Ex** ppD3D)
 {
     Message("uMod_Direct3DCreate9Ex:  original %p, uMod %p\n", Direct3DCreate9Ex_fn, Direct3DCreate9Ex);
@@ -107,10 +109,10 @@ BOOL WINAPI DllMain(HINSTANCE hModule, DWORD ul_reason_for_call, LPVOID lpReserv
     switch (ul_reason_for_call) {
         case DLL_PROCESS_ATTACH: {
 #ifdef _DEBUG
-        AllocConsole();
-        SetConsoleTitleA("gMod Console");
-        freopen_s(&stdout_proxy, "CONOUT$", "w", stdout);
-        freopen_s(&stderr_proxy, "CONOUT$", "w", stderr);
+            AllocConsole();
+            SetConsoleTitleA("gMod Console");
+            freopen_s(&stdout_proxy, "CONOUT$", "w", stdout);
+            freopen_s(&stderr_proxy, "CONOUT$", "w", stderr);
 #endif
             InitInstance(hModule);
             break;
@@ -131,7 +133,7 @@ void InitInstance(HINSTANCE hModule)
     DisableThreadLibraryCalls(hModule); //reduce overhead
 
     // Store the handle to this module
-    gMod_Module_Handle = hModule;
+    gl_hThisInstance = hModule;
 
     const auto d3d9_dll = LoadOriginalDll();
     ASSERT(d3d9_dll);
@@ -154,11 +156,12 @@ void InitInstance(HINSTANCE hModule)
     }
 
 }
+
 void ExitInstance()
 {
-    if(Direct3DCreate9_fn)
+    if (Direct3DCreate9_fn)
         MH_DisableHook(Direct3DCreate9_fn);
-    if(Direct3DCreate9Ex_fn)
+    if (Direct3DCreate9Ex_fn)
         MH_DisableHook(Direct3DCreate9Ex_fn);
 
     MH_Uninitialize();
@@ -177,8 +180,7 @@ void ExitInstance()
     __try {
         FreeConsole();
     }
-    __except(EXCEPTION_CONTINUE_EXECUTION) {
-    }
+    __except (EXCEPTION_CONTINUE_EXECUTION) { }
 #endif
 }
 
@@ -223,7 +225,3 @@ HMODULE LoadOriginalDll()
 /*
  * We inject the dll into the game, thus we retour the original Direct3DCreate9 function to our MyDirect3DCreate9 function
  */
-
-
-
-
