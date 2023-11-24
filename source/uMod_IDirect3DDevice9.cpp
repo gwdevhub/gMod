@@ -11,10 +11,9 @@
 
 int uMod_IDirect3DDevice9::CreateSingleTexture()
 {
-    if (SingleTexture != nullptr && SingleVolumeTexture != nullptr && SingleCubeTexture != nullptr && TextureColour == uMod_Client->TextureColour) {
+    if (SingleTexture != nullptr && SingleVolumeTexture != nullptr && SingleCubeTexture != nullptr) {
         return RETURN_OK;
     }
-    TextureColour = uMod_Client->TextureColour;
     if (SingleTexture == nullptr) //create texture
     {
         if (D3D_OK != CreateTexture(8, 8, 1, 0, D3DFMT_A8R8G8B8, D3DPOOL_MANAGED, (IDirect3DTexture9**)&SingleTexture, nullptr)) {
@@ -128,7 +127,6 @@ uMod_IDirect3DDevice9::uMod_IDirect3DDevice9(IDirect3DDevice9* pOriginal, int ba
     SingleTexture = nullptr;
     SingleVolumeTexture = nullptr;
     SingleCubeTexture = nullptr;
-    OSD_Font = nullptr;
     uMod_Reference = 1;
 }
 
@@ -181,14 +179,10 @@ ULONG uMod_IDirect3DDevice9::Release()
         if (SingleCubeTexture != nullptr) {
             SingleCubeTexture->Release(); //this is the only texture we must release by ourself
         }
-        if (OSD_Font != nullptr) {
-            OSD_Font->Release();
-        }
 
         delete uMod_Client; //must be deleted at the end, because other releases might call a function of this object
         uMod_Client = nullptr;
         SingleTexture = nullptr;
-        OSD_Font = nullptr;
     }
 
     const ULONG count = m_pIDirect3DDevice9->Release();
@@ -271,10 +265,6 @@ UINT uMod_IDirect3DDevice9::GetNumberOfSwapChains()
 
 HRESULT uMod_IDirect3DDevice9::Reset(D3DPRESENT_PARAMETERS* pPresentationParameters)
 {
-    if (OSD_Font != nullptr) {
-        OSD_Font->Release();
-        OSD_Font = nullptr;
-    } //the game will crashes if the font is not released before the game is minimized!
     return m_pIDirect3DDevice9->Reset(pPresentationParameters);
 }
 

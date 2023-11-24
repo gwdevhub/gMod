@@ -1,7 +1,6 @@
 #pragma once
 
 #include <d3d9.h>
-#include <d3dx9.h>
 #include "uMod_IDirect3DTexture9.h"
 #include "uMod_IDirect3DVolumeTexture9.h"
 #include "uMod_IDirect3DCubeTexture9.h"
@@ -178,8 +177,6 @@ private:
     char SingleTextureMod;
 
     D3DCOLOR TextureColour;
-    ID3DXFont* OSD_Font;
-    //D3DCOLOR FontColour;
     int BackBufferCount;
     bool NormalRendering;
 

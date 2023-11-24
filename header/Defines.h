@@ -13,3 +13,7 @@ using HashType = DWORD32;
 #endif
 
 #endif
+
+#ifndef _countof
+#define _countof(arr) sizeof(arr) / sizeof(*arr)
+#endif

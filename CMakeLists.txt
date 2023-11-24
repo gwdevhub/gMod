@@ -50,6 +50,7 @@ endif()
 list(APPEND CMAKE_MODULE_PATH "${PROJECT_SOURCE_DIR}/cmake")
 include(libzippp)
 include(minhook)
+include(dxtk)
 
 add_library(gMod SHARED)
 
@@ -59,10 +60,10 @@ file(GLOB SOURCES
     ${VERSION_RC}
     )
 
-target_include_directories(gMod PRIVATE $ENV{DXSDK_DIR}/Include)
-target_include_directories(gMod PUBLIC
+target_include_directories(gMod PRIVATE
     "header"
     ${CMAKE_INSTALL_PREFIX}/include
+	$ENV{DXSDK_DIR}/Include
     )
 source_group(TREE "${CMAKE_CURRENT_SOURCE_DIR}" FILES ${SOURCES})
 target_sources(gMod PRIVATE ${SOURCES})
@@ -74,6 +75,7 @@ target_link_libraries(gMod PRIVATE
     libzippp
 	psapi
 	minhook
+	directxtex
     )
 target_link_options(gMod PRIVATE
     "$<$<CONFIG:DEBUG>:/NODEFAULTLIB:LIBCMT>"

@@ -8,7 +8,7 @@ FileLoader::FileLoader(const std::string& fileName)
     file_name = std::filesystem::absolute(fileName).string();
 }
 
-std::vector<TpfEntry> FileLoader::GetContents()
+std::vector<TextureFileStruct> FileLoader::GetContents()
 {
     try {
         return file_name.ends_with(".tpf") ? GetTpfContents() : GetFileContents();
@@ -19,9 +19,9 @@ std::vector<TpfEntry> FileLoader::GetContents()
     return {};
 }
 
-std::vector<TpfEntry> FileLoader::GetTpfContents()
+std::vector<TextureFileStruct> FileLoader::GetTpfContents()
 {
-    std::vector<TpfEntry> entries;
+    std::vector<TextureFileStruct> entries;
     auto tpf_reader = TpfReader(file_name);
     const auto buffer = tpf_reader.ReadToEnd();
     const auto zip_archive = libzippp::ZipArchive::fromBuffer(buffer.data(), buffer.size(), false, TPF_PASSWORD);
@@ -41,9 +41,9 @@ std::vector<TpfEntry> FileLoader::GetTpfContents()
     return entries;
 }
 
-std::vector<TpfEntry> FileLoader::GetFileContents()
+std::vector<TextureFileStruct> FileLoader::GetFileContents()
 {
-    std::vector<TpfEntry> entries;
+    std::vector<TextureFileStruct> entries;
 
     libzippp::ZipArchive zip_archive(file_name);
     zip_archive.open();
@@ -53,7 +53,7 @@ std::vector<TpfEntry> FileLoader::GetFileContents()
     return entries;
 }
 
-void ParseSimpleArchive(const libzippp::ZipArchive& archive, std::vector<TpfEntry>& entries)
+void ParseSimpleArchive(const libzippp::ZipArchive& archive, std::vector<TextureFileStruct>& entries)
 {
     for (const auto& entry : archive.getEntries()) {
         if (entry.isFile()) {
@@ -92,16 +92,17 @@ void ParseSimpleArchive(const libzippp::ZipArchive& archive, std::vector<TpfEntr
                 continue;
             }
 
-            const auto data_ptr = static_cast<char*>(entry.readAsBinary());
+            const auto data_ptr = static_cast<BYTE*>(entry.readAsBinary());
             const auto size = entry.getSize();
-            std::vector<char> vec;
-            vec.assign(data_ptr, data_ptr + size);
-            entries.emplace_back(name, entry.getName(), crc_hash, std::move(vec));
+            std::vector vec(data_ptr, data_ptr + size);
+            std::filesystem::path tex_name(entry.getName());
+            entries.emplace_back(std::move(vec), crc_hash, tex_name.extension() != ".dds");
+            delete[] data_ptr;
         }
     }
 }
 
-void ParseTexmodArchive(std::vector<std::string>& lines, libzippp::ZipArchive& archive, std::vector<TpfEntry>& entries)
+void ParseTexmodArchive(std::vector<std::string>& lines, libzippp::ZipArchive& archive, std::vector<TextureFileStruct>& entries)
 {
     for (const auto& line : lines) {
         std::istringstream iss(line);
@@ -155,17 +156,17 @@ void ParseTexmodArchive(std::vector<std::string>& lines, libzippp::ZipArchive& a
             continue;
         }
 
-        const auto data_ptr = static_cast<char*>(entry.readAsBinary());
+        const auto data_ptr = static_cast<BYTE*>(entry.readAsBinary());
         const auto size = static_cast<size_t>(entry.getSize());
         std::vector vec(data_ptr, data_ptr + size);
-        entries.emplace_back(addrstr, entry.getName(), crc_hash, std::move(vec));
+        const auto tex_name = std::filesystem::path(entry.getName());
+        entries.emplace_back(std::move(vec), crc_hash, tex_name.extension() != ".dds");
         delete[] data_ptr;
     }
 }
 
-void FileLoader::LoadEntries(libzippp::ZipArchive& archive, std::vector<TpfEntry>& entries)
+void FileLoader::LoadEntries(libzippp::ZipArchive& archive, std::vector<TextureFileStruct>& entries)
 {
-    // Iterate over the files in the zip archive
     const auto def_file = archive.getEntry("texmod.def");
     if (def_file.isNull() || !def_file.isFile()) {
         ParseSimpleArchive(archive, entries);
