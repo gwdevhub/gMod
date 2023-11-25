@@ -8,8 +8,10 @@ using HashType = DWORD32;
 
 #ifdef _DEBUG
 #define Message(...) { printf(__VA_ARGS__); }
+#define Warning(...) { fprintf(stderr, __VA_ARGS__); }
 #else
 #define Message(...)
+#define Warning(...)
 #endif
 
 #endif
