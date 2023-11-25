@@ -14,7 +14,7 @@ std::vector<TextureFileStruct> FileLoader::GetContents()
         return file_name.ends_with(".tpf") ? GetTpfContents() : GetFileContents();
     }
     catch (const std::exception&) {
-        Message("Failed to open mod file: %s\n", file_name.c_str());
+        Warning("Failed to open mod file: %s\n", file_name.c_str());
     }
     return {};
 }
@@ -26,7 +26,7 @@ std::vector<TextureFileStruct> FileLoader::GetTpfContents()
     const auto buffer = tpf_reader.ReadToEnd();
     const auto zip_archive = libzippp::ZipArchive::fromBuffer(buffer.data(), buffer.size(), false, TPF_PASSWORD);
     if (!zip_archive) {
-        Message("Failed to open tpf file: %s - %u bytes!", file_name.c_str(), buffer.size());
+        Warning("Failed to open tpf file: %s - %u bytes!", file_name.c_str(), buffer.size());
         return {};
     }
     zip_archive->setErrorHandlerCallback(
@@ -84,7 +84,7 @@ void ParseSimpleArchive(const libzippp::ZipArchive& archive, std::vector<Texture
                 crc_hash = std::stoul(name, nullptr, 16);
             }
             catch (const std::invalid_argument& e) {
-                Message("Failed to parse %s as a hash", name.c_str());
+                Warning("Failed to parse %s as a hash", name.c_str());
                 continue;
             }
             catch (const std::out_of_range& e) {
@@ -148,11 +148,11 @@ void ParseTexmodArchive(std::vector<std::string>& lines, libzippp::ZipArchive& a
             crc_hash = std::stoul(addrstr, nullptr, 16);
         }
         catch (const std::invalid_argument& e) {
-            Message("Failed to parse %s as a hash", addrstr.c_str());
+            Warning("Failed to parse %s as a hash", addrstr.c_str());
             continue;
         }
         catch (const std::out_of_range& e) {
-            Message("Out of range while parsing %s as a hash", addrstr.c_str());
+            Warning("Out of range while parsing %s as a hash", addrstr.c_str());
             continue;
         }
 

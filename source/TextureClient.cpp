@@ -151,7 +151,7 @@ void TextureClient::LoadModsFromFile(const char* source)
 
     std::ifstream file(source);
     if (!file.is_open()) {
-        Message("LoadModsFromFile: failed to open modlist.txt for reading; aborting!!!");
+        Warning("LoadModsFromFile: failed to open modlist.txt for reading; aborting!!!");
         return;
     }
     Message("Initialize: found modlist.txt. Reading\n");

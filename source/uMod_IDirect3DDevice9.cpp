@@ -17,7 +17,7 @@ int uMod_IDirect3DDevice9::CreateSingleTexture()
     if (SingleTexture == nullptr) //create texture
     {
         if (D3D_OK != CreateTexture(8, 8, 1, 0, D3DFMT_A8R8G8B8, D3DPOOL_MANAGED, (IDirect3DTexture9**)&SingleTexture, nullptr)) {
-            Message(PRE_MESSAGE "::CreateSingleTexture(): CreateTexture Failed\n");
+            Warning(PRE_MESSAGE "::CreateSingleTexture(): CreateTexture Failed\n");
             SingleTexture = nullptr;
             return RETURN_TEXTURE_NOT_LOADED;
         }
@@ -30,7 +30,7 @@ int uMod_IDirect3DDevice9::CreateSingleTexture()
         IDirect3DTexture9* pD3Dtex = SingleTexture->m_D3Dtex;
 
         if (D3D_OK != pD3Dtex->LockRect(0, &d3dlr, nullptr, 0)) {
-            Message(PRE_MESSAGE "::CreateSingleTexture(): LockRect Failed\n");
+            Warning(PRE_MESSAGE "::CreateSingleTexture(): LockRect Failed\n");
             SingleTexture->Release();
             SingleTexture = nullptr;
             return RETURN_TEXTURE_NOT_LOADED;
@@ -46,7 +46,7 @@ int uMod_IDirect3DDevice9::CreateSingleTexture()
     if (SingleVolumeTexture == nullptr) //create texture
     {
         if (D3D_OK != CreateVolumeTexture(8, 8, 8, 1, 0, D3DFMT_A8R8G8B8, D3DPOOL_MANAGED, (IDirect3DVolumeTexture9**)&SingleVolumeTexture, nullptr)) {
-            Message(PRE_MESSAGE "::CreateSingleTexture(): CreateVolumeTexture Failed\n");
+            Warning(PRE_MESSAGE "::CreateSingleTexture(): CreateVolumeTexture Failed\n");
             SingleVolumeTexture = nullptr;
             return RETURN_TEXTURE_NOT_LOADED;
         }
@@ -59,7 +59,7 @@ int uMod_IDirect3DDevice9::CreateSingleTexture()
         IDirect3DVolumeTexture9* pD3Dtex = SingleVolumeTexture->m_D3Dtex;
         //LockBox)(UINT Level, D3DLOCKED_BOX *pLockedVolume, CONST D3DBOX *pBox,
         if (D3D_OK != pD3Dtex->LockBox(0, &d3dlr, nullptr, 0)) {
-            Message(PRE_MESSAGE "::CreateSingleTexture(): LockBox Failed\n");
+            Warning(PRE_MESSAGE "::CreateSingleTexture(): LockBox Failed\n");
             SingleVolumeTexture->Release();
             SingleVolumeTexture = nullptr;
             return RETURN_TEXTURE_NOT_LOADED;
@@ -74,7 +74,7 @@ int uMod_IDirect3DDevice9::CreateSingleTexture()
     if (SingleCubeTexture == nullptr) //create texture
     {
         if (D3D_OK != CreateCubeTexture(8, 1, 0, D3DFMT_A8R8G8B8, D3DPOOL_MANAGED, (IDirect3DCubeTexture9**)&SingleCubeTexture, nullptr)) {
-            Message(PRE_MESSAGE "::CreateSingleTexture(): CreateCubeTexture Failed\n");
+            Warning(PRE_MESSAGE "::CreateSingleTexture(): CreateCubeTexture Failed\n");
             SingleCubeTexture = nullptr;
             return RETURN_TEXTURE_NOT_LOADED;
         }
@@ -88,7 +88,7 @@ int uMod_IDirect3DDevice9::CreateSingleTexture()
 
         for (int c = 0; c < 6; c++) {
             if (D3D_OK != pD3Dtex->LockRect(static_cast<D3DCUBEMAP_FACES>(c), 0, &d3dlr, nullptr, 0)) {
-                Message(PRE_MESSAGE "::CreateSingleTexture(): LockRect (Cube) Failed\n");
+                Warning(PRE_MESSAGE "::CreateSingleTexture(): LockRect (Cube) Failed\n");
                 SingleCubeTexture->Release();
                 SingleCubeTexture = nullptr;
                 return RETURN_TEXTURE_NOT_LOADED;

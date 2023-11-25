@@ -251,20 +251,20 @@ HashType uMod_IDirect3DVolumeTexture9::GetHash() const
 
     if (pTexture->GetLevelDesc(0, &desc) != D3D_OK) //get the format and the size of the texture
     {
-        Message("uMod_IDirect3DVolumeTexture9::GetHash() Failed: GetLevelDesc \n");
+        Warning("uMod_IDirect3DVolumeTexture9::GetHash() Failed: GetLevelDesc \n");
         return 0;
     }
 
     Message("uMod_IDirect3DVolumeTexture9::GetHash() (%d %d %d) %d\n", desc.Width, desc.Height, desc.Depth, desc.Format);
     if (pTexture->LockBox(0, &d3dlr, nullptr, D3DLOCK_READONLY) != D3D_OK) {
-        Message("uMod_IDirect3DVolumeTexture9::GetHash() Failed: LockRect 1\n");
+        Warning("uMod_IDirect3DVolumeTexture9::GetHash() Failed: LockRect 1\n");
         if (pTexture->GetVolumeLevel(0, &pResolvedSurface) != D3D_OK) {
-            Message("uMod_IDirect3DVolumeTexture9::GetHash() Failed: GetSurfaceLevel\n");
+            Warning("uMod_IDirect3DVolumeTexture9::GetHash() Failed: GetSurfaceLevel\n");
             return 0;
         }
         if (pResolvedSurface->LockBox(&d3dlr, nullptr, D3DLOCK_READONLY) != D3D_OK) {
             pResolvedSurface->Release();
-            Message("uMod_IDirect3DVolumeTexture9::GetHash() Failed: LockRect 2\n");
+            Warning("uMod_IDirect3DVolumeTexture9::GetHash() Failed: LockRect 2\n");
             return 0;
         }
     }
