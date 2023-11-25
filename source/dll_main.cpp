@@ -1,6 +1,5 @@
 #include "dll_main.h"
 
-#include <array>
 #include <Windows.h>
 #include "Main.h"
 #include <Psapi.h>
@@ -22,8 +21,8 @@ namespace {
     Direct3DCreate9Ex_type Direct3DCreate9Ex_ret = nullptr;
 
 
-    static FILE* stdout_proxy;
-    static FILE* stderr_proxy;
+    FILE* stdout_proxy;
+    FILE* stderr_proxy;
 
     // If not nullptr, we're responsible for freeing this library on termination
     HMODULE gMod_Loaded_d3d9_Module_Handle = nullptr;
@@ -35,13 +34,6 @@ namespace {
         ASSERT(GetModuleFileName(hModule, szModuleName, sizeof(szModuleName) / sizeof(*szModuleName)) > 0);
         const auto basename = strrchr(szModuleName, '\\');
         return basename && strcmp(basename + 1, "d3d9.dll") == 0;
-    }
-
-    // Does this module contain exported function calls for creating a d3d9 device?
-    bool HasD3d9Methods(HMODULE hModule)
-    {
-        return GetProcAddress(hModule, "Direct3DCreate9")
-               && GetProcAddress(hModule, "Direct3DCreate9Ex");
     }
 
     HMODULE FindLoadedDll()
@@ -94,8 +86,9 @@ HRESULT APIENTRY Direct3DCreate9Ex(UINT SDKVersion, IDirect3D9Ex** ppD3D)
         return ret;
 
     // @Cleanup: should be we freeing pIDirect3D9Ex at the end of our own lifecycle?
-    uMod_IDirect3D9Ex* pIDirect3D9Ex = new uMod_IDirect3D9Ex(pIDirect3D9Ex_orig);
-    ppD3D = (IDirect3D9Ex**)&pIDirect3D9Ex;
+    const auto pIDirect3D9Ex = new uMod_IDirect3D9Ex(pIDirect3D9Ex_orig);
+    // original umod does not do this for some reason
+    *ppD3D = static_cast<IDirect3D9Ex*>(pIDirect3D9Ex);
     return ret;
 }
 
@@ -193,14 +186,14 @@ HMODULE LoadOriginalDll()
     char executable_path[MAX_PATH]{};
     ASSERT(GetModuleFileName(GetModuleHandle(nullptr), executable_path, _countof(executable_path)) > 0);
 
-    char gMod_path[MAX_PATH]{};
-    ASSERT(GetModuleFileName(gl_hThisInstance, gMod_path, _countof(gMod_path)) > 0);
+    char dll_path[MAX_PATH]{};
+    ASSERT(GetModuleFileName(gl_hThisInstance, dll_path, _countof(dll_path)) > 0);
 
-    const auto exe_fs_path = std::filesystem::path(executable_path);
-    const auto gMod_fs_path = std::filesystem::path(gMod_path);
+    const auto exe_path = std::filesystem::path(executable_path);
+    const auto gmod_path = std::filesystem::path(dll_path);
 
-    if (exe_fs_path.parent_path() != gMod_fs_path.parent_path()
-        || gMod_fs_path.filename() != "d3d9.dll") {
+    if (exe_path.parent_path() != gmod_path.parent_path()
+        || gmod_path.filename() != "d3d9.dll") {
         // Call basic LoadLibrary function; we're not in the same directory as the exe.
         gMod_Loaded_d3d9_Module_Handle = LoadLibrary("d3d9.dll");
     }

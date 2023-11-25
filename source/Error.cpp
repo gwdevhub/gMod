@@ -1,7 +1,7 @@
 #include "Error.h"
 
 #include <Windows.h>
-#include <stdio.h>
+#include <cstdio>
 #include <process.h>
 
 __declspec(noreturn) void FatalAssert(
