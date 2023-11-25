@@ -1,7 +1,5 @@
 #pragma once
 
-#include <map>
-
 #include "FileLoader.h"
 #include "uMod_IDirect3DTexture9.h"
 #include <DDSTextureLoader/DDSTextureLoader9.h>
@@ -176,12 +174,13 @@ int TextureClient::LookUpToMod(uModTexturePtr auto pTexture)
     return ret;
 }
 
+extern HINSTANCE gl_hThisInstance;
 int TextureClient::LoadTexture(TextureFileStruct* file_in_memory, uModTexturePtrPtr auto ppTexture)
 {
     Message("LoadTexture( %p, %p, %#lX): %p\n", file_in_memory, ppTexture, file_in_memory->crc_hash, this);
     if (file_in_memory->is_wic_texture) {
         Warning("(%#lX)\n", file_in_memory->crc_hash);
-        #if 0
+        #if 1
         if (D3D_OK != D3DXCreateTextureFromFileInMemoryEx(
                 D3D9Device, file_in_memory->data.data(),
                 file_in_memory->data.size(), D3DX_DEFAULT, D3DX_DEFAULT,
@@ -191,8 +190,10 @@ int TextureClient::LoadTexture(TextureFileStruct* file_in_memory, uModTexturePtr
             *ppTexture = nullptr;
             Warning("LoadWICTexture(%p, %#lX): FAILED\n", *ppTexture, file_in_memory->crc_hash);
             return RETURN_TEXTURE_NOT_LOADED;
-        }
-        const auto dds_export_path = std::filesystem::current_path() / std::format("{:x}", file_in_memory->crc_hash) / ".dds";
+                }
+        char dllpath[MAX_PATH]{};
+        GetModuleFileName(gl_hThisInstance, dllpath, MAX_PATH); //ask for name and path of this dll
+        const auto dds_export_path = std::filesystem::path(dllpath).parent_path() / "d3dxout" / std::format("GW.EXE_{:X}.dds", file_in_memory->crc_hash);
         if (!std::filesystem::exists(dds_export_path)) {
             D3DXSaveTextureToFile(dds_export_path.string().c_str(), D3DXIFF_DDS, *ppTexture, nullptr);
         }

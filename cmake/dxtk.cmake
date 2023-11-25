@@ -4,7 +4,7 @@ include(FetchContent)
 FetchContent_Declare(
     DirectXTex
     GIT_REPOSITORY https://github.com/microsoft/DirectXTex
-    GIT_TAG jul2022)
+    GIT_TAG oct2023)
 FetchContent_GetProperties(directxtex)
 if (directxtex_POPULATED)
     return()
