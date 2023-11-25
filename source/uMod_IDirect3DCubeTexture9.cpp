@@ -233,8 +233,6 @@ HRESULT APIENTRY uMod_IDirect3DCubeTexture9::UnlockRect(D3DCUBEMAP_FACES FaceTyp
     return m_D3Dtex->UnlockRect(FaceType, Level);
 }
 
-
-
 HashType uMod_IDirect3DCubeTexture9::GetHash() const
 {
     if (FAKE) {

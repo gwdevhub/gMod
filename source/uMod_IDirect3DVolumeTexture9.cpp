@@ -187,8 +187,6 @@ void APIENTRY uMod_IDirect3DVolumeTexture9::GenerateMipSubLevels()
     m_D3Dtex->GenerateMipSubLevels();
 }
 
-
-
 //this function yields for the non switched texture object
 HRESULT APIENTRY uMod_IDirect3DVolumeTexture9::AddDirtyBox(CONST D3DBOX* pDirtyBox)
 {
@@ -234,7 +232,6 @@ HRESULT APIENTRY uMod_IDirect3DVolumeTexture9::UnlockBox(UINT Level)
     return m_D3Dtex->UnlockBox(Level);
 }
 
-
 HashType uMod_IDirect3DVolumeTexture9::GetHash() const
 {
     if (FAKE) {
@@ -268,8 +265,6 @@ HashType uMod_IDirect3DVolumeTexture9::GetHash() const
             return 0;
         }
     }
-
-
 
     const int size = (GetBitsFromFormat(desc.Format) * desc.Width * desc.Height * desc.Depth) / 8;
     const auto hash = GetCRC32(static_cast<char*>(d3dlr.pBits), size); //calculate the crc32 of the texture
