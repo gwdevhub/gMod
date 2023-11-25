@@ -7,11 +7,19 @@ using HashType = DWORD32;
 #include <iostream>
 
 #ifdef _DEBUG
+
+#ifdef PRINT_MESSAGES
 #define Message(...) { printf(__VA_ARGS__); }
-#define Warning(...) { fprintf(stderr, __VA_ARGS__); }
 #else
 #define Message(...)
+#endif
+#define Warning(...) { fprintf(stderr, __VA_ARGS__); }
+
+#else
+
+#define Message(...)
 #define Warning(...)
+
 #endif
 
 #endif

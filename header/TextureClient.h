@@ -192,10 +192,11 @@ int TextureClient::LoadTexture(TextureFileStruct* file_in_memory, uModTexturePtr
                 return RETURN_TEXTURE_NOT_LOADED;
             }
         }
-        else if (D3D_OK != DirectX::CreateDDSTextureFromMemory(
+        else if (D3D_OK != DirectX::CreateDDSTextureFromMemoryEx(
                      D3D9Device,
                      file_in_memory->data.data(),
                      file_in_memory->data.size(),
+                     0, D3DPOOL_MANAGED, false,
                      reinterpret_cast<LPDIRECT3DTEXTURE9*>(ppTexture))) {
             *ppTexture = nullptr;
             Warning("LoadDDSTexture Normal(%p, %#lX): FAILED\n", *ppTexture, file_in_memory->crc_hash);
@@ -218,11 +219,12 @@ int TextureClient::LoadTexture(TextureFileStruct* file_in_memory, uModTexturePtr
                 return RETURN_TEXTURE_NOT_LOADED;
             }
         }
-        else if (D3D_OK != DirectX::CreateDDSTextureFromMemory(
+        else if (D3D_OK != DirectX::CreateDDSTextureFromMemoryEx(
                      D3D9Device,
                      file_in_memory->data.data(),
                      file_in_memory->data.size(),
-                     reinterpret_cast<LPDIRECT3DVOLUMETEXTURE9*>(ppTexture))) {
+                     0, D3DPOOL_MANAGED, false,
+                     reinterpret_cast<LPDIRECT3DBASETEXTURE9*>(ppTexture))) {
             *ppTexture = nullptr;
             Warning("LoadDDSTexture Volume( %p, %#lX): FAILED\n", *ppTexture, file_in_memory->crc_hash);
             return RETURN_TEXTURE_NOT_LOADED;
@@ -241,11 +243,12 @@ int TextureClient::LoadTexture(TextureFileStruct* file_in_memory, uModTexturePtr
                 return RETURN_TEXTURE_NOT_LOADED;
             }
         }
-        else if (D3D_OK != DirectX::CreateDDSTextureFromMemory(
+        else if (D3D_OK != DirectX::CreateDDSTextureFromMemoryEx(
                      D3D9Device,
                      file_in_memory->data.data(),
                      file_in_memory->data.size(),
-                     reinterpret_cast<LPDIRECT3DCUBETEXTURE9*>(ppTexture))) {
+                     0, D3DPOOL_MANAGED, false,
+                     reinterpret_cast<LPDIRECT3DBASETEXTURE9*>(ppTexture))) {
             *ppTexture = nullptr;
             Warning("LoadDDSTexture Cube( %p, %#lX): FAILED\n", *ppTexture, file_in_memory->crc_hash);
             return RETURN_TEXTURE_NOT_LOADED;
