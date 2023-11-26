@@ -37,53 +37,23 @@ int TextureClient::MergeUpdate()
 
     Message("MergeUpdate(): %p\n", this);
 
-    const auto single_texture = GetSingleTexture();
     for (const auto pTexture : OriginalTextures) {
-        if (pTexture->CrossRef_D3Dtex == nullptr || pTexture->CrossRef_D3Dtex == single_texture) {
-            UnswitchTextures(pTexture); //this we can do always, so we unswitch the single texture
+        if (pTexture->CrossRef_D3Dtex == nullptr) {
             LookUpToMod(pTexture);
         }
     }
-    const auto single_volume_texture = GetSingleVolumeTexture();
     for (const auto pTexture : OriginalVolumeTextures) {
-        if (pTexture->CrossRef_D3Dtex == nullptr || pTexture->CrossRef_D3Dtex == single_volume_texture) {
-            UnswitchTextures(pTexture); //this we can do always, so we unswitch the single texture
+        if (pTexture->CrossRef_D3Dtex == nullptr) {
             LookUpToMod(pTexture);
         }
     }
-    const auto single_cube_texture = GetSingleCubeTexture();
     for (const auto pTexture : OriginalCubeTextures) {
-        if (pTexture->CrossRef_D3Dtex == nullptr || pTexture->CrossRef_D3Dtex == single_cube_texture) {
-            UnswitchTextures(pTexture); //this we can do always, so we unswitch the single texture
+        if (pTexture->CrossRef_D3Dtex == nullptr) {
             LookUpToMod(pTexture);
         }
     }
 
     return UnlockMutex();
-}
-
-uMod_IDirect3DTexture9* TextureClient::GetSingleTexture()
-{
-    if (isDirectXExDevice)
-        return static_cast<uMod_IDirect3DDevice9Ex*>(D3D9Device)->GetSingleTexture();
-    //this texture must no be added twice
-    return static_cast<uMod_IDirect3DDevice9*>(D3D9Device)->GetSingleTexture();
-}
-
-uMod_IDirect3DVolumeTexture9* TextureClient::GetSingleVolumeTexture()
-{
-    if (isDirectXExDevice)
-        return static_cast<uMod_IDirect3DDevice9Ex*>(D3D9Device)->GetSingleVolumeTexture();
-    //this texture must no be added twice
-    return static_cast<uMod_IDirect3DDevice9*>(D3D9Device)->GetSingleVolumeTexture();
-}
-
-uMod_IDirect3DCubeTexture9* TextureClient::GetSingleCubeTexture()
-{
-    if (isDirectXExDevice)
-        return static_cast<uMod_IDirect3DDevice9Ex*>(D3D9Device)->GetSingleCubeTexture();
-    //this texture must no be added twice
-    return static_cast<uMod_IDirect3DDevice9*>(D3D9Device)->GetSingleCubeTexture();
 }
 
 int TextureClient::SetLastCreatedTexture(uMod_IDirect3DTexture9* texture)
@@ -109,7 +79,6 @@ int TextureClient::SetLastCreatedCubeTexture(uMod_IDirect3DCubeTexture9* texture
     //this texture must no be added twice
     return static_cast<uMod_IDirect3DDevice9*>(D3D9Device)->SetLastCreatedCubeTexture(texture);
 }
-
 
 int TextureClient::LockMutex()
 {

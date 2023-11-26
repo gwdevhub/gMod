@@ -70,11 +70,11 @@ namespace {
 unsigned int gl_ErrorState = 0;
 HINSTANCE gl_hThisInstance = nullptr;
 
-extern "C" IDirect3D9* APIENTRY Direct3DCreate9(UINT SDKVersion)
+IDirect3D9* APIENTRY Direct3DCreate9(UINT SDKVersion)
 {
     DISABLE_HOOK(GetProcAddress_fn);
 
-    Message("uMod_Direct3DCreate9:  original %p, uMod %p\n", Direct3DCreate9_fn, Direct3DCreate9);
+    Message("uMod_Direct3DCreate9: uMod %p\n", Direct3DCreate9);
 
     ASSERT(Direct3DCreate9_ret);
 
@@ -84,11 +84,11 @@ extern "C" IDirect3D9* APIENTRY Direct3DCreate9(UINT SDKVersion)
     return new uMod_IDirect3D9(pIDirect3D9_orig); //return our object instead of the "real one"
 }
 
-extern "C" HRESULT APIENTRY Direct3DCreate9Ex(UINT SDKVersion, IDirect3D9Ex** ppD3D)
+HRESULT APIENTRY Direct3DCreate9Ex(UINT SDKVersion, IDirect3D9Ex** ppD3D)
 {
     DISABLE_HOOK(GetProcAddress_fn);
 
-    Message("uMod_Direct3DCreate9Ex:  original %p, uMod %p\n", Direct3DCreate9Ex_fn, Direct3DCreate9Ex);
+    Message("uMod_Direct3DCreate9Ex: uMod %p\n", Direct3DCreate9Ex);
 
     ASSERT(Direct3DCreate9Ex_ret);
 
