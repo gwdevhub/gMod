@@ -186,7 +186,7 @@ void uMod_IDirect3DDevice9::GetGammaRamp(UINT iSwapChain, D3DGAMMARAMP* pRamp)
 HRESULT uMod_IDirect3DDevice9::CreateTexture(UINT Width, UINT Height, UINT Levels, DWORD Usage, D3DFORMAT Format, D3DPOOL Pool, IDirect3DTexture9** ppTexture, HANDLE* pSharedHandle)
 {
     //create real texture
-    //Message("uMod_IDirect3DDevice9::CreateTexture()\n");
+    Message("uMod_IDirect3DDevice9::CreateTexture()\n");
     const HRESULT ret = m_pIDirect3DDevice9->CreateTexture(Width, Height, Levels, Usage, Format, Pool, ppTexture, pSharedHandle);
     if (ret != D3D_OK) {
         return ret;
@@ -206,7 +206,7 @@ HRESULT uMod_IDirect3DDevice9::CreateTexture(UINT Width, UINT Height, UINT Level
 HRESULT uMod_IDirect3DDevice9::CreateVolumeTexture(UINT Width, UINT Height, UINT Depth, UINT Levels, DWORD Usage, D3DFORMAT Format, D3DPOOL Pool, IDirect3DVolumeTexture9** ppVolumeTexture, HANDLE* pSharedHandle)
 {
     //create real texture
-    //Message("uMod_IDirect3DDevice9::CreateVolumeTexture()\n");
+    Message("uMod_IDirect3DDevice9::CreateVolumeTexture()\n");
     const HRESULT ret = m_pIDirect3DDevice9->CreateVolumeTexture(Width, Height, Depth, Levels, Usage, Format, Pool, ppVolumeTexture, pSharedHandle);
     if (ret != D3D_OK) {
         return ret;
@@ -227,7 +227,7 @@ HRESULT uMod_IDirect3DDevice9::CreateVolumeTexture(UINT Width, UINT Height, UINT
 HRESULT uMod_IDirect3DDevice9::CreateCubeTexture(UINT EdgeLength, UINT Levels, DWORD Usage, D3DFORMAT Format, D3DPOOL Pool, IDirect3DCubeTexture9** ppCubeTexture, HANDLE* pSharedHandle)
 {
     //create real texture
-    //Message("uMod_IDirect3DDevice9::CreateCubeTexture()\n");
+    Message("uMod_IDirect3DDevice9::CreateCubeTexture()\n");
     const HRESULT ret = m_pIDirect3DDevice9->CreateCubeTexture(EdgeLength, Levels, Usage, Format, Pool, ppCubeTexture, pSharedHandle);
     if (ret != D3D_OK) {
         return ret;
