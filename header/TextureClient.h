@@ -177,7 +177,7 @@ int TextureClient::LoadTexture(TextureFileStruct* file_in_memory, uModTexturePtr
     Message("LoadTexture( %p, %p, %#lX): %p\n", file_in_memory, ppTexture, file_in_memory->crc_hash, this);
     if (file_in_memory->is_wic_texture) {
         Warning("(%#lX)\n", file_in_memory->crc_hash);
-        #if 1
+        #if 0
         if (D3D_OK != D3DXCreateTextureFromFileInMemoryEx(
                 D3D9Device, file_in_memory->data.data(),
                 file_in_memory->data.size(), D3DX_DEFAULT, D3DX_DEFAULT,
@@ -188,6 +188,8 @@ int TextureClient::LoadTexture(TextureFileStruct* file_in_memory, uModTexturePtr
             Warning("LoadWICTexture(%p, %#lX): FAILED\n", *ppTexture, file_in_memory->crc_hash);
             return RETURN_TEXTURE_NOT_LOADED;
                 }
+        D3DXIMAGE_INFO info;
+        D3DXGetImageInfoFromFileInMemory(file_in_memory->data.data(), file_in_memory->data.size(), &info);
         char dllpath[MAX_PATH]{};
         GetModuleFileName(gl_hThisInstance, dllpath, MAX_PATH); //ask for name and path of this dll
         const auto dds_export_path = std::filesystem::path(dllpath).parent_path() / "d3dxout" / std::format("GW.EXE_{:X}.dds", file_in_memory->crc_hash);
@@ -199,7 +201,7 @@ int TextureClient::LoadTexture(TextureFileStruct* file_in_memory, uModTexturePtr
                 D3D9Device,
                 file_in_memory->data.data(),
                 file_in_memory->data.size(),
-                0, 0, D3DPOOL_MANAGED, DirectX::WIC_LOADER_DEFAULT,
+                0, 0, D3DPOOL_MANAGED, DirectX::WIC_LOADER_MIP_AUTOGEN,
                 reinterpret_cast<IDirect3DTexture9**>(ppTexture))) {
             *ppTexture = nullptr;
             Warning("LoadWICTexture(%p, %#lX): FAILED\n", *ppTexture, file_in_memory->crc_hash);

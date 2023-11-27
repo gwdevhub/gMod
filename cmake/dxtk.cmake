@@ -15,7 +15,7 @@ FetchContent_Populate(directxtex)
 file(READ "${directxtex_SOURCE_DIR}/WICTextureLoader/WICTextureLoader9.cpp" FILE_CONTENT)
 string(REPLACE
     "hr = frame->GetPixelFormat(&pixelFormat);\n"
-	"hr = frame->GetPixelFormat(&pixelFormat); if (pixelFormat == _GUID{0x6fddc324, 0x4e03, 0x4bfe, {0xb1, 0x85, 0x3d, 0x77, 0x76, 0x8d, 0xc9, 0xe}}) pixelFormat = GUID_WICPixelFormat32bppBGRA;\n"
+	"hr = frame->GetPixelFormat(&pixelFormat); if (pixelFormat == GUID_WICPixelFormat32bppBGR) pixelFormat = GUID_WICPixelFormat32bppBGRA;\n"
 	FILE_CONTENT "${FILE_CONTENT}" )
 file(WRITE "${directxtex_SOURCE_DIR}/WICTextureLoader/WICTextureLoader9.cpp" "${FILE_CONTENT}")
 
