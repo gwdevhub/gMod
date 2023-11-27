@@ -7,10 +7,13 @@ interface uMod_IDirect3DTexture9 : public IDirect3DTexture9 {
     {
         m_D3Dtex = *ppTex; //Texture which will be displayed and will be passed to the game
         m_D3Ddev = pIDirect3DDevice9; //device pointer
-        CrossRef_D3Dtex = nullptr; //cross reference
         // fake texture: store the pointer to the original uMod_IDirect3DTexture9 object, needed if a fake texture is unselected
         // original texture: stores the pointer to the fake texture object, is needed if original texture is deleted,
         // thus the fake texture can also be deleted
+    }
+    virtual ~uMod_IDirect3DTexture9()
+    {
+
     }
 
     // callback interface

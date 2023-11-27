@@ -56,27 +56,24 @@ int TextureClient::MergeUpdate()
     return UnlockMutex();
 }
 
-int TextureClient::SetLastCreatedTexture(uMod_IDirect3DTexture9* texture)
+void TextureClient::SetLastCreatedTexture(uMod_IDirect3DTexture9* texture)
 {
     if (isDirectXExDevice)
         return static_cast<uMod_IDirect3DDevice9Ex*>(D3D9Device)->SetLastCreatedTexture(texture);
-    //this texture must no be added twice
     return static_cast<uMod_IDirect3DDevice9*>(D3D9Device)->SetLastCreatedTexture(texture);
 }
 
-int TextureClient::SetLastCreatedVolumeTexture(uMod_IDirect3DVolumeTexture9* texture)
+void TextureClient::SetLastCreatedVolumeTexture(uMod_IDirect3DVolumeTexture9* texture)
 {
     if (isDirectXExDevice)
         return static_cast<uMod_IDirect3DDevice9Ex*>(D3D9Device)->SetLastCreatedVolumeTexture(texture);
-    //this texture must no be added twice
     return static_cast<uMod_IDirect3DDevice9*>(D3D9Device)->SetLastCreatedVolumeTexture(texture);
 }
 
-int TextureClient::SetLastCreatedCubeTexture(uMod_IDirect3DCubeTexture9* texture)
+void TextureClient::SetLastCreatedCubeTexture(uMod_IDirect3DCubeTexture9* texture)
 {
     if (isDirectXExDevice)
         return static_cast<uMod_IDirect3DDevice9Ex*>(D3D9Device)->SetLastCreatedCubeTexture(texture);
-    //this texture must no be added twice
     return static_cast<uMod_IDirect3DDevice9*>(D3D9Device)->SetLastCreatedCubeTexture(texture);
 }
 

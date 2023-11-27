@@ -139,48 +139,31 @@ public:
 
     uMod_IDirect3DTexture9* GetLastCreatedTexture() { return LastCreatedTexture; }
 
-    int SetLastCreatedTexture(uMod_IDirect3DTexture9* pTexture)
+    void SetLastCreatedTexture(uMod_IDirect3DTexture9* pTexture)
     {
         LastCreatedTexture = pTexture;
-        return RETURN_OK;
     }
 
     uMod_IDirect3DVolumeTexture9* GetLastCreatedVolumeTexture() { return LastCreatedVolumeTexture; }
 
-    int SetLastCreatedVolumeTexture(uMod_IDirect3DVolumeTexture9* pTexture)
+    void SetLastCreatedVolumeTexture(uMod_IDirect3DVolumeTexture9* pTexture)
     {
         LastCreatedVolumeTexture = pTexture;
-        return RETURN_OK;
     }
 
     uMod_IDirect3DCubeTexture9* GetLastCreatedCubeTexture() { return LastCreatedCubeTexture; }
 
-    int SetLastCreatedCubeTexture(uMod_IDirect3DCubeTexture9* pTexture)
+    void SetLastCreatedCubeTexture(uMod_IDirect3DCubeTexture9* pTexture)
     {
         LastCreatedCubeTexture = pTexture;
-        return RETURN_OK;
     }
 
-
-    uMod_IDirect3DTexture9* GetSingleTexture() { return SingleTexture; }
-    uMod_IDirect3DVolumeTexture9* GetSingleVolumeTexture() { return SingleVolumeTexture; }
-    uMod_IDirect3DCubeTexture9* GetSingleCubeTexture() { return SingleCubeTexture; }
-
 private:
-    int CreateSingleTexture();
     IDirect3DDevice9* m_pIDirect3DDevice9 = nullptr;
 
-    int CounterSaveSingleTexture;
-    uMod_IDirect3DTexture9* SingleTexture = nullptr;
-    uMod_IDirect3DVolumeTexture9* SingleVolumeTexture = nullptr;
-    uMod_IDirect3DCubeTexture9* SingleCubeTexture = nullptr;
-    char SingleTextureMod;
-
-    D3DCOLOR TextureColour;
     int BackBufferCount;
-    bool NormalRendering;
-
-    int uMod_Reference;
+    bool NormalRendering = true;
+    int uMod_Reference = 1;
 
     uMod_IDirect3DTexture9* LastCreatedTexture = nullptr;
     uMod_IDirect3DVolumeTexture9* LastCreatedVolumeTexture = nullptr;

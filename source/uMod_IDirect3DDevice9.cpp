@@ -13,17 +13,10 @@ uMod_IDirect3DDevice9::uMod_IDirect3DDevice9(IDirect3DDevice9* pOriginal, int ba
     Message(PRE_MESSAGE "::" PRE_MESSAGE " (%p): %p\n", pOriginal, this);
 
     BackBufferCount = back_buffer_count;
-    NormalRendering = true;
 
     uMod_Client = new TextureClient(this); //get a new texture client for this device
     uMod_Client->Initialize();
-
-    LastCreatedTexture = nullptr;
-    LastCreatedVolumeTexture = nullptr;
-    LastCreatedCubeTexture = nullptr;
     m_pIDirect3DDevice9 = pOriginal; // store the pointer to original object
-
-    uMod_Reference = 1;
 }
 
 uMod_IDirect3DDevice9::~uMod_IDirect3DDevice9()

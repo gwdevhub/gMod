@@ -62,16 +62,7 @@ ULONG APIENTRY uMod_IDirect3DTexture9::Release()
             if (count == 0) //if texture is released we switch the textures back
             {
                 UnswitchTextures(this);
-                if (ret == 0x01000000L) {
-                    if (static_cast<uMod_IDirect3DDevice9*>(m_D3Ddev)->GetSingleTexture() != fake_texture) {
-                        fake_texture->Release(); // we release the fake texture
-                    }
-                }
-                else {
-                    if (static_cast<uMod_IDirect3DDevice9Ex*>(m_D3Ddev)->GetSingleTexture() != fake_texture) {
-                        fake_texture->Release(); // we release the fake texture
-                    }
-                }
+                fake_texture->Release(); // we release the fake texture
             }
         }
         else {

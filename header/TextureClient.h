@@ -59,12 +59,9 @@ private:
     bool isDirectXExDevice = false;
 
     // DX9 proxy functions
-    uMod_IDirect3DTexture9* GetSingleTexture();
-    uMod_IDirect3DVolumeTexture9* GetSingleVolumeTexture();
-    uMod_IDirect3DCubeTexture9* GetSingleCubeTexture();
-    int SetLastCreatedTexture(uMod_IDirect3DTexture9*);
-    int SetLastCreatedVolumeTexture(uMod_IDirect3DVolumeTexture9*);
-    int SetLastCreatedCubeTexture(uMod_IDirect3DCubeTexture9*);
+    void SetLastCreatedTexture(uMod_IDirect3DTexture9*);
+    void SetLastCreatedVolumeTexture(uMod_IDirect3DVolumeTexture9*);
+    void SetLastCreatedCubeTexture(uMod_IDirect3DCubeTexture9*);
 
     bool should_update = false;
 
