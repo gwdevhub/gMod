@@ -52,9 +52,6 @@ namespace {
         }
         return nullptr;
     }
-    bool IsGmod(HMODULE hModule) {
-        return hModule && GetProcAddress(hModule, "GetGModVersion");
-    }
 
     HMODULE LoadD3d9Dll()
     {
