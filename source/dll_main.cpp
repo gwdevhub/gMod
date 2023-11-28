@@ -9,7 +9,7 @@
 
 namespace {
 
-#define DISABLE_HOOK(var) if(var) { MH_DisableHook(var); var = nullptr;}
+#define DISABLE_HOOK(var) if(var) { MH_DisableHook(var);}
 
     using Direct3DCreate9_type = IDirect3D9* (APIENTRY*)(UINT);
     using Direct3DCreate9Ex_type = HRESULT(APIENTRY*)(UINT SDKVersion, IDirect3D9Ex** ppD3D);
@@ -24,27 +24,14 @@ namespace {
     GetProcAddress_type GetProcAddress_fn = nullptr;
     GetProcAddress_type GetProcAddress_ret = nullptr;
 
-    FARPROC APIENTRY OnGetProcAddress(HMODULE hModule, LPCSTR lpProcName) {
-        ASSERT(GetProcAddress_ret);
-        if ((int)lpProcName < 0xffff)
-            return GetProcAddress_ret(hModule, lpProcName); // lpProcName is ordinal offset, not string
-
-        if (strcmp(lpProcName, "Direct3DCreate9") == 0) {
-            Direct3DCreate9_ret = (Direct3DCreate9_type)GetProcAddress_ret(hModule, lpProcName);
-            return (FARPROC)Direct3DCreate9;
-        }
-        if (strcmp(lpProcName, "Direct3DCreate9Ex") == 0) {
-            Direct3DCreate9Ex_ret = (Direct3DCreate9Ex_type)GetProcAddress_ret(hModule, lpProcName);
-            return (FARPROC)Direct3DCreate9Ex;
-        }
-        return GetProcAddress_ret(hModule, lpProcName);
-    }
-
-
     FILE* stdout_proxy;
     FILE* stderr_proxy;
 
-    HMODULE FindLoadedModuleByName(const char* name) {
+    HMODULE gMod_Loaded_d3d9_Module_Handle = nullptr;
+
+
+
+    HMODULE FindLoadedModuleByName(const char* name, bool include_this_module = false) {
         HMODULE hModules[1024];
         HANDLE hProcess;
         DWORD cbNeeded;
@@ -55,7 +42,7 @@ namespace {
         if (!EnumProcessModules(hProcess, hModules, sizeof(hModules), &cbNeeded))
             return nullptr;
         for (i = 0; i < (cbNeeded / sizeof(HMODULE)); i++) {
-            if (hModules[i] == gl_hThisInstance)
+            if (hModules[i] == gl_hThisInstance && !include_this_module)
                 continue;
             TCHAR szModuleName[MAX_PATH];
             ASSERT(GetModuleFileName(hModules[i], szModuleName, _countof(szModuleName)) > 0);
@@ -65,35 +52,122 @@ namespace {
         }
         return nullptr;
     }
+    bool IsGmod(HMODULE hModule) {
+        return hModule && GetProcAddress(hModule, "GetGModVersion");
+    }
+
+    HMODULE LoadD3d9Dll()
+    {
+        HMODULE found = FindLoadedModuleByName("d3d9.dll");
+        if (!found) {
+            char executable_path[MAX_PATH]{};
+            ASSERT(GetModuleFileName(GetModuleHandle(nullptr), executable_path, _countof(executable_path)) > 0);
+
+            char dll_path[MAX_PATH]{};
+            ASSERT(GetModuleFileName(gl_hThisInstance, dll_path, _countof(dll_path)) > 0);
+
+            const auto exe_path = std::filesystem::path(executable_path);
+            const auto gmod_path = std::filesystem::path(dll_path);
+
+            bool successful_load = false;
+
+            if (exe_path.parent_path() != gmod_path.parent_path()
+                || gmod_path.filename() != "d3d9.dll") {
+                // Call basic LoadLibrary function; we're not in the same directory as the exe.
+                gMod_Loaded_d3d9_Module_Handle = LoadLibrary("d3d9.dll");
+            }
+            if (!gMod_Loaded_d3d9_Module_Handle) {
+                // Tried resolving d3d9.dll locally, didn't work. Try system directory
+                char buffer[MAX_PATH] ;
+                ASSERT(GetSystemDirectory(buffer, _countof(buffer)) > 0); //get the system directory, we need to open the original d3d9.dll
+
+                // Append dll name
+                strcat_s(buffer, _countof(buffer), "\\d3d9.dll");
+                gMod_Loaded_d3d9_Module_Handle = LoadLibrary(buffer);
+            }
+
+            ASSERT(gMod_Loaded_d3d9_Module_Handle);
+
+            found = FindLoadedModuleByName("d3d9.dll");
+            ASSERT(found && found == gMod_Loaded_d3d9_Module_Handle);
+        }
+
+        DISABLE_HOOK(GetProcAddress_fn);
+        // GetProcAddress, hooked via OnGetProcAddress
+        Direct3DCreate9_ret = (Direct3DCreate9_type)GetProcAddress(found, "Direct3DCreate9");
+        Direct3DCreate9Ex_ret = (Direct3DCreate9Ex_type)GetProcAddress(found, "Direct3DCreate9Ex");
+
+        return found;
+    }
+
+    FARPROC APIENTRY OnGetProcAddress(HMODULE hModule, LPCSTR lpProcName) {
+        ASSERT(GetProcAddress_ret);
+        if ((int)lpProcName < 0xffff)
+            return GetProcAddress_ret(hModule, lpProcName); // lpProcName is ordinal offset, not string
+
+            if (strcmp(lpProcName, "Direct3DCreate9") == 0) {
+                Direct3DCreate9_ret = (Direct3DCreate9_type)GetProcAddress_ret(hModule, lpProcName);
+                return (FARPROC)Direct3DCreate9;
+            }
+            if (strcmp(lpProcName, "Direct3DCreate9Ex") == 0) {
+                Direct3DCreate9Ex_ret = (Direct3DCreate9Ex_type)GetProcAddress_ret(hModule, lpProcName);
+                return (FARPROC)Direct3DCreate9Ex;
+            }
+            return GetProcAddress_ret(hModule, lpProcName);
+        }
+
+    // If the original d3d9 function is nullptr or points to gMod, load the actual d3d9 dll and redirect the addresses
+    void CheckLoadD3d9Dll() {
+        if (!(Direct3DCreate9_ret && Direct3DCreate9_ret != Direct3DCreate9)) {
+            ASSERT(LoadD3d9Dll());
+            ASSERT(Direct3DCreate9_ret && Direct3DCreate9_ret != Direct3DCreate9);
+        }
+        if (!(Direct3DCreate9Ex_ret && Direct3DCreate9Ex_ret != Direct3DCreate9Ex)) {
+            ASSERT(LoadD3d9Dll());
+            ASSERT(Direct3DCreate9Ex_ret && Direct3DCreate9Ex_ret != Direct3DCreate9Ex);
+        }
+    }
+
+    // There may be a sitation where more than 1 gmod is loaded; avoid recursions!
+    bool creating_d3d9 = false;
 }
 
 unsigned int gl_ErrorState = 0;
 HINSTANCE gl_hThisInstance = nullptr;
 
-IDirect3D9* APIENTRY Direct3DCreate9(UINT SDKVersion)
+extern "C" IDirect3D9* APIENTRY Direct3DCreate9(UINT SDKVersion)
 {
-    DISABLE_HOOK(GetProcAddress_fn);
-
     Message("uMod_Direct3DCreate9: uMod %p\n", Direct3DCreate9);
 
-    ASSERT(Direct3DCreate9_ret);
+    ASSERT(!creating_d3d9);
+    creating_d3d9 = true;
+
+    DISABLE_HOOK(GetProcAddress_fn);
+    CheckLoadD3d9Dll();
 
     IDirect3D9* pIDirect3D9_orig = Direct3DCreate9_ret(SDKVersion); //creating the original IDirect3D9 object
     ASSERT(pIDirect3D9_orig);
 
+    creating_d3d9 = false;
+
     return new uMod_IDirect3D9(pIDirect3D9_orig); //return our object instead of the "real one"
 }
 
-HRESULT APIENTRY Direct3DCreate9Ex(UINT SDKVersion, IDirect3D9Ex** ppD3D)
+extern "C" HRESULT APIENTRY Direct3DCreate9Ex(UINT SDKVersion, IDirect3D9Ex** ppD3D)
 {
-    DISABLE_HOOK(GetProcAddress_fn);
-
     Message("uMod_Direct3DCreate9Ex: uMod %p\n", Direct3DCreate9Ex);
 
-    ASSERT(Direct3DCreate9Ex_ret);
+    ASSERT(!creating_d3d9);
+    creating_d3d9 = true;
+
+
+    DISABLE_HOOK(GetProcAddress_fn);
+    CheckLoadD3d9Dll();
 
     IDirect3D9Ex* pIDirect3D9Ex_orig = nullptr;
     HRESULT ret = Direct3DCreate9Ex_ret(SDKVersion, &pIDirect3D9Ex_orig); //creating the original IDirect3D9 object
+
+    creating_d3d9 = false;
 
     if (ret != S_OK)
         return ret;
@@ -162,6 +236,9 @@ void ExitInstance()
 
     MH_Uninitialize();
 
+    if (gMod_Loaded_d3d9_Module_Handle)
+        FreeLibrary(gMod_Loaded_d3d9_Module_Handle);
+
 #ifdef _DEBUG
     if (stdout_proxy)
         fclose(stdout_proxy);
@@ -173,3 +250,4 @@ void ExitInstance()
     __except (EXCEPTION_CONTINUE_EXECUTION) { }
 #endif
 }
+
