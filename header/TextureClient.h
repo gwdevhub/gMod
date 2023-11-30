@@ -196,7 +196,7 @@ int TextureClient::LoadTexture(TextureFileStruct* file_in_memory, uModTexturePtr
         DirectX::ScratchImage image;
         HRESULT hr = 0;
         if (file_in_memory->ext == ".tga") {
-            hr = DirectX::LoadFromTGAMemory(file_in_memory->data.data(), file_in_memory->data.size(), DirectX::TGA_FLAGS_NONE, nullptr, image);
+            hr = DirectX::LoadFromTGAMemory(file_in_memory->data.data(), file_in_memory->data.size(), DirectX::TGA_FLAGS_BGR, nullptr, image);
         }
         else {
             hr = DirectX::LoadFromHDRMemory(file_in_memory->data.data(), file_in_memory->data.size(), nullptr, image);
