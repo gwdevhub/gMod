@@ -96,7 +96,7 @@ void ParseSimpleArchive(const libzippp::ZipArchive& archive, std::vector<Texture
             const auto size = entry.getSize();
             std::vector vec(data_ptr, data_ptr + size);
             std::filesystem::path tex_name(entry.getName());
-            entries.emplace_back(std::move(vec), crc_hash, tex_name.extension() != ".dds");
+            entries.emplace_back(std::move(vec), crc_hash, tex_name.extension().string());
             delete[] data_ptr;
         }
     }
@@ -160,7 +160,7 @@ void ParseTexmodArchive(std::vector<std::string>& lines, libzippp::ZipArchive& a
         const auto size = static_cast<size_t>(entry.getSize());
         std::vector vec(data_ptr, data_ptr + size);
         const auto tex_name = std::filesystem::path(entry.getName());
-        entries.emplace_back(std::move(vec), crc_hash, tex_name.extension() != ".dds");
+        entries.emplace_back(std::move(vec), crc_hash, tex_name.extension().string());
         delete[] data_ptr;
     }
 }

@@ -8,7 +8,7 @@ using HashType = DWORD32;
 
 #ifdef _DEBUG
 
-#if 1
+#if 0
 #define Message(...) { printf(__VA_ARGS__); }
 #else
 #define Message(...)

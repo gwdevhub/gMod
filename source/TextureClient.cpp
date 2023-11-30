@@ -104,7 +104,7 @@ unsigned long TextureClient::AddFile(TextureFileStruct& entry)
     TextureFileStruct* texture_file_struct = new TextureFileStruct();
     texture_file_struct->data = std::move(entry.data);
     texture_file_struct->crc_hash = entry.crc_hash;
-    texture_file_struct->is_wic_texture = entry.is_wic_texture;
+    texture_file_struct->ext = entry.ext;
     modded_textures.emplace(entry.crc_hash, texture_file_struct);
     should_update = true;
     return texture_file_struct->data.size();
