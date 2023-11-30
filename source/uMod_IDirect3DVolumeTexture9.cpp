@@ -61,16 +61,7 @@ ULONG APIENTRY uMod_IDirect3DVolumeTexture9::Release()
             if (count == 0) //if texture is released we switch the textures back
             {
                 UnswitchTextures(this);
-                if (ret == 0x01000000L) {
-                    if (static_cast<uMod_IDirect3DDevice9*>(m_D3Ddev)->GetSingleVolumeTexture() != fake_texture) {
-                        fake_texture->Release(); // we release the fake texture
-                    }
-                }
-                else {
-                    if (static_cast<uMod_IDirect3DDevice9Ex*>(m_D3Ddev)->GetSingleVolumeTexture() != fake_texture) {
-                        fake_texture->Release(); // we release the fake texture
-                    }
-                }
+                fake_texture->Release(); // we release the fake texture
             }
         }
         else {
@@ -187,8 +178,6 @@ void APIENTRY uMod_IDirect3DVolumeTexture9::GenerateMipSubLevels()
     m_D3Dtex->GenerateMipSubLevels();
 }
 
-
-
 //this function yields for the non switched texture object
 HRESULT APIENTRY uMod_IDirect3DVolumeTexture9::AddDirtyBox(CONST D3DBOX* pDirtyBox)
 {
@@ -234,7 +223,6 @@ HRESULT APIENTRY uMod_IDirect3DVolumeTexture9::UnlockBox(UINT Level)
     return m_D3Dtex->UnlockBox(Level);
 }
 
-
 HashType uMod_IDirect3DVolumeTexture9::GetHash() const
 {
     if (FAKE) {
@@ -251,25 +239,23 @@ HashType uMod_IDirect3DVolumeTexture9::GetHash() const
 
     if (pTexture->GetLevelDesc(0, &desc) != D3D_OK) //get the format and the size of the texture
     {
-        Message("uMod_IDirect3DVolumeTexture9::GetHash() Failed: GetLevelDesc \n");
+        Warning("uMod_IDirect3DVolumeTexture9::GetHash() Failed: GetLevelDesc \n");
         return 0;
     }
 
     Message("uMod_IDirect3DVolumeTexture9::GetHash() (%d %d %d) %d\n", desc.Width, desc.Height, desc.Depth, desc.Format);
     if (pTexture->LockBox(0, &d3dlr, nullptr, D3DLOCK_READONLY) != D3D_OK) {
-        Message("uMod_IDirect3DVolumeTexture9::GetHash() Failed: LockRect 1\n");
+        Warning("uMod_IDirect3DVolumeTexture9::GetHash() Failed: LockRect 1\n");
         if (pTexture->GetVolumeLevel(0, &pResolvedSurface) != D3D_OK) {
-            Message("uMod_IDirect3DVolumeTexture9::GetHash() Failed: GetSurfaceLevel\n");
+            Warning("uMod_IDirect3DVolumeTexture9::GetHash() Failed: GetSurfaceLevel\n");
             return 0;
         }
         if (pResolvedSurface->LockBox(&d3dlr, nullptr, D3DLOCK_READONLY) != D3D_OK) {
             pResolvedSurface->Release();
-            Message("uMod_IDirect3DVolumeTexture9::GetHash() Failed: LockRect 2\n");
+            Warning("uMod_IDirect3DVolumeTexture9::GetHash() Failed: LockRect 2\n");
             return 0;
         }
     }
-
-
 
     const int size = (GetBitsFromFormat(desc.Format) * desc.Width * desc.Height * desc.Depth) / 8;
     const auto hash = GetCRC32(static_cast<char*>(d3dlr.pBits), size); //calculate the crc32 of the texture

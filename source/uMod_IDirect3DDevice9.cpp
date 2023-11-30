@@ -8,126 +8,15 @@
 #define PRE_MESSAGE "uMod_IDirect3DDevice9"
 #endif
 
-
-int uMod_IDirect3DDevice9::CreateSingleTexture()
-{
-    if (SingleTexture != nullptr && SingleVolumeTexture != nullptr && SingleCubeTexture != nullptr) {
-        return RETURN_OK;
-    }
-    if (SingleTexture == nullptr) //create texture
-    {
-        if (D3D_OK != CreateTexture(8, 8, 1, 0, D3DFMT_A8R8G8B8, D3DPOOL_MANAGED, (IDirect3DTexture9**)&SingleTexture, nullptr)) {
-            Message(PRE_MESSAGE "::CreateSingleTexture(): CreateTexture Failed\n");
-            SingleTexture = nullptr;
-            return RETURN_TEXTURE_NOT_LOADED;
-        }
-        LastCreatedTexture = nullptr; // set LastCreatedTexture to NULL, cause LastCreatedTexture is equal SingleTexture
-        SingleTexture->FAKE = true; //this is no texture created from by game
-    }
-
-    {
-        D3DLOCKED_RECT d3dlr;
-        IDirect3DTexture9* pD3Dtex = SingleTexture->m_D3Dtex;
-
-        if (D3D_OK != pD3Dtex->LockRect(0, &d3dlr, nullptr, 0)) {
-            Message(PRE_MESSAGE "::CreateSingleTexture(): LockRect Failed\n");
-            SingleTexture->Release();
-            SingleTexture = nullptr;
-            return RETURN_TEXTURE_NOT_LOADED;
-        }
-        const auto pDst = static_cast<DWORD*>(d3dlr.pBits);
-
-        for (int i = 0; i < 8 * 8; i++) {
-            pDst[i] = TextureColour;
-        }
-        pD3Dtex->UnlockRect(0);
-    }
-
-    if (SingleVolumeTexture == nullptr) //create texture
-    {
-        if (D3D_OK != CreateVolumeTexture(8, 8, 8, 1, 0, D3DFMT_A8R8G8B8, D3DPOOL_MANAGED, (IDirect3DVolumeTexture9**)&SingleVolumeTexture, nullptr)) {
-            Message(PRE_MESSAGE "::CreateSingleTexture(): CreateVolumeTexture Failed\n");
-            SingleVolumeTexture = nullptr;
-            return RETURN_TEXTURE_NOT_LOADED;
-        }
-        LastCreatedVolumeTexture = nullptr; // set LastCreatedTexture to NULL, cause LastCreatedTexture is equal SingleTexture
-        SingleVolumeTexture->FAKE = true; //this is no texture created from by game
-    }
-
-    {
-        D3DLOCKED_BOX d3dlr;
-        IDirect3DVolumeTexture9* pD3Dtex = SingleVolumeTexture->m_D3Dtex;
-        //LockBox)(UINT Level, D3DLOCKED_BOX *pLockedVolume, CONST D3DBOX *pBox,
-        if (D3D_OK != pD3Dtex->LockBox(0, &d3dlr, nullptr, 0)) {
-            Message(PRE_MESSAGE "::CreateSingleTexture(): LockBox Failed\n");
-            SingleVolumeTexture->Release();
-            SingleVolumeTexture = nullptr;
-            return RETURN_TEXTURE_NOT_LOADED;
-        }
-        const auto pDst = static_cast<DWORD*>(d3dlr.pBits);
-
-        for (int i = 0; i < 8 * 8 * 8; i++) {
-            pDst[i] = TextureColour;
-        }
-        pD3Dtex->UnlockBox(0);
-    }
-    if (SingleCubeTexture == nullptr) //create texture
-    {
-        if (D3D_OK != CreateCubeTexture(8, 1, 0, D3DFMT_A8R8G8B8, D3DPOOL_MANAGED, (IDirect3DCubeTexture9**)&SingleCubeTexture, nullptr)) {
-            Message(PRE_MESSAGE "::CreateSingleTexture(): CreateCubeTexture Failed\n");
-            SingleCubeTexture = nullptr;
-            return RETURN_TEXTURE_NOT_LOADED;
-        }
-        LastCreatedCubeTexture = nullptr; // set LastCreatedTexture to NULL, cause LastCreatedTexture is equal SingleTexture
-        SingleCubeTexture->FAKE = true; //this is no texture created from by game
-    }
-
-    {
-        D3DLOCKED_RECT d3dlr;
-        IDirect3DCubeTexture9* pD3Dtex = SingleCubeTexture->m_D3Dtex;
-
-        for (int c = 0; c < 6; c++) {
-            if (D3D_OK != pD3Dtex->LockRect(static_cast<D3DCUBEMAP_FACES>(c), 0, &d3dlr, nullptr, 0)) {
-                Message(PRE_MESSAGE "::CreateSingleTexture(): LockRect (Cube) Failed\n");
-                SingleCubeTexture->Release();
-                SingleCubeTexture = nullptr;
-                return RETURN_TEXTURE_NOT_LOADED;
-            }
-            const auto pDst = static_cast<DWORD*>(d3dlr.pBits);
-
-            for (int i = 0; i < 8 * 8; i++) {
-                pDst[i] = TextureColour;
-            }
-            pD3Dtex->UnlockRect(static_cast<D3DCUBEMAP_FACES>(c), 0);
-        }
-    }
-
-    return RETURN_OK;
-}
-
 uMod_IDirect3DDevice9::uMod_IDirect3DDevice9(IDirect3DDevice9* pOriginal, int back_buffer_count)
 {
     Message(PRE_MESSAGE "::" PRE_MESSAGE " (%p): %p\n", pOriginal, this);
 
     BackBufferCount = back_buffer_count;
-    NormalRendering = true;
 
     uMod_Client = new TextureClient(this); //get a new texture client for this device
     uMod_Client->Initialize();
-
-    LastCreatedTexture = nullptr;
-    LastCreatedVolumeTexture = nullptr;
-    LastCreatedCubeTexture = nullptr;
     m_pIDirect3DDevice9 = pOriginal; // store the pointer to original object
-    TextureColour = D3DCOLOR_ARGB(255, 0, 255, 0);
-
-    CounterSaveSingleTexture = -20;
-
-    SingleTextureMod = 0;
-    SingleTexture = nullptr;
-    SingleVolumeTexture = nullptr;
-    SingleCubeTexture = nullptr;
-    uMod_Reference = 1;
 }
 
 uMod_IDirect3DDevice9::~uMod_IDirect3DDevice9()
@@ -170,19 +59,8 @@ ULONG uMod_IDirect3DDevice9::Release()
         // we must not release the fake textures, cause they are released if the target textures are released
         // and the target textures are released by the game.
 
-        if (SingleTexture != nullptr) {
-            SingleTexture->Release(); //this is the only texture we must release by ourself
-        }
-        if (SingleVolumeTexture != nullptr) {
-            SingleVolumeTexture->Release(); //this is the only texture we must release by ourself
-        }
-        if (SingleCubeTexture != nullptr) {
-            SingleCubeTexture->Release(); //this is the only texture we must release by ourself
-        }
-
         delete uMod_Client; //must be deleted at the end, because other releases might call a function of this object
         uMod_Client = nullptr;
-        SingleTexture = nullptr;
     }
 
     const ULONG count = m_pIDirect3DDevice9->Release();
@@ -301,23 +179,18 @@ void uMod_IDirect3DDevice9::GetGammaRamp(UINT iSwapChain, D3DGAMMARAMP* pRamp)
 HRESULT uMod_IDirect3DDevice9::CreateTexture(UINT Width, UINT Height, UINT Levels, DWORD Usage, D3DFORMAT Format, D3DPOOL Pool, IDirect3DTexture9** ppTexture, HANDLE* pSharedHandle)
 {
     //create real texture
-    //Message("uMod_IDirect3DDevice9::CreateTexture()\n");
+    Message("uMod_IDirect3DDevice9::CreateTexture()\n");
     const HRESULT ret = m_pIDirect3DDevice9->CreateTexture(Width, Height, Levels, Usage, Format, Pool, ppTexture, pSharedHandle);
     if (ret != D3D_OK) {
         return ret;
     }
 
-    //create fake texture
     const auto texture = new uMod_IDirect3DTexture9(ppTexture, this);
-    if (texture) {
-        *ppTexture = texture;
-    }
+    *ppTexture = texture;
 
-    if (LastCreatedTexture != nullptr) //if a texture was loaded before, hopefully this texture contains now the data, so we can add it
+    if (LastCreatedTexture != nullptr && uMod_Client != nullptr) //if a texture was loaded before, hopefully this texture contains now the data, so we can add it
     {
-        if (uMod_Client != nullptr) {
-            uMod_Client->AddTexture(LastCreatedTexture);
-        }
+        uMod_Client->AddTexture(LastCreatedTexture);
     }
     LastCreatedTexture = texture;
     return ret;
@@ -326,7 +199,7 @@ HRESULT uMod_IDirect3DDevice9::CreateTexture(UINT Width, UINT Height, UINT Level
 HRESULT uMod_IDirect3DDevice9::CreateVolumeTexture(UINT Width, UINT Height, UINT Depth, UINT Levels, DWORD Usage, D3DFORMAT Format, D3DPOOL Pool, IDirect3DVolumeTexture9** ppVolumeTexture, HANDLE* pSharedHandle)
 {
     //create real texture
-    //Message("uMod_IDirect3DDevice9::CreateVolumeTexture()\n");
+    Message("uMod_IDirect3DDevice9::CreateVolumeTexture()\n");
     const HRESULT ret = m_pIDirect3DDevice9->CreateVolumeTexture(Width, Height, Depth, Levels, Usage, Format, Pool, ppVolumeTexture, pSharedHandle);
     if (ret != D3D_OK) {
         return ret;
@@ -334,15 +207,11 @@ HRESULT uMod_IDirect3DDevice9::CreateVolumeTexture(UINT Width, UINT Height, UINT
 
     //create fake texture
     const auto texture = new uMod_IDirect3DVolumeTexture9(ppVolumeTexture, this);
-    if (texture) {
-        *ppVolumeTexture = texture;
-    }
+    *ppVolumeTexture = texture;
 
-    if (LastCreatedVolumeTexture != nullptr) //if a texture was loaded before, hopefully this texture contains now the data, so we can add it
+    if (LastCreatedVolumeTexture != nullptr && uMod_Client != nullptr) //if a texture was loaded before, hopefully this texture contains now the data, so we can add it
     {
-        if (uMod_Client != nullptr) {
-            uMod_Client->AddTexture(LastCreatedVolumeTexture);
-        }
+        uMod_Client->AddTexture(LastCreatedVolumeTexture);
     }
     LastCreatedVolumeTexture = texture;
     return ret;
@@ -351,7 +220,7 @@ HRESULT uMod_IDirect3DDevice9::CreateVolumeTexture(UINT Width, UINT Height, UINT
 HRESULT uMod_IDirect3DDevice9::CreateCubeTexture(UINT EdgeLength, UINT Levels, DWORD Usage, D3DFORMAT Format, D3DPOOL Pool, IDirect3DCubeTexture9** ppCubeTexture, HANDLE* pSharedHandle)
 {
     //create real texture
-    //Message("uMod_IDirect3DDevice9::CreateCubeTexture()\n");
+    Message("uMod_IDirect3DDevice9::CreateCubeTexture()\n");
     const HRESULT ret = m_pIDirect3DDevice9->CreateCubeTexture(EdgeLength, Levels, Usage, Format, Pool, ppCubeTexture, pSharedHandle);
     if (ret != D3D_OK) {
         return ret;
@@ -359,15 +228,11 @@ HRESULT uMod_IDirect3DDevice9::CreateCubeTexture(UINT EdgeLength, UINT Levels, D
 
     //create fake texture
     const auto texture = new uMod_IDirect3DCubeTexture9(ppCubeTexture, this);
-    if (texture) {
-        *ppCubeTexture = texture;
-    }
+    *ppCubeTexture = texture;
 
-    if (LastCreatedCubeTexture != nullptr) //if a texture was loaded before, hopefully this texture contains now the data, so we can add it
+    if (LastCreatedCubeTexture != nullptr && uMod_Client != nullptr) //if a texture was loaded before, hopefully this texture contains now the data, so we can add it
     {
-        if (uMod_Client != nullptr) {
-            uMod_Client->AddTexture(LastCreatedCubeTexture);
-        }
+        uMod_Client->AddTexture(LastCreatedCubeTexture);
     }
     LastCreatedCubeTexture = texture;
     return ret;

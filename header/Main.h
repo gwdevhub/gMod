@@ -4,6 +4,8 @@
 
 #include <cstdlib>
 #include <cstdio>
+#include <filesystem>
+#include <map>
 #include "Utils.h"
 
 #include <d3d9.h>

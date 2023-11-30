@@ -62,16 +62,7 @@ ULONG APIENTRY uMod_IDirect3DTexture9::Release()
             if (count == 0) //if texture is released we switch the textures back
             {
                 UnswitchTextures(this);
-                if (ret == 0x01000000L) {
-                    if (static_cast<uMod_IDirect3DDevice9*>(m_D3Ddev)->GetSingleTexture() != fake_texture) {
-                        fake_texture->Release(); // we release the fake texture
-                    }
-                }
-                else {
-                    if (static_cast<uMod_IDirect3DDevice9Ex*>(m_D3Ddev)->GetSingleTexture() != fake_texture) {
-                        fake_texture->Release(); // we release the fake texture
-                    }
-                }
+                fake_texture->Release(); // we release the fake texture
             }
         }
         else {
@@ -252,7 +243,7 @@ HashType uMod_IDirect3DTexture9::GetHash() const
 
     if (pTexture->GetLevelDesc(0, &desc) != D3D_OK) //get the format and the size of the texture
     {
-        Message("uMod_IDirect3DTexture9::GetHash() Failed: GetLevelDesc \n");
+        Warning("uMod_IDirect3DTexture9::GetHash() Failed: GetLevelDesc \n");
         return 0;
     }
 
@@ -265,7 +256,7 @@ HashType uMod_IDirect3DTexture9::GetHash() const
 
         IDirect3DSurface9* pSurfaceLevel_orig = nullptr;
         if (pTexture->GetSurfaceLevel(0, &pSurfaceLevel_orig) != D3D_OK) {
-            Message("uMod_IDirect3DTexture9::GetHash() Failed: GetSurfaceLevel 1  (D3DPOOL_DEFAULT)\n");
+            Warning("uMod_IDirect3DTexture9::GetHash() Failed: GetSurfaceLevel 1  (D3DPOOL_DEFAULT)\n");
             return 0;
         }
 
@@ -273,12 +264,12 @@ HashType uMod_IDirect3DTexture9::GetHash() const
             //Message("uMod_IDirect3DTexture9::GetHash() MultiSampleType\n");
             if (D3D_OK != m_D3Ddev->CreateRenderTarget(desc.Width, desc.Height, desc.Format, D3DMULTISAMPLE_NONE, 0, FALSE, &pResolvedSurface, nullptr)) {
                 pSurfaceLevel_orig->Release();
-                Message("uMod_IDirect3DTexture9::GetHash() Failed: CreateRenderTarget  (D3DPOOL_DEFAULT)\n");
+                Warning("uMod_IDirect3DTexture9::GetHash() Failed: CreateRenderTarget  (D3DPOOL_DEFAULT)\n");
                 return 0;
             }
             if (D3D_OK != m_D3Ddev->StretchRect(pSurfaceLevel_orig, nullptr, pResolvedSurface, nullptr, D3DTEXF_NONE)) {
                 pSurfaceLevel_orig->Release();
-                Message("uMod_IDirect3DTexture9::GetHash() Failed: StretchRect  (D3DPOOL_DEFAULT)\n");
+                Warning("uMod_IDirect3DTexture9::GetHash() Failed: StretchRect  (D3DPOOL_DEFAULT)\n");
                 return 0;
             }
 
@@ -290,7 +281,7 @@ HashType uMod_IDirect3DTexture9::GetHash() const
             if (pResolvedSurface != nullptr) {
                 pResolvedSurface->Release();
             }
-            Message("uMod_IDirect3DTexture9::GetHash() Failed: CreateOffscreenPlainSurface (D3DPOOL_DEFAULT)\n");
+            Warning("uMod_IDirect3DTexture9::GetHash() Failed: CreateOffscreenPlainSurface (D3DPOOL_DEFAULT)\n");
             return 0;
         }
 
@@ -300,7 +291,7 @@ HashType uMod_IDirect3DTexture9::GetHash() const
                 pResolvedSurface->Release();
             }
             pOffscreenSurface->Release();
-            Message("uMod_IDirect3DTexture9::GetHash() Failed: GetRenderTargetData (D3DPOOL_DEFAULT)\n");
+            Warning("uMod_IDirect3DTexture9::GetHash() Failed: GetRenderTargetData (D3DPOOL_DEFAULT)\n");
             return 0;
         }
         pSurfaceLevel_orig->Release();
@@ -310,19 +301,19 @@ HashType uMod_IDirect3DTexture9::GetHash() const
                 pResolvedSurface->Release();
             }
             pOffscreenSurface->Release();
-            Message("uMod_IDirect3DTexture9::GetHash() Failed: LockRect (D3DPOOL_DEFAULT)\n");
+            Warning("uMod_IDirect3DTexture9::GetHash() Failed: LockRect (D3DPOOL_DEFAULT)\n");
             return 0;
         }
     }
     else if (pTexture->LockRect(0, &d3dlr, nullptr, D3DLOCK_READONLY) != D3D_OK) {
-        Message("uMod_IDirect3DTexture9::GetHash() Failed: LockRect 1\n");
+        Warning("uMod_IDirect3DTexture9::GetHash() Failed: LockRect 1\n");
         if (pTexture->GetSurfaceLevel(0, &pResolvedSurface) != D3D_OK) {
-            Message("uMod_IDirect3DTexture9::GetHash() Failed: GetSurfaceLevel\n");
+            Warning("uMod_IDirect3DTexture9::GetHash() Failed: GetSurfaceLevel\n");
             return 0;
         }
         if (pResolvedSurface->LockRect(&d3dlr, nullptr, D3DLOCK_READONLY) != D3D_OK) {
             pResolvedSurface->Release();
-            Message("uMod_IDirect3DTexture9::GetHash() Failed: LockRect 2\n");
+            Warning("uMod_IDirect3DTexture9::GetHash() Failed: LockRect 2\n");
             return 0;
         }
     }

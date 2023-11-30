@@ -1,7 +1,5 @@
 #pragma once
 
-#include <map>
-
 #include "FileLoader.h"
 #include "uMod_IDirect3DTexture9.h"
 #include <DDSTextureLoader/DDSTextureLoader9.h>
@@ -61,12 +59,9 @@ private:
     bool isDirectXExDevice = false;
 
     // DX9 proxy functions
-    uMod_IDirect3DTexture9* GetSingleTexture();
-    uMod_IDirect3DVolumeTexture9* GetSingleVolumeTexture();
-    uMod_IDirect3DCubeTexture9* GetSingleCubeTexture();
-    int SetLastCreatedTexture(uMod_IDirect3DTexture9*);
-    int SetLastCreatedVolumeTexture(uMod_IDirect3DVolumeTexture9*);
-    int SetLastCreatedCubeTexture(uMod_IDirect3DCubeTexture9*);
+    void SetLastCreatedTexture(uMod_IDirect3DTexture9*);
+    void SetLastCreatedVolumeTexture(uMod_IDirect3DVolumeTexture9*);
+    void SetLastCreatedCubeTexture(uMod_IDirect3DCubeTexture9*);
 
     bool should_update = false;
 
@@ -176,59 +171,64 @@ int TextureClient::LookUpToMod(uModTexturePtr auto pTexture)
     return ret;
 }
 
+extern HINSTANCE gl_hThisInstance;
 int TextureClient::LoadTexture(TextureFileStruct* file_in_memory, uModTexturePtrPtr auto ppTexture)
 {
     Message("LoadTexture( %p, %p, %#lX): %p\n", file_in_memory, ppTexture, file_in_memory->crc_hash, this);
     if (file_in_memory->is_wic_texture) {
-        if constexpr (std::same_as<decltype(ppTexture), uMod_IDirect3DTexture9**>) {
-            if (D3D_OK != D3DXCreateTextureFromFileInMemoryEx(
-                    D3D9Device, file_in_memory->data.data(),
-                    file_in_memory->data.size(), D3DX_DEFAULT, D3DX_DEFAULT,
-                    D3DX_DEFAULT, 0, D3DFMT_UNKNOWN, D3DPOOL_MANAGED,
-                    D3DX_DEFAULT, D3DX_DEFAULT, 0, nullptr, nullptr,
-                    reinterpret_cast<IDirect3DTexture9**>(ppTexture))) {
-                *ppTexture = nullptr;
-                Message("LoadWICTexture( %p, %#lX): FAILED\n", *ppTexture, file_in_memory->crc_hash);
-                return RETURN_TEXTURE_NOT_LOADED;
-            }
+        Warning("(%#lX)\n", file_in_memory->crc_hash);
+        #if 0
+        if (D3D_OK != D3DXCreateTextureFromFileInMemoryEx(
+                D3D9Device, file_in_memory->data.data(),
+                file_in_memory->data.size(), D3DX_DEFAULT, D3DX_DEFAULT,
+                D3DX_DEFAULT, 0, D3DFMT_UNKNOWN, D3DPOOL_MANAGED,
+                D3DX_DEFAULT, D3DX_DEFAULT, 0, nullptr, nullptr,
+                reinterpret_cast<IDirect3DTexture9**>(ppTexture))) {
+            *ppTexture = nullptr;
+            Warning("LoadWICTexture(%p, %#lX): FAILED\n", *ppTexture, file_in_memory->crc_hash);
+            return RETURN_TEXTURE_NOT_LOADED;
+                }
+        D3DXIMAGE_INFO info;
+        D3DXGetImageInfoFromFileInMemory(file_in_memory->data.data(), file_in_memory->data.size(), &info);
+        char dllpath[MAX_PATH]{};
+        GetModuleFileName(gl_hThisInstance, dllpath, MAX_PATH); //ask for name and path of this dll
+        const auto dds_export_path = std::filesystem::path(dllpath).parent_path() / "d3dxout" / std::format("GW.EXE_{:X}.dds", file_in_memory->crc_hash);
+        if (!std::filesystem::exists(dds_export_path)) {
+            D3DXSaveTextureToFile(dds_export_path.string().c_str(), D3DXIFF_DDS, *ppTexture, nullptr);
         }
-        else if constexpr (std::same_as<decltype(ppTexture), uMod_IDirect3DVolumeTexture9**>) {
-            if (D3D_OK != D3DXCreateVolumeTextureFromFileInMemoryEx(
-                    D3D9Device, file_in_memory->data.data(),
-                    file_in_memory->data.size(), D3DX_DEFAULT, D3DX_DEFAULT,
-                    D3DX_DEFAULT, D3DX_DEFAULT, 0, D3DFMT_UNKNOWN,
-                    D3DPOOL_MANAGED, D3DX_DEFAULT, D3DX_DEFAULT, 0,
-                    nullptr,
-                    nullptr,
-                    reinterpret_cast<IDirect3DVolumeTexture9**>(ppTexture))) {
-                *ppTexture = nullptr;
-                Message("LoadWICTexture( %p, %#lX): FAILED\n", *ppTexture, file_in_memory->crc_hash);
-                return RETURN_TEXTURE_NOT_LOADED;
-            }
-            SetLastCreatedVolumeTexture(nullptr);
+        #else
+        if (D3D_OK != DirectX::CreateWICTextureFromMemoryEx(
+                D3D9Device,
+                file_in_memory->data.data(),
+                file_in_memory->data.size(),
+                0, 0, D3DPOOL_MANAGED, DirectX::WIC_LOADER_MIP_AUTOGEN,
+                reinterpret_cast<IDirect3DTexture9**>(ppTexture))) {
+            *ppTexture = nullptr;
+            Warning("LoadWICTexture(%p, %#lX): FAILED\n", *ppTexture, file_in_memory->crc_hash);
+            return RETURN_TEXTURE_NOT_LOADED;
         }
-        else if constexpr (std::same_as<decltype(ppTexture), uMod_IDirect3DCubeTexture9**>) {
-            if (D3D_OK != D3DXCreateCubeTextureFromFileInMemoryEx(
-                    D3D9Device, file_in_memory->data.data(), file_in_memory->data.size(), D3DX_DEFAULT, D3DX_DEFAULT, 0,
-                    D3DFMT_UNKNOWN, D3DPOOL_MANAGED,
-                    D3DX_DEFAULT, D3DX_DEFAULT, 0, nullptr, nullptr,
-                    reinterpret_cast<IDirect3DCubeTexture9**>(ppTexture))) {
-                *ppTexture = nullptr;
-                Message("LoadWICTexture( %p, %#lX): FAILED\n", *ppTexture, file_in_memory->crc_hash);
-                return RETURN_TEXTURE_NOT_LOADED;
-            }
-        }
+        #endif
     }
     else if (D3D_OK != DirectX::CreateDDSTextureFromMemoryEx(
                  D3D9Device,
                  file_in_memory->data.data(),
                  file_in_memory->data.size(),
-                 0, D3DPOOL_MANAGED, false, reinterpret_cast<LPDIRECT3DTEXTURE9*>(ppTexture))) {
+                 0, D3DPOOL_MANAGED, false,
+                 reinterpret_cast<LPDIRECT3DTEXTURE9*>(ppTexture))) {
         *ppTexture = nullptr;
-        Message("LoadDDSTexture( %p, 0x%#lX): FAILED\n", *ppTexture, file_in_memory->crc_hash);
+        Warning("LoadDDSTexture Normal(%p, %#lX): FAILED\n", *ppTexture, file_in_memory->crc_hash);
         return RETURN_TEXTURE_NOT_LOADED;
     }
-    SetLastCreatedTexture(nullptr);
+    if constexpr (std::same_as<decltype(ppTexture), uMod_IDirect3DTexture9**>) {
+
+        SetLastCreatedTexture(nullptr);
+    }
+    else if constexpr (std::same_as<decltype(ppTexture), uMod_IDirect3DVolumeTexture9**>) {
+        SetLastCreatedVolumeTexture(nullptr);
+    }
+    else if constexpr (std::same_as<decltype(ppTexture), uMod_IDirect3DCubeTexture9**>) {
+        SetLastCreatedCubeTexture(nullptr);
+    }
     (*ppTexture)->FAKE = true;
 
     Message("LoadTexture( %p, %#lX): DONE\n", *ppTexture, file_in_memory->crc_hash);
