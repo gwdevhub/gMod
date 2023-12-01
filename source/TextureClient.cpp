@@ -101,12 +101,69 @@ unsigned long TextureClient::AddFile(TextureFileStruct& entry)
     if (modded_textures.contains(entry.crc_hash)) {
         return 0;
     }
-    TextureFileStruct* texture_file_struct = new TextureFileStruct();
-    texture_file_struct->data = std::move(entry.data);
+    auto texture_file_struct = new TextureFileStruct();
     texture_file_struct->crc_hash = entry.crc_hash;
-    texture_file_struct->ext = entry.ext;
     modded_textures.emplace(entry.crc_hash, texture_file_struct);
     should_update = true;
+
+    if (entry.ext == ".dds") {
+        // DDS files are already in the correct format
+        texture_file_struct->data = std::move(entry.data);
+        return texture_file_struct->data.size();
+    }
+    // Other files need to be converted to DDS
+    DirectX::ScratchImage image;
+    DirectX::ScratchImage dds_image;
+    HRESULT hr = 0;
+    DirectX::TexMetadata metadata{};
+    if (entry.ext == ".tga") {
+        hr = DirectX::LoadFromTGAMemory(entry.data.data(), entry.data.size(), DirectX::TGA_FLAGS_BGR, &metadata, image);
+    }
+    else if (entry.ext == ".hdr") {
+        hr = DirectX::LoadFromHDRMemory(entry.data.data(), entry.data.size(), &metadata, image);
+    }
+    else {
+        hr = DirectX::LoadFromWICMemory(entry.data.data(), entry.data.size(), DirectX::WIC_FLAGS_NONE, &metadata, image);
+    }
+    if (FAILED(hr)) {
+        Warning("LoadImageFromMemory (%#lX%s): FAILED\n", entry.crc_hash, entry.ext.c_str());
+        return 0;
+    }
+    hr = DirectX::Convert(
+        *image.GetImages(),
+        DXGI_FORMAT_R8G8B8A8_UNORM,
+        DirectX::TEX_FILTER_DEFAULT,
+        DirectX::TEX_THRESHOLD_DEFAULT,
+        dds_image);
+    if (FAILED(hr)) {
+        Warning("ConvertImageToDDS (%#lX%s): FAILED\n", entry.crc_hash, entry.ext.c_str());
+        return 0;
+    }
+    DirectX::Blob dds_blob;
+    hr = DirectX::SaveToDDSMemory(
+        dds_image.GetImages(),
+        dds_image.GetImageCount(),
+        dds_image.GetMetadata(),
+        DirectX::DDS_FLAGS_FORCE_DX9_LEGACY,
+        dds_blob);
+    if (FAILED(hr)) {
+        Warning("SaveDDSImageToMemory (%#lX%s): FAILED\n", entry.crc_hash, entry.ext.c_str());
+        return 0;
+    }
+    #if 1
+    const auto file_out = std::format(L"C:\\Users\\m\\RiderProjects\\gwlauncher\\x86\\Debug\\net6.0-windows\\d3dxout\\0x{:x}.dds", entry.crc_hash);
+    if (!std::filesystem::exists(file_out)) {
+        hr = DirectX::SaveToDDSFile(
+            *dds_image.GetImages(),
+            DirectX::DDS_FLAGS_FORCE_DX9_LEGACY,
+            file_out.c_str());
+        if (FAILED(hr)) {
+            Warning("SaveDDSImageToDisk (%#lX%s): FAILED\n", entry.crc_hash, entry.ext.c_str());
+            return 0;
+        }
+    }
+    #endif
+    texture_file_struct->data.assign(static_cast<BYTE*>(dds_blob.GetBufferPointer()), static_cast<BYTE*>(dds_blob.GetBufferPointer()) + dds_blob.GetBufferSize());
     return texture_file_struct->data.size();
 }
 
@@ -130,7 +187,7 @@ void TextureClient::LoadModsFromFile(const char* source)
 
         auto file_loader = FileLoader(line);
         auto entries = file_loader.GetContents();
-        if (loaded_size > 1'500'000'000) {
+        if (loaded_size > 1'000'000'000) {
             Message("LoadModsFromFile: Loaded %d bytes, aborting!!!\n", loaded_size);
             return;
         }
@@ -160,6 +217,7 @@ void TextureClient::Initialize()
     GetModuleFileName(gl_hThisInstance, dllpath, MAX_PATH); //ask for name and path of this dll
     const auto exe = std::filesystem::path(gwpath).parent_path();
     const auto dll = std::filesystem::path(dllpath).parent_path();
+    //__debugbreak();
     for (const auto& path : {exe, dll}) {
         const auto modlist = path / "modlist.txt";
         if (std::filesystem::exists(modlist)) {
