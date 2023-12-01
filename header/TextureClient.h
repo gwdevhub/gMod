@@ -10,7 +10,6 @@ extern unsigned int gl_ErrorState;
 struct TextureFileStruct {
     std::vector<BYTE> data{};
     HashType crc_hash = 0; // hash value
-    std::string ext;
 };
 
 template <typename T>
@@ -42,7 +41,7 @@ public:
     void Initialize();
 
     // Add TextureFileStruct data, return size of data added. 0 on failure.
-    unsigned long AddFile(TextureFileStruct& entry);
+    unsigned long AddFile(TexEntry& entry);
 
     std::vector<uMod_IDirect3DTexture9*> OriginalTextures;
     // stores the pointer to the uMod_IDirect3DTexture9 objects created by the game

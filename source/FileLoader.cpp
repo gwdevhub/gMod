@@ -1,4 +1,4 @@
-#include <..\header\Main.h>
+#include <Main.h>
 #include <filesystem>
 #include "FileLoader.h"
 #include "TpfReader.h"
@@ -8,7 +8,7 @@ FileLoader::FileLoader(const std::string& fileName)
     file_name = std::filesystem::absolute(fileName).string();
 }
 
-std::vector<TextureFileStruct> FileLoader::GetContents()
+std::vector<TexEntry> FileLoader::GetContents()
 {
     try {
         return file_name.ends_with(".tpf") ? GetTpfContents() : GetFileContents();
@@ -19,9 +19,9 @@ std::vector<TextureFileStruct> FileLoader::GetContents()
     return {};
 }
 
-std::vector<TextureFileStruct> FileLoader::GetTpfContents()
+std::vector<TexEntry> FileLoader::GetTpfContents()
 {
-    std::vector<TextureFileStruct> entries;
+    std::vector<TexEntry> entries;
     auto tpf_reader = TpfReader(file_name);
     const auto buffer = tpf_reader.ReadToEnd();
     const auto zip_archive = libzippp::ZipArchive::fromBuffer(buffer.data(), buffer.size(), false, TPF_PASSWORD);
@@ -41,9 +41,9 @@ std::vector<TextureFileStruct> FileLoader::GetTpfContents()
     return entries;
 }
 
-std::vector<TextureFileStruct> FileLoader::GetFileContents()
+std::vector<TexEntry> FileLoader::GetFileContents()
 {
-    std::vector<TextureFileStruct> entries;
+    std::vector<TexEntry> entries;
 
     libzippp::ZipArchive zip_archive(file_name);
     zip_archive.open();
@@ -53,7 +53,7 @@ std::vector<TextureFileStruct> FileLoader::GetFileContents()
     return entries;
 }
 
-void ParseSimpleArchive(const libzippp::ZipArchive& archive, std::vector<TextureFileStruct>& entries)
+void ParseSimpleArchive(const libzippp::ZipArchive& archive, std::vector<TexEntry>& entries)
 {
     for (const auto& entry : archive.getEntries()) {
         if (entry.isFile()) {
@@ -102,7 +102,7 @@ void ParseSimpleArchive(const libzippp::ZipArchive& archive, std::vector<Texture
     }
 }
 
-void ParseTexmodArchive(std::vector<std::string>& lines, libzippp::ZipArchive& archive, std::vector<TextureFileStruct>& entries)
+void ParseTexmodArchive(std::vector<std::string>& lines, libzippp::ZipArchive& archive, std::vector<TexEntry>& entries)
 {
     for (const auto& line : lines) {
         std::istringstream iss(line);
@@ -165,7 +165,7 @@ void ParseTexmodArchive(std::vector<std::string>& lines, libzippp::ZipArchive& a
     }
 }
 
-void FileLoader::LoadEntries(libzippp::ZipArchive& archive, std::vector<TextureFileStruct>& entries)
+void FileLoader::LoadEntries(libzippp::ZipArchive& archive, std::vector<TexEntry>& entries)
 {
     const auto def_file = archive.getEntry("texmod.def");
     if (def_file.isNull() || !def_file.isFile()) {

@@ -4,6 +4,12 @@
 #include <string>
 #include <libzippp.h>
 
+struct TexEntry {
+    std::vector<BYTE> data{};
+    HashType crc_hash = 0; // hash value
+    std::string ext{};
+};
+
 class FileLoader {
     std::string file_name;
     const std::string TPF_PASSWORD{
@@ -18,13 +24,13 @@ class FileLoader {
 public:
     FileLoader(const std::string& fileName);
 
-    std::vector<TextureFileStruct> GetContents();
+    std::vector<TexEntry> GetContents();
 
 private:
 
-    std::vector<TextureFileStruct> GetTpfContents();
+    std::vector<TexEntry> GetTpfContents();
 
-    std::vector<TextureFileStruct> GetFileContents();
+    std::vector<TexEntry> GetFileContents();
 
-    void LoadEntries(libzippp::ZipArchive& archive, std::vector<TextureFileStruct>& entries);
+    void LoadEntries(libzippp::ZipArchive& archive, std::vector<TexEntry>& entries);
 };
