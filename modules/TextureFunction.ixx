@@ -248,7 +248,7 @@ export namespace TextureFunction {
         }
     }
 
-    DirectX::Blob ConvertToCompressedDDS(TexEntry& entry, const std::filesystem::path& dll_path)
+    DirectX::Blob ConvertToCompressedDDS(TexEntry& entry, const bool compress, const std::filesystem::path& dll_path)
     {
         DirectX::ScratchImage image;
         HRESULT hr = 0;
@@ -281,7 +281,7 @@ export namespace TextureFunction {
 
         auto bgra_image = ImageConvertToBGRA(image, entry);
         auto mipmapped_image = ImageGenerateMipMaps(bgra_image, entry);
-        const auto compressed_image = ImageCompress(mipmapped_image, entry);
+        const auto compressed_image = compress ? ImageCompress(mipmapped_image, entry) : std::move(mipmapped_image);
 
         DirectX::Blob dds_blob;
         hr = DirectX::SaveToDDSMemory(

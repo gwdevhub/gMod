@@ -5,8 +5,9 @@
 #include <cstdlib>
 #include <cstdio>
 #include <filesystem>
-#include <map>
 #include <fstream>
+#include <map>
+#include <ranges>
 #include "Utils.h"
 
 #include <d3d9.h>

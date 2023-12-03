@@ -28,7 +28,7 @@ public:
     void Initialize();
 
     // Add TextureFileStruct data, return size of data added. 0 on failure.
-    unsigned long AddFile(TexEntry& entry);
+    unsigned long AddFile(TexEntry& entry, bool compress = false);
 
     std::vector<uMod_IDirect3DTexture9*> OriginalTextures;
     // stores the pointer to the uMod_IDirect3DTexture9 objects created by the game
@@ -158,7 +158,7 @@ int TextureClient::UnlockMutex()
     return RETURN_OK;
 }
 
-unsigned long TextureClient::AddFile(TexEntry& entry)
+unsigned long TextureClient::AddFile(TexEntry& entry, const bool compress)
 {
     if (modded_textures.contains(entry.crc_hash)) {
         return 0;
@@ -167,7 +167,7 @@ unsigned long TextureClient::AddFile(TexEntry& entry)
     texture_file_struct->crc_hash = entry.crc_hash;
     modded_textures.emplace(entry.crc_hash, texture_file_struct);
     should_update = true;
-    const auto dds_blob = TextureFunction::ConvertToCompressedDDS(entry, dll_path);
+    const auto dds_blob = TextureFunction::ConvertToCompressedDDS(entry, compress, dll_path);
     texture_file_struct->data.assign(static_cast<BYTE*>(dds_blob.GetBufferPointer()), static_cast<BYTE*>(dds_blob.GetBufferPointer()) + dds_blob.GetBufferSize());
     return texture_file_struct->data.size();
 }
@@ -184,13 +184,23 @@ void TextureClient::LoadModsFromFile(const char* source)
     }
     Message("Initialize: found modlist.txt. Reading\n");
     std::string line;
+    std::vector<std::string> modfiles;
     while (std::getline(file, line)) {
-        Message("Initialize: loading file %s... ", line.c_str());
-
         // Remove newline character
+        line.erase(std::ranges::remove(line, '\r').begin(), line.end());
         line.erase(std::ranges::remove(line, '\n').begin(), line.end());
 
-        auto file_loader = ModfileLoader(line);
+        modfiles.push_back(line);
+    }
+    auto files_size = 0u;
+    for (const auto modfile : modfiles) {
+        if (std::filesystem::exists(modfile)) {
+            files_size += std::filesystem::file_size(modfile);
+        }
+    }
+    for (const auto modfile : modfiles) {
+        Message("Initialize: loading file %s... ", modfile.c_str());
+        auto file_loader = ModfileLoader(modfile);
         auto entries = file_loader.GetContents();
         if (loaded_size > 1'000'000'000) {
             Message("LoadModsFromFile: Loaded %d bytes, aborting!!!\n", loaded_size);
@@ -203,7 +213,7 @@ void TextureClient::LoadModsFromFile(const char* source)
         Message("%zu textures... ", entries.size());
         unsigned long file_bytes_loaded = 0;
         for (auto& tpf_entry : entries) {
-            file_bytes_loaded += AddFile(tpf_entry);
+            file_bytes_loaded += AddFile(tpf_entry, files_size > 400'000'000);
         }
         entries.clear();
         Message("%d bytes loaded.\n", file_bytes_loaded);
