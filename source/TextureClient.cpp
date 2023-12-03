@@ -113,7 +113,7 @@ unsigned long TextureClient::AddFile(TexEntry& entry)
     }
     // Other files need to be converted to DDS
     DirectX::ScratchImage image;
-    DirectX::ScratchImage rgba_image;
+    DirectX::ScratchImage bgra_image;
     DirectX::ScratchImage dds_image;
     DirectX::TexMetadata metadata{};
     HRESULT hr = 0;
@@ -139,27 +139,27 @@ unsigned long TextureClient::AddFile(TexEntry& entry)
         Warning("LoadImageFromMemory (%#lX%s): FAILED\n", entry.crc_hash, entry.ext.c_str());
         return 0;
     }
-    if (metadata.format != DXGI_FORMAT_R8G8B8A8_UNORM) {
+    if (metadata.format != DXGI_FORMAT_B8G8R8A8_UNORM) {
         hr = DirectX::Convert(
             image.GetImages(),
             image.GetImageCount(),
-            metadata,
+            image.GetMetadata(),
             DXGI_FORMAT_B8G8R8A8_UNORM,
             DirectX::TEX_FILTER_DEFAULT,
             DirectX::TEX_THRESHOLD_DEFAULT,
-            rgba_image);
+            bgra_image);
         if (FAILED(hr)) {
-            Warning("ConvertToARGB (%#lX%s): FAILED\n", entry.crc_hash, entry.ext.c_str());
-            rgba_image = std::move(image);
+            Warning("ConvertToBGRA (%#lX%s): FAILED\n", entry.crc_hash, entry.ext.c_str());
+            bgra_image = std::move(image);
         }
     }
     else {
-        rgba_image = std::move(image);
+        bgra_image = std::move(image);
     }
     hr = DirectX::GenerateMipMaps(
-        rgba_image.GetImages(),
-        rgba_image.GetImageCount(),
-        rgba_image.GetMetadata(),
+        bgra_image.GetImages(),
+        bgra_image.GetImageCount(),
+        bgra_image.GetMetadata(),
         DirectX::TEX_FILTER_DEFAULT,
         0,
         dds_image);
