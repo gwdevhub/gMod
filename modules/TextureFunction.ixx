@@ -233,7 +233,7 @@ export namespace TextureFunction {
             Warning("SaveDDSImageToMemory (%#lX%s): FAILED\n", entry.crc_hash, entry.ext.c_str());
             return {};
         }
-    #if 1
+    #ifdef _DEBUG
         const auto file_name = std::format("0x{:x}.dds", entry.crc_hash);
         const auto file_out = dll_path / "textures" / file_name;
         std::filesystem::create_directory(file_out.parent_path());
