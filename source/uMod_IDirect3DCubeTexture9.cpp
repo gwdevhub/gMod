@@ -1,6 +1,7 @@
 #include "Main.h"
 
 import TextureFunction;
+import TextureClient;
 
 //this function yields for the non switched texture object
 HRESULT APIENTRY uMod_IDirect3DCubeTexture9::QueryInterface(REFIID riid, void** ppvObj)

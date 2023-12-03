@@ -31,8 +31,6 @@ set(CMAKE_INSTALL_PREFIX ${PROJECT_SOURCE_DIR}/bin/install)
 
 add_compile_options(/MP /permissive-)
 
-find_library(DXGUID_LIB NAMES dxguid PATHS $ENV{DXSDK_DIR}/lib/x86 ${CMAKE_SOURCE_DIR}/Lib NO_DEFAULT_PATH)
-
 list(APPEND CMAKE_MODULE_PATH "${PROJECT_SOURCE_DIR}/cmake")
 include(libzippp)
 include(minhook)
@@ -50,13 +48,12 @@ file(GLOB SOURCES
 target_include_directories(gMod PRIVATE
     "header"
     ${CMAKE_INSTALL_PREFIX}/include
-	$ENV{DXSDK_DIR}/Include
     )
 source_group(TREE "${CMAKE_CURRENT_SOURCE_DIR}" FILES ${SOURCES})
 target_sources(gMod PRIVATE ${SOURCES})
 
 target_link_libraries(gMod PRIVATE
-    ${DXGUID_LIB}
+    dxguid
     libzippp
 	psapi
 	minhook

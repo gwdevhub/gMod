@@ -3,6 +3,17 @@
 //#define HashType DWORD64
 using HashType = DWORD32;
 
+struct TexEntry {
+    std::vector<BYTE> data{};
+    HashType crc_hash = 0; // hash value
+    std::string ext{};
+};
+
+struct TextureFileStruct {
+    std::vector<BYTE> data{};
+    HashType crc_hash = 0; // hash value
+};
+
 inline void Message(const char* format, ...)
 {
 #ifdef _DEBUG

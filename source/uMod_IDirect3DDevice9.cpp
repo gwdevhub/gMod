@@ -1,4 +1,5 @@
 #include "Main.h"
+import TextureClient;
 
 #ifndef RETURN_QueryInterface
 #define RETURN_QueryInterface 0x01000000L

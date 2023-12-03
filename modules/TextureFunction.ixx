@@ -6,13 +6,51 @@ module;
 
 export module TextureFunction;
 
-constexpr auto crc32_poly = 0xEDB88320u;
-constexpr auto ul_crc_in = 0xffffffff;
+export template <typename T>
+concept uModTexturePtr = requires(T a)
+{
+    std::same_as<uMod_IDirect3DTexture9*, T> ||
+    std::same_as<uMod_IDirect3DVolumeTexture9*, T> ||
+    std::same_as<uMod_IDirect3DCubeTexture9*, T>;
+};
+
+export template <typename T>
+concept uModTexturePtrPtr = uModTexturePtr<std::remove_pointer_t<T>>;
+
+export template <typename T> requires uModTexturePtr<T>
+void UnswitchTextures(T pTexture)
+{
+    decltype(pTexture) CrossRef = pTexture->CrossRef_D3Dtex;
+    if (CrossRef != nullptr) {
+        std::swap(pTexture->m_D3Dtex, CrossRef->m_D3Dtex);
+
+        // cancel the link
+        CrossRef->CrossRef_D3Dtex = nullptr;
+        pTexture->CrossRef_D3Dtex = nullptr;
+    }
+}
+
+export template <typename T> requires uModTexturePtr<T>
+int SwitchTextures(T pTexture1, T pTexture2)
+{
+    if (pTexture1->m_D3Ddev == pTexture2->m_D3Ddev && pTexture1->CrossRef_D3Dtex == nullptr && pTexture2->CrossRef_D3Dtex == nullptr) {
+        // make cross reference
+        pTexture1->CrossRef_D3Dtex = pTexture2;
+        pTexture2->CrossRef_D3Dtex = pTexture1;
+
+        // switch textures
+        std::swap(pTexture1->m_D3Dtex, pTexture2->m_D3Dtex);
+        return RETURN_OK;
+    }
+    return RETURN_TEXTURE_NOT_SWITCHED;
+}
 
 export namespace TextureFunction {
 
     unsigned int GetCRC32(char* pcDatabuf, unsigned int ulDatalen)
     {
+        constexpr static auto crc32_poly = 0xEDB88320u;
+        constexpr static auto ul_crc_in = 0xffffffff;
         unsigned int crc = ul_crc_in;
         for (unsigned int idx = 0u; idx < ulDatalen; idx++) {
             unsigned int data = *pcDatabuf++;

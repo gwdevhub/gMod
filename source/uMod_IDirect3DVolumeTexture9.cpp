@@ -1,5 +1,6 @@
 #include "Main.h"
 import TextureFunction;
+import TextureClient;
 
 HRESULT APIENTRY uMod_IDirect3DVolumeTexture9::QueryInterface(REFIID riid, void** ppvObj)
 {

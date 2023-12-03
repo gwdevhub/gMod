@@ -14,7 +14,6 @@
 #include "Defines.h"
 #include "Error.h"
 #include "Defines.h"
-#include "dll_main.h"
 
 #include "uMod_IDirect3D9.h"
 #include "uMod_IDirect3D9Ex.h"
@@ -25,8 +24,6 @@
 #include "uMod_IDirect3DCubeTexture9.h"
 #include "uMod_IDirect3DTexture9.h"
 #include "uMod_IDirect3DVolumeTexture9.h"
-
-#include "TextureClient.h"
 
 #pragma warning(disable : 4477)
 
