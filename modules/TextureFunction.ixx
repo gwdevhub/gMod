@@ -167,7 +167,7 @@ export namespace TextureFunction {
 
     DirectX::ScratchImage ImageConvertToBGRA(DirectX::ScratchImage& image, const TexEntry& entry)
     {
-        if (image.GetMetadata().format == DXGI_FORMAT_B8G8R8A8_UNORM) {
+        if (image.GetMetadata().format == DXGI_FORMAT_B8G8R8A8_UNORM || image.GetMetadata().format == DXGI_FORMAT_BC3_UNORM) {
             return std::move(image);
         }
         DirectX::ScratchImage bgra_image;

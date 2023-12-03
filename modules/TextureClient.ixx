@@ -52,7 +52,8 @@ private:
 
     int LockMutex();
     int UnlockMutex();
-    HANDLE mutex;
+    HANDLE hMutex;
+    std::mutex mutex;
 
     std::unordered_map<HashType, TextureFileStruct*> modded_textures;
     // array which stores the file in memory and the hash of each texture to be modded
@@ -73,14 +74,14 @@ TextureClient::TextureClient(IDirect3DDevice9* device)
     void* cpy;
     isDirectXExDevice = D3D9Device->QueryInterface(IID_IDirect3DTexture9, &cpy) == 0x01000001L;
 
-    mutex = CreateMutex(nullptr, false, nullptr);
+    hMutex = CreateMutex(nullptr, false, nullptr);
 }
 
 TextureClient::~TextureClient()
 {
     Message("TextureClient::~TextureClient(): %p\n", this);
-    if (mutex != nullptr) {
-        CloseHandle(mutex);
+    if (hMutex != nullptr) {
+        CloseHandle(hMutex);
     }
     for (const auto& it : modded_textures) {
         delete it.second;
@@ -144,7 +145,7 @@ int TextureClient::LockMutex()
     if ((gl_ErrorState & (uMod_ERROR_FATAL | uMod_ERROR_MUTEX))) {
         return RETURN_NO_MUTEX;
     }
-    if (WAIT_OBJECT_0 != WaitForSingleObject(mutex, 100)) {
+    if (WAIT_OBJECT_0 != WaitForSingleObject(hMutex, 100)) {
         return RETURN_MUTEX_LOCK; //waiting 100ms, to wait infinite pass INFINITE
     }
     return RETURN_OK;
@@ -152,7 +153,7 @@ int TextureClient::LockMutex()
 
 int TextureClient::UnlockMutex()
 {
-    if (ReleaseMutex(mutex) == 0) {
+    if (ReleaseMutex(hMutex) == 0) {
         return RETURN_MUTEX_UNLOCK;
     }
     return RETURN_OK;
@@ -165,15 +166,36 @@ unsigned long TextureClient::AddFile(TexEntry& entry, const bool compress)
     }
     auto texture_file_struct = new TextureFileStruct();
     texture_file_struct->crc_hash = entry.crc_hash;
-    modded_textures.emplace(entry.crc_hash, texture_file_struct);
     should_update = true;
     const auto dds_blob = TextureFunction::ConvertToCompressedDDS(entry, compress, dll_path);
     texture_file_struct->data.assign(static_cast<BYTE*>(dds_blob.GetBufferPointer()), static_cast<BYTE*>(dds_blob.GetBufferPointer()) + dds_blob.GetBufferSize());
+    std::lock_guard lock(mutex);
+    modded_textures.emplace(entry.crc_hash, texture_file_struct);
     return texture_file_struct->data.size();
+}
+
+unsigned ProcessModfile(TextureClient& client, const std::string& modfile, const bool compress)
+{
+    Message("Initialize: loading file %s... ", modfile.c_str());
+    auto file_loader = ModfileLoader(modfile);
+    auto entries = file_loader.GetContents();
+    if (entries.empty()) {
+        Message("No entries found.\n");
+        return 0;
+    }
+    Message("%zu textures... ", entries.size());
+    unsigned long file_bytes_loaded = 0;
+    for (auto& tpf_entry : entries) {
+        file_bytes_loaded += client.AddFile(tpf_entry, compress);
+    }
+    entries.clear();
+    Message("%d bytes loaded.\n", file_bytes_loaded);
+    return file_bytes_loaded;
 }
 
 void TextureClient::LoadModsFromFile(const char* source)
 {
+    static std::vector<std::string> loaded_modfiles{};
     static unsigned long loaded_size = 0;
     Message("Initialize: searching in %s\n", source);
 
@@ -190,7 +212,10 @@ void TextureClient::LoadModsFromFile(const char* source)
         line.erase(std::ranges::remove(line, '\r').begin(), line.end());
         line.erase(std::ranges::remove(line, '\n').begin(), line.end());
 
-        modfiles.push_back(line);
+        if (!std::ranges::contains(loaded_modfiles, line)) {
+            modfiles.push_back(line);
+            loaded_modfiles.push_back(line);
+        }
     }
     auto files_size = 0u;
     for (const auto modfile : modfiles) {
@@ -198,26 +223,13 @@ void TextureClient::LoadModsFromFile(const char* source)
             files_size += std::filesystem::file_size(modfile);
         }
     }
+    std::vector<std::future<unsigned>> futures;
     for (const auto modfile : modfiles) {
-        Message("Initialize: loading file %s... ", modfile.c_str());
-        auto file_loader = ModfileLoader(modfile);
-        auto entries = file_loader.GetContents();
-        if (loaded_size > 1'000'000'000) {
-            Message("LoadModsFromFile: Loaded %d bytes, aborting!!!\n", loaded_size);
-            return;
-        }
-        if (entries.empty()) {
-            Message("No entries found.\n");
-            continue;
-        }
-        Message("%zu textures... ", entries.size());
-        unsigned long file_bytes_loaded = 0;
-        for (auto& tpf_entry : entries) {
-            file_bytes_loaded += AddFile(tpf_entry, files_size > 400'000'000);
-        }
-        entries.clear();
-        Message("%d bytes loaded.\n", file_bytes_loaded);
-        loaded_size += file_bytes_loaded;
+        futures.emplace_back(std::async(std::launch::deferred, ProcessModfile, std::ref(*this), modfile, files_size > 400'000'000));
+    }
+    // Join all threads
+    for (auto& future : futures) {
+        loaded_size += future.get();
     }
     Message("Finished loading mods from %s: Loaded %u bytes (%u mb)", source, loaded_size, loaded_size / 1024 / 1024);
 }
