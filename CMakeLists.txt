@@ -43,7 +43,7 @@ add_library(gMod SHARED)
 file(GLOB SOURCES
     "header/*.h"
     "source/*.cpp"
-    "source/*.ixx"
+    "modules/*.ixx"
     ${VERSION_RC}
     )
 

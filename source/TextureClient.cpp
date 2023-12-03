@@ -1,6 +1,7 @@
 #include "Main.h"
 
 import TextureFunction;
+import ModfileLoader;
 
 TextureClient::TextureClient(IDirect3DDevice9* device)
 {
@@ -134,7 +135,7 @@ void TextureClient::LoadModsFromFile(const char* source)
         // Remove newline character
         line.erase(std::ranges::remove(line, '\n').begin(), line.end());
 
-        auto file_loader = FileLoader(line);
+        auto file_loader = ModfileLoader(line);
         auto entries = file_loader.GetContents();
         if (loaded_size > 1'000'000'000) {
             Message("LoadModsFromFile: Loaded %d bytes, aborting!!!\n", loaded_size);

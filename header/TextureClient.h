@@ -1,12 +1,16 @@
 #pragma once
 
-#include "FileLoader.h"
 #include "uMod_IDirect3DTexture9.h"
 #include <DDSTextureLoader/DDSTextureLoader9.h>
 #include <DirectXTex/DirectXTex.h>
 
 extern unsigned int gl_ErrorState;
 
+struct TexEntry {
+    std::vector<BYTE> data{};
+    HashType crc_hash = 0; // hash value
+    std::string ext{};
+};
 struct TextureFileStruct {
     std::vector<BYTE> data{};
     HashType crc_hash = 0; // hash value
