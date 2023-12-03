@@ -1,4 +1,6 @@
 #include <Main.h>
+#include <regex>
+#include <algorithm>
 #include <filesystem>
 #include "FileLoader.h"
 #include "TpfReader.h"
@@ -60,28 +62,16 @@ void ParseSimpleArchive(const libzippp::ZipArchive& archive, std::vector<TexEntr
             //TODO: #6 - Implement regex search
             auto name = entry.getName();
 
-            // Remove the part before the last underscore (if any)
-            size_t firstIndex = name.find_last_of('_');
-            while (firstIndex != std::string::npos) {
-                if (firstIndex >= entry.getName().length() - 1) {
-                    name = entry.getName();
-                }
-                else {
-                    name = entry.getName().substr(firstIndex + 1);
-                }
 
-                firstIndex = name.find_last_of('_');
-            }
-
-            // Remove the file extension (if any)
-            size_t lastIndex = name.find_last_of('.');
-            if (lastIndex != std::string::npos) {
-                name = name.substr(0, lastIndex);
+            const static std::regex re(R"(0x[0-9a-f]{8})", std::regex::optimize | std::regex::icase);
+            std::smatch match;
+            if (!std::regex_match(name, match, re)) {
+                continue;
             }
 
             uint32_t crc_hash;
             try {
-                crc_hash = std::stoul(name, nullptr, 16);
+                crc_hash = std::stoul(match.str(), nullptr, 16);
             }
             catch (const std::invalid_argument& e) {
                 Warning("Failed to parse %s as a hash", name.c_str());
@@ -105,54 +95,31 @@ void ParseSimpleArchive(const libzippp::ZipArchive& archive, std::vector<TexEntr
 void ParseTexmodArchive(std::vector<std::string>& lines, libzippp::ZipArchive& archive, std::vector<TexEntry>& entries)
 {
     for (const auto& line : lines) {
-        std::istringstream iss(line);
-        std::string part;
-        std::vector<std::string> splits;
-
-        // Split the line by '|'
-        while (std::getline(iss, part, '|')) {
-            splits.push_back(part);
-        }
-
-        if (splits.size() != 2) {
+        // 0xC57D73F7|GW.EXE_0xC57D73F7.tga\r\n
+        // match[1] | match[2]
+        const static auto address_file_regex = std::regex(R"(^[\\/.]*([^|]+)\|([^\r\n]+))", std::regex::optimize);
+        std::smatch match;
+        std::regex_search(line, match, address_file_regex);
+        if (match.size() != 3u)
             continue;
-        }
+        const auto address_string = match[1].str();
+        const auto file_path = match[2].str();
 
-        std::string addrstr = splits[0];
-        std::string path = splits[1];
-
-        // Remove unwanted characters from the beginning of the path
-        while (!path.empty() && (path[0] == '.' && (path[1] == '/' || path[1] == '\\')) || path[0] == '/' || path[0] == '\\') {
-            path.erase(0, 1);
-        }
-
-        // Remove trailing newline and carriage return characters
-        if (const auto end_pos = path.find_last_not_of("\r\n"); end_pos != std::string::npos) {
-            path.erase(end_pos + 1);
-        }
-        else if (!path.empty()) {
-            path.clear();
-        }
-
-        const auto entry = archive.getEntry(path);
-        if (entry.isNull()) {
-            continue;
-        }
-
-        if (!entry.isFile()) {
+        const auto entry = archive.getEntry(file_path);
+        if (entry.isNull() || !entry.isFile()) {
             continue;
         }
 
         uint32_t crc_hash{};
         try {
-            crc_hash = std::stoul(addrstr, nullptr, 16);
+            crc_hash = std::stoul(address_string, nullptr, 16);
         }
         catch (const std::invalid_argument& e) {
-            Warning("Failed to parse %s as a hash", addrstr.c_str());
+            Warning("Failed to parse %s as a hash", address_string.c_str());
             continue;
         }
         catch (const std::out_of_range& e) {
-            Warning("Out of range while parsing %s as a hash", addrstr.c_str());
+            Warning("Out of range while parsing %s as a hash", address_string.c_str());
             continue;
         }
 
