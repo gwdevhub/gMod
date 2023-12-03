@@ -12,13 +12,6 @@ endif()
 
 FetchContent_Populate(directxtex)
 
-file(READ "${directxtex_SOURCE_DIR}/WICTextureLoader/WICTextureLoader9.cpp" FILE_CONTENT)
-string(REPLACE
-    "hr = frame->GetPixelFormat(&pixelFormat);\n"
-	"hr = frame->GetPixelFormat(&pixelFormat); if (pixelFormat == GUID_WICPixelFormat32bppBGR) pixelFormat = GUID_WICPixelFormat32bppBGRA;\n"
-	FILE_CONTENT "${FILE_CONTENT}" )
-file(WRITE "${directxtex_SOURCE_DIR}/WICTextureLoader/WICTextureLoader9.cpp" "${FILE_CONTENT}")
-
 add_library(directxtex)
 file(GLOB SOURCES
     "${directxtex_SOURCE_DIR}/DDSTextureLoader/DDSTextureLoader9.h"
