@@ -165,7 +165,7 @@ unsigned long TextureClient::AddFile(TexEntry& entry)
         dds_image);
     if (FAILED(hr)) {
         Warning("GenerateMipMaps (%#lX%s): FAILED\n", entry.crc_hash, entry.ext.c_str());
-        dds_image = std::move(image);
+        dds_image = std::move(bgra_image);
     }
     DirectX::Blob dds_blob;
     hr = DirectX::SaveToDDSMemory(
@@ -184,9 +184,9 @@ unsigned long TextureClient::AddFile(TexEntry& entry)
     std::filesystem::create_directory(file_out.parent_path());
     if (!std::filesystem::exists(file_out)) {
         hr = DirectX::SaveToDDSFile(
-            image.GetImages(),
-            image.GetImageCount(),
-            metadata,
+            dds_image.GetImages(),
+            dds_image.GetImageCount(),
+            dds_image.GetMetadata(),
             DirectX::DDS_FLAGS_NONE,
             file_out.c_str());
         if (FAILED(hr)) {
