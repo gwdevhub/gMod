@@ -167,22 +167,20 @@ export namespace TextureFunction {
 
     DirectX::ScratchImage ImageConvertToBGRA(DirectX::ScratchImage& image, const TexEntry& entry)
     {
-        DirectX::ScratchImage bgra_image;
-        if (image.GetMetadata().format != DXGI_FORMAT_B8G8R8A8_UNORM) {
-            const HRESULT hr = DirectX::Convert(
-                image.GetImages(),
-                image.GetImageCount(),
-                image.GetMetadata(),
-                DXGI_FORMAT_B8G8R8A8_UNORM,
-                DirectX::TEX_FILTER_DEFAULT,
-                DirectX::TEX_THRESHOLD_DEFAULT,
-                bgra_image);
-            if (FAILED(hr)) {
-                Warning("ImageConvertToBGRA (%#lX%s): FAILED\n", entry.crc_hash, entry.ext.c_str());
-                bgra_image = std::move(image);
-            }
+        if (image.GetMetadata().format == DXGI_FORMAT_B8G8R8A8_UNORM) {
+            return std::move(image);
         }
-        else {
+        DirectX::ScratchImage bgra_image;
+        const HRESULT hr = DirectX::Convert(
+            image.GetImages(),
+            image.GetImageCount(),
+            image.GetMetadata(),
+            DXGI_FORMAT_B8G8R8A8_UNORM,
+            DirectX::TEX_FILTER_DEFAULT,
+            DirectX::TEX_THRESHOLD_DEFAULT,
+            bgra_image);
+        if (FAILED(hr)) {
+            Warning("ImageConvertToBGRA (%#lX%s): FAILED\n", entry.crc_hash, entry.ext.c_str());
             bgra_image = std::move(image);
         }
         image.Release();
@@ -191,21 +189,19 @@ export namespace TextureFunction {
 
     DirectX::ScratchImage ImageGenerateMipMaps(DirectX::ScratchImage& image, const TexEntry& entry)
     {
-        DirectX::ScratchImage mipmapped_image;
-        if (entry.ext != ".dds") {
-            const auto hr = DirectX::GenerateMipMaps(
-                image.GetImages(),
-                image.GetImageCount(),
-                image.GetMetadata(),
-                DirectX::TEX_FILTER_DEFAULT,
-                0,
-                mipmapped_image);
-            if (FAILED(hr)) {
-                Warning("GenerateMipMaps (%#lX%s): FAILED\n", entry.crc_hash, entry.ext.c_str());
-                mipmapped_image = std::move(image);
-            }
+        if (entry.ext == ".dds") {
+            return std::move(image);
         }
-        else {
+        DirectX::ScratchImage mipmapped_image;
+        const auto hr = DirectX::GenerateMipMaps(
+            image.GetImages(),
+            image.GetImageCount(),
+            image.GetMetadata(),
+            DirectX::TEX_FILTER_DEFAULT,
+            0,
+            mipmapped_image);
+        if (FAILED(hr)) {
+            Warning("GenerateMipMaps (%#lX%s): FAILED\n", entry.crc_hash, entry.ext.c_str());
             mipmapped_image = std::move(image);
         }
         image.Release();
@@ -214,22 +210,20 @@ export namespace TextureFunction {
 
     DirectX::ScratchImage ImageCompress(DirectX::ScratchImage& image, const TexEntry& entry)
     {
-        DirectX::ScratchImage compressed_image;
-        if (image.GetMetadata().format != DXGI_FORMAT_BC3_UNORM) {
-            const auto hr = DirectX::Compress(
-                image.GetImages(),
-                image.GetImageCount(),
-                image.GetMetadata(),
-                DXGI_FORMAT_BC3_UNORM,
-                DirectX::TEX_COMPRESS_DEFAULT,
-                DirectX::TEX_THRESHOLD_DEFAULT,
-                compressed_image);
-            if (FAILED(hr)) {
-                Warning("ImageCompress (%#lX%s): FAILED\n", entry.crc_hash, entry.ext.c_str());
-                compressed_image = std::move(image);
-            }
+        if (image.GetMetadata().format == DXGI_FORMAT_BC3_UNORM) {
+            return std::move(image);
         }
-        else {
+        DirectX::ScratchImage compressed_image;
+        const auto hr = DirectX::Compress(
+            image.GetImages(),
+            image.GetImageCount(),
+            image.GetMetadata(),
+            DXGI_FORMAT_BC3_UNORM,
+            DirectX::TEX_COMPRESS_DEFAULT,
+            DirectX::TEX_THRESHOLD_DEFAULT,
+            compressed_image);
+        if (FAILED(hr)) {
+            Warning("ImageCompress (%#lX%s): FAILED\n", entry.crc_hash, entry.ext.c_str());
             compressed_image = std::move(image);
         }
         image.Release();
