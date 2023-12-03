@@ -165,37 +165,11 @@ export namespace TextureFunction {
         }
     }
 
-    DirectX::Blob ConvertToDDS(TexEntry& entry, const std::filesystem::path& dll_path)
+    DirectX::ScratchImage ImageConvertToBGRA(DirectX::ScratchImage& image, const TexEntry& entry)
     {
-        DirectX::ScratchImage image;
         DirectX::ScratchImage bgra_image;
-        DirectX::ScratchImage dds_image;
-        DirectX::TexMetadata metadata{};
-        HRESULT hr = 0;
-        if (entry.ext == ".tga") {
-            hr = DirectX::LoadFromTGAMemory(entry.data.data(), entry.data.size(), DirectX::TGA_FLAGS_BGR, &metadata, image);
-        }
-        else if (entry.ext == ".hdr") {
-            hr = DirectX::LoadFromHDRMemory(entry.data.data(), entry.data.size(), &metadata, image);
-        }
-        else {
-            hr = DirectX::LoadFromWICMemory(entry.data.data(), entry.data.size(), DirectX::WIC_FLAGS_NONE, &metadata, image);
-            if (metadata.format == DXGI_FORMAT_B8G8R8X8_UNORM) {
-                metadata.format = DXGI_FORMAT_B8G8R8A8_UNORM;
-                // todo: this is undefined behaviour, but we must force them to be interpreted as BGRA instead of BGRX
-                const auto images = image.GetImages();
-                for (int i = 0; i < image.GetImageCount(); ++i) {
-                    const_cast<DXGI_FORMAT&>(images[i].format) = DXGI_FORMAT_B8G8R8A8_UNORM;
-                }
-                const_cast<DXGI_FORMAT&>(image.GetMetadata().format) = DXGI_FORMAT_B8G8R8A8_UNORM;
-            }
-        }
-        if (FAILED(hr)) {
-            Warning("LoadImageFromMemory (%#lX%s): FAILED\n", entry.crc_hash, entry.ext.c_str());
-            return {};
-        }
-        if (metadata.format != DXGI_FORMAT_B8G8R8A8_UNORM) {
-            hr = DirectX::Convert(
+        if (image.GetMetadata().format != DXGI_FORMAT_B8G8R8A8_UNORM) {
+            const HRESULT hr = DirectX::Convert(
                 image.GetImages(),
                 image.GetImageCount(),
                 image.GetMetadata(),
@@ -204,51 +178,131 @@ export namespace TextureFunction {
                 DirectX::TEX_THRESHOLD_DEFAULT,
                 bgra_image);
             if (FAILED(hr)) {
-                Warning("ConvertToBGRA (%#lX%s): FAILED\n", entry.crc_hash, entry.ext.c_str());
+                Warning("ImageConvertToBGRA (%#lX%s): FAILED\n", entry.crc_hash, entry.ext.c_str());
                 bgra_image = std::move(image);
             }
         }
         else {
             bgra_image = std::move(image);
         }
-        hr = DirectX::GenerateMipMaps(
-            bgra_image.GetImages(),
-            bgra_image.GetImageCount(),
-            bgra_image.GetMetadata(),
-            DirectX::TEX_FILTER_DEFAULT,
-            0,
-            dds_image);
-        if (FAILED(hr)) {
-            Warning("GenerateMipMaps (%#lX%s): FAILED\n", entry.crc_hash, entry.ext.c_str());
-            dds_image = std::move(bgra_image);
+        image.Release();
+        return bgra_image;
+    }
+
+    DirectX::ScratchImage ImageGenerateMipMaps(DirectX::ScratchImage& image, const TexEntry& entry)
+    {
+        DirectX::ScratchImage mipmapped_image;
+        if (entry.ext != ".dds") {
+            const auto hr = DirectX::GenerateMipMaps(
+                image.GetImages(),
+                image.GetImageCount(),
+                image.GetMetadata(),
+                DirectX::TEX_FILTER_DEFAULT,
+                0,
+                mipmapped_image);
+            if (FAILED(hr)) {
+                Warning("GenerateMipMaps (%#lX%s): FAILED\n", entry.crc_hash, entry.ext.c_str());
+                mipmapped_image = std::move(image);
+            }
         }
+        else {
+            mipmapped_image = std::move(image);
+        }
+        image.Release();
+        return mipmapped_image;
+    }
+
+    DirectX::ScratchImage ImageCompress(DirectX::ScratchImage& image, const TexEntry& entry)
+    {
+        DirectX::ScratchImage compressed_image;
+        if (image.GetMetadata().format != DXGI_FORMAT_BC3_UNORM) {
+            const auto hr = DirectX::Compress(
+                image.GetImages(),
+                image.GetImageCount(),
+                image.GetMetadata(),
+                DXGI_FORMAT_BC3_UNORM,
+                DirectX::TEX_COMPRESS_DEFAULT,
+                DirectX::TEX_THRESHOLD_DEFAULT,
+                compressed_image);
+            if (FAILED(hr)) {
+                Warning("ImageCompress (%#lX%s): FAILED\n", entry.crc_hash, entry.ext.c_str());
+                compressed_image = std::move(image);
+            }
+        }
+        else {
+            compressed_image = std::move(image);
+        }
+        image.Release();
+        return compressed_image;
+    }
+
+    void ImageSave(const DirectX::ScratchImage& image, const TexEntry& entry, const std::filesystem::path& dll_path)
+    {
+        const auto file_name = std::format("0x{:x}.dds", entry.crc_hash);
+        const auto file_out = dll_path / "textures" / file_name;
+        std::filesystem::create_directory(file_out.parent_path());
+        if (!std::filesystem::exists(file_out)) {
+            const auto hr = DirectX::SaveToDDSFile(
+                image.GetImages(),
+                image.GetImageCount(),
+                image.GetMetadata(),
+                DirectX::DDS_FLAGS_NONE,
+                file_out.c_str());
+            if (FAILED(hr)) {
+                Warning("SaveDDSImageToDisk (%#lX%s): FAILED\n", entry.crc_hash, entry.ext.c_str());
+            }
+        }
+    }
+
+    DirectX::Blob ConvertToCompressedDDS(TexEntry& entry, const std::filesystem::path& dll_path)
+    {
+        DirectX::ScratchImage image;
+        HRESULT hr = 0;
+
+        if (entry.ext == ".dds") {
+            hr = DirectX::LoadFromDDSMemory(entry.data.data(), entry.data.size(), DirectX::DDS_FLAGS_NONE, nullptr, image);
+        }
+        else if (entry.ext == ".tga") {
+            hr = DirectX::LoadFromTGAMemory(entry.data.data(), entry.data.size(), DirectX::TGA_FLAGS_BGR, nullptr, image);
+        }
+        else if (entry.ext == ".hdr") {
+            hr = DirectX::LoadFromHDRMemory(entry.data.data(), entry.data.size(), nullptr, image);
+        }
+        else {
+            hr = DirectX::LoadFromWICMemory(entry.data.data(), entry.data.size(), DirectX::WIC_FLAGS_NONE, nullptr, image);
+            if (image.GetMetadata().format == DXGI_FORMAT_B8G8R8X8_UNORM) {
+                // todo: this is undefined behaviour, but we must force them to be interpreted as BGRA instead of BGRX
+                const_cast<DXGI_FORMAT&>(image.GetMetadata().format) = DXGI_FORMAT_B8G8R8A8_UNORM;
+                const auto images = image.GetImages();
+                for (int i = 0; i < image.GetImageCount(); ++i) {
+                    const_cast<DXGI_FORMAT&>(images[i].format) = DXGI_FORMAT_B8G8R8A8_UNORM;
+                }
+            }
+        }
+        entry.data.clear();
+        if (FAILED(hr)) {
+            Warning("LoadImageFromMemory (%#lX%s): FAILED\n", entry.crc_hash, entry.ext.c_str());
+            return {};
+        }
+
+        auto bgra_image = ImageConvertToBGRA(image, entry);
+        auto mipmapped_image = ImageGenerateMipMaps(bgra_image, entry);
+        const auto compressed_image = ImageCompress(mipmapped_image, entry);
+
         DirectX::Blob dds_blob;
         hr = DirectX::SaveToDDSMemory(
-            dds_image.GetImages(),
-            dds_image.GetImageCount(),
-            dds_image.GetMetadata(),
+            compressed_image.GetImages(),
+            compressed_image.GetImageCount(),
+            compressed_image.GetMetadata(),
             DirectX::DDS_FLAGS_NONE,
             dds_blob);
         if (FAILED(hr)) {
             Warning("SaveDDSImageToMemory (%#lX%s): FAILED\n", entry.crc_hash, entry.ext.c_str());
             return {};
         }
+
     #ifdef _DEBUG
-        const auto file_name = std::format("0x{:x}.dds", entry.crc_hash);
-        const auto file_out = dll_path / "textures" / file_name;
-        std::filesystem::create_directory(file_out.parent_path());
-        if (!std::filesystem::exists(file_out)) {
-            hr = DirectX::SaveToDDSFile(
-                dds_image.GetImages(),
-                dds_image.GetImageCount(),
-                dds_image.GetMetadata(),
-                DirectX::DDS_FLAGS_NONE,
-                file_out.c_str());
-            if (FAILED(hr)) {
-                Warning("SaveDDSImageToDisk (%#lX%s): FAILED\n", entry.crc_hash, entry.ext.c_str());
-                return dds_blob;
-            }
-        }
+        ImageSave(compressed_image, entry, dll_path);
     #endif
         return dds_blob;
     }

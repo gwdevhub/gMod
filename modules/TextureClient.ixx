@@ -167,14 +167,7 @@ unsigned long TextureClient::AddFile(TexEntry& entry)
     texture_file_struct->crc_hash = entry.crc_hash;
     modded_textures.emplace(entry.crc_hash, texture_file_struct);
     should_update = true;
-
-    if (entry.ext == ".dds") {
-        // DDS files are already in the correct format
-        texture_file_struct->data = std::move(entry.data);
-        return texture_file_struct->data.size();
-    }
-    // Other files need to be converted to BGRA DDS
-    const auto dds_blob = TextureFunction::ConvertToDDS(entry, dll_path);
+    const auto dds_blob = TextureFunction::ConvertToCompressedDDS(entry, dll_path);
     texture_file_struct->data.assign(static_cast<BYTE*>(dds_blob.GetBufferPointer()), static_cast<BYTE*>(dds_blob.GetBufferPointer()) + dds_blob.GetBufferSize());
     return texture_file_struct->data.size();
 }
