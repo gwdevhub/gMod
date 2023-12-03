@@ -3,27 +3,25 @@
 //#define HashType DWORD64
 using HashType = DWORD32;
 
-#ifdef LOG_MESSAGE
-#include <iostream>
-
+inline void Message(const char* format, ...)
+{
 #ifdef _DEBUG
-
 #if 0
-#define Message(...) { printf(__VA_ARGS__); }
-#else
-#define Message(...)
+    va_list args;
+    va_start(args, format);
+    vprintf(format, args);
+    va_end(args);
 #endif
-#define Warning(...) { fprintf(stderr, __VA_ARGS__); }
-
-#else
-
-#define Message(...)
-#define Warning(...)
-
 #endif
+}
 
+inline void Warning(const char* format, ...)
+{
+#ifdef _DEBUG
+    va_list args;
+    va_start(args, format);
+    vfprintf(stderr, format, args);
+    va_end(args);
 #endif
+}
 
-#ifndef _countof
-#define _countof(arr) sizeof(arr) / sizeof(*arr)
-#endif

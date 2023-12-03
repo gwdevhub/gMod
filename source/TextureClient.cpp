@@ -113,9 +113,8 @@ unsigned long TextureClient::AddFile(TexEntry& entry)
     }
     // Other files need to be converted to DDS
     DirectX::ScratchImage image;
-    DirectX::ScratchImage dds_image;
-    HRESULT hr = 0;
     DirectX::TexMetadata metadata{};
+    HRESULT hr = 0;
     if (entry.ext == ".tga") {
         hr = DirectX::LoadFromTGAMemory(entry.data.data(), entry.data.size(), DirectX::TGA_FLAGS_BGR, &metadata, image);
     }
@@ -129,33 +128,27 @@ unsigned long TextureClient::AddFile(TexEntry& entry)
         Warning("LoadImageFromMemory (%#lX%s): FAILED\n", entry.crc_hash, entry.ext.c_str());
         return 0;
     }
-    hr = DirectX::Convert(
-        *image.GetImages(),
-        DXGI_FORMAT_R8G8B8A8_UNORM,
-        DirectX::TEX_FILTER_DEFAULT,
-        DirectX::TEX_THRESHOLD_DEFAULT,
-        dds_image);
-    if (FAILED(hr)) {
-        Warning("ConvertImageToDDS (%#lX%s): FAILED\n", entry.crc_hash, entry.ext.c_str());
-        return 0;
-    }
     DirectX::Blob dds_blob;
     hr = DirectX::SaveToDDSMemory(
-        dds_image.GetImages(),
-        dds_image.GetImageCount(),
-        dds_image.GetMetadata(),
-        DirectX::DDS_FLAGS_FORCE_DX9_LEGACY,
+        image.GetImages(),
+        image.GetImageCount(),
+        image.GetMetadata(),
+        DirectX::DDS_FLAGS_NONE,
         dds_blob);
     if (FAILED(hr)) {
         Warning("SaveDDSImageToMemory (%#lX%s): FAILED\n", entry.crc_hash, entry.ext.c_str());
         return 0;
     }
-    #if 1
-    const auto file_out = std::format(L"C:\\Users\\m\\RiderProjects\\gwlauncher\\x86\\Debug\\net6.0-windows\\d3dxout\\0x{:x}.dds", entry.crc_hash);
+    #ifdef SAVE_TEXTURES
+    const auto file_name = std::format("0x{:x}.dds", entry.crc_hash);
+    const auto file_out = dll_path / "textures" / file_name;
+    std::filesystem::create_directory(file_out.parent_path());
     if (!std::filesystem::exists(file_out)) {
         hr = DirectX::SaveToDDSFile(
-            *dds_image.GetImages(),
-            DirectX::DDS_FLAGS_FORCE_DX9_LEGACY,
+            image.GetImages(),
+            image.GetImageCount(),
+            metadata,
+            DirectX::DDS_FLAGS_NONE,
             file_out.c_str());
         if (FAILED(hr)) {
             Warning("SaveDDSImageToDisk (%#lX%s): FAILED\n", entry.crc_hash, entry.ext.c_str());
@@ -215,10 +208,9 @@ void TextureClient::Initialize()
     GetModuleFileName(GetModuleHandle(nullptr), gwpath, MAX_PATH); //ask for name and path of this executable
     char dllpath[MAX_PATH]{};
     GetModuleFileName(gl_hThisInstance, dllpath, MAX_PATH); //ask for name and path of this dll
-    const auto exe = std::filesystem::path(gwpath).parent_path();
-    const auto dll = std::filesystem::path(dllpath).parent_path();
-    //__debugbreak();
-    for (const auto& path : {exe, dll}) {
+    exe_path = std::filesystem::path(gwpath).parent_path();
+    dll_path = std::filesystem::path(dllpath).parent_path();
+    for (const auto& path : {exe_path, dll_path}) {
         const auto modlist = path / "modlist.txt";
         if (std::filesystem::exists(modlist)) {
             Message("Initialize: found %s\n", modlist.string().c_str());

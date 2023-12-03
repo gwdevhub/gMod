@@ -74,6 +74,8 @@ private:
     int LoadTexture(TextureFileStruct* file_in_memory, uModTexturePtrPtr auto ppTexture);
 
     void LoadModsFromFile(const char* source);
+    std::filesystem::path exe_path; // path to gw.exe
+    std::filesystem::path dll_path; // path to gmod dll
 };
 
 int TextureClient::AddTexture(uModTexturePtr auto pTexture)
@@ -178,10 +180,10 @@ int TextureClient::LoadTexture(TextureFileStruct* file_in_memory, uModTexturePtr
             D3D9Device,
             file_in_memory->data.data(),
             file_in_memory->data.size(),
-            0, D3DPOOL_MANAGED, true,
+            0, D3DPOOL_MANAGED, false,
             reinterpret_cast<LPDIRECT3DTEXTURE9*>(ppTexture)); ret != D3D_OK) {
         *ppTexture = nullptr;
-        Warning("LoadDDSTexture (%p, %#lX): FAILED %x\n", file_in_memory->data.data(), file_in_memory->crc_hash, ret);
+        Warning("LoadDDSTexture (%p, %#lX): FAILED ret: 0x%x\n", file_in_memory->data.data(), file_in_memory->crc_hash, ret);
         return RETURN_TEXTURE_NOT_LOADED;
     }
     if constexpr (std::same_as<decltype(ppTexture), uMod_IDirect3DTexture9**>) {
