@@ -55,9 +55,9 @@ target_sources(gMod PRIVATE ${SOURCES})
 target_link_libraries(gMod PRIVATE
     dxguid
     libzippp
-	psapi
-	minhook
-	directxtex
+    psapi
+    minhook
+    directxtex
     )
 target_link_options(gMod PRIVATE
     "$<$<CONFIG:DEBUG>:/NODEFAULTLIB:LIBCMT>"
