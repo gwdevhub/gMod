@@ -1,7 +1,6 @@
-#include <filesystem>
-#include <fstream>
-
 #include "Main.h"
+
+import TextureFunction;
 
 TextureClient::TextureClient(IDirect3DDevice9* device)
 {
@@ -111,90 +110,8 @@ unsigned long TextureClient::AddFile(TexEntry& entry)
         texture_file_struct->data = std::move(entry.data);
         return texture_file_struct->data.size();
     }
-    // Other files need to be converted to DDS
-    DirectX::ScratchImage image;
-    DirectX::ScratchImage bgra_image;
-    DirectX::ScratchImage dds_image;
-    DirectX::TexMetadata metadata{};
-    HRESULT hr = 0;
-    if (entry.ext == ".tga") {
-        hr = DirectX::LoadFromTGAMemory(entry.data.data(), entry.data.size(), DirectX::TGA_FLAGS_BGR, &metadata, image);
-    }
-    else if (entry.ext == ".hdr") {
-        hr = DirectX::LoadFromHDRMemory(entry.data.data(), entry.data.size(), &metadata, image);
-    }
-    else {
-        hr = DirectX::LoadFromWICMemory(entry.data.data(), entry.data.size(), DirectX::WIC_FLAGS_NONE, &metadata, image);
-        if (metadata.format == DXGI_FORMAT_B8G8R8X8_UNORM) {
-            metadata.format = DXGI_FORMAT_B8G8R8A8_UNORM;
-            // todo: this is undefined behaviour, but we must force them to be interpreted as BGRA instead of BGRX
-            const auto images = image.GetImages();
-            for (int i = 0; i < image.GetImageCount(); ++i) {
-                const_cast<DXGI_FORMAT&>(images[i].format) = DXGI_FORMAT_B8G8R8A8_UNORM;
-            }
-            const_cast<DXGI_FORMAT&>(image.GetMetadata().format) = DXGI_FORMAT_B8G8R8A8_UNORM;
-        }
-    }
-    if (FAILED(hr)) {
-        Warning("LoadImageFromMemory (%#lX%s): FAILED\n", entry.crc_hash, entry.ext.c_str());
-        return 0;
-    }
-    if (metadata.format != DXGI_FORMAT_B8G8R8A8_UNORM) {
-        hr = DirectX::Convert(
-            image.GetImages(),
-            image.GetImageCount(),
-            image.GetMetadata(),
-            DXGI_FORMAT_B8G8R8A8_UNORM,
-            DirectX::TEX_FILTER_DEFAULT,
-            DirectX::TEX_THRESHOLD_DEFAULT,
-            bgra_image);
-        if (FAILED(hr)) {
-            Warning("ConvertToBGRA (%#lX%s): FAILED\n", entry.crc_hash, entry.ext.c_str());
-            bgra_image = std::move(image);
-        }
-    }
-    else {
-        bgra_image = std::move(image);
-    }
-    hr = DirectX::GenerateMipMaps(
-        bgra_image.GetImages(),
-        bgra_image.GetImageCount(),
-        bgra_image.GetMetadata(),
-        DirectX::TEX_FILTER_DEFAULT,
-        0,
-        dds_image);
-    if (FAILED(hr)) {
-        Warning("GenerateMipMaps (%#lX%s): FAILED\n", entry.crc_hash, entry.ext.c_str());
-        dds_image = std::move(bgra_image);
-    }
-    DirectX::Blob dds_blob;
-    hr = DirectX::SaveToDDSMemory(
-        dds_image.GetImages(),
-        dds_image.GetImageCount(),
-        dds_image.GetMetadata(),
-        DirectX::DDS_FLAGS_NONE,
-        dds_blob);
-    if (FAILED(hr)) {
-        Warning("SaveDDSImageToMemory (%#lX%s): FAILED\n", entry.crc_hash, entry.ext.c_str());
-        return 0;
-    }
-    #if 1
-    const auto file_name = std::format("0x{:x}.dds", entry.crc_hash);
-    const auto file_out = dll_path / "textures" / file_name;
-    std::filesystem::create_directory(file_out.parent_path());
-    if (!std::filesystem::exists(file_out)) {
-        hr = DirectX::SaveToDDSFile(
-            dds_image.GetImages(),
-            dds_image.GetImageCount(),
-            dds_image.GetMetadata(),
-            DirectX::DDS_FLAGS_NONE,
-            file_out.c_str());
-        if (FAILED(hr)) {
-            Warning("SaveDDSImageToDisk (%#lX%s): FAILED\n", entry.crc_hash, entry.ext.c_str());
-            return 0;
-        }
-    }
-    #endif
+    // Other files need to be converted to BGRA DDS
+    const auto dds_blob = TextureFunction::ConvertToDDS(entry, dll_path);
     texture_file_struct->data.assign(static_cast<BYTE*>(dds_blob.GetBufferPointer()), static_cast<BYTE*>(dds_blob.GetBufferPointer()) + dds_blob.GetBufferSize());
     return texture_file_struct->data.size();
 }

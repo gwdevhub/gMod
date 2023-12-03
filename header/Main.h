@@ -6,6 +6,7 @@
 #include <cstdio>
 #include <filesystem>
 #include <map>
+#include <fstream>
 #include "Utils.h"
 
 #include <d3d9.h>
@@ -14,7 +15,6 @@
 #include "Error.h"
 #include "Defines.h"
 #include "dll_main.h"
-#include "TextureFunction.h"
 
 #include "uMod_IDirect3D9.h"
 #include "uMod_IDirect3D9Ex.h"
