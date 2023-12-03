@@ -1,5 +1,7 @@
 #pragma once
 
+#include <d3dx9tex.h>
+
 #include "FileLoader.h"
 #include "uMod_IDirect3DTexture9.h"
 #include <DDSTextureLoader/DDSTextureLoader9.h>
@@ -177,14 +179,34 @@ int TextureClient::LoadTexture(TextureFileStruct* file_in_memory, uModTexturePtr
 {
     Message("LoadTexture( %p, %p, %#lX): %p\n", file_in_memory, ppTexture, file_in_memory->crc_hash, this);
     if (const auto ret = DirectX::CreateDDSTextureFromMemoryEx(
-            D3D9Device,
-            file_in_memory->data.data(),
-            file_in_memory->data.size(),
-            0, D3DPOOL_MANAGED, false,
-            reinterpret_cast<LPDIRECT3DTEXTURE9*>(ppTexture)); ret != D3D_OK) {
-        *ppTexture = nullptr;
-        Warning("LoadDDSTexture (%p, %#lX): FAILED ret: 0x%x\n", file_in_memory->data.data(), file_in_memory->crc_hash, ret);
-        return RETURN_TEXTURE_NOT_LOADED;
+        D3D9Device,
+        file_in_memory->data.data(),
+        file_in_memory->data.size(),
+        0, D3DPOOL_MANAGED, false,
+        reinterpret_cast<LPDIRECT3DTEXTURE9*>(ppTexture)); ret != D3D_OK) {
+            Warning("LoadDDSTexture (%p, %#lX): FAILED ret: 0x%x\n", file_in_memory->data.data(), file_in_memory->crc_hash, ret);
+            Warning("Trying D3DX...\n", file_in_memory->data.data(), file_in_memory->crc_hash, ret);
+        if (FAILED(D3DXCreateTextureFromFileInMemoryEx(
+                D3D9Device,
+                file_in_memory->data.data(),
+                file_in_memory->data.size(),
+                0,
+                0,
+                0,
+                0,
+                D3DFMT_UNKNOWN,
+                D3DPOOL_MANAGED,
+                D3DX_FILTER_NONE,
+                D3DX_DEFAULT,
+                0,
+                nullptr,
+                nullptr,
+                reinterpret_cast<LPDIRECT3DTEXTURE9*>(ppTexture)))
+        ) {
+            *ppTexture = nullptr;
+            Warning("!!!!!!!!!!LoadDDSTexture (%p, %#lX): FAILED with D3DX!!!!!!!!!!!!!!\n", file_in_memory->data.data(), file_in_memory->crc_hash);
+            return RETURN_TEXTURE_NOT_LOADED;
+        }
     }
     if constexpr (std::same_as<decltype(ppTexture), uMod_IDirect3DTexture9**>) {
         SetLastCreatedTexture(nullptr);

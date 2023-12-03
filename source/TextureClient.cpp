@@ -113,6 +113,8 @@ unsigned long TextureClient::AddFile(TexEntry& entry)
     }
     // Other files need to be converted to DDS
     DirectX::ScratchImage image;
+    DirectX::ScratchImage rgba_image;
+    DirectX::ScratchImage dds_image;
     DirectX::TexMetadata metadata{};
     HRESULT hr = 0;
     if (entry.ext == ".tga") {
@@ -123,23 +125,60 @@ unsigned long TextureClient::AddFile(TexEntry& entry)
     }
     else {
         hr = DirectX::LoadFromWICMemory(entry.data.data(), entry.data.size(), DirectX::WIC_FLAGS_NONE, &metadata, image);
+        if (metadata.format == DXGI_FORMAT_B8G8R8X8_UNORM) {
+            metadata.format = DXGI_FORMAT_B8G8R8A8_UNORM;
+            // todo: this is undefined behaviour, but we must force them to be interpreted as BGRA instead of BGRX
+            const auto images = image.GetImages();
+            for (int i = 0; i < image.GetImageCount(); ++i) {
+                const_cast<DXGI_FORMAT&>(images[i].format) = DXGI_FORMAT_B8G8R8A8_UNORM;
+            }
+            const_cast<DXGI_FORMAT&>(image.GetMetadata().format) = DXGI_FORMAT_B8G8R8A8_UNORM;
+        }
     }
     if (FAILED(hr)) {
         Warning("LoadImageFromMemory (%#lX%s): FAILED\n", entry.crc_hash, entry.ext.c_str());
         return 0;
     }
+    if (metadata.format != DXGI_FORMAT_R8G8B8A8_UNORM) {
+        hr = DirectX::Convert(
+            image.GetImages(),
+            image.GetImageCount(),
+            metadata,
+            DXGI_FORMAT_B8G8R8A8_UNORM,
+            DirectX::TEX_FILTER_DEFAULT,
+            DirectX::TEX_THRESHOLD_DEFAULT,
+            rgba_image);
+        if (FAILED(hr)) {
+            Warning("ConvertToARGB (%#lX%s): FAILED\n", entry.crc_hash, entry.ext.c_str());
+            rgba_image = std::move(image);
+        }
+    }
+    else {
+        rgba_image = std::move(image);
+    }
+    hr = DirectX::GenerateMipMaps(
+        rgba_image.GetImages(),
+        rgba_image.GetImageCount(),
+        rgba_image.GetMetadata(),
+        DirectX::TEX_FILTER_DEFAULT,
+        0,
+        dds_image);
+    if (FAILED(hr)) {
+        Warning("GenerateMipMaps (%#lX%s): FAILED\n", entry.crc_hash, entry.ext.c_str());
+        dds_image = std::move(image);
+    }
     DirectX::Blob dds_blob;
     hr = DirectX::SaveToDDSMemory(
-        image.GetImages(),
-        image.GetImageCount(),
-        image.GetMetadata(),
+        dds_image.GetImages(),
+        dds_image.GetImageCount(),
+        dds_image.GetMetadata(),
         DirectX::DDS_FLAGS_NONE,
         dds_blob);
     if (FAILED(hr)) {
         Warning("SaveDDSImageToMemory (%#lX%s): FAILED\n", entry.crc_hash, entry.ext.c_str());
         return 0;
     }
-    #ifdef SAVE_TEXTURES
+    #if 1
     const auto file_name = std::format("0x{:x}.dds", entry.crc_hash);
     const auto file_out = dll_path / "textures" / file_name;
     std::filesystem::create_directory(file_out.parent_path());

@@ -62,15 +62,14 @@ void ParseSimpleArchive(const libzippp::ZipArchive& archive, std::vector<TexEntr
             //TODO: #6 - Implement regex search
             auto name = entry.getName();
 
-
             const static std::regex re(R"(0x[0-9a-f]{8})", std::regex::optimize | std::regex::icase);
             std::smatch match;
-            if (!std::regex_match(name, match, re)) {
+            if (!std::regex_search(name, match, re)) {
                 continue;
             }
 
             uint32_t crc_hash;
-            try {
+             try {
                 crc_hash = std::stoul(match.str(), nullptr, 16);
             }
             catch (const std::invalid_argument& e) {
