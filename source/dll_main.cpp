@@ -63,8 +63,6 @@ namespace {
             const auto exe_path = std::filesystem::path(executable_path);
             const auto gmod_path = std::filesystem::path(dll_path);
 
-            bool successful_load = false;
-
             if (exe_path.parent_path() != gmod_path.parent_path()
                 || gmod_path.filename() != "d3d9.dll") {
                 // Call basic LoadLibrary function; we're not in the same directory as the exe.
@@ -131,7 +129,7 @@ namespace {
 unsigned int gl_ErrorState = 0;
 HINSTANCE gl_hThisInstance = nullptr;
 
-extern "C" IDirect3D9* APIENTRY Direct3DCreate9(UINT SDKVersion)
+IDirect3D9* APIENTRY Direct3DCreate9(UINT SDKVersion)
 {
     Message("uMod_Direct3DCreate9: uMod %p\n", Direct3DCreate9);
 
@@ -149,7 +147,7 @@ extern "C" IDirect3D9* APIENTRY Direct3DCreate9(UINT SDKVersion)
     return new uMod_IDirect3D9(pIDirect3D9_orig); //return our object instead of the "real one"
 }
 
-extern "C" HRESULT APIENTRY Direct3DCreate9Ex(UINT SDKVersion, IDirect3D9Ex** ppD3D)
+HRESULT APIENTRY Direct3DCreate9Ex(UINT SDKVersion, IDirect3D9Ex** ppD3D)
 {
     Message("uMod_Direct3DCreate9Ex: uMod %p\n", Direct3DCreate9Ex);
 
