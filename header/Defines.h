@@ -17,7 +17,7 @@ struct TextureFileStruct {
 inline void Message(const char* format, ...)
 {
 #ifdef _DEBUG
-#if 1
+#if 0
     va_list args;
     va_start(args, format);
     vprintf(format, args);
