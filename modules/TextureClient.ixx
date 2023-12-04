@@ -176,6 +176,8 @@ unsigned long TextureClient::AddFile(TexEntry& entry, const bool compress)
 
 unsigned ProcessModfile(TextureClient& client, const std::string& modfile, const bool compress)
 {
+    const auto hr = CoInitializeEx(nullptr, COINIT_APARTMENTTHREADED);
+    if (FAILED(hr)) return 0;
     Message("Initialize: loading file %s... ", modfile.c_str());
     auto file_loader = ModfileLoader(modfile);
     auto entries = file_loader.GetContents();
@@ -190,6 +192,7 @@ unsigned ProcessModfile(TextureClient& client, const std::string& modfile, const
     }
     entries.clear();
     Message("%d bytes loaded.\n", file_bytes_loaded);
+    CoUninitialize();
     return file_bytes_loaded;
 }
 
@@ -225,7 +228,7 @@ void TextureClient::LoadModsFromFile(const char* source)
     }
     std::vector<std::future<unsigned>> futures;
     for (const auto modfile : modfiles) {
-        futures.emplace_back(std::async(std::launch::deferred, ProcessModfile, std::ref(*this), modfile, files_size > 400'000'000));
+        futures.emplace_back(std::async(std::launch::async, ProcessModfile, std::ref(*this), modfile, files_size > 400'000'000));
     }
     // Join all threads
     for (auto& future : futures) {
