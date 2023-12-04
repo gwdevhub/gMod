@@ -234,8 +234,13 @@ export namespace TextureFunction {
     {
         const auto file_name = std::format("0x{:x}.dds", entry.crc_hash);
         const auto file_out = dll_path / "textures" / file_name;
-        std::filesystem::create_directory(file_out.parent_path());
-        if (!std::filesystem::exists(file_out)) {
+        try {
+            if (std::filesystem::exists(file_out)) {
+                return;
+            }
+            if (!std::filesystem::exists(file_out.parent_path())) {
+                std::filesystem::create_directory(file_out.parent_path());
+            }
             const auto hr = DirectX::SaveToDDSFile(
                 image.GetImages(),
                 image.GetImageCount(),
@@ -245,6 +250,10 @@ export namespace TextureFunction {
             if (FAILED(hr)) {
                 Warning("SaveDDSImageToDisk (%#lX%s): FAILED\n", entry.crc_hash, entry.ext.c_str());
             }
+        }
+        catch (const std::exception& e) {
+            Warning("SaveDDSImageToDisk (%#lX%s): %s\n", entry.crc_hash, entry.ext.c_str(), e.what());
+            return;
         }
     }
 
