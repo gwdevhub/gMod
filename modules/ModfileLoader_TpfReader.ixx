@@ -1,9 +1,10 @@
-#pragma once
+export module ModfileLoader.TpfReader;
 
-#include <fstream>
-#include <vector>
+import <string>;
+import <fstream>;
+import <vector>;
 
-class TpfReader {
+export class TpfReader {
 public:
     TpfReader(const std::string& path)
     {

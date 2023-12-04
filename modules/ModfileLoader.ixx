@@ -1,14 +1,50 @@
-#include <..\header\Main.h>
-#include <filesystem>
-#include "FileLoader.h"
-#include "TpfReader.h"
+module;
 
-FileLoader::FileLoader(const std::string& fileName)
+#include "Main.h"
+#include "Defines.h"
+
+export module ModfileLoader;
+
+import <intsafe.h>;
+import <vector>;
+import <string>;
+import <libzippp.h>;
+import <regex>;
+import <algorithm>;
+import <filesystem>;
+import ModfileLoader.TpfReader;
+
+export class ModfileLoader {
+    std::string file_name;
+    const std::string TPF_PASSWORD{
+        0x73, 0x2A, 0x63, 0x7D, 0x5F, 0x0A, static_cast<char>(0xA6), static_cast<char>(0xBD),
+        0x7D, 0x65, 0x7E, 0x67, 0x61, 0x2A, 0x7F, 0x7F,
+        0x74, 0x61, 0x67, 0x5B, 0x60, 0x70, 0x45, 0x74,
+        0x5C, 0x22, 0x74, 0x5D, 0x6E, 0x6A, 0x73, 0x41,
+        0x77, 0x6E, 0x46, 0x47, 0x77, 0x49, 0x0C, 0x4B,
+        0x46, 0x6F
+    };
+
+public:
+    ModfileLoader(const std::string& fileName);
+
+    std::vector<TexEntry> GetContents();
+
+private:
+
+    std::vector<TexEntry> GetTpfContents();
+
+    std::vector<TexEntry> GetFileContents();
+
+    void LoadEntries(libzippp::ZipArchive& archive, std::vector<TexEntry>& entries);
+};
+
+ModfileLoader::ModfileLoader(const std::string& fileName)
 {
     file_name = std::filesystem::absolute(fileName).string();
 }
 
-std::vector<TextureFileStruct> FileLoader::GetContents()
+std::vector<TexEntry> ModfileLoader::GetContents()
 {
     try {
         return file_name.ends_with(".tpf") ? GetTpfContents() : GetFileContents();
@@ -19,9 +55,9 @@ std::vector<TextureFileStruct> FileLoader::GetContents()
     return {};
 }
 
-std::vector<TextureFileStruct> FileLoader::GetTpfContents()
+std::vector<TexEntry> ModfileLoader::GetTpfContents()
 {
-    std::vector<TextureFileStruct> entries;
+    std::vector<TexEntry> entries;
     auto tpf_reader = TpfReader(file_name);
     const auto buffer = tpf_reader.ReadToEnd();
     const auto zip_archive = libzippp::ZipArchive::fromBuffer(buffer.data(), buffer.size(), false, TPF_PASSWORD);
@@ -41,9 +77,9 @@ std::vector<TextureFileStruct> FileLoader::GetTpfContents()
     return entries;
 }
 
-std::vector<TextureFileStruct> FileLoader::GetFileContents()
+std::vector<TexEntry> ModfileLoader::GetFileContents()
 {
-    std::vector<TextureFileStruct> entries;
+    std::vector<TexEntry> entries;
 
     libzippp::ZipArchive zip_archive(file_name);
     zip_archive.open();
@@ -53,35 +89,22 @@ std::vector<TextureFileStruct> FileLoader::GetFileContents()
     return entries;
 }
 
-void ParseSimpleArchive(const libzippp::ZipArchive& archive, std::vector<TextureFileStruct>& entries)
+void ParseSimpleArchive(const libzippp::ZipArchive& archive, std::vector<TexEntry>& entries)
 {
     for (const auto& entry : archive.getEntries()) {
         if (entry.isFile()) {
             //TODO: #6 - Implement regex search
             auto name = entry.getName();
 
-            // Remove the part before the last underscore (if any)
-            size_t firstIndex = name.find_last_of('_');
-            while (firstIndex != std::string::npos) {
-                if (firstIndex >= entry.getName().length() - 1) {
-                    name = entry.getName();
-                }
-                else {
-                    name = entry.getName().substr(firstIndex + 1);
-                }
-
-                firstIndex = name.find_last_of('_');
-            }
-
-            // Remove the file extension (if any)
-            size_t lastIndex = name.find_last_of('.');
-            if (lastIndex != std::string::npos) {
-                name = name.substr(0, lastIndex);
+            const static std::regex re(R"(0x[0-9a-f]{8})", std::regex::optimize | std::regex::icase);
+            std::smatch match;
+            if (!std::regex_search(name, match, re)) {
+                continue;
             }
 
             uint32_t crc_hash;
-            try {
-                crc_hash = std::stoul(name, nullptr, 16);
+             try {
+                crc_hash = std::stoul(match.str(), nullptr, 16);
             }
             catch (const std::invalid_argument& e) {
                 Warning("Failed to parse %s as a hash", name.c_str());
@@ -96,63 +119,40 @@ void ParseSimpleArchive(const libzippp::ZipArchive& archive, std::vector<Texture
             const auto size = entry.getSize();
             std::vector vec(data_ptr, data_ptr + size);
             std::filesystem::path tex_name(entry.getName());
-            entries.emplace_back(std::move(vec), crc_hash, tex_name.extension() != ".dds");
+            entries.emplace_back(std::move(vec), crc_hash, tex_name.extension().string());
             delete[] data_ptr;
         }
     }
 }
 
-void ParseTexmodArchive(std::vector<std::string>& lines, libzippp::ZipArchive& archive, std::vector<TextureFileStruct>& entries)
+void ParseTexmodArchive(std::vector<std::string>& lines, libzippp::ZipArchive& archive, std::vector<TexEntry>& entries)
 {
     for (const auto& line : lines) {
-        std::istringstream iss(line);
-        std::string part;
-        std::vector<std::string> splits;
-
-        // Split the line by '|'
-        while (std::getline(iss, part, '|')) {
-            splits.push_back(part);
-        }
-
-        if (splits.size() != 2) {
+        // 0xC57D73F7|GW.EXE_0xC57D73F7.tga\r\n
+        // match[1] | match[2]
+        const static auto address_file_regex = std::regex(R"(^[\\/.]*([^|]+)\|([^\r\n]+))", std::regex::optimize);
+        std::smatch match;
+        std::regex_search(line, match, address_file_regex);
+        if (match.size() != 3u)
             continue;
-        }
+        const auto address_string = match[1].str();
+        const auto file_path = match[2].str();
 
-        std::string addrstr = splits[0];
-        std::string path = splits[1];
-
-        // Remove unwanted characters from the beginning of the path
-        while (!path.empty() && (path[0] == '.' && (path[1] == '/' || path[1] == '\\')) || path[0] == '/' || path[0] == '\\') {
-            path.erase(0, 1);
-        }
-
-        // Remove trailing newline and carriage return characters
-        if (const auto end_pos = path.find_last_not_of("\r\n"); end_pos != std::string::npos) {
-            path.erase(end_pos + 1);
-        }
-        else if (!path.empty()) {
-            path.clear();
-        }
-
-        const auto entry = archive.getEntry(path);
-        if (entry.isNull()) {
-            continue;
-        }
-
-        if (!entry.isFile()) {
+        const auto entry = archive.getEntry(file_path);
+        if (entry.isNull() || !entry.isFile()) {
             continue;
         }
 
         uint32_t crc_hash{};
         try {
-            crc_hash = std::stoul(addrstr, nullptr, 16);
+            crc_hash = std::stoul(address_string, nullptr, 16);
         }
         catch (const std::invalid_argument& e) {
-            Warning("Failed to parse %s as a hash", addrstr.c_str());
+            Warning("Failed to parse %s as a hash", address_string.c_str());
             continue;
         }
         catch (const std::out_of_range& e) {
-            Warning("Out of range while parsing %s as a hash", addrstr.c_str());
+            Warning("Out of range while parsing %s as a hash", address_string.c_str());
             continue;
         }
 
@@ -160,12 +160,12 @@ void ParseTexmodArchive(std::vector<std::string>& lines, libzippp::ZipArchive& a
         const auto size = static_cast<size_t>(entry.getSize());
         std::vector vec(data_ptr, data_ptr + size);
         const auto tex_name = std::filesystem::path(entry.getName());
-        entries.emplace_back(std::move(vec), crc_hash, tex_name.extension() != ".dds");
+        entries.emplace_back(std::move(vec), crc_hash, tex_name.extension().string());
         delete[] data_ptr;
     }
 }
 
-void FileLoader::LoadEntries(libzippp::ZipArchive& archive, std::vector<TextureFileStruct>& entries)
+void ModfileLoader::LoadEntries(libzippp::ZipArchive& archive, std::vector<TexEntry>& entries)
 {
     const auto def_file = archive.getEntry("texmod.def");
     if (def_file.isNull() || !def_file.isFile()) {
