@@ -1,5 +1,4 @@
 Requirements:
-- DirectX SDK (June 2010)
 - Visual Studio 2022
 - CMake 3.16+, integrated into the Developer Powershell for VS 2022
 
