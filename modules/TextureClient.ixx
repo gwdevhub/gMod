@@ -176,10 +176,12 @@ std::vector<gsl::owner<TextureFileStruct*>> ProcessModfile(const std::string& mo
         return {};
     }
     Message("%zu textures... ", entries.size());
-    std::vector<gsl::owner<TextureFileStruct*>> texture_file_structs(entries.size());
+    std::vector<gsl::owner<TextureFileStruct*>> texture_file_structs;
+    texture_file_structs.reserve(entries.size());
     unsigned file_bytes_loaded = 0;
     for (auto& tpf_entry : entries) {
-        texture_file_structs.emplace_back(AddFile(tpf_entry, compress, dll_path));
+        const auto tex_file_struct = AddFile(tpf_entry, compress, dll_path);
+        texture_file_structs.push_back(tex_file_struct);
         file_bytes_loaded += texture_file_structs.back()->data.size();
     }
     entries.clear();
