@@ -243,7 +243,8 @@ void TextureClient::LoadModsFromFile(const char* source)
 
 void TextureClient::Initialize()
 {
-    Message("Initialize: begin\n");
+    const auto t1 = std::chrono::high_resolution_clock::now();
+    Info("Initialize: begin\n");
     Message("Initialize: searching for modlist.txt\n");
     char gwpath[MAX_PATH]{};
     GetModuleFileName(GetModuleHandle(nullptr), gwpath, MAX_PATH); //ask for name and path of this executable
@@ -258,8 +259,9 @@ void TextureClient::Initialize()
             LoadModsFromFile(modlist.string().c_str());
         }
     }
-
-    Message("Initialize: end\n");
+    const auto t2 = std::chrono::high_resolution_clock::now();
+    const auto ms = duration_cast<std::chrono::milliseconds>(t2 - t1);
+    Info("Initialize: end, took %d ms\n", ms);
 }
 
 int TextureClient::AddTexture(uModTexturePtr auto pTexture)

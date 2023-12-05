@@ -26,9 +26,21 @@ inline void Message(const char* format, ...)
 #endif
 }
 
+inline void Info(const char* format, ...)
+{
+#ifdef _DEBUG
+    va_list args;
+    va_start(args, format);
+    vprintf(format, args);
+    va_end(args);
+#endif
+}
+
 inline void Warning(const char* format, ...)
 {
 #ifdef _DEBUG
+    static HANDLE hConsole = GetStdHandle(STD_ERROR_HANDLE);
+    [[maybe_unused]] static auto success = SetConsoleTextAttribute(hConsole, 6);
     va_list args;
     va_start(args, format);
     vfprintf(stderr, format, args);
