@@ -35,6 +35,7 @@ list(APPEND CMAKE_MODULE_PATH "${PROJECT_SOURCE_DIR}/cmake")
 include(libzippp)
 include(minhook)
 include(dxtk)
+include(msgsl)
 
 add_library(gMod SHARED)
 
@@ -58,6 +59,7 @@ target_link_libraries(gMod PRIVATE
     psapi
     minhook
     directxtex
+    Microsoft.GSL::GSL
     )
 target_link_options(gMod PRIVATE
     "$<$<CONFIG:DEBUG>:/NODEFAULTLIB:LIBCMT>"

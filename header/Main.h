@@ -12,6 +12,7 @@
 #include "Utils.h"
 
 #include <d3d9.h>
+#include <gsl/gsl>
 
 #include "Defines.h"
 #include "Error.h"
