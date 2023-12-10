@@ -96,7 +96,7 @@ void ParseSimpleArchive(const libzippp::ZipArchive& archive, std::vector<TexEntr
             //TODO: #6 - Implement regex search
             auto name = entry.getName();
 
-            const static std::regex re(R"(0x[0-9a-f]{8})", std::regex::optimize | std::regex::icase);
+            const static std::regex re(R"(0x[0-9a-f]{4,8})", std::regex::optimize | std::regex::icase);
             std::smatch match;
             if (!std::regex_search(name, match, re)) {
                 continue;
@@ -106,11 +106,11 @@ void ParseSimpleArchive(const libzippp::ZipArchive& archive, std::vector<TexEntr
              try {
                 crc_hash = std::stoul(match.str(), nullptr, 16);
             }
-            catch (const std::invalid_argument& e) {
+            catch (const std::invalid_argument&) {
                 Warning("Failed to parse %s as a hash", name.c_str());
                 continue;
             }
-            catch (const std::out_of_range& e) {
+            catch (const std::out_of_range&) {
                 Message("Out of range while parsing %s as a hash", name.c_str());
                 continue;
             }
@@ -147,11 +147,11 @@ void ParseTexmodArchive(std::vector<std::string>& lines, libzippp::ZipArchive& a
         try {
             crc_hash = std::stoul(address_string, nullptr, 16);
         }
-        catch (const std::invalid_argument& e) {
+        catch (const std::invalid_argument&) {
             Warning("Failed to parse %s as a hash", address_string.c_str());
             continue;
         }
-        catch (const std::out_of_range& e) {
+        catch (const std::out_of_range&) {
             Warning("Out of range while parsing %s as a hash", address_string.c_str());
             continue;
         }
