@@ -164,7 +164,7 @@ gsl::owner<TextureFileStruct*> AddFile(TexEntry& entry, const bool compress, con
     return texture_file_struct;
 }
 
-std::vector<gsl::owner<TextureFileStruct*>> ProcessModfile(const std::string& modfile, const std::filesystem::path& dll_path, const bool compress)
+std::vector<gsl::owner<TextureFileStruct*>> ProcessModfile(const std::filesystem::path& modfile, const std::filesystem::path& dll_path, const bool compress)
 {
     const auto hr = CoInitializeEx(nullptr, COINIT_APARTMENTTHREADED);
     if (FAILED(hr)) return {};
@@ -192,25 +192,29 @@ std::vector<gsl::owner<TextureFileStruct*>> ProcessModfile(const std::string& mo
 
 void TextureClient::LoadModsFromFile(const char* source)
 {
-    static std::vector<std::string> loaded_modfiles{};
+    static std::vector<std::filesystem::path> loaded_modfiles{};
     Message("Initialize: searching in %s\n", source);
 
-    std::ifstream file(source);
+    std::locale::global(std::locale(""));
+    std::ifstream file(source, std::ios::binary);
     if (!file.is_open()) {
         Warning("LoadModsFromFile: failed to open modlist.txt for reading; aborting!!!");
         return;
     }
     Message("Initialize: found modlist.txt. Reading\n");
     std::string line;
-    std::vector<std::string> modfiles;
+    std::vector<std::filesystem::path> modfiles;
     while (std::getline(file, line)) {
         // Remove newline character
         line.erase(std::ranges::remove(line, '\r').begin(), line.end());
         line.erase(std::ranges::remove(line, '\n').begin(), line.end());
 
-        if (!std::ranges::contains(loaded_modfiles, line)) {
-            modfiles.push_back(line);
-            loaded_modfiles.push_back(line);
+        const auto wline = utils::utf8_to_wstring(line);
+        const auto fsline = std::filesystem::path(wline);
+
+        if (!std::ranges::contains(loaded_modfiles, fsline)) {
+            modfiles.push_back(fsline);
+            loaded_modfiles.push_back(fsline);
         }
     }
     auto files_size = 0u;

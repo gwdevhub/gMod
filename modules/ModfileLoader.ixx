@@ -15,7 +15,7 @@ import <filesystem>;
 import ModfileLoader.TpfReader;
 
 export class ModfileLoader {
-    std::string file_name;
+    std::filesystem::path file_name;
     const std::string TPF_PASSWORD{
         0x73, 0x2A, 0x63, 0x7D, 0x5F, 0x0A, static_cast<char>(0xA6), static_cast<char>(0xBD),
         0x7D, 0x65, 0x7E, 0x67, 0x61, 0x2A, 0x7F, 0x7F,
@@ -26,7 +26,7 @@ export class ModfileLoader {
     };
 
 public:
-    ModfileLoader(const std::string& fileName);
+    ModfileLoader(const std::filesystem::path& fileName);
 
     std::vector<TexEntry> GetContents();
 
@@ -39,15 +39,15 @@ private:
     void LoadEntries(libzippp::ZipArchive& archive, std::vector<TexEntry>& entries);
 };
 
-ModfileLoader::ModfileLoader(const std::string& fileName)
+ModfileLoader::ModfileLoader(const std::filesystem::path& fileName)
 {
-    file_name = std::filesystem::absolute(fileName).string();
+    file_name = std::filesystem::absolute(fileName);
 }
 
 std::vector<TexEntry> ModfileLoader::GetContents()
 {
     try {
-        return file_name.ends_with(".tpf") ? GetTpfContents() : GetFileContents();
+        return file_name.wstring().ends_with(L".tpf") ? GetTpfContents() : GetFileContents();
     }
     catch (const std::exception&) {
         Warning("Failed to open mod file: %s\n", file_name.c_str());
@@ -81,7 +81,7 @@ std::vector<TexEntry> ModfileLoader::GetFileContents()
 {
     std::vector<TexEntry> entries;
 
-    libzippp::ZipArchive zip_archive(file_name);
+    libzippp::ZipArchive zip_archive(file_name.string());
     zip_archive.open();
     LoadEntries(zip_archive, entries);
     zip_archive.close();

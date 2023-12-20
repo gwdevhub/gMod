@@ -29,6 +29,8 @@ inline void Message(const char* format, ...)
 inline void Info(const char* format, ...)
 {
 #ifdef _DEBUG
+    const HANDLE hConsole = GetStdHandle(STD_OUTPUT_HANDLE);
+    [[maybe_unused]] const auto success = SetConsoleTextAttribute(hConsole, 0); // white
     va_list args;
     va_start(args, format);
     vprintf(format, args);
@@ -39,8 +41,8 @@ inline void Info(const char* format, ...)
 inline void Warning(const char* format, ...)
 {
 #ifdef _DEBUG
-    static HANDLE hConsole = GetStdHandle(STD_ERROR_HANDLE);
-    [[maybe_unused]] static auto success = SetConsoleTextAttribute(hConsole, 6);
+    const HANDLE hConsole = GetStdHandle(STD_ERROR_HANDLE);
+    [[maybe_unused]] const auto success = SetConsoleTextAttribute(hConsole, 6); // yellow
     va_list args;
     va_start(args, format);
     vfprintf(stderr, format, args);

@@ -1,12 +1,13 @@
 export module ModfileLoader.TpfReader;
 
+import <filesystem>;
 import <string>;
 import <fstream>;
 import <vector>;
 
 export class TpfReader {
 public:
-    TpfReader(const std::string& path)
+    TpfReader(const std::filesystem::path& path)
     {
         file_stream = std::ifstream(path, std::ios::binary);
         if (!file_stream.seekg(0, std::ios::end).good() || !file_stream.seekg(0, std::ios::beg).good()) {
