@@ -16,8 +16,8 @@ if(${CLEAN} MATCHES "ON")
 endif()
 
 set(VERSION_MAJOR 1)
-set(VERSION_MINOR 5)
-set(VERSION_PATCH 7)
+set(VERSION_MINOR 6)
+set(VERSION_PATCH 3)
 set(VERSION_TWEAK 0)
 
 set(VERSION_RC "${CMAKE_CURRENT_BINARY_DIR}/version.rc")
@@ -31,54 +31,39 @@ set(CMAKE_INSTALL_PREFIX ${PROJECT_SOURCE_DIR}/bin/install)
 
 add_compile_options(/MP /permissive-)
 
-find_library(D3D9_LIB NAMES d3d9 PATHS $ENV{DXSDK_DIR}/lib/x86 NO_DEFAULT_PATH)
-find_library(D3DX9_LIB NAMES d3dx9 PATHS $ENV{DXSDK_DIR}/lib/x86 NO_DEFAULT_PATH)
-find_library(DXGUID_LIB NAMES dxguid PATHS $ENV{DXSDK_DIR}/lib/x86 NO_DEFAULT_PATH)
-
-if(NOT D3D9_LIB)
-    find_library(D3D9_LIB NAMES d3d9 PATHS ${CMAKE_SOURCE_DIR}/Lib)
-endif()
-
-if(NOT D3DX9_LIB)
-    find_library(D3DX9_LIB NAMES d3dx9 PATHS ${CMAKE_SOURCE_DIR}/Lib)
-endif()
-
-if(NOT DXGUID_LIB)
-    find_library(DXGUID_LIB NAMES dxguid PATHS ${CMAKE_SOURCE_DIR}/Lib)
-endif()
-
 list(APPEND CMAKE_MODULE_PATH "${PROJECT_SOURCE_DIR}/cmake")
 include(libzippp)
 include(minhook)
 include(dxtk)
+include(msgsl)
 
 add_library(gMod SHARED)
 
 file(GLOB SOURCES
     "header/*.h"
     "source/*.cpp"
+    "modules/*.ixx"
     ${VERSION_RC}
     )
 
 target_include_directories(gMod PRIVATE
     "header"
     ${CMAKE_INSTALL_PREFIX}/include
-	$ENV{DXSDK_DIR}/Include
     )
 source_group(TREE "${CMAKE_CURRENT_SOURCE_DIR}" FILES ${SOURCES})
 target_sources(gMod PRIVATE ${SOURCES})
 
 target_link_libraries(gMod PRIVATE
-    ${D3D9_LIB}
-    ${D3DX9_LIB}
-    ${DXGUID_LIB}
+    dxguid
     libzippp
-	psapi
-	minhook
-	directxtex
+    psapi
+    minhook
+    directxtex
+    Microsoft.GSL::GSL
     )
 target_link_options(gMod PRIVATE
     "$<$<CONFIG:DEBUG>:/NODEFAULTLIB:LIBCMT>"
+	"/LARGEADDRESSAWARE"
     )
 source_group(TREE "${CMAKE_CURRENT_SOURCE_DIR}" FILES ${SOURCES})
 target_sources(gMod PRIVATE ${SOURCES})

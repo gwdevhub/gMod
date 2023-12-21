@@ -1,5 +1,8 @@
 #include "Main.h"
 
+import TextureFunction;
+import TextureClient;
+
 //this function yields for the non switched texture object
 HRESULT APIENTRY uMod_IDirect3DCubeTexture9::QueryInterface(REFIID riid, void** ppvObj)
 {
@@ -260,8 +263,8 @@ HashType uMod_IDirect3DCubeTexture9::GetHash() const
         }
     }
 
-    const int size = (GetBitsFromFormat(desc.Format) * desc.Width * desc.Height) / 8;
-    const auto hash = GetCRC32(static_cast<char*>(d3dlr.pBits), size); //calculate the crc32 of the texture
+    const int size = (TextureFunction::GetBitsFromFormat(desc.Format) * desc.Width * desc.Height) / 8;
+    const auto hash = TextureFunction::GetCRC32(static_cast<char*>(d3dlr.pBits), size); //calculate the crc32 of the texture
 
     // Only release surfaces after we're finished with d3dlr
     if (pResolvedSurface != nullptr) {

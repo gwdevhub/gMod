@@ -4,8 +4,8 @@
 #include "uMod_IDirect3DTexture9.h"
 #include "uMod_IDirect3DVolumeTexture9.h"
 #include "uMod_IDirect3DCubeTexture9.h"
-#include "TextureClient.h"
 
+class TextureClient;
 
 class uMod_IDirect3DDevice9 : public IDirect3DDevice9 {
 public:

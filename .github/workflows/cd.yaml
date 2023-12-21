@@ -26,66 +26,14 @@ jobs:
       with:
         fetch-depth: 0
 
-    - name:  Config
-      run:   echo "DXSDK_DIR=DXSDK" >> $GITHUB_ENV
-      shell: bash
-
-    - name: Cache
-      id:   cache
-      uses: actions/cache@v1
-      with:
-        path: DXSDK
-        key:  DXSDK
-
-    - name:  Cache create
-      if:    steps.cache.outputs.cache-hit != 'true'
-      run:   |
-        curl -L https://download.microsoft.com/download/a/e/7/ae743f1f-632b-4809-87a9-aa1bb3458e31/DXSDK_Jun10.exe -o _DX2010_.exe
-        7z x _DX2010_.exe DXSDK/Include
-        7z x _DX2010_.exe DXSDK/Lib/x86
-      shell: bash
-
-    - name: Echo cache
-      run: echo ${{ env.DXSDK_DIR }}
-
-    - name: List dxsdk files
-      run: |
-        cd DXSDK
-        ls
-        cd Include
-        ls
-        cd ../Lib/x86
-        ls
-
-    - name: Copy DirectX headers to project include directory
-      run: Copy-Item -Path "${{ env.DXSDK_DIR }}/Include/*" -Destination header/ -Recurse -Force
-      env:
-        DXSDK_DIR: ${{ env.DXSDK_DIR }}
-      shell: pwsh
-
-    - name: Ensure Lib directory exists and copy DirectX libraries
-      run: |
-        $libDir = "Lib/"
-        if (-Not (Test-Path -Path $libDir)) {
-            New-Item -ItemType Directory -Path $libDir
-        }
-        Copy-Item -Path "${{ env.DXSDK_DIR }}/Lib/x86/*" -Destination $libDir -Recurse -Force
-      env:
-        DXSDK_DIR: ${{ env.DXSDK_DIR }}
-      shell: pwsh
-
     - name: Setup MSBuild.exe
       uses: microsoft/setup-msbuild@v1.3.1
 
     - name: Build CMake Files
       run: cmake -S . -B build -A Win32
-      env:
-        DXSDK_DIR: ${{ env.DXSDK_DIR }}
 
     - name: Build binaries
       run: cmake --build build --config Release
-      env:
-        DXSDK_DIR: ${{ env.DXSDK_DIR }}
     
     - name: Retrieve version
       id: set_version

@@ -5,16 +5,18 @@
 #include <cstdlib>
 #include <cstdio>
 #include <filesystem>
+#include <fstream>
+#include <future>
 #include <map>
+#include <ranges>
 #include "Utils.h"
 
 #include <d3d9.h>
+#include <gsl/gsl>
 
 #include "Defines.h"
 #include "Error.h"
 #include "Defines.h"
-#include "dll_main.h"
-#include "TextureFunction.h"
 
 #include "uMod_IDirect3D9.h"
 #include "uMod_IDirect3D9Ex.h"
@@ -25,8 +27,6 @@
 #include "uMod_IDirect3DCubeTexture9.h"
 #include "uMod_IDirect3DTexture9.h"
 #include "uMod_IDirect3DVolumeTexture9.h"
-
-#include "TextureClient.h"
 
 #pragma warning(disable : 4477)
 
