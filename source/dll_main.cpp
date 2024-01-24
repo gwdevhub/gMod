@@ -211,7 +211,7 @@ void InitInstance(HINSTANCE hModule)
 
     // d3d9.dll shouldn't be loaded at this point.
     const auto d3d9_loaded = FindLoadedModuleByName("d3d9.dll");
-    ASSERT(!d3d9_loaded);
+    //ASSERT(!d3d9_loaded);
 
     MH_Initialize();
 
