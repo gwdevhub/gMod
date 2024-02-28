@@ -283,12 +283,7 @@ export namespace TextureFunction {
         else {
             hr = DirectX::LoadFromWICMemory(entry.data.data(), entry.data.size(), DirectX::WIC_FLAGS_NONE, nullptr, image);
             if (image.GetMetadata().format == DXGI_FORMAT_B8G8R8X8_UNORM) {
-                // todo: this is undefined behaviour, but we must force them to be interpreted as BGRA instead of BGRX
-                const_cast<DXGI_FORMAT&>(image.GetMetadata().format) = DXGI_FORMAT_B8G8R8A8_UNORM;
-                const auto images = image.GetImages();
-                for (int i = 0; i < image.GetImageCount(); ++i) {
-                    const_cast<DXGI_FORMAT&>(images[i].format) = DXGI_FORMAT_B8G8R8A8_UNORM;
-                }
+                image.OverrideFormat(DXGI_FORMAT_B8G8R8A8_UNORM);
             }
         }
         entry.data.clear();
