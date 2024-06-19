@@ -19,6 +19,11 @@ Continuation of the uMod project to improve performance and stability. Integrate
 Each line in the modlist.txt is the full path to a mod you want to load (eg. `D:\uMod\Borderless Cartography Made Easy 2015 1.3.tpf`)
 gMod will load all these files on startup
 
+**Disclaimer about [Reshade](https://github.com/crosire/reshade)**
+
+Reshade in versions > 5.0.1 is known to cause glitches with TexMod, uMod and also gMod.
+If you would like to use Reshade in combination with gMod, we recommend running version [5.0.1](https://github.com/crosire/reshade/releases/tag/v5.0.1) or [4.9.1](https://github.com/crosire/reshade/releases/tag/v4.9.1).
+
 **Build from source**
 
 Requirements:
