@@ -1,4 +1,5 @@
 ***gMod***
+
 Continuation of the uMod project to improve performance and stability. Integrated with [Guild Wars Launcher](https://github.com/gwdevhub/gwlauncher) and [Daybreak](https://github.com/gwdevhub/Daybreak).
 
 *Usage is primarily intended with GW Launcher or Daybreak, but it can be used without.*
