@@ -13,6 +13,32 @@ import <regex>;
 import <algorithm>;
 import <filesystem>;
 import ModfileLoader.TpfReader;
+import TextureFunction;
+
+namespace {
+    uint32_t GetCrcFromFilename(const std::string& filename) {
+        const static std::regex re(R"(0x[0-9a-f]{4,16})", std::regex::optimize | std::regex::icase);
+        std::smatch match;
+        if (!std::regex_search(filename, match, re)) {
+            return 0;
+        }
+
+        uint64_t crc64_hash = 0;
+        try {
+            crc64_hash = std::stoull(match.str(), nullptr, 16);
+        }
+        catch (const std::invalid_argument&) {
+            Warning("Failed to parse %s as a hash", filename.c_str());
+            return 0;
+        }
+        catch (const std::out_of_range&) {
+            Message("Out of range while parsing %s as a hash", filename.c_str());
+            return 0;
+        }
+        // Truncate the higher 32-bits
+        return (uint32_t)(crc64_hash & 0xFFFFFFFF);
+    }
+}
 
 export class ModfileLoader {
     std::filesystem::path file_name;
@@ -92,36 +118,17 @@ std::vector<TexEntry> ModfileLoader::GetFileContents()
 void ParseSimpleArchive(const libzippp::ZipArchive& archive, std::vector<TexEntry>& entries)
 {
     for (const auto& entry : archive.getEntries()) {
-        if (entry.isFile()) {
-            //TODO: #6 - Implement regex search
-            auto name = entry.getName();
-
-            const static std::regex re(R"(0x[0-9a-f]{4,8})", std::regex::optimize | std::regex::icase);
-            std::smatch match;
-            if (!std::regex_search(name, match, re)) {
-                continue;
-            }
-
-            uint32_t crc_hash;
-             try {
-                crc_hash = std::stoul(match.str(), nullptr, 16);
-            }
-            catch (const std::invalid_argument&) {
-                Warning("Failed to parse %s as a hash", name.c_str());
-                continue;
-            }
-            catch (const std::out_of_range&) {
-                Message("Out of range while parsing %s as a hash", name.c_str());
-                continue;
-            }
-
-            const auto data_ptr = static_cast<BYTE*>(entry.readAsBinary());
-            const auto size = entry.getSize();
-            std::vector vec(data_ptr, data_ptr + size);
-            std::filesystem::path tex_name(entry.getName());
-            entries.emplace_back(std::move(vec), crc_hash, tex_name.extension().string());
-            delete[] data_ptr;
-        }
+        if (!entry.isFile())
+            continue;
+        const auto crc_hash = GetCrcFromFilename(entry.getName());
+        if (!crc_hash)
+            continue;
+        const auto data_ptr = static_cast<BYTE*>(entry.readAsBinary());
+        const auto size = entry.getSize();
+        std::vector vec(data_ptr, data_ptr + size);
+        std::filesystem::path tex_name(entry.getName());
+        entries.emplace_back(std::move(vec), crc_hash, tex_name.extension().string());
+        delete[] data_ptr;
     }
 }
 
@@ -132,29 +139,18 @@ void ParseTexmodArchive(std::vector<std::string>& lines, libzippp::ZipArchive& a
         // match[1] | match[2]
         const static auto address_file_regex = std::regex(R"(^[\\/.]*([^|]+)\|([^\r\n]+))", std::regex::optimize);
         std::smatch match;
-        std::regex_search(line, match, address_file_regex);
-        if (match.size() != 3u)
+        if (!std::regex_search(line, match, address_file_regex))
             continue;
         const auto address_string = match[1].str();
         const auto file_path = match[2].str();
 
-        const auto entry = archive.getEntry(file_path);
-        if (entry.isNull() || !entry.isFile()) {
+        const auto crc_hash = GetCrcFromFilename(address_string);
+        if (!crc_hash)
             continue;
-        }
 
-        uint32_t crc_hash{};
-        try {
-            crc_hash = std::stoul(address_string, nullptr, 16);
-        }
-        catch (const std::invalid_argument&) {
-            Warning("Failed to parse %s as a hash", address_string.c_str());
+        const auto entry = archive.getEntry(file_path);
+        if (entry.isNull() || !entry.isFile())
             continue;
-        }
-        catch (const std::out_of_range&) {
-            Warning("Out of range while parsing %s as a hash", address_string.c_str());
-            continue;
-        }
 
         const auto data_ptr = static_cast<BYTE*>(entry.readAsBinary());
         const auto size = static_cast<size_t>(entry.getSize());
