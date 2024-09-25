@@ -19,8 +19,9 @@ namespace {
         }
 
         uint64_t crc64_hash = 0;
+        const auto number_str = match.str();
         try {
-            crc64_hash = std::stoull(match.str(), nullptr, 16);
+            crc64_hash = std::stoull(number_str, nullptr, 16);
         }
         catch (const std::invalid_argument&) {
             Warning("Failed to parse %s as a hash\n", filename.c_str());
@@ -30,12 +31,14 @@ namespace {
             Warning("Out of range while parsing %s as a hash\n", filename.c_str());
             return 0;
         }
+        // TODO: @3vcloud go at this when you can, truncating the higher bits doesn't work
         // Truncate the higher 32-bits
         if (crc64_hash > 0xFFFFFFFF) {
-            Warning("Truncating hash %s to 0x%8x\n", match.str(), static_cast<uint32_t>(crc64_hash & 0xFFFFFFFF));
+            Warning("Truncating hash %s to 0x%08x\n", number_str.c_str(), static_cast<uint32_t>(crc64_hash & 0xFFFFFFFF));
+            return 0;
         }
         else {
-            Warning("Non truncated hash %s to 0x%8x\n", match.str(), crc64_hash);
+            Warning("Non truncated hash %s to 0x%8x\n", number_str.c_str(), crc64_hash);
         }
         return static_cast<uint32_t>(crc64_hash & 0xFFFFFFFF);
     }
