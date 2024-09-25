@@ -42,7 +42,7 @@ public:
 
 private:
     std::ifstream file_stream;
-    long line_length;
+    long line_length = 0;
 
     [[nodiscard]] char XOR(const char b, const long position) const
     {
