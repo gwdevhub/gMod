@@ -47,7 +47,7 @@ int SwitchTextures(T pTexture1, T pTexture2)
 
 export namespace TextureFunction {
 
-    unsigned int GetCRC32(const char* pcDatabuf, unsigned int ulDatalen)
+    uint32_t GetCRC32(const char* pcDatabuf, unsigned int ulDatalen)
     {
         constexpr static auto crc32_poly = 0xEDB88320u;
         constexpr static auto ul_crc_in = 0xffffffff;
