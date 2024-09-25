@@ -5,13 +5,8 @@ module;
 
 export module ModfileLoader;
 
-import <intsafe.h>;
-import <vector>;
-import <string>;
+import std;
 import <libzippp.h>;
-import <regex>;
-import <algorithm>;
-import <filesystem>;
 import ModfileLoader.TpfReader;
 import TextureFunction;
 

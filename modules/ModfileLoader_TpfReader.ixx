@@ -1,9 +1,6 @@
 export module ModfileLoader.TpfReader;
 
-import <filesystem>;
-import <string>;
-import <fstream>;
-import <vector>;
+import std;
 
 export class TpfReader {
 public:
