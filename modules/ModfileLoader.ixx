@@ -11,7 +11,7 @@ import ModfileLoader.TpfReader;
 import TextureFunction;
 
 namespace {
-    uint32_t GetCrcFromFilename(const std::string& filename) {
+    HashType GetCrcFromFilename(const std::string& filename) {
         const static std::regex re(R"(0x[0-9a-f]{4,16})", std::regex::optimize | std::regex::icase);
         std::smatch match;
         if (!std::regex_search(filename, match, re)) {
@@ -31,16 +31,7 @@ namespace {
             Warning("Out of range while parsing %s as a hash\n", filename.c_str());
             return 0;
         }
-        // TODO: @3vcloud go at this when you can, truncating the higher bits doesn't work
-        // Truncate the higher 32-bits
-        if (crc64_hash > 0xFFFFFFFF) {
-            Warning("Truncating hash %s to 0x%08x\n", number_str.c_str(), static_cast<uint32_t>(crc64_hash & 0xFFFFFFFF));
-            return 0;
-        }
-        else {
-            Warning("Non truncated hash %s to 0x%8x\n", number_str.c_str(), crc64_hash);
-        }
-        return static_cast<uint32_t>(crc64_hash & 0xFFFFFFFF);
+        return crc64_hash;
     }
 }
 
@@ -58,15 +49,15 @@ export class ModfileLoader {
 public:
     ModfileLoader(const std::filesystem::path& fileName);
 
-    std::vector<TexEntry> GetContents();
+    std::vector<TexEntry> GetContents() const;
 
 private:
 
-    std::vector<TexEntry> GetTpfContents();
+    std::vector<TexEntry> GetTpfContents() const;
 
-    std::vector<TexEntry> GetFileContents();
+    std::vector<TexEntry> GetFileContents() const;
 
-    void LoadEntries(libzippp::ZipArchive& archive, std::vector<TexEntry>& entries);
+    static void LoadEntries(libzippp::ZipArchive& archive, std::vector<TexEntry>& entries);
 };
 
 ModfileLoader::ModfileLoader(const std::filesystem::path& fileName)
@@ -74,7 +65,7 @@ ModfileLoader::ModfileLoader(const std::filesystem::path& fileName)
     file_name = std::filesystem::absolute(fileName);
 }
 
-std::vector<TexEntry> ModfileLoader::GetContents()
+std::vector<TexEntry> ModfileLoader::GetContents() const
 {
     try {
         return file_name.wstring().ends_with(L".tpf") ? GetTpfContents() : GetFileContents();
@@ -85,7 +76,7 @@ std::vector<TexEntry> ModfileLoader::GetContents()
     return {};
 }
 
-std::vector<TexEntry> ModfileLoader::GetTpfContents()
+std::vector<TexEntry> ModfileLoader::GetTpfContents() const
 {
     std::vector<TexEntry> entries;
     auto tpf_reader = TpfReader(file_name);
@@ -107,7 +98,7 @@ std::vector<TexEntry> ModfileLoader::GetTpfContents()
     return entries;
 }
 
-std::vector<TexEntry> ModfileLoader::GetFileContents()
+std::vector<TexEntry> ModfileLoader::GetFileContents() const
 {
     std::vector<TexEntry> entries;
 

@@ -1,8 +1,10 @@
 #pragma once
 
 #include <d3d9.h>
+#include "Defines.h"
+
 struct TextureFileStruct;
-interface uMod_IDirect3DTexture9 : public IDirect3DTexture9 {
+interface uMod_IDirect3DTexture9 : IDirect3DTexture9 {
     uMod_IDirect3DTexture9(IDirect3DTexture9** ppTex, IDirect3DDevice9* pIDirect3DDevice9)
     {
         m_D3Dtex = *ppTex; //Texture which will be displayed and will be passed to the game
@@ -21,7 +23,7 @@ interface uMod_IDirect3DTexture9 : public IDirect3DTexture9 {
     uMod_IDirect3DTexture9* CrossRef_D3Dtex = nullptr;
     IDirect3DDevice9* m_D3Ddev = nullptr;
     TextureFileStruct* Reference = nullptr;
-    HashType Hash = 0u;
+    HashTuple Hash = {};
     bool FAKE = false;
 
     // original interface
@@ -48,5 +50,5 @@ interface uMod_IDirect3DTexture9 : public IDirect3DTexture9 {
     STDMETHOD(UnlockRect)(UINT Level) override;
     STDMETHOD(AddDirtyRect)(CONST RECT* pDirtyRect) override;
 
-    [[nodiscard]] HashType GetHash() const;
+    [[nodiscard]] HashTuple GetHash() const;
 };

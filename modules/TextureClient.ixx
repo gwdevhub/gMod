@@ -340,9 +340,10 @@ int TextureClient::LookUpToMod(uModTexturePtr auto pTexture)
     if (pTexture->CrossRef_D3Dtex != nullptr)
         return ret; // bug, this texture is already switched
 
-    const auto found = modded_textures.find(pTexture->Hash);
+    auto found = modded_textures.find(pTexture->Hash.crc32);
     if (found == modded_textures.end())
-        return ret;
+        if (found = modded_textures.find(pTexture->Hash.crc64), found == modded_textures.end())
+            return ret;
 
     const auto textureFileStruct = found->second;
 

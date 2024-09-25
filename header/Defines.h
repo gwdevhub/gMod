@@ -1,7 +1,27 @@
 #pragma once
 
-//#define HashType DWORD64
-using HashType = DWORD32;
+//using HashType = DWORD32;
+using HashType = DWORD64;
+
+struct HashTuple {
+    HashType crc32;
+    HashType crc64;
+
+    bool operator==(const HashTuple& other) const noexcept
+    {
+        return (other.crc32 == crc32) || (other.crc64 == crc64);
+    }
+
+    explicit operator bool() const noexcept
+    {
+        return crc32 != 0 || crc64 != 0;
+    }
+
+    explicit operator HashType() const noexcept
+    {
+        return crc32 ? crc32 : crc64;
+    }
+};
 
 struct TexEntry {
     std::vector<BYTE> data{};
@@ -49,4 +69,3 @@ inline void Warning(const char* format, ...)
     va_end(args);
 #endif
 }
-
