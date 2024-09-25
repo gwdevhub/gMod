@@ -23,15 +23,21 @@ namespace {
             crc64_hash = std::stoull(match.str(), nullptr, 16);
         }
         catch (const std::invalid_argument&) {
-            Warning("Failed to parse %s as a hash", filename.c_str());
+            Warning("Failed to parse %s as a hash\n", filename.c_str());
             return 0;
         }
         catch (const std::out_of_range&) {
-            Message("Out of range while parsing %s as a hash", filename.c_str());
+            Warning("Out of range while parsing %s as a hash\n", filename.c_str());
             return 0;
         }
         // Truncate the higher 32-bits
-        return (uint32_t)(crc64_hash & 0xFFFFFFFF);
+        if (crc64_hash > 0xFFFFFFFF) {
+            Warning("Truncating hash %s to 0x%8x\n", match.str(), static_cast<uint32_t>(crc64_hash & 0xFFFFFFFF));
+        }
+        else {
+            Warning("Non truncated hash %s to 0x%8x\n", match.str(), crc64_hash);
+        }
+        return static_cast<uint32_t>(crc64_hash & 0xFFFFFFFF);
     }
 }
 
