@@ -11,6 +11,8 @@ import ModfileLoader.TpfReader;
 import TextureFunction;
 
 namespace {
+    bool use_64_bit_crc = false;
+
     HashType GetCrcFromFilename(const std::string& filename) {
         const static std::regex re(R"(0x[0-9a-f]{4,16})", std::regex::optimize | std::regex::icase);
         std::smatch match;
@@ -31,7 +33,14 @@ namespace {
             Warning("Out of range while parsing %s as a hash\n", filename.c_str());
             return 0;
         }
+        use_64_bit_crc = use_64_bit_crc || crc64_hash > 0xFFFFFFFF;
         return crc64_hash;
+    }
+}
+
+namespace HashCheck {
+    export bool Use64BitCrc() {
+        return use_64_bit_crc;
     }
 }
 

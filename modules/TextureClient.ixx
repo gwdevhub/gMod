@@ -34,7 +34,6 @@ public:
     std::vector<uMod_IDirect3DCubeTexture9*> OriginalCubeTextures;
     // stores the pointer to the uMod_IDirect3DCubeTexture9 objects created by the game
 
-
 private:
     IDirect3DDevice9* D3D9Device;
     // Cached info about whether this id a dx9ex device or not; used for proxy functions
@@ -342,7 +341,7 @@ int TextureClient::LookUpToMod(uModTexturePtr auto pTexture)
 
     auto found = modded_textures.find(pTexture->Hash.crc32);
     if (found == modded_textures.end())
-        if (found = modded_textures.find(pTexture->Hash.crc64), found == modded_textures.end())
+        if (found = modded_textures.find(pTexture->Hash.crc64), !pTexture->Hash.crc64 || found == modded_textures.end())
             return ret;
 
     const auto textureFileStruct = found->second;

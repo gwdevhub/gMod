@@ -1,7 +1,8 @@
 #include "Main.h"
 
-import TextureFunction;
+import ModfileLoader;
 import TextureClient;
+import TextureFunction;
 
 //this function yields for the non switched texture object
 HRESULT APIENTRY uMod_IDirect3DTexture9::QueryInterface(REFIID riid, void** ppvObj)
@@ -203,7 +204,7 @@ HRESULT APIENTRY uMod_IDirect3DTexture9::GetSurfaceLevel(UINT Level, IDirect3DSu
 }
 
 //this function yields for the non switched texture object
-HRESULT APIENTRY uMod_IDirect3DTexture9::LockRect(UINT Level, D3DLOCKED_RECT* pLockedRect,CONST RECT* pRect, DWORD Flags)
+HRESULT APIENTRY uMod_IDirect3DTexture9::LockRect(UINT Level, D3DLOCKED_RECT* pLockedRect, CONST RECT* pRect, DWORD Flags)
 {
     if (CrossRef_D3Dtex != nullptr) {
         return CrossRef_D3Dtex->m_D3Dtex->LockRect(Level, pLockedRect, pRect, Flags);
@@ -323,7 +324,7 @@ HashTuple uMod_IDirect3DTexture9::GetHash() const
 
     const int size = (TextureFunction::GetBitsFromFormat(desc.Format) * desc.Width * desc.Height) / 8;
     const auto crc32 = TextureFunction::get_crc32(static_cast<char*>(d3dlr.pBits), size);
-    const auto crc64 = TextureFunction::get_crc64(static_cast<char*>(d3dlr.pBits), size);
+    const auto crc64 = HashCheck::Use64BitCrc() ? TextureFunction::get_crc64(static_cast<char*>(d3dlr.pBits), size) : 0;
 
     // Only release surfaces after we're finished with d3dlr
     if (pOffscreenSurface != nullptr) {
@@ -340,6 +341,7 @@ HashTuple uMod_IDirect3DTexture9::GetHash() const
     else {
         pTexture->UnlockRect(0);
     }
+
     Message("uMod_IDirect3DTexture9::GetHash() crc32 %#lX (%d %d) %d = %d\n", crc32, desc.Width, desc.Height, desc.Format, size);
     Message("uMod_IDirect3DTexture9::GetHash() crc64 %#llX (%d %d) %d = %d\n", crc64, desc.Width, desc.Height, desc.Format, size);
     return {crc32, crc64};

@@ -1,6 +1,8 @@
 #include "Main.h"
-import TextureFunction;
+
+import ModfileLoader;
 import TextureClient;
+import TextureFunction;
 
 HRESULT APIENTRY uMod_IDirect3DVolumeTexture9::QueryInterface(REFIID riid, void** ppvObj)
 {
@@ -261,7 +263,7 @@ HashTuple uMod_IDirect3DVolumeTexture9::GetHash() const
 
     const int size = (TextureFunction::GetBitsFromFormat(desc.Format) * desc.Width * desc.Height * desc.Depth) / 8;
     const auto crc32 = TextureFunction::get_crc32(static_cast<char*>(d3dlr.pBits), size);
-    const auto crc64 = TextureFunction::get_crc64(static_cast<char*>(d3dlr.pBits), size);
+    const auto crc64 = HashCheck::Use64BitCrc() ? TextureFunction::get_crc64(static_cast<char*>(d3dlr.pBits), size) : 0;
 
     // Only release surfaces after we're finished with d3dlr
     if (pResolvedSurface != nullptr) {
