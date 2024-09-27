@@ -29,8 +29,20 @@ jobs:
     - name: Setup MSBuild.exe
       uses: microsoft/setup-msbuild@v1.3.1
 
-    - name: Build CMake Files
-      run: cmake -S . -B build -A Win32
+    - name: Install vcpkg
+      run: |
+        git clone https://github.com/microsoft/vcpkg.git
+        .\vcpkg\bootstrap-vcpkg.bat
+        
+    - name: Set VCPKG_ROOT
+      run: |
+        echo "VCPKG_ROOT=$(Get-Location)\vcpkg" >> $env:GITHUB_ENV
+      shell: powershell
+
+    - name: Build CMake Files with vcpkg toolchain
+      run: cmake --preset=vcpkg
+      env:
+        VCPKG_ROOT: ${{ env.VCPKG_ROOT }}
 
     - name: Build binaries
       run: cmake --build build --config Release
@@ -54,7 +66,7 @@ jobs:
         mode: update
         tag_name: v${{ steps.set_version.outputs.version }}
         release_name: gMod v${{ steps.set_version.outputs.version }}
-        assets: .\bin\Release\gMod.dll
+        assets: .\bin\Release\gMod.dll,.\bin\Release\TpfConvert.exe,.\bin\Release\d3dx9_43.dll
         github_token: ${{ env.GITHUB_TOKEN }}
         replace_assets: true
         body_mrkdwn: ${{ env.Changelog }}
