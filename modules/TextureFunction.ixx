@@ -382,7 +382,33 @@ export namespace TextureFunction {
         else {
             hr = DirectX::LoadFromWICMemory(entry.data.data(), entry.data.size(), DirectX::WIC_FLAGS_NONE, nullptr, image);
             if (image.GetMetadata().format == DXGI_FORMAT_B8G8R8X8_UNORM) {
-                image.OverrideFormat(DXGI_FORMAT_B8G8R8A8_UNORM);
+                if (entry.ext == ".bmp") {
+                    DirectX::ScratchImage convertedImage;
+                    hr = Convert(image.GetImages(), image.GetImageCount(), image.GetMetadata(), DXGI_FORMAT_B8G8R8A8_UNORM, DirectX::TEX_FILTER_DEFAULT, DirectX::TEX_THRESHOLD_DEFAULT, convertedImage);
+                    if (FAILED(hr)) {
+                        Warning("ConvertToBGRA (%#lX%s): FAILED\n", entry.crc_hash, entry.ext.c_str());
+                        return {};
+                    }
+
+                    for (size_t y = 0; y < convertedImage.GetMetadata().height; ++y) {
+                        uint8_t* row = convertedImage.GetImage(0, 0, 0)->pixels + y * convertedImage.GetImage(0, 0, 0)->rowPitch;
+                        for (size_t x = 0; x < convertedImage.GetMetadata().width; ++x) {
+                            const auto blue = row[x * 4 + 0];
+                            const auto green = row[x * 4 + 1];
+                            const auto red = row[x * 4 + 2];
+
+                            if (red == 0 && green == 0 && blue == 0) {
+                                row[x * 4 + 3] = 0x00; // force transparency
+                            } else {
+                                row[x * 4 + 3] = 0xFF;
+                            }
+                        }
+                    }
+                    image = std::move(convertedImage);
+                }
+                else {
+                    image.OverrideFormat(DXGI_FORMAT_B8G8R8A8_UNORM);
+                }
             }
         }
         entry.data.clear();
