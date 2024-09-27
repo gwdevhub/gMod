@@ -1,7 +1,3 @@
-list(APPEND CMAKE_MODULE_PATH "${PROJECT_SOURCE_DIR}/TpfConvert/cmake")
-
-find_package(DirectX REQUIRED)
-
 add_executable(TpfConvert)
 
 # Find all .ixx files in the TpfConvert folder
@@ -22,9 +18,22 @@ target_compile_definitions(TpfConvert PRIVATE
     "VC_EXTRALEAN"
 )
 
-target_include_directories(TpfConvert PRIVATE ${DirectX_INCLUDE_DIRS})
+if(DEFINED ENV{VCPKG_ROOT})
+    message(STATUS "VCPKG_ROOT: $ENV{VCPKG_ROOT}")
+else()
+    message(STATUS "VCPKG_ROOT is not set")
+endif()
+
+if(DEFINED CMAKE_TOOLCHAIN_FILE)
+    message(STATUS "CMAKE_TOOLCHAIN_FILE: ${CMAKE_TOOLCHAIN_FILE}")
+else()
+    message(STATUS "CMAKE_TOOLCHAIN_FILE is not set")
+endif()
+
+find_package(dxsdk-d3dx CONFIG REQUIRED)
 
 target_link_libraries(TpfConvert PRIVATE
     libzippp
-    ${DirectX_LIBRARIES}             
+    Microsoft::D3DX9
+    d3d9
 )

@@ -7,6 +7,8 @@ import std;
 import ModfileLoader;
 import <libzippp.h>;
 
+struct TexEntry;
+
 namespace {
     IDirect3D9* pD3D = nullptr;
     IDirect3DDevice9* pDevice = nullptr;
@@ -95,14 +97,26 @@ int main(int argc, char* argv[])
 
     for (const auto& modfile : std::filesystem::directory_iterator(path)) {
         if (modfile.is_regular_file() && (modfile.path().extension() == ".tpf" || modfile.path().extension() == ".zip")) {
-            std::print("Processing: {}\n", modfile.path().filename().string());
+            const auto mod_path = modfile.path();
+            if (mod_path.extension() == ".zip" && mod_path.stem().string().ends_with("_")) {
+                std::print("Skipping previous TpfConvert output: {}\n", mod_path.filename().string());
+                continue;
+            }
+            else {
+                std::print("Processing: {}\n", mod_path.filename().string());
+            }
 
-            ModfileLoader loader(modfile.path());
+            const auto zip_filename = mod_path.parent_path() / (mod_path.stem().string() + "_.zip");
+            if (std::filesystem::exists(zip_filename)) {
+                std::print("{} was already processed\n", mod_path.filename().string());
+                continue;
+            }
+            libzippp::ZipArchive zip_archive(zip_filename.string());
+
+            ModfileLoader loader(mod_path);
             std::vector<std::pair<std::string, std::vector<uint8_t>>> data_entries;
             const auto entries = loader.GetContents();
 
-            const auto zip_filename = path / (modfile.path().stem().string() + "_.zip");
-            libzippp::ZipArchive zip_archive(zip_filename.string());
             zip_archive.open(libzippp::ZipArchive::Write);
 
             for (const auto& entry : entries) {

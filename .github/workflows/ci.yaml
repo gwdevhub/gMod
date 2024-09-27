@@ -1,55 +1,42 @@
 name: gMod CI Pipeline
 
 on:
-    pull_request:
-        branches:
-            - master
-    push:
-        branches:
-            - dev
-    workflow_dispatch:
+  pull_request:
+    branches:
+      - master
+  push:
+    branches:
+      - dev
+  workflow_dispatch:
 
 jobs:
-    build:
+  build:
 
-        strategy:
-            matrix:
-                targetplatform: [x86]
+    strategy:
+      matrix:
+        targetplatform: [x86]
 
-        runs-on: windows-latest
+    runs-on: windows-latest
 
-        env:
-            Configuration: Release
-            Actions_Allow_Unsecure_Commands: true
+    env:
+      Configuration: Release
+      Actions_Allow_Unsecure_Commands: true
 
-        steps:
-            - name: Checkout
-              uses: actions/checkout@v4
-              with:
-                  fetch-depth: 0
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v4
+      with:
+        fetch-depth: 0
 
-            - name: Setup MSBuild.exe
-              uses: microsoft/setup-msbuild@v1.3.1
+    - name: Install vcpkg
+      run: |
+        git clone https://github.com/microsoft/vcpkg.git
+        .\vcpkg\bootstrap-vcpkg.bat
+        echo "VCPKG_ROOT=$(pwd)\vcpkg" >> $GITHUB_ENV
+        echo "PATH=$(pwd)\vcpkg;$PATH" >> $GITHUB_ENV
 
-            - name: Cache DirectX SDK Installer
-              id: cache-directx
-              uses: actions/cache@v4
-              with:
-                  path: ${{ runner.temp }}/DXSDK_Jun10.exe
-                  key: DXSDK_Jun10
+    - name: Build CMake Files with vcpkg toolchain
+      run: cmake --preset=vcpkg
 
-            - name: Download DirectX SDK if not cached
-              if: steps.cache-directx.outputs.cache-hit != 'true'
-              run: |
-                  Invoke-WebRequest -Uri https://download.microsoft.com/download/A/E/7/AE743F1F-632B-4809-87A9-AA1BB3458E31/DXSDK_Jun10.exe
-
-            - name: Install DirectX SDK
-              run: |
-                  Start-Process -FilePath $env:RUNNER_TEMP\DXSDK_Jun10.exe -ArgumentList "/Q /T:$env:RUNNER_TEMP\dxsdk" -Wait
-                  Start-Process -FilePath "$env:RUNNER_TEMP\dxsdk\DXSETUP.exe" -ArgumentList "/silent" -Wait
-
-            - name: Build CMake Files
-              run: cmake -S . -B build -A Win32
-
-            - name: Build binaries
-              run: cmake --build build --config Release
+    - name: Build binaries
+      run: cmake --build build --config Release

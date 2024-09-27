@@ -23,6 +23,8 @@ bin/
 */Release
 */bin
 */obj
+vcpkg
+vcpkg_installed
 
 # Bloated Windows Databases
 *.sdf
