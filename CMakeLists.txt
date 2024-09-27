@@ -75,3 +75,5 @@ target_compile_definitions(gMod PRIVATE
     DIRECT_INJECTION
     LOG_MESSAGE
     )
+	
+add_subdirectory(TpfConvert)
