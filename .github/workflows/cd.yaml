@@ -66,7 +66,7 @@ jobs:
         mode: update
         tag_name: v${{ steps.set_version.outputs.version }}
         release_name: gMod v${{ steps.set_version.outputs.version }}
-        assets: .\bin\Release\gMod.dll,.\bin\Release\TpfConvert.exe,.\bin\Release\d3dx9_43.dll
+        assets: .\bin\Release\gMod.dll;.\bin\Release\TpfConvert.exe;.\bin\Release\d3dx9_43.dll
         github_token: ${{ env.GITHUB_TOKEN }}
         replace_assets: true
         body_mrkdwn: ${{ env.Changelog }}
