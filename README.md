@@ -29,8 +29,17 @@ If you would like to use Reshade in combination with gMod, we recommend running 
 Requirements:
 - Visual Studio 2022
 - CMake 3.16+, integrated into the Developer Powershell for VS 2022
+- vcpkg, integrated into the Developer Powershell for VS 2022
 
 Compile:
-- cmake -B build
+- cmake --preset=vcpkg
 - cmake --open build
 - compile
+
+**TpfConvert**
+Small utility to convert old .tpf files with invalid images into .zip files with working images.
+Usage:
+- put TpfConvert.exe and d3dx9.dll anywhere
+- create a folder "plugins" in that folder and put your .tpf/.zip files with invalid images there
+- run TpfConvert.exe, My_Texmod.tpf is fixed and copied into My_Texmod_.zip
+- copy My_Texmod_.zip into your GW Launcher plugins folder, delete My_Texmod.tpf from it, if it still exists

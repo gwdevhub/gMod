@@ -1,27 +1,23 @@
 #pragma once
 
 #include <d3d9.h>
-struct TextureFileStruct;
-interface uMod_IDirect3DTexture9 : public IDirect3DTexture9 {
-    uMod_IDirect3DTexture9(IDirect3DTexture9** ppTex, IDirect3DDevice9* pIDirect3DDevice9)
-    {
-        m_D3Dtex = *ppTex; //Texture which will be displayed and will be passed to the game
-        m_D3Ddev = pIDirect3DDevice9; //device pointer
-        // fake texture: store the pointer to the original uMod_IDirect3DTexture9 object, needed if a fake texture is unselected
-        // original texture: stores the pointer to the fake texture object, is needed if original texture is deleted,
-        // thus the fake texture can also be deleted
-    }
-    virtual ~uMod_IDirect3DTexture9()
-    {
+#include "Defines.h"
 
-    }
+struct TextureFileStruct;
+interface uMod_IDirect3DTexture9 : IDirect3DTexture9 {
+    uMod_IDirect3DTexture9(IDirect3DTexture9** ppTex, IDirect3DDevice9* pIDirect3DDevice9)
+        : m_D3Dtex(*ppTex),
+          m_D3Ddev(pIDirect3DDevice9)
+    {}
+
+    virtual ~uMod_IDirect3DTexture9() = default;
 
     // callback interface
     IDirect3DTexture9* m_D3Dtex = nullptr;
     uMod_IDirect3DTexture9* CrossRef_D3Dtex = nullptr;
     IDirect3DDevice9* m_D3Ddev = nullptr;
     TextureFileStruct* Reference = nullptr;
-    HashType Hash = 0u;
+    HashTuple Hash = {};
     bool FAKE = false;
 
     // original interface
@@ -48,5 +44,5 @@ interface uMod_IDirect3DTexture9 : public IDirect3DTexture9 {
     STDMETHOD(UnlockRect)(UINT Level) override;
     STDMETHOD(AddDirtyRect)(CONST RECT* pDirtyRect) override;
 
-    [[nodiscard]] HashType GetHash() const;
+    [[nodiscard]] HashTuple GetHash() const;
 };

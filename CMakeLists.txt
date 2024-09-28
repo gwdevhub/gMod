@@ -16,9 +16,9 @@ if(${CLEAN} MATCHES "ON")
 endif()
 
 set(VERSION_MAJOR 1)
-set(VERSION_MINOR 6)
-set(VERSION_PATCH 3)
-set(VERSION_TWEAK 1)
+set(VERSION_MINOR 7)
+set(VERSION_PATCH 0)
+set(VERSION_TWEAK 0)
 
 set(VERSION_RC "${CMAKE_CURRENT_BINARY_DIR}/version.rc")
 configure_file("${CMAKE_CURRENT_SOURCE_DIR}/version.rc.in" "${VERSION_RC}" @ONLY)
@@ -75,3 +75,5 @@ target_compile_definitions(gMod PRIVATE
     DIRECT_INJECTION
     LOG_MESSAGE
     )
+	
+add_subdirectory(TpfConvert)

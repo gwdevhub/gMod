@@ -1,7 +1,8 @@
 #include "Main.h"
 
-import TextureFunction;
+import ModfileLoader;
 import TextureClient;
+import TextureFunction;
 
 //this function yields for the non switched texture object
 HRESULT APIENTRY uMod_IDirect3DCubeTexture9::QueryInterface(REFIID riid, void** ppvObj)
@@ -227,10 +228,10 @@ HRESULT APIENTRY uMod_IDirect3DCubeTexture9::UnlockRect(D3DCUBEMAP_FACES FaceTyp
     return m_D3Dtex->UnlockRect(FaceType, Level);
 }
 
-HashType uMod_IDirect3DCubeTexture9::GetHash() const
+HashTuple uMod_IDirect3DCubeTexture9::GetHash() const
 {
     if (FAKE) {
-        return 0;
+        return {};
     }
     IDirect3DCubeTexture9* pTexture = m_D3Dtex;
     if (CrossRef_D3Dtex != nullptr) {
@@ -244,7 +245,7 @@ HashType uMod_IDirect3DCubeTexture9::GetHash() const
     if (pTexture->GetLevelDesc(0, &desc) != D3D_OK) //get the format and the size of the texture
     {
         Warning("uMod_IDirect3DCubeTexture9::GetHash() Failed: GetLevelDesc \n");
-        return 0;
+        return {};
     }
 
     Message("uMod_IDirect3DCubeTexture9::GetHash() (%d %d) %d\n", desc.Width, desc.Height, desc.Format);
@@ -254,17 +255,18 @@ HashType uMod_IDirect3DCubeTexture9::GetHash() const
         Warning("uMod_IDirect3DCubeTexture9::GetHash() Failed: LockRect 1\n");
         if (pTexture->GetCubeMapSurface(D3DCUBEMAP_FACE_POSITIVE_X, 0, &pResolvedSurface) != D3D_OK) {
             Warning("uMod_IDirect3DCubeTexture9::GetHash() Failed: GetSurfaceLevel\n");
-            return 0;
+            return {};
         }
         if (pResolvedSurface->LockRect(&d3dlr, nullptr, D3DLOCK_READONLY) != D3D_OK) {
             pResolvedSurface->Release();
             Warning("uMod_IDirect3DCubeTexture9::GetHash() Failed: LockRect 2\n");
-            return 0;
+            return {};
         }
     }
 
     const int size = (TextureFunction::GetBitsFromFormat(desc.Format) * desc.Width * desc.Height) / 8;
-    const auto hash = TextureFunction::GetCRC32(static_cast<char*>(d3dlr.pBits), size); //calculate the crc32 of the texture
+    const auto crc32 = TextureFunction::get_crc32(static_cast<char*>(d3dlr.pBits), size);
+    const auto crc64 = HashCheck::Use64BitCrc() ? TextureFunction::get_crc64(static_cast<char*>(d3dlr.pBits), size) : 0;
 
     // Only release surfaces after we're finished with d3dlr
     if (pResolvedSurface != nullptr) {
@@ -275,6 +277,7 @@ HashType uMod_IDirect3DCubeTexture9::GetHash() const
         pTexture->UnlockRect(D3DCUBEMAP_FACE_POSITIVE_X, 0); //unlock the raw data
     }
 
-    Message("uMod_IDirect3DCubeTexture9::GetHash() %#lX (%d %d) %d = %d\n", hash, desc.Width, desc.Height, desc.Format, size);
-    return hash;
+    Message("uMod_IDirect3DCubeTexture9::GetHash() %#lX (%d %d) %d = %d\n", crc32, desc.Width, desc.Height, desc.Format, size);
+    Message("uMod_IDirect3DCubeTexture9::GetHash() %#llX (%d %d) %d = %d\n", crc64, desc.Width, desc.Height, desc.Format, size);
+    return {crc32, crc64};
 }

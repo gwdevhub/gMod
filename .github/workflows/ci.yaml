@@ -1,4 +1,4 @@
-name:  gMod CI Pipeline
+name: gMod CI Pipeline
 
 on:
   pull_request:
@@ -8,9 +8,8 @@ on:
     branches:
       - dev
   workflow_dispatch:
-      
-jobs:
 
+jobs:
   build:
 
     strategy:
@@ -32,8 +31,20 @@ jobs:
     - name: Setup MSBuild.exe
       uses: microsoft/setup-msbuild@v1.3.1
 
-    - name: Build CMake Files
-      run: cmake -S . -B build -A Win32
+    - name: Install vcpkg
+      run: |
+        git clone https://github.com/microsoft/vcpkg.git
+        .\vcpkg\bootstrap-vcpkg.bat
+        
+    - name: Set VCPKG_ROOT
+      run: |
+        echo "VCPKG_ROOT=$(Get-Location)\vcpkg" >> $env:GITHUB_ENV
+      shell: powershell
+
+    - name: Build CMake Files with vcpkg toolchain
+      run: cmake --preset=vcpkg
+      env:
+        VCPKG_ROOT: ${{ env.VCPKG_ROOT }}
 
     - name: Build binaries
       run: cmake --build build --config Release

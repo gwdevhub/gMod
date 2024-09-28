@@ -1,18 +1,18 @@
-module;
-
-#include "Main.h"
-#include "Defines.h"
-
 export module ModfileLoader;
 
 import std;
 import <libzippp.h>;
 import ModfileLoader.TpfReader;
-import TextureFunction;
+
+export using HashType = uint64_t;
+
+export struct TexEntry {
+    std::vector<uint8_t> data{};
+    HashType crc_hash = 0; // hash value
+    std::string ext{};
+};
 
 namespace {
-    bool use_64_bit_crc = false;
-
     HashType GetCrcFromFilename(const std::string& filename) {
         const static std::regex re(R"(0x[0-9a-f]{4,16})", std::regex::optimize | std::regex::icase);
         std::smatch match;
@@ -26,21 +26,14 @@ namespace {
             crc64_hash = std::stoull(number_str, nullptr, 16);
         }
         catch (const std::invalid_argument&) {
-            Warning("Failed to parse %s as a hash\n", filename.c_str());
+            std::print(stderr, "Failed to parse {} as a hash\n", filename);
             return 0;
         }
         catch (const std::out_of_range&) {
-            Warning("Out of range while parsing %s as a hash\n", filename.c_str());
+            std::print(stderr, "Out of range while parsing {} as a hash\n", filename);
             return 0;
         }
-        use_64_bit_crc = use_64_bit_crc || crc64_hash > 0xFFFFFFFF;
         return crc64_hash;
-    }
-}
-
-namespace HashCheck {
-    export bool Use64BitCrc() {
-        return use_64_bit_crc;
     }
 }
 
@@ -80,7 +73,7 @@ std::vector<TexEntry> ModfileLoader::GetContents() const
         return file_name.wstring().ends_with(L".tpf") ? GetTpfContents() : GetFileContents();
     }
     catch (const std::exception&) {
-        Warning("Failed to open mod file: %s\n", file_name.c_str());
+        std::print(stderr, "Failed to open mod file: {}\n", file_name.string().c_str());
     }
     return {};
 }
@@ -92,12 +85,12 @@ std::vector<TexEntry> ModfileLoader::GetTpfContents() const
     const auto buffer = tpf_reader.ReadToEnd();
     const auto zip_archive = libzippp::ZipArchive::fromBuffer(buffer.data(), buffer.size(), false, TPF_PASSWORD);
     if (!zip_archive) {
-        Warning("Failed to open tpf file: %s - %u bytes!", file_name.c_str(), buffer.size());
+    std::print(stderr, "Failed to open tpf file: {} - {} uint8_ts!\n", file_name.string(), buffer.size());
         return {};
     }
     zip_archive->setErrorHandlerCallback(
         [](const std::string& message, const std::string& strerror, int zip_error_code, int system_error_code) -> void {
-            Message("GetTpfContents: %s %s %d %d\n", message.c_str(), strerror.c_str(), zip_error_code, system_error_code);
+            std::print(stderr, "GetTpfContents: {} {} {} {}\n", message, strerror, zip_error_code, system_error_code);
         });
     zip_archive->open();
     LoadEntries(*zip_archive, entries);
@@ -127,7 +120,7 @@ void ParseSimpleArchive(const libzippp::ZipArchive& archive, std::vector<TexEntr
         const auto crc_hash = GetCrcFromFilename(entry.getName());
         if (!crc_hash)
             continue;
-        const auto data_ptr = static_cast<BYTE*>(entry.readAsBinary());
+        const auto data_ptr = static_cast<uint8_t*>(entry.readAsBinary());
         const auto size = entry.getSize();
         std::vector vec(data_ptr, data_ptr + size);
         std::filesystem::path tex_name(entry.getName());
@@ -156,7 +149,7 @@ void ParseTexmodArchive(std::vector<std::string>& lines, libzippp::ZipArchive& a
         if (entry.isNull() || !entry.isFile())
             continue;
 
-        const auto data_ptr = static_cast<BYTE*>(entry.readAsBinary());
+        const auto data_ptr = static_cast<uint8_t*>(entry.readAsBinary());
         const auto size = static_cast<size_t>(entry.getSize());
         std::vector vec(data_ptr, data_ptr + size);
         const auto tex_name = std::filesystem::path(entry.getName());

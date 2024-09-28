@@ -4,21 +4,18 @@
 
 interface uMod_IDirect3DVolumeTexture9 : IDirect3DVolumeTexture9 {
     uMod_IDirect3DVolumeTexture9(IDirect3DVolumeTexture9** ppTex, IDirect3DDevice9* pIDirect3DDevice9)
-    {
-        m_D3Dtex = *ppTex; //Texture which will be displayed and will be passed to the game
-        m_D3Ddev = pIDirect3DDevice9; //device pointer
-        CrossRef_D3Dtex = nullptr; //cross reference
-        // fake texture: store the pointer to the original uMod_IDirect3DVolumeTexture9 object, needed if a fake texture is unselected
-        // original texture: stores the pointer to the fake texture object, is needed if original texture is deleted,
-        // thus the fake texture can also be deleted
-    }
+        : m_D3Dtex(*ppTex),
+          m_D3Ddev(pIDirect3DDevice9)
+    {}
+
+    virtual ~uMod_IDirect3DVolumeTexture9() = default;
 
     // callback interface
     IDirect3DVolumeTexture9* m_D3Dtex = nullptr;
     uMod_IDirect3DVolumeTexture9* CrossRef_D3Dtex = nullptr;
     IDirect3DDevice9* m_D3Ddev = nullptr;
     TextureFileStruct* Reference = nullptr;
-    HashType Hash = 0u;
+    HashTuple Hash = {};
     bool FAKE = false;
 
     // original interface
@@ -46,5 +43,5 @@ interface uMod_IDirect3DVolumeTexture9 : IDirect3DVolumeTexture9 {
     STDMETHOD(UnlockBox)(UINT Level) override;
 
 
-    [[nodiscard]] HashType GetHash() const;
+    [[nodiscard]] HashTuple GetHash() const;
 };
