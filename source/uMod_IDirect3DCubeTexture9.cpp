@@ -264,7 +264,7 @@ HashTuple uMod_IDirect3DCubeTexture9::GetHash() const
         }
     }
 
-    const int size = (TextureFunction::GetBitsFromFormat(desc.Format) * desc.Width * desc.Height) / 8;
+    const auto size = (TextureFunction::GetBitsFromFormat(desc.Format) * desc.Width * desc.Height) / 8;
     const auto crc32 = TextureFunction::get_crc32(static_cast<char*>(d3dlr.pBits), size);
     const auto crc64 = HashCheck::Use64BitCrc() ? TextureFunction::get_crc64(static_cast<char*>(d3dlr.pBits), size) : 0;
 

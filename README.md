@@ -28,7 +28,7 @@ If you would like to use Reshade in combination with gMod, we recommend running 
 
 Requirements:
 - Visual Studio 2022
-- CMake 3.16+, integrated into the Developer Powershell for VS 2022
+- CMake 3.29+, integrated into the Developer Powershell for VS 2022
 - vcpkg, integrated into the Developer Powershell for VS 2022
 
 Compile:

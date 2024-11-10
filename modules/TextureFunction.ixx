@@ -146,7 +146,7 @@ export namespace TextureFunction {
         return crc;
     }
 
-    uint32_t get_crc32(const char* data_ptr, const int length)
+    uint32_t get_crc32(const char* data_ptr, const unsigned int length)
     {
         constexpr static auto crc32_poly = 0xEDB88320u;
         constexpr static auto ul_crc_in = 0xffffffff;

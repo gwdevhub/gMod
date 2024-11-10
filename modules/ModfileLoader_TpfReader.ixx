@@ -23,13 +23,13 @@ public:
         line_length = file_stream.tellg();
         file_stream.seekg(0, std::ios::beg); // Go to the beginning of the stream
 
-        std::vector<char> data(line_length);
+        std::vector<char> data(static_cast<long>(line_length));
         file_stream.read(data.data(), line_length);
-        for (auto i = 0; i < data.size(); i++) {
+        for (auto i = 0u; i < data.size(); i++) {
             data[i] = XOR(data[i], i);
         }
 
-        for (int i = data.size() - 1; i > 0 && data[i] != 0; i--) {
+        for (auto i = data.size() - 1; i > 0 && data[i] != 0; i--) {
             data[i] = 0;
         }
 
@@ -42,7 +42,7 @@ public:
 
 private:
     std::ifstream file_stream;
-    long line_length = 0;
+    std::streamoff line_length = 0;
 
     [[nodiscard]] char XOR(const char b, const long position) const
     {

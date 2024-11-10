@@ -18,7 +18,7 @@ endif()
 set(VERSION_MAJOR 1)
 set(VERSION_MINOR 7)
 set(VERSION_PATCH 0)
-set(VERSION_TWEAK 0)
+set(VERSION_TWEAK 1)
 
 set(VERSION_RC "${CMAKE_CURRENT_BINARY_DIR}/version.rc")
 configure_file("${CMAKE_CURRENT_SOURCE_DIR}/version.rc.in" "${VERSION_RC}" @ONLY)
@@ -52,6 +52,7 @@ target_include_directories(gMod PRIVATE
     )
 source_group(TREE "${CMAKE_CURRENT_SOURCE_DIR}" FILES ${SOURCES})
 target_sources(gMod PRIVATE ${SOURCES})
+target_compile_options(gMod PRIVATE /W4 /WX)
 
 target_link_libraries(gMod PRIVATE
     dxguid

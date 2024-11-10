@@ -34,7 +34,7 @@ struct TextureFileStruct {
     HashType crc_hash = 0; // hash value
 };
 
-inline void Message(const char* format, ...)
+inline void Message([[maybe_unused]] const char* format, ...)
 {
 #ifdef _DEBUG
 #if 0
