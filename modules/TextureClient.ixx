@@ -57,7 +57,7 @@ private:
     // called if a target texture is found
     int LoadTexture(TextureFileStruct* file_in_memory, uModTexturePtrPtr auto ppTexture);
 
-    void LoadModsFromModlist(std::pair<std::string, std::string> modfile);
+    void LoadModsFromModlist(std::pair<std::string, std::string> modfile_tuple);
     std::filesystem::path dll_path; // path to gmod dll
 };
 
@@ -189,12 +189,12 @@ std::vector<gsl::owner<TextureFileStruct*>> ProcessModfile(const std::filesystem
     return texture_file_structs;
 }
 
-void TextureClient::LoadModsFromModlist(std::pair<std::string, std::string> modfile)
+void TextureClient::LoadModsFromModlist(std::pair<std::string, std::string> modfile_tuple)
 {
     static std::vector<std::filesystem::path> loaded_modfiles{};
 
     std::locale::global(std::locale(""));
-    std::istringstream file(modfile.second);
+    std::istringstream file(modfile_tuple.second);
     std::string line;
     std::vector<std::filesystem::path> modfiles;
     while (std::getline(file, line)) {
@@ -210,7 +210,7 @@ void TextureClient::LoadModsFromModlist(std::pair<std::string, std::string> modf
             loaded_modfiles.push_back(fsline);
         }
     }
-    auto files_size = 0u;
+    auto files_size = 0ull;
     for (const auto modfile : modfiles) {
         if (std::filesystem::exists(modfile)) {
             files_size += std::filesystem::file_size(modfile);
@@ -235,7 +235,7 @@ void TextureClient::LoadModsFromModlist(std::pair<std::string, std::string> modf
         }
         should_update = true;
     }
-    Message("Finished loading mods from %s: Loaded %u bytes (%u mb)", modfile.first.c_str(), loaded_size, loaded_size / 1024 / 1024);
+    Message("Finished loading mods from %s: Loaded %u bytes (%u mb)", modfile_tuple.first.c_str(), loaded_size, loaded_size / 1024 / 1024);
 }
 
 void TextureClient::Initialize()

@@ -46,7 +46,7 @@ namespace {
             TCHAR szModuleName[MAX_PATH];
             ASSERT(GetModuleFileName(hModules[i], szModuleName, _countof(szModuleName)) > 0);
             const auto basename = strrchr(szModuleName, '\\');
-            if (basename && stricmp(basename + 1, name) == 0)
+            if (basename && _stricmp(basename + 1, name) == 0)
                 return hModules[i];
         }
         return nullptr;
@@ -215,7 +215,7 @@ void LoadModlists()
     for (const auto& path : {exe_path, dll_path}) {
         const auto modlist = path / "modlist.txt";
         if (std::filesystem::exists(modlist)) {
-            Message("Initialize: found %s\n", modlist.string());
+            Message("Initialize: found %s\n", modlist.string().c_str());
             std::ifstream t(modlist, std::ios::binary);
             std::stringstream buffer;
             buffer << t.rdbuf();
@@ -235,7 +235,7 @@ void InitInstance(HINSTANCE hModule)
     DisableThreadLibraryCalls(hModule); //reduce overhead
 
     // d3d9.dll shouldn't be loaded at this point.
-    const auto d3d9_loaded = FindLoadedModuleByName("d3d9.dll");
+    [[maybe_unused]] const auto d3d9_loaded = FindLoadedModuleByName("d3d9.dll");
     //ASSERT(!d3d9_loaded);
 
     MH_Initialize();

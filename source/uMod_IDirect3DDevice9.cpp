@@ -66,7 +66,7 @@ ULONG uMod_IDirect3DDevice9::Release()
 
     const ULONG count = m_pIDirect3DDevice9->Release();
     Message("%p = " PRE_MESSAGE "::Release(): %p\n", count, this);
-    if (uMod_Reference != count) //bug
+    if (uMod_Reference != static_cast<int>(count)) //bug
     {
         Message("Error in " PRE_MESSAGE "::Release(): %p!=%p\n", uMod_Reference, count);
     }
@@ -367,9 +367,9 @@ HRESULT uMod_IDirect3DDevice9::UpdateTexture(IDirect3DBaseTexture9* pSourceTextu
                     pDest->Hash = pSource->Hash; // take over the hash
                     UnswitchTextures(pDest);
                     if (pSource->CrossRef_D3Dtex != nullptr) {
-                        uMod_IDirect3DTexture9* cpy = pSource->CrossRef_D3Dtex;
+                        uMod_IDirect3DTexture9* cpy2 = pSource->CrossRef_D3Dtex;
                         UnswitchTextures(pSource);
-                        SwitchTextures(cpy, pDest);
+                        SwitchTextures(cpy2, pDest);
                     }
                 }
                 if (pDest->CrossRef_D3Dtex != nullptr) {
@@ -387,9 +387,9 @@ HRESULT uMod_IDirect3DDevice9::UpdateTexture(IDirect3DBaseTexture9* pSourceTextu
                     pDest->Hash = pSourceVolume->Hash; // take over the hash
                     UnswitchTextures(pDest);
                     if (pSourceVolume->CrossRef_D3Dtex != nullptr) {
-                        uMod_IDirect3DVolumeTexture9* cpy = pSourceVolume->CrossRef_D3Dtex;
+                        uMod_IDirect3DVolumeTexture9* cpy2 = pSourceVolume->CrossRef_D3Dtex;
                         UnswitchTextures(pSourceVolume);
-                        SwitchTextures(cpy, pDest);
+                        SwitchTextures(cpy2, pDest);
                     }
                 }
                 if (pDest->CrossRef_D3Dtex != nullptr) {
@@ -407,9 +407,9 @@ HRESULT uMod_IDirect3DDevice9::UpdateTexture(IDirect3DBaseTexture9* pSourceTextu
                     pDest->Hash = pSourceCube->Hash; // take over the hash
                     UnswitchTextures(pDest);
                     if (pSourceCube->CrossRef_D3Dtex != nullptr) {
-                        uMod_IDirect3DCubeTexture9* cpy = pSourceCube->CrossRef_D3Dtex;
+                        uMod_IDirect3DCubeTexture9* cpy2 = pSourceCube->CrossRef_D3Dtex;
                         UnswitchTextures(pSourceCube);
-                        SwitchTextures(cpy, pDest);
+                        SwitchTextures(cpy2, pDest);
                     }
                 }
                 if (pDest->CrossRef_D3Dtex != nullptr) {

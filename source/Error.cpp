@@ -16,7 +16,7 @@ const char *function)
         GetModuleFileName(gl_hThisInstance, module_path, _countof(module_path));
     }
     if (!*module_path) {
-        strcpy(module_path, "Unknown");
+        strcpy_s(module_path, "Unknown");
     }
     const char* fmt = "Module: %s\n\nExpr: %s\n\nFile: %s\n\nFunction: %s, line %d";
     int len = snprintf(NULL, 0, fmt, module_path, expr, file, function, line);

@@ -52,6 +52,7 @@ target_include_directories(gMod PRIVATE
     )
 source_group(TREE "${CMAKE_CURRENT_SOURCE_DIR}" FILES ${SOURCES})
 target_sources(gMod PRIVATE ${SOURCES})
+target_compile_options(gMod PRIVATE /W4 /WX)
 
 target_link_libraries(gMod PRIVATE
     dxguid
