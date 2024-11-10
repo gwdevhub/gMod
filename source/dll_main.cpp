@@ -2,6 +2,8 @@
 #include <Psapi.h>
 #include "MinHook.h"
 
+import TextureClient;
+
 void ExitInstance();
 void InitInstance(HINSTANCE hModule);
 
@@ -201,13 +203,36 @@ BOOL WINAPI DllMain(HINSTANCE hModule, DWORD ul_reason_for_call, LPVOID lpReserv
     return true;
 }
 
+void LoadModlists()
+{
+    Message("Initialize: searching for modlist.txt\n");
+    char gwpath[MAX_PATH]{};
+    GetModuleFileName(GetModuleHandle(nullptr), gwpath, MAX_PATH); //ask for name and path of this executable
+    char dllpath[MAX_PATH]{};
+    GetModuleFileName(gl_hThisInstance, dllpath, MAX_PATH); //ask for name and path of this dll
+    const auto exe_path = std::filesystem::path(gwpath).parent_path();
+    const auto dll_path = std::filesystem::path(dllpath).parent_path();
+    for (const auto& path : {exe_path, dll_path}) {
+        const auto modlist = path / "modlist.txt";
+        if (std::filesystem::exists(modlist)) {
+            Message("Initialize: found %s\n", modlist.string());
+            std::ifstream t(modlist, std::ios::binary);
+            std::stringstream buffer;
+            buffer << t.rdbuf();
+            modlists_contents.emplace_back(modlist.string(), buffer.str());
+        }
+    }
+}
+
 void InitInstance(HINSTANCE hModule)
 {
     Message("InitInstance: %p\n", hModule);
-    DisableThreadLibraryCalls(hModule); //reduce overhead
 
     // Store the handle to this module
     gl_hThisInstance = hModule;
+
+    LoadModlists();
+    DisableThreadLibraryCalls(hModule); //reduce overhead
 
     // d3d9.dll shouldn't be loaded at this point.
     const auto d3d9_loaded = FindLoadedModuleByName("d3d9.dll");

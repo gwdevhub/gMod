@@ -10,6 +10,7 @@ export module TextureClient;
 import TextureFunction;
 import ModfileLoader;
 
+export std::vector<std::pair<std::string, std::string>> modlists_contents;
 /*
  *  An object of this class is owned by each d3d9 device.
  *  All other functions are called from the render thread instance of the game itself.
@@ -56,8 +57,7 @@ private:
     // called if a target texture is found
     int LoadTexture(TextureFileStruct* file_in_memory, uModTexturePtrPtr auto ppTexture);
 
-    void LoadModsFromFile(const char* source);
-    std::filesystem::path exe_path; // path to gw.exe
+    void LoadModsFromModlist(std::pair<std::string, std::string> modfile);
     std::filesystem::path dll_path; // path to gmod dll
 };
 
@@ -189,18 +189,12 @@ std::vector<gsl::owner<TextureFileStruct*>> ProcessModfile(const std::filesystem
     return texture_file_structs;
 }
 
-void TextureClient::LoadModsFromFile(const char* source)
+void TextureClient::LoadModsFromModlist(std::pair<std::string, std::string> modfile)
 {
     static std::vector<std::filesystem::path> loaded_modfiles{};
-    Message("Initialize: searching in %s\n", source);
 
     std::locale::global(std::locale(""));
-    std::ifstream file(source, std::ios::binary);
-    if (!file.is_open()) {
-        Warning("LoadModsFromFile: failed to open modlist.txt for reading; aborting!!!");
-        return;
-    }
-    Message("Initialize: found modlist.txt. Reading\n");
+    std::istringstream file(modfile.second);
     std::string line;
     std::vector<std::filesystem::path> modfiles;
     while (std::getline(file, line)) {
@@ -241,26 +235,15 @@ void TextureClient::LoadModsFromFile(const char* source)
         }
         should_update = true;
     }
-    Message("Finished loading mods from %s: Loaded %u bytes (%u mb)", source, loaded_size, loaded_size / 1024 / 1024);
+    Message("Finished loading mods from %s: Loaded %u bytes (%u mb)", modfile.first.c_str(), loaded_size, loaded_size / 1024 / 1024);
 }
 
 void TextureClient::Initialize()
 {
     const auto t1 = std::chrono::high_resolution_clock::now();
     Info("Initialize: begin\n");
-    Message("Initialize: searching for modlist.txt\n");
-    char gwpath[MAX_PATH]{};
-    GetModuleFileName(GetModuleHandle(nullptr), gwpath, MAX_PATH); //ask for name and path of this executable
-    char dllpath[MAX_PATH]{};
-    GetModuleFileName(gl_hThisInstance, dllpath, MAX_PATH); //ask for name and path of this dll
-    exe_path = std::filesystem::path(gwpath).parent_path();
-    dll_path = std::filesystem::path(dllpath).parent_path();
-    for (const auto& path : {exe_path, dll_path}) {
-        const auto modlist = path / "modlist.txt";
-        if (std::filesystem::exists(modlist)) {
-            Message("Initialize: found %s\n", modlist.string().c_str());
-            LoadModsFromFile(modlist.string().c_str());
-        }
+    for (const auto& modlists_content : modlists_contents) {
+        LoadModsFromModlist(modlists_content);
     }
     const auto t2 = std::chrono::high_resolution_clock::now();
     const auto ms = duration_cast<std::chrono::milliseconds>(t2 - t1);
