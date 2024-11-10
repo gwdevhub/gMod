@@ -365,7 +365,7 @@ export namespace TextureFunction {
         }
     }
 
-    DirectX::Blob ConvertToCompressedDDS(TexEntry& entry, const bool compress, const std::filesystem::path& dll_path)
+    DirectX::Blob ConvertToCompressedDDS(TexEntry& entry, const bool compress, [[maybe_unused]] const std::filesystem::path& dll_path)
     {
         DirectX::ScratchImage image;
         HRESULT hr = 0;
