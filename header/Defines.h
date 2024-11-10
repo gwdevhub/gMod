@@ -46,7 +46,7 @@ inline void Message([[maybe_unused]] const char* format, ...)
 #endif
 }
 
-inline void Info(const char* format, ...)
+inline void Info([[maybe_unused]] const char* format, ...)
 {
 #ifdef _DEBUG
     const HANDLE hConsole = GetStdHandle(STD_OUTPUT_HANDLE);
@@ -58,7 +58,7 @@ inline void Info(const char* format, ...)
 #endif
 }
 
-inline void Warning(const char* format, ...)
+inline void Warning([[maybe_unused]] const char* format, ...)
 {
 #ifdef _DEBUG
     const HANDLE hConsole = GetStdHandle(STD_ERROR_HANDLE);
