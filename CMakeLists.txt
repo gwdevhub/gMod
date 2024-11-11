@@ -9,12 +9,6 @@ if(NOT(CMAKE_SIZEOF_VOID_P EQUAL 4))
     message(FATAL_ERROR "You are configuring a non 32-bit build, this is not supported. Run cmake with `-A Win32`")
 endif()
 
-option(CLEAN "Cleans third party libraries and recompiles them" OFF)
-if(${CLEAN} MATCHES "ON")
-    message("Removing directory: ${PROJECT_SOURCE_DIR}/bin/install")
-    file(REMOVE_RECURSE ${PROJECT_SOURCE_DIR}/bin/install)
-endif()
-
 set(VERSION_MAJOR 1)
 set(VERSION_MINOR 7)
 set(VERSION_PATCH 0)
@@ -32,10 +26,10 @@ set(CMAKE_INSTALL_PREFIX ${PROJECT_SOURCE_DIR}/bin/install)
 add_compile_options(/MP /permissive-)
 
 list(APPEND CMAKE_MODULE_PATH "${PROJECT_SOURCE_DIR}/cmake")
-include(libzippp)
-include(minhook)
+find_package(libzippp CONFIG REQUIRED)
+find_package(minhook CONFIG REQUIRED)
+find_package(Microsoft.GSL CONFIG REQUIRED)
 include(dxtk)
-include(msgsl)
 
 add_library(gMod SHARED)
 
@@ -56,9 +50,9 @@ target_compile_options(gMod PRIVATE /W4 /WX)
 
 target_link_libraries(gMod PRIVATE
     dxguid
-    libzippp
+    libzippp::libzippp
     psapi
-    minhook
+    minhook::minhook
     directxtex
     Microsoft.GSL::GSL
     )

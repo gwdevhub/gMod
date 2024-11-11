@@ -33,7 +33,7 @@ endif()
 find_package(dxsdk-d3dx CONFIG REQUIRED)
 
 target_link_libraries(TpfConvert PRIVATE
-    libzippp
+    libzippp::libzippp
     Microsoft::D3DX9
     d3d9
 )
