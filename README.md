@@ -39,7 +39,6 @@ Compile:
 **TpfConvert**
 Small utility to convert old .tpf files with invalid images into .zip files with working images.
 Usage:
-- put TpfConvert.exe and d3dx9.dll anywhere
-- create a folder "plugins" in that folder and put your .tpf/.zip files with invalid images there
-- run TpfConvert.exe, My_Texmod.tpf is fixed and copied into My_Texmod_.zip
-- copy My_Texmod_.zip into your GW Launcher plugins folder, delete My_Texmod.tpf from it, if it still exists
+- Put TpfConvert.exe and d3dx9.dll in the folder where you have your old, broken texmods with invalid images.
+- Run TpfConvert.exe, all *.tpf and *.zip files are processed. The originals are saved into a newly created backup folder.
+- Done.
