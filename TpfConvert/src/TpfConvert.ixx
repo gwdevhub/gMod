@@ -85,7 +85,8 @@ namespace {
 
 int main(int argc, char* argv[])
 {
-    const std::filesystem::path path = argc > 1 ? argv[1] : GetExecutablePath() / "plugins";
+    const std::filesystem::path path = argc > 1 ? argv[1] : GetExecutablePath();
+    const auto backup_path = path / "backup";
 
     if (!InitializeDirect3D()) {
         return -1;
@@ -95,28 +96,35 @@ int main(int argc, char* argv[])
         return 1;
     }
 
+    if (!std::filesystem::exists(backup_path)) {
+        std::filesystem::create_directory(backup_path);
+    }
+
     for (const auto& modfile : std::filesystem::directory_iterator(path)) {
         if (modfile.is_regular_file() && (modfile.path().extension() == ".tpf" || modfile.path().extension() == ".zip")) {
             const auto mod_path = modfile.path();
-            if (mod_path.extension() == ".zip" && mod_path.stem().string().ends_with("_")) {
+            const auto backup_file = backup_path / mod_path.filename();
+
+            if (std::filesystem::exists( backup_file)) {
                 std::print("Skipping previous TpfConvert output: {}\n", mod_path.filename().string());
                 continue;
             }
             else {
                 std::print("Processing: {}\n", mod_path.filename().string());
+                std::error_code ec;
+                std::filesystem::rename(mod_path, backup_file, ec);
             }
 
-            const auto zip_filename = mod_path.parent_path() / (mod_path.stem().string() + "_.zip");
+            const auto zip_filename = path / (mod_path.stem().string() + ".zip");
             if (std::filesystem::exists(zip_filename)) {
-                std::print("{} was already processed\n", mod_path.filename().string());
-                continue;
+                std::filesystem::remove(zip_filename);
             }
-            libzippp::ZipArchive zip_archive(zip_filename.string());
 
-            ModfileLoader loader(mod_path);
+            ModfileLoader loader(backup_file);
             std::vector<std::pair<std::string, std::vector<uint8_t>>> data_entries;
             const auto entries = loader.GetContents();
 
+            libzippp::ZipArchive zip_archive(zip_filename.string());
             zip_archive.open(libzippp::ZipArchive::Write);
 
             for (const auto& entry : entries) {
