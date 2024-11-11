@@ -1,5 +1,13 @@
 {
   "dependencies": [
-    "dxsdk-d3dx"
+    "dxsdk-d3dx",
+    {
+      "name": "libzippp",
+      "features": [
+        "encryption"
+      ]
+    },
+    "minhook",
+    "ms-gsl"
   ]
 }

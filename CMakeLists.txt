@@ -1,4 +1,4 @@
-﻿cmake_minimum_required(VERSION 3.16)
+﻿cmake_minimum_required(VERSION 3.29)
 
 set(CMAKE_GENERATOR_PLATFORM win32)
 
@@ -9,16 +9,10 @@ if(NOT(CMAKE_SIZEOF_VOID_P EQUAL 4))
     message(FATAL_ERROR "You are configuring a non 32-bit build, this is not supported. Run cmake with `-A Win32`")
 endif()
 
-option(CLEAN "Cleans third party libraries and recompiles them" OFF)
-if(${CLEAN} MATCHES "ON")
-    message("Removing directory: ${PROJECT_SOURCE_DIR}/bin/install")
-    file(REMOVE_RECURSE ${PROJECT_SOURCE_DIR}/bin/install)
-endif()
-
 set(VERSION_MAJOR 1)
 set(VERSION_MINOR 7)
 set(VERSION_PATCH 0)
-set(VERSION_TWEAK 1)
+set(VERSION_TWEAK 2)
 
 set(VERSION_RC "${CMAKE_CURRENT_BINARY_DIR}/version.rc")
 configure_file("${CMAKE_CURRENT_SOURCE_DIR}/version.rc.in" "${VERSION_RC}" @ONLY)
@@ -27,15 +21,14 @@ set(CMAKE_RUNTIME_OUTPUT_DIRECTORY "${PROJECT_SOURCE_DIR}/bin")
 set(CMAKE_CXX_STANDARD 23)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>")
-set(CMAKE_INSTALL_PREFIX ${PROJECT_SOURCE_DIR}/bin/install)
 
 add_compile_options(/MP /permissive-)
 
 list(APPEND CMAKE_MODULE_PATH "${PROJECT_SOURCE_DIR}/cmake")
-include(libzippp)
-include(minhook)
+find_package(libzippp CONFIG REQUIRED)
+find_package(minhook CONFIG REQUIRED)
+find_package(Microsoft.GSL CONFIG REQUIRED)
 include(dxtk)
-include(msgsl)
 
 add_library(gMod SHARED)
 
@@ -56,9 +49,9 @@ target_compile_options(gMod PRIVATE /W4 /WX)
 
 target_link_libraries(gMod PRIVATE
     dxguid
-    libzippp
+    libzippp::libzippp
     psapi
-    minhook
+    minhook::minhook
     directxtex
     Microsoft.GSL::GSL
     )
