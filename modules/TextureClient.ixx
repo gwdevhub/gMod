@@ -154,16 +154,16 @@ int TextureClient::UnlockMutex()
     return RETURN_OK;
 }
 
-gsl::owner<TextureFileStruct*> AddFile(TexEntry& entry, const bool compress, const std::filesystem::path& dll_path)
+gsl::owner<TextureFileStruct*> AddFile(TexEntry& entry, const bool compress)
 {
     const auto texture_file_struct = new TextureFileStruct();
     texture_file_struct->crc_hash = entry.crc_hash;
-    const auto dds_blob = TextureFunction::ConvertToCompressedDDS(entry, compress, dll_path);
+    const auto dds_blob = TextureFunction::ConvertToCompressedDDS(entry, compress);
     texture_file_struct->data.assign(static_cast<BYTE*>(dds_blob.GetBufferPointer()), static_cast<BYTE*>(dds_blob.GetBufferPointer()) + dds_blob.GetBufferSize());
     return texture_file_struct;
 }
 
-std::vector<gsl::owner<TextureFileStruct*>> ProcessModfile(const std::filesystem::path& modfile, const std::filesystem::path& dll_path, const bool compress)
+std::vector<gsl::owner<TextureFileStruct*>> ProcessModfile(const std::filesystem::path& modfile, const bool compress)
 {
     const auto hr = CoInitializeEx(nullptr, COINIT_APARTMENTTHREADED);
     if (FAILED(hr)) return {};
@@ -179,7 +179,7 @@ std::vector<gsl::owner<TextureFileStruct*>> ProcessModfile(const std::filesystem
     texture_file_structs.reserve(entries.size());
     unsigned file_bytes_loaded = 0;
     for (auto& tpf_entry : entries) {
-        const auto tex_file_struct = AddFile(tpf_entry, compress, dll_path);
+        const auto tex_file_struct = AddFile(tpf_entry, compress);
         texture_file_structs.push_back(tex_file_struct);
         file_bytes_loaded += texture_file_structs.back()->data.size();
     }
@@ -218,7 +218,7 @@ void TextureClient::LoadModsFromModlist(std::pair<std::string, std::string> modf
     }
     std::vector<std::future<std::vector<gsl::owner<TextureFileStruct*>>>> futures;
     for (const auto modfile : modfiles) {
-        futures.emplace_back(std::async(std::launch::async, ProcessModfile, modfile, dll_path, files_size > 400'000'000));
+        futures.emplace_back(std::async(std::launch::async, ProcessModfile, modfile, files_size > 400'000'000));
     }
     auto loaded_size = 0u;
     for (auto& future : futures) {

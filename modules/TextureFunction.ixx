@@ -338,10 +338,10 @@ export namespace TextureFunction {
         return compressed_image;
     }
 
-    void ImageSave(const DirectX::ScratchImage& image, const TexEntry& entry, const std::filesystem::path& dll_path)
+    void ImageSave(const DirectX::ScratchImage& image, const TexEntry& entry)
     {
         const auto file_name = std::format("0x{:x}.dds", entry.crc_hash);
-        const auto file_out = dll_path / "textures" / file_name;
+        const auto file_out = gmod_dll_path.parent_path() / "textures" / file_name;
         try {
             if (std::filesystem::exists(file_out)) {
                 return;
@@ -361,11 +361,10 @@ export namespace TextureFunction {
         }
         catch (const std::exception& e) {
             Warning("SaveDDSImageToDisk (%#lX%s): %s\n", entry.crc_hash, entry.ext.c_str(), e.what());
-            return;
         }
     }
 
-    DirectX::Blob ConvertToCompressedDDS(TexEntry& entry, const bool compress, [[maybe_unused]] const std::filesystem::path& dll_path)
+    DirectX::Blob ConvertToCompressedDDS(TexEntry& entry, const bool compress)
     {
         DirectX::ScratchImage image;
         HRESULT hr = 0;
@@ -408,7 +407,7 @@ export namespace TextureFunction {
         }
 
     #ifdef _DEBUG
-        ImageSave(compressed_image, entry, dll_path);
+        ImageSave(compressed_image, entry);
     #endif
         return dds_blob;
     }

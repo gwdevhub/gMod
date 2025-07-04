@@ -32,3 +32,4 @@
 
 extern unsigned int gl_ErrorState;
 extern HINSTANCE gl_hThisInstance;
+inline std::filesystem::path gmod_dll_path;
