@@ -198,6 +198,9 @@ void TextureClient::LoadModsFromModlist(std::pair<std::string, std::string> modf
     std::string line;
     std::vector<std::filesystem::path> modfiles;
     while (std::getline(file, line)) {
+        if (line.starts_with("//") || line.starts_with("#") || line.empty()) {
+            continue;
+        }
         // Remove newline character
         line.erase(std::ranges::remove(line, '\r').begin(), line.end());
         line.erase(std::ranges::remove(line, '\n').begin(), line.end());
