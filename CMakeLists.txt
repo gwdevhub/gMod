@@ -12,7 +12,7 @@ endif()
 set(VERSION_MAJOR 1)
 set(VERSION_MINOR 7)
 set(VERSION_PATCH 0)
-set(VERSION_TWEAK 2)
+set(VERSION_TWEAK 3)
 
 set(VERSION_RC "${CMAKE_CURRENT_BINARY_DIR}/version.rc")
 configure_file("${CMAKE_CURRENT_SOURCE_DIR}/version.rc.in" "${VERSION_RC}" @ONLY)
