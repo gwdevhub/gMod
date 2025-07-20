@@ -185,6 +185,9 @@ BOOL WINAPI DllMain(HINSTANCE hModule, DWORD ul_reason_for_call, LPVOID lpReserv
     switch (ul_reason_for_call) {
         case DLL_PROCESS_ATTACH: {
 #ifdef _DEBUG
+            wchar_t dllFilePath[512 + 1]{};
+            GetModuleFileNameW(hModule, dllFilePath, 512);
+            gmod_dll_path = dllFilePath;
             AllocConsole();
             SetConsoleTitleA("gMod Console");
             freopen_s(&stdout_proxy, "CONOUT$", "w", stdout);
