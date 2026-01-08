@@ -37,20 +37,20 @@ struct TextureFileStruct {
 inline void Message([[maybe_unused]] const char* format, ...)
 {
 #ifdef _DEBUG
-#if 0
+    //const HANDLE hConsole = GetStdHandle(STD_OUTPUT_HANDLE);
+    //[[maybe_unused]] const auto success = SetConsoleTextAttribute(hConsole, 0); // white
     va_list args;
     va_start(args, format);
     vprintf(format, args);
     va_end(args);
-#endif
 #endif
 }
 
 inline void Info([[maybe_unused]] const char* format, ...)
 {
 #ifdef _DEBUG
-    const HANDLE hConsole = GetStdHandle(STD_OUTPUT_HANDLE);
-    [[maybe_unused]] const auto success = SetConsoleTextAttribute(hConsole, 0); // white
+    //const HANDLE hConsole = GetStdHandle(STD_OUTPUT_HANDLE);
+    //[[maybe_unused]] const auto success = SetConsoleTextAttribute(hConsole, 0); // white
     va_list args;
     va_start(args, format);
     vprintf(format, args);

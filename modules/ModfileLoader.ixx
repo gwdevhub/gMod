@@ -14,7 +14,7 @@ namespace {
     bool use_64_bit_crc = false;
 
     HashType GetCrcFromFilename(const std::string& filename) {
-        const static std::regex re(R"(0x[0-9a-f]{4,16})", std::regex::optimize | std::regex::icase);
+        const static std::regex re(R"(0x[0-9a-fA-F]{4,16})", std::regex::optimize);
         std::smatch match;
         if (!std::regex_search(filename, match, re)) {
             return 0;
@@ -143,8 +143,10 @@ void ParseTexmodArchive(std::vector<std::string>& lines, libzippp::ZipArchive& a
         // match[1] | match[2]
         const static auto address_file_regex = std::regex(R"(^[\\/.]*([^|]+)\|([^\r\n]+))", std::regex::optimize);
         std::smatch match;
-        if (!std::regex_search(line, match, address_file_regex))
+        if (!std::regex_search(line, match, address_file_regex)) {
+            Warning("Failed to parse texmod.def archive line: %s - %s", line.c_str(), line.c_str());
             continue;
+        }
         const auto address_string = match[1].str();
         const auto file_path = match[2].str();
 

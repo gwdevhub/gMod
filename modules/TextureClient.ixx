@@ -167,7 +167,8 @@ std::vector<gsl::owner<TextureFileStruct*>> ProcessModfile(const std::filesystem
 {
     const auto hr = CoInitializeEx(nullptr, COINIT_APARTMENTTHREADED);
     if (FAILED(hr)) return {};
-    Message("Initialize: loading file %s... ", modfile.c_str());
+    const auto modfile_str = modfile.string();
+    Message("Initialize: loading file %s... ", modfile_str.c_str());
     auto file_loader = ModfileLoader(modfile);
     auto entries = file_loader.GetContents();
     if (entries.empty()) {
@@ -238,7 +239,7 @@ void TextureClient::LoadModsFromModlist(std::pair<std::string, std::string> modf
         }
         should_update = true;
     }
-    Message("Finished loading mods from %s: Loaded %u bytes (%u mb)", modfile_tuple.first.c_str(), loaded_size, loaded_size / 1024 / 1024);
+    Message("Finished loading mods from %s: Loaded %u bytes (%u mb)\n", modfile_tuple.first.c_str(), loaded_size, loaded_size / 1024 / 1024);
 }
 
 void TextureClient::Initialize()
@@ -319,7 +320,7 @@ int TextureClient::RemoveTexture(uModTexturePtr auto pTexture)
 
 int TextureClient::LookUpToMod(uModTexturePtr auto pTexture)
 {
-    Message("TextureClient::LookUpToMod( %p): hash: %#lX,  %p\n", pTexture, pTexture->Hash, this);
+    Message("TextureClient::LookUpToMod( %p): hash: %#lX\n", pTexture, pTexture->Hash);
     int ret = RETURN_OK;
 
     if (pTexture->CrossRef_D3Dtex != nullptr)
