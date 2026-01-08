@@ -167,7 +167,7 @@ std::vector<gsl::owner<TextureFileStruct*>> ProcessModfile(const std::filesystem
 {
     const auto hr = CoInitializeEx(nullptr, COINIT_APARTMENTTHREADED);
     if (FAILED(hr)) return {};
-    Message("Initialize: loading file %s... ", modfile.c_str());
+    Message("Initialize: loading file %s... ", modfile.string().c_str());
     auto file_loader = ModfileLoader(modfile);
     auto entries = file_loader.GetContents();
     if (entries.empty()) {
@@ -319,7 +319,7 @@ int TextureClient::RemoveTexture(uModTexturePtr auto pTexture)
 
 int TextureClient::LookUpToMod(uModTexturePtr auto pTexture)
 {
-    Message("TextureClient::LookUpToMod( %p): hash: %#lX,  %p\n", pTexture, pTexture->Hash, this);
+    Message("TextureClient::LookUpToMod( %p): hash: %#lX\n", pTexture, pTexture->Hash);
     int ret = RETURN_OK;
 
     if (pTexture->CrossRef_D3Dtex != nullptr)
