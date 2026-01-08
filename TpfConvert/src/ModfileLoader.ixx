@@ -14,7 +14,7 @@ export struct TexEntry {
 
 namespace {
     HashType GetCrcFromFilename(const std::string& filename) {
-        const static std::regex re(R"(0x[0-9a-f]{4,16})", std::regex::optimize | std::regex::icase);
+        const static std::regex re(R"(0x[0-9a-fA-F]{4,16})", std::regex::optimize);
         std::smatch match;
         if (!std::regex_search(filename, match, re)) {
             return 0;
@@ -117,13 +117,14 @@ void ParseSimpleArchive(const libzippp::ZipArchive& archive, std::vector<TexEntr
     for (const auto& entry : archive.getEntries()) {
         if (!entry.isFile())
             continue;
-        const auto crc_hash = GetCrcFromFilename(entry.getName());
+        const auto entry_name = entry.getName();
+        const auto crc_hash = GetCrcFromFilename(entry_name);
         if (!crc_hash)
             continue;
         const auto data_ptr = static_cast<uint8_t*>(entry.readAsBinary());
         const auto size = entry.getSize();
         std::vector vec(data_ptr, data_ptr + size);
-        std::filesystem::path tex_name(entry.getName());
+        std::filesystem::path tex_name(entry_name);
         entries.emplace_back(std::move(vec), crc_hash, tex_name.extension().string());
         delete[] data_ptr;
     }
