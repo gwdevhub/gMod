@@ -167,7 +167,8 @@ std::vector<gsl::owner<TextureFileStruct*>> ProcessModfile(const std::filesystem
 {
     const auto hr = CoInitializeEx(nullptr, COINIT_APARTMENTTHREADED);
     if (FAILED(hr)) return {};
-    Message("Initialize: loading file %s... ", modfile.string().c_str());
+    const auto modfile_str = modfile.string();
+    Message("Initialize: loading file %s... ", modfile_str.c_str());
     auto file_loader = ModfileLoader(modfile);
     auto entries = file_loader.GetContents();
     if (entries.empty()) {
