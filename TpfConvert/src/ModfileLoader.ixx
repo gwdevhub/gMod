@@ -14,7 +14,7 @@ export struct TexEntry {
 
 namespace {
     HashType GetCrcFromFilename(const std::string& filename) {
-        const static std::regex re(R"(0x[0-9a-fA-F]{4,16})", std::regex::optimize);
+        const static std::regex re(R"(0[xX][0-9a-fA-F]{4,16})", std::regex::optimize);
         std::smatch match;
         if (!std::regex_search(filename, match, re)) {
             return 0;

@@ -14,7 +14,7 @@ namespace {
     bool use_64_bit_crc = false;
 
     HashType GetCrcFromFilename(const std::string& filename) {
-        const static std::regex re(R"(0x[0-9a-fA-F]{4,16})", std::regex::optimize);
+        const static std::regex re(R"(0[xX][0-9a-fA-F]{4,16})", std::regex::optimize);
         std::smatch match;
         if (!std::regex_search(filename, match, re)) {
             return 0;
@@ -124,9 +124,12 @@ void ParseSimpleArchive(const libzippp::ZipArchive& archive, std::vector<TexEntr
     for (const auto& entry : archive.getEntries()) {
         if (!entry.isFile())
             continue;
+        const auto entry_name = entry.getName();
         const auto crc_hash = GetCrcFromFilename(entry.getName());
-        if (!crc_hash)
+        if (!crc_hash) {
+            Warning("Entry with name %s could not be parsed", entry_name.c_str());
             continue;
+        }
         const auto data_ptr = static_cast<BYTE*>(entry.readAsBinary());
         const auto size = entry.getSize();
         std::vector vec(data_ptr, data_ptr + size);
