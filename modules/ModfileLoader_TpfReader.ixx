@@ -46,7 +46,7 @@ private:
 
     [[nodiscard]] char XOR(const char b, const long position) const
     {
-        if (position > line_length - 4) {
+        if (position >= (line_length / 4) * 4) {
             return b ^ TPF_XOREven;
         }
 
