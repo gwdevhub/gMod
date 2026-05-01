@@ -274,7 +274,7 @@ extern "C" __declspec(dllexport) int __cdecl RemoveFile(const wchar_t* path)
     }
 }
 
-extern "C" __declspec(dllexport) int __cdecl GetFiles(wchar_t* buffer, int buffer_size_chars)
+extern "C" __declspec(dllexport) int __cdecl GetFiles(wchar_t* buffer, const size_t buffer_size_chars)
 {
     try {
         const auto files = TextureClient::GetFiles();
@@ -283,7 +283,7 @@ extern "C" __declspec(dllexport) int __cdecl GetFiles(wchar_t* buffer, int buffe
             required += path.native().size() + 1;
         }
 
-        if (buffer && buffer_size_chars > 0 && static_cast<size_t>(buffer_size_chars) >= required) {
+        if (buffer && buffer_size_chars > 0 && buffer_size_chars >= required) {
             wchar_t* out = buffer;
             for (const auto& path : files) {
                 const auto& native = path.native();
