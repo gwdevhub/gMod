@@ -252,6 +252,54 @@ void InitInstance(HINSTANCE hModule)
     }
 }
 
+extern "C" __declspec(dllexport) int __cdecl AddFile(const wchar_t* path)
+{
+    if (!path) return RETURN_BAD_ARGUMENT;
+    try {
+        return TextureClient::AddFile(std::filesystem::path(path));
+    }
+    catch (...) {
+        return RETURN_FATAL_ERROR;
+    }
+}
+
+extern "C" __declspec(dllexport) int __cdecl RemoveFile(const wchar_t* path)
+{
+    if (!path) return RETURN_BAD_ARGUMENT;
+    try {
+        return TextureClient::RemoveFile(std::filesystem::path(path));
+    }
+    catch (...) {
+        return RETURN_FATAL_ERROR;
+    }
+}
+
+extern "C" __declspec(dllexport) int __cdecl GetFiles(wchar_t* buffer, int buffer_size_chars)
+{
+    try {
+        const auto files = TextureClient::GetFiles();
+        size_t required = 1;
+        for (const auto& path : files) {
+            required += path.native().size() + 1;
+        }
+
+        if (buffer && buffer_size_chars > 0 && static_cast<size_t>(buffer_size_chars) >= required) {
+            wchar_t* out = buffer;
+            for (const auto& path : files) {
+                const auto& native = path.native();
+                std::ranges::copy(native, out);
+                out += native.size();
+                *out++ = L'\0';
+            }
+            *out = L'\0';
+        }
+        return static_cast<int>(required);
+    }
+    catch (...) {
+        return RETURN_FATAL_ERROR;
+    }
+}
+
 void ExitInstance()
 {
     DISABLE_HOOK(GetProcAddress_fn);
