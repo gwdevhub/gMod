@@ -33,14 +33,14 @@
 
 // define error states
 #define uMod_ERROR_FATAL 1u
-#define uMod_ERROR_MUTEX 1u<<1
-#define uMod_ERROR_PIPE 1u<<2
-#define uMod_ERROR_MEMORY 1u<<3
-#define uMod_ERROR_TEXTURE 1u<<4
-#define uMod_ERROR_MULTIPLE_IDirect3D9 1u<<5
-#define uMod_ERROR_MULTIPLE_IDirect3DDevice9 1u<<6
-#define uMod_ERROR_UPDATE 1u<<7
-#define uMod_ERROR_SERVER 1u<<8
+#define uMod_ERROR_MUTEX 1u << 1
+#define uMod_ERROR_PIPE 1u << 2
+#define uMod_ERROR_MEMORY 1u << 3
+#define uMod_ERROR_TEXTURE 1u << 4
+#define uMod_ERROR_MULTIPLE_IDirect3D9 1u << 5
+#define uMod_ERROR_MULTIPLE_IDirect3DDevice9 1u << 6
+#define uMod_ERROR_UPDATE 1u << 7
+#define uMod_ERROR_SERVER 1u << 8
 
 __declspec(noreturn) void FatalAssert(
     const char* expr,
@@ -49,4 +49,3 @@ __declspec(noreturn) void FatalAssert(
     const char* function);
 
 #define ASSERT(expr) ((void)(!!(expr) || (FatalAssert(#expr, __FILE__, (unsigned)__LINE__, __FUNCTION__), 0)))
-

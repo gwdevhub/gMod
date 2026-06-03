@@ -16,17 +16,10 @@
 
 #include "Defines.h"
 #include "Error.h"
-#include "Defines.h"
 
-#include "uMod_IDirect3D9.h"
-#include "uMod_IDirect3D9Ex.h"
-
-#include "uMod_IDirect3DDevice9.h"
-#include "uMod_IDirect3DDevice9Ex.h"
-
-#include "uMod_IDirect3DCubeTexture9.h"
-#include "uMod_IDirect3DTexture9.h"
-#include "uMod_IDirect3DVolumeTexture9.h"
+// gMod no longer subclasses the D3D9 interfaces; it hooks their vtable slots and
+// keeps per-object side-state in lookups (see D3D9State.h / D3D9Hooks.h).
+#include "D3D9State.h"
 
 #pragma warning(disable : 4477)
 

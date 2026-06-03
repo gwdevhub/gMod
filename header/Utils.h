@@ -2,9 +2,8 @@
 
 #include <vector>
 
-namespace utils
-{
-    template<typename T>
+namespace utils {
+    template <typename T>
     void erase_first(std::vector<T>& vec, const T& elem)
     {
         const auto found = std::ranges::find(vec, elem);
@@ -13,7 +12,8 @@ namespace utils
         }
     }
 
-    inline std::wstring utf8_to_wstring(const std::string& utf8str) {
+    inline std::wstring utf8_to_wstring(const std::string& utf8str)
+    {
         if (utf8str.empty()) return {};
 
         // Calculate the number of wide characters needed for the conversion

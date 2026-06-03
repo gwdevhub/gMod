@@ -27,7 +27,7 @@ namespace {
         d3dpp.hDeviceWindow = GetDesktopWindow();
 
         if (FAILED(pD3D->CreateDevice(D3DADAPTER_DEFAULT, D3DDEVTYPE_HAL, GetDesktopWindow(),
-            D3DCREATE_SOFTWARE_VERTEXPROCESSING, &d3dpp, &pDevice))) {
+                                      D3DCREATE_SOFTWARE_VERTEXPROCESSING, &d3dpp, &pDevice))) {
             std::print(stderr, "Failed to create Direct3D9 device\n");
             pD3D->Release();
             return false;
@@ -105,7 +105,7 @@ int main(int argc, char* argv[])
             const auto mod_path = modfile.path();
             const auto backup_file = backup_path / mod_path.filename();
 
-            if (std::filesystem::exists( backup_file)) {
+            if (std::filesystem::exists(backup_file)) {
                 std::print("Skipping previous TpfConvert output: {}\n", mod_path.filename().string());
                 continue;
             }

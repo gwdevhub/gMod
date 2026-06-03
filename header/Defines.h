@@ -1,6 +1,6 @@
 #pragma once
 
-//using HashType = DWORD32;
+// using HashType = DWORD32;
 using HashType = DWORD64;
 
 struct HashTuple {
@@ -37,7 +37,7 @@ struct TextureFileStruct {
 inline void Message([[maybe_unused]] const char* format, ...)
 {
 #ifdef _DEBUG
-    //const HANDLE hConsole = GetStdHandle(STD_OUTPUT_HANDLE);
+    // const HANDLE hConsole = GetStdHandle(STD_OUTPUT_HANDLE);
     //[[maybe_unused]] const auto success = SetConsoleTextAttribute(hConsole, 0); // white
     va_list args;
     va_start(args, format);
@@ -49,7 +49,7 @@ inline void Message([[maybe_unused]] const char* format, ...)
 inline void Info([[maybe_unused]] const char* format, ...)
 {
 #ifdef _DEBUG
-    //const HANDLE hConsole = GetStdHandle(STD_OUTPUT_HANDLE);
+    // const HANDLE hConsole = GetStdHandle(STD_OUTPUT_HANDLE);
     //[[maybe_unused]] const auto success = SetConsoleTextAttribute(hConsole, 0); // white
     va_list args;
     va_start(args, format);

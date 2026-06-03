@@ -35,7 +35,7 @@ public:
 
         // in the other zip libraries, these had to be cut off, with libzip we need to zero them out
         // cutting them off makes the archive invalid
-        //data.resize(last_zero);
+        // data.resize(last_zero);
 
         return data;
     }

@@ -1,6 +1,7 @@
 #include "Main.h"
 #include <Psapi.h>
 #include "MinHook.h"
+#include "D3D9Hooks.h"
 
 import TextureClient;
 
@@ -9,9 +10,10 @@ void InitInstance(HINSTANCE hModule);
 
 namespace {
 
-    #define DISABLE_HOOK(var) if(var) { MH_DisableHook(var);}
+#define DISABLE_HOOK(var) \
+    if (var) { MH_DisableHook(var); }
 
-    using Direct3DCreate9_type = IDirect3D9* (APIENTRY*)(UINT);
+    using Direct3DCreate9_type = IDirect3D9*(APIENTRY*)(UINT);
     using Direct3DCreate9Ex_type = HRESULT(APIENTRY*)(UINT SDKVersion, IDirect3D9Ex** ppD3D);
     using GetProcAddress_type = FARPROC(APIENTRY*)(HMODULE, LPCSTR);
 
@@ -65,15 +67,14 @@ namespace {
             const auto exe_path = std::filesystem::path(executable_path);
             const auto gmod_path = std::filesystem::path(dll_path);
 
-            if (exe_path.parent_path() != gmod_path.parent_path()
-                || gmod_path.filename() != "d3d9.dll") {
+            if (exe_path.parent_path() != gmod_path.parent_path() || gmod_path.filename() != "d3d9.dll") {
                 // Call basic LoadLibrary function; we're not in the same directory as the exe.
                 gMod_Loaded_d3d9_Module_Handle = LoadLibrary("d3d9.dll");
             }
             if (!gMod_Loaded_d3d9_Module_Handle) {
                 // Tried resolving d3d9.dll locally, didn't work. Try system directory
                 char buffer[MAX_PATH];
-                ASSERT(GetSystemDirectory(buffer, _countof(buffer)) > 0); //get the system directory, we need to open the original d3d9.dll
+                ASSERT(GetSystemDirectory(buffer, _countof(buffer)) > 0); // get the system directory, we need to open the original d3d9.dll
 
                 // Append dll name
                 strcat_s(buffer, _countof(buffer), "\\d3d9.dll");
@@ -141,12 +142,14 @@ IDirect3D9* APIENTRY Direct3DCreate9(UINT SDKVersion)
     DISABLE_HOOK(GetProcAddress_fn);
     CheckLoadD3d9Dll();
 
-    IDirect3D9* pIDirect3D9_orig = Direct3DCreate9_ret(SDKVersion); //creating the original IDirect3D9 object
+    IDirect3D9* pIDirect3D9_orig = Direct3DCreate9_ret(SDKVersion); // creating the original IDirect3D9 object
     ASSERT(pIDirect3D9_orig);
 
     creating_d3d9 = false;
 
-    return new uMod_IDirect3D9(pIDirect3D9_orig); //return our object instead of the "real one"
+    // Hook the vtable and hand the game back the real object untouched.
+    InstallD3D9Hooks(pIDirect3D9_orig, false);
+    return pIDirect3D9_orig;
 }
 
 HRESULT APIENTRY Direct3DCreate9Ex(UINT SDKVersion, IDirect3D9Ex** ppD3D)
@@ -161,17 +164,16 @@ HRESULT APIENTRY Direct3DCreate9Ex(UINT SDKVersion, IDirect3D9Ex** ppD3D)
     CheckLoadD3d9Dll();
 
     IDirect3D9Ex* pIDirect3D9Ex_orig = nullptr;
-    HRESULT ret = Direct3DCreate9Ex_ret(SDKVersion, &pIDirect3D9Ex_orig); //creating the original IDirect3D9 object
+    HRESULT ret = Direct3DCreate9Ex_ret(SDKVersion, &pIDirect3D9Ex_orig); // creating the original IDirect3D9 object
 
     creating_d3d9 = false;
 
     if (ret != S_OK)
         return ret;
 
-    // @Cleanup: should be we freeing pIDirect3D9Ex at the end of our own lifecycle?
-    const auto pIDirect3D9Ex = new uMod_IDirect3D9Ex(pIDirect3D9Ex_orig);
-    // original umod does not do this for some reason
-    *ppD3D = static_cast<IDirect3D9Ex*>(pIDirect3D9Ex);
+    // Hook the vtable (CreateDevice + CreateDeviceEx) and return the real object untouched.
+    InstallD3D9Hooks(pIDirect3D9Ex_orig, true);
+    *ppD3D = pIDirect3D9Ex_orig;
     return ret;
 }
 
@@ -210,9 +212,9 @@ void LoadModlists()
 {
     Message("Initialize: searching for modlist.txt\n");
     char gwpath[MAX_PATH]{};
-    GetModuleFileName(GetModuleHandle(nullptr), gwpath, MAX_PATH); //ask for name and path of this executable
+    GetModuleFileName(GetModuleHandle(nullptr), gwpath, MAX_PATH); // ask for name and path of this executable
     char dllpath[MAX_PATH]{};
-    GetModuleFileName(gl_hThisInstance, dllpath, MAX_PATH); //ask for name and path of this dll
+    GetModuleFileName(gl_hThisInstance, dllpath, MAX_PATH); // ask for name and path of this dll
     const auto exe_path = std::filesystem::path(gwpath).parent_path();
     const auto dll_path = std::filesystem::path(dllpath).parent_path();
     for (const auto& path : {exe_path, dll_path}) {
@@ -235,11 +237,11 @@ void InitInstance(HINSTANCE hModule)
     gl_hThisInstance = hModule;
 
     LoadModlists();
-    DisableThreadLibraryCalls(hModule); //reduce overhead
+    DisableThreadLibraryCalls(hModule); // reduce overhead
 
     // d3d9.dll shouldn't be loaded at this point.
     [[maybe_unused]] const auto d3d9_loaded = FindLoadedModuleByName("d3d9.dll");
-    //ASSERT(!d3d9_loaded);
+    // ASSERT(!d3d9_loaded);
 
     MH_Initialize();
 
@@ -249,6 +251,20 @@ void InitInstance(HINSTANCE hModule)
     if (GetProcAddress_fn) {
         MH_CreateHook(GetProcAddress_fn, OnGetProcAddress, (void**)&GetProcAddress_ret);
         MH_EnableHook(GetProcAddress_fn);
+    }
+}
+
+// Exported entry for late injection: hand gMod a device that already exists
+// (IDirect3DDevice9Ex* works too) so it hooks the vtable and mods textures from
+// here on. Returns RETURN_OK if newly registered, RETURN_EXISTS if already known.
+extern "C" __declspec(dllexport) int __cdecl SetDevice(IDirect3DDevice9* device)
+{
+    if (!device) return RETURN_BAD_ARGUMENT;
+    try {
+        return RegisterExistingDevice(device) ? RETURN_OK : RETURN_EXISTS;
+    }
+    catch (...) {
+        return RETURN_FATAL_ERROR;
     }
 }
 
@@ -276,6 +292,7 @@ extern "C" __declspec(dllexport) int __cdecl RemoveFile(const wchar_t* path)
 
 // nullptr first arg = return required size
 // returns paths separated by null terminator, e.g. "C:\foo.tpf\0C:\bar.zip\0\0"
+// Paths come back in load order (== priority order).
 extern "C" __declspec(dllexport) int __cdecl GetFiles(wchar_t* buffer, const size_t buffer_size_chars)
 {
     try {
@@ -306,6 +323,9 @@ void ExitInstance()
 {
     DISABLE_HOOK(GetProcAddress_fn);
 
+    // Revert every D3D9 vtable hook so the original objects are left pristine.
+    RemoveAllD3D9Hooks();
+
     MH_Uninitialize();
 
     if (gMod_Loaded_d3d9_Module_Handle)
@@ -319,6 +339,7 @@ void ExitInstance()
     __try {
         FreeConsole();
     }
-    __except (EXCEPTION_CONTINUE_EXECUTION) { }
+    __except (EXCEPTION_CONTINUE_EXECUTION) {
+    }
 #endif
 }

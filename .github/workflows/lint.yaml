@@ -1,0 +1,40 @@
+name: gMod Lint
+
+on:
+  pull_request:
+    branches:
+      - master
+  push:
+    branches:
+      - dev
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  clang-format:
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.head_ref || github.ref_name }}
+
+      # Pinned to the version the tree was formatted with so CI and local agree.
+      - name: Install clang-format
+        run: pipx install clang-format==22.1.5
+
+      - name: Apply clang-format
+        run: clang-format -i header/*.h source/*.cpp modules/*.ixx TpfConvert/src/*.ixx
+
+      # Push / same-repo PRs: commit the fixes back. Fork PRs can't be pushed to,
+      # so fail the check instead and let the contributor format.
+      - name: Commit fixes
+        if: github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository
+        uses: stefanzweifel/git-auto-commit-action@v5
+        with:
+          commit_message: "ci: apply clang-format"
+      - name: Verify formatting (fork PRs)
+        if: github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name != github.repository
+        run: git diff --exit-code

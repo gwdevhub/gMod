@@ -2,10 +2,11 @@ module;
 
 #include "Main.h"
 #include "Error.h"
-#include "uMod_IDirect3DTexture9.h"
+#include "D3D9State.h"
 #include <DDSTextureLoader/DDSTextureLoader9.h>
 #include <DirectXTex/DirectXTex.h>
 #include <mutex>
+#include <unordered_map>
 
 export module TextureClient;
 import TextureFunction;
@@ -14,27 +15,51 @@ import ModfileLoader;
 export std::vector<std::pair<std::string, std::string>> modlists_contents;
 
 struct PendingOp {
-    enum class Kind { Add, Remove };
+    enum class Kind {
+        Add,
+        Remove
+    };
     Kind kind;
     HashType hash;
     std::vector<BYTE> data;
 };
 
+// Couples a value with the mutex guarding it; the value is only reachable while
+// the lock is held.
+template <class T>
+class Guarded {
+    std::mutex mutex;
+    T value;
+
+public:
+    template <class Fn>
+    auto with(Fn&& fn)
+    {
+        std::lock_guard lock(mutex);
+        return fn(value);
+    }
+};
+
 /*
- *  An object of this class is owned by each d3d9 device.
- *  All other functions are called from the render thread instance of the game itself.
+ *  Owned by each d3d9 device (see D3D9Hooks.cpp). Holds the side-state for every
+ *  texture and performs the actual modding. The On*() methods are the vtable-hook
+ *  entry points, all driven by the game's render thread.
  */
 export class TextureClient {
 public:
     TextureClient(IDirect3DDevice9* device);
     ~TextureClient();
 
-    int AddTexture(uModTexturePtr auto pTexture);
-    int RemoveTexture(uModTexturePtr auto pTexture); //called from  uMod_IDirect3DTexture9::Release()
-    int LookUpToMod(uModTexturePtr auto pTexture);
-    // called at the end AddTexture(...) and from Device->UpdateTexture(...)
+    // Called from the hooked vtable slots:
+    TexState* OnCreateTexture(IDirect3DBaseTexture9* texture, TexType type);
+    void OnBeginScene();
+    // The fake replacement when `texture` is a modded original, else `texture`.
+    IDirect3DBaseTexture9* ResolveBinding(IDirect3DBaseTexture9* texture);
+    // For GetTexture: the original behind one of our fakes, or nullptr.
+    IDirect3DBaseTexture9* ResolveOriginalFromFake(IDirect3DBaseTexture9* texture);
+    void OnUpdateTexture(IDirect3DBaseTexture9* source, IDirect3DBaseTexture9* destination);
+    void OnReleaseTexture(IDirect3DBaseTexture9* texture); // called once the real refcount hit zero
 
-    int MergeUpdate(); //called from uMod_IDirect3DDevice9::BeginScene()
     void Initialize();
 
     void EnqueueAdd(HashType hash, std::vector<BYTE> data);
@@ -44,54 +69,79 @@ public:
     static int RemoveFile(const std::filesystem::path& path);
     static std::vector<std::filesystem::path> GetFiles();
 
-    std::vector<uMod_IDirect3DTexture9*> OriginalTextures;
-    // stores the pointer to the uMod_IDirect3DTexture9 objects created by the game
-    std::vector<uMod_IDirect3DVolumeTexture9*> OriginalVolumeTextures;
-    // stores the pointer to the uMod_IDirect3DVolumeTexture9 objects created by the game
-    std::vector<uMod_IDirect3DCubeTexture9*> OriginalCubeTextures;
-    // stores the pointer to the uMod_IDirect3DCubeTexture9 objects created by the game
+    // The texture Release hook has only a texture pointer, so it finds its client here.
+    static TextureClient* CurrentClient();
 
 private:
     IDirect3DDevice9* D3D9Device;
-    // Cached info about whether this id a dx9ex device or not; used for proxy functions
-    bool isDirectXExDevice = false;
 
-    // DX9 proxy functions
-    void SetLastCreatedTexture(uMod_IDirect3DTexture9*);
-    void SetLastCreatedVolumeTexture(uMod_IDirect3DVolumeTexture9*);
-    void SetLastCreatedCubeTexture(uMod_IDirect3DCubeTexture9*);
+    // Side-state keyed by real texture pointer: the game's textures vs. our fakes.
+    std::recursive_mutex registry_mutex;
+    std::unordered_map<IDirect3DBaseTexture9*, TexState*> originals;
+    std::unordered_map<IDirect3DBaseTexture9*, TexState*> fakes;
 
+    // Hashed one creation later, once the game has filled it with data.
+    IDirect3DBaseTexture9* last_created[3] = {};
+
+    bool loading_fake = false;  // set while LoadTexture() drives CreateTexture internally
+    bool shutting_down = false; // set in ~TextureClient so the Release hook stops touching us
     bool should_update = false;
+
+    int AddTexture(IDirect3DBaseTexture9* texture); // hash a freshly filled original + look up its mod
+    int LookUpToMod(TexState* state);               // switch in a fake if a mod matches the hash
+    int LoadTexture(TextureFileStruct* file_in_memory, IDirect3DBaseTexture9** ppTexture, TexState** ppState);
+
+    static void Switch(TexState* original, TexState* fake);
+    static void Unswitch(TexState* original);
+    void UnswitchAndRelease(TexState* original); // unswitch + release our fake
+
+    int MergeUpdate();
 
     int LockMutex();
     int UnlockMutex();
     HANDLE hMutex;
 
-    std::mutex pending_mutex;
-    std::vector<PendingOp> pending_ops;
+    Guarded<std::vector<PendingOp>> pending_ops;
     void ProcessPendingOps();
     void RemoveModdedTexture(HashType hash);
 
-    std::unordered_map<HashType, gsl::owner<TextureFileStruct*>> modded_textures;
-    // array which stores the file in memory and the hash of each texture to be modded
-
-    // called if a target texture is found
-    int LoadTexture(TextureFileStruct* file_in_memory, uModTexturePtrPtr auto ppTexture);
+    std::unordered_map<HashType, gsl::owner<TextureFileStruct*>> modded_textures; // hash -> mod file in memory
 
     static void LoadStartupModlists();
 
+    // Enqueue an Add per distinct non-zero hash, free the structs, return the hashes
+    // in load order; accumulates moved bytes into loaded_bytes when given.
+    static std::vector<HashType> IngestModfile(std::vector<gsl::owner<TextureFileStruct*>>& texture_file_structs, uint64_t* loaded_bytes = nullptr);
+
+    // Kept in load order, which is priority order: on a hash collision the
+    // earlier file wins (see ProcessPendingOps).
+    struct LoadedFile {
+        std::filesystem::path path;
+        std::vector<HashType> hashes;
+    };
+
     static inline std::mutex global_mutex;
     static inline TextureClient* current_client = nullptr;
-    static inline std::map<std::filesystem::path, std::vector<HashType>> loaded_files;
+    // A vector, not a map: tens of mods at most, and their order is meaningful.
+    static inline std::vector<LoadedFile> loaded_files;
+
+    // Caller holds global_mutex; path must already be absolute.
+    static std::vector<LoadedFile>::iterator FindLoadedFile(const std::filesystem::path& absolute_path)
+    {
+        return std::ranges::find(loaded_files, absolute_path, &LoadedFile::path);
+    }
 };
+
+TextureClient* TextureClient::CurrentClient()
+{
+    std::lock_guard lk(global_mutex);
+    return current_client;
+}
 
 TextureClient::TextureClient(IDirect3DDevice9* device)
 {
     Message("TextureClient::TextureClient(): %p\n", this);
     D3D9Device = device;
-
-    void* cpy;
-    isDirectXExDevice = D3D9Device->QueryInterface(IID_IDirect3DTexture9, &cpy) == 0x01000001L;
 
     hMutex = CreateMutex(nullptr, false, nullptr);
 
@@ -107,6 +157,23 @@ TextureClient::~TextureClient()
         std::lock_guard lk(global_mutex);
         if (current_client == this) current_client = nullptr;
     }
+
+    {
+        std::lock_guard lk(registry_mutex);
+        shutting_down = true; // the texture Release hook now no-ops for our textures
+
+        // Drop side-state but don't Release the textures: the game already released
+        // its originals (and our fakes with them), and the device may be gone.
+        for (const auto state : fakes | std::views::values) {
+            delete state;
+        }
+        fakes.clear();
+        for (const auto state : originals | std::views::values) {
+            delete state;
+        }
+        originals.clear();
+    }
+
     if (hMutex != nullptr) {
         CloseHandle(hMutex);
     }
@@ -116,13 +183,216 @@ TextureClient::~TextureClient()
     modded_textures.clear();
 }
 
+void TextureClient::Switch(TexState* original, TexState* fake)
+{
+    original->partner = fake;
+    fake->partner = original;
+}
+
+void TextureClient::Unswitch(TexState* original)
+{
+    if (original->partner != nullptr) {
+        original->partner->partner = nullptr;
+        original->partner = nullptr;
+    }
+}
+
+void TextureClient::UnswitchAndRelease(TexState* original)
+{
+    TexState* fake = original->partner;
+    if (fake == nullptr) return;
+    Unswitch(original);                    // detach before releasing so the fake's Release hook won't touch `original`
+    if (fake->real) fake->real->Release(); // re-enters OnReleaseTexture(fake), which frees its state
+}
+
+TexState* TextureClient::OnCreateTexture(IDirect3DBaseTexture9* texture, TexType type)
+{
+    std::lock_guard lk(registry_mutex);
+
+    const auto state = new TexState();
+    state->real = texture;
+    state->device = D3D9Device;
+    state->type = type;
+
+    if (loading_fake) {
+        // A replacement we're creating: track as a fake, skip the originals bookkeeping.
+        state->isFake = true;
+        fakes.emplace(texture, state);
+        return state;
+    }
+
+    originals.emplace(texture, state);
+
+    // The previous texture of this type is now filled, so hash it.
+    if (const auto last = last_created[static_cast<int>(type)]) {
+        AddTexture(last);
+    }
+    last_created[static_cast<int>(type)] = texture;
+    return state;
+}
+
+int TextureClient::AddTexture(IDirect3DBaseTexture9* texture)
+{
+    const auto it = originals.find(texture);
+    if (it == originals.end()) return RETURN_OK;
+    const auto state = it->second;
+
+    // No longer pending.
+    if (last_created[static_cast<int>(state->type)] == texture) {
+        last_created[static_cast<int>(state->type)] = nullptr;
+    }
+
+    if (gl_ErrorState & uMod_ERROR_FATAL) {
+        return RETURN_FATAL_ERROR;
+    }
+
+    state->hash = GetTextureHash(state);
+    if (!state->hash) {
+        return RETURN_FATAL_ERROR;
+    }
+
+    return LookUpToMod(state); // check if this texture should be modded
+}
+
+int TextureClient::LookUpToMod(TexState* state)
+{
+    Message("TextureClient::LookUpToMod( %p): hash: %#lX\n", state->real, state->hash);
+    if (state->partner != nullptr)
+        return RETURN_OK; // already switched
+
+    auto found = modded_textures.find(state->hash.crc32);
+    if (found == modded_textures.end())
+        if (found = modded_textures.find(state->hash.crc64), !state->hash.crc64 || found == modded_textures.end())
+            return RETURN_OK;
+
+    const auto textureFileStruct = found->second;
+
+    IDirect3DBaseTexture9* fake_texture = nullptr;
+    TexState* fake_state = nullptr;
+    if (const int ret = LoadTexture(textureFileStruct, &fake_texture, &fake_state); ret != RETURN_OK)
+        return ret;
+
+    Switch(state, fake_state);
+    fake_state->reference = textureFileStruct;
+    return RETURN_OK;
+}
+
+int TextureClient::LoadTexture(TextureFileStruct* file_in_memory, IDirect3DBaseTexture9** ppTexture, TexState** ppState)
+{
+    Message("LoadTexture( %p, %#lX): %p\n", file_in_memory, file_in_memory->crc_hash, this);
+    *ppTexture = nullptr;
+    *ppState = nullptr;
+
+    // CreateDDSTextureFromMemoryEx calls the hooked CreateTexture; loading_fake
+    // makes that hook register the result as a fake, not a game original.
+    IDirect3DTexture9* texture = nullptr;
+    loading_fake = true;
+    const auto ret = DirectX::CreateDDSTextureFromMemoryEx(
+        D3D9Device,
+        file_in_memory->data.data(),
+        file_in_memory->data.size(),
+        0, D3DPOOL_MANAGED, false,
+        &texture);
+    loading_fake = false;
+
+    if (ret != D3D_OK || texture == nullptr) {
+        Warning("LoadDDSTexture (%p, %#lX): FAILED ret: \n", file_in_memory->data.data(), file_in_memory->crc_hash, ret);
+        return RETURN_TEXTURE_NOT_LOADED;
+    }
+
+    const auto fake = static_cast<IDirect3DBaseTexture9*>(texture);
+    const auto state_it = fakes.find(fake);
+    ASSERT(state_it != fakes.end()); // must have been registered by the CreateTexture hook
+    *ppTexture = fake;
+    *ppState = state_it->second;
+
+    Message("LoadTexture (%p, %#lX): DONE\n", fake, file_in_memory->crc_hash);
+    return RETURN_OK;
+}
+
+IDirect3DBaseTexture9* TextureClient::ResolveBinding(IDirect3DBaseTexture9* texture)
+{
+    if (texture == nullptr) return nullptr;
+    std::lock_guard lk(registry_mutex);
+    const auto it = originals.find(texture);
+    if (it != originals.end() && it->second->partner != nullptr) {
+        return it->second->partner->real; // bind the fake in place of the original
+    }
+    return texture;
+}
+
+IDirect3DBaseTexture9* TextureClient::ResolveOriginalFromFake(IDirect3DBaseTexture9* texture)
+{
+    if (texture == nullptr) return nullptr;
+    std::lock_guard lk(registry_mutex);
+    const auto it = fakes.find(texture);
+    if (it != fakes.end() && it->second->partner != nullptr) {
+        return it->second->partner->real;
+    }
+    return nullptr;
+}
+
+void TextureClient::OnBeginScene()
+{
+    {
+        std::lock_guard lk(registry_mutex);
+        for (int type = 0; type < 3; ++type) {
+            if (last_created[type] != nullptr) {
+                AddTexture(last_created[type]); // hashes + clears the slot
+            }
+        }
+    }
+    MergeUpdate();
+}
+
+void TextureClient::OnUpdateTexture(IDirect3DBaseTexture9* source, IDirect3DBaseTexture9* destination)
+{
+    // The copy already happened; re-hash both textures and re-run the mod lookup.
+    std::lock_guard lk(registry_mutex);
+
+    auto refresh = [this](IDirect3DBaseTexture9* texture) {
+        const auto it = originals.find(texture);
+        if (it == originals.end()) return;
+        const auto state = it->second;
+        const auto hash = GetTextureHash(state);
+        if (hash == state->hash) return; // unchanged
+        state->hash = hash;
+        if (state->partner != nullptr) UnswitchAndRelease(state);
+        if (hash) LookUpToMod(state);
+    };
+    refresh(source);
+    refresh(destination);
+}
+
+void TextureClient::OnReleaseTexture(IDirect3DBaseTexture9* texture)
+{
+    std::lock_guard lk(registry_mutex);
+    if (shutting_down) return; // ~TextureClient is tearing everything down itself
+
+    // A fake of ours being released (either by us during cleanup, or transitively).
+    if (const auto fit = fakes.find(texture); fit != fakes.end()) {
+        const auto state = fit->second;
+        if (state->partner != nullptr) state->partner->partner = nullptr;
+        fakes.erase(fit);
+        delete state;
+        return;
+    }
+
+    // A game texture (original) reaching zero references.
+    if (const auto oit = originals.find(texture); oit != originals.end()) {
+        const auto state = oit->second;
+        if (last_created[static_cast<int>(state->type)] == texture) {
+            last_created[static_cast<int>(state->type)] = nullptr;
+        }
+        originals.erase(oit);
+        UnswitchAndRelease(state); // release the fake we held for it, if any
+        delete state;
+    }
+}
+
 int TextureClient::MergeUpdate()
 {
-    bool has_pending;
-    {
-        std::lock_guard lk(pending_mutex);
-        has_pending = !pending_ops.empty();
-    }
+    const bool has_pending = pending_ops.with([](auto& ops) { return !ops.empty(); });
     if (!should_update && !has_pending) return RETURN_OK;
     if (const int ret = LockMutex()) {
         gl_ErrorState |= uMod_ERROR_TEXTURE;
@@ -133,19 +403,12 @@ int TextureClient::MergeUpdate()
 
     ProcessPendingOps();
 
-    for (const auto pTexture : OriginalTextures) {
-        if (pTexture->CrossRef_D3Dtex == nullptr) {
-            LookUpToMod(pTexture);
-        }
-    }
-    for (const auto pTexture : OriginalVolumeTextures) {
-        if (pTexture->CrossRef_D3Dtex == nullptr) {
-            LookUpToMod(pTexture);
-        }
-    }
-    for (const auto pTexture : OriginalCubeTextures) {
-        if (pTexture->CrossRef_D3Dtex == nullptr) {
-            LookUpToMod(pTexture);
+    {
+        std::lock_guard lk(registry_mutex);
+        for (const auto state : originals | std::views::values) {
+            if (state->partner == nullptr && state->hash) {
+                LookUpToMod(state);
+            }
         }
     }
 
@@ -156,24 +419,19 @@ int TextureClient::MergeUpdate()
 void TextureClient::EnqueueAdd(HashType hash, std::vector<BYTE> data)
 {
     if (!hash) return;
-    std::lock_guard lk(pending_mutex);
-    pending_ops.push_back(PendingOp{PendingOp::Kind::Add, hash, std::move(data)});
+    pending_ops.with([&](auto& ops) { ops.push_back(PendingOp{PendingOp::Kind::Add, hash, std::move(data)}); });
 }
 
 void TextureClient::EnqueueRemove(HashType hash)
 {
     if (!hash) return;
-    std::lock_guard lk(pending_mutex);
-    pending_ops.push_back(PendingOp{PendingOp::Kind::Remove, hash, {}});
+    pending_ops.with([&](auto& ops) { ops.push_back(PendingOp{PendingOp::Kind::Remove, hash, {}}); });
 }
 
 void TextureClient::ProcessPendingOps()
 {
     std::vector<PendingOp> ops;
-    {
-        std::lock_guard lk(pending_mutex);
-        ops.swap(pending_ops);
-    }
+    pending_ops.with([&](auto& pending) { ops.swap(pending); });
     for (auto& op : ops) {
         if (op.kind == PendingOp::Kind::Add) {
             if (modded_textures.contains(op.hash)) continue;
@@ -195,42 +453,18 @@ void TextureClient::RemoveModdedTexture(HashType hash)
     if (it == modded_textures.end()) return;
     const auto texture_file_struct = it->second;
 
-    auto unswitch_in = [texture_file_struct](auto& vec) {
-        for (auto* original_texture : vec) {
-            auto* fake_texture = original_texture->CrossRef_D3Dtex;
-            if (fake_texture && fake_texture->Reference == texture_file_struct) {
-                UnswitchTextures(original_texture);
-                fake_texture->Release();
+    {
+        std::lock_guard lk(registry_mutex);
+        for (const auto original : originals | std::views::values) {
+            const auto fake = original->partner;
+            if (fake != nullptr && fake->reference == texture_file_struct) {
+                UnswitchAndRelease(original);
             }
         }
-    };
-    unswitch_in(OriginalTextures);
-    unswitch_in(OriginalVolumeTextures);
-    unswitch_in(OriginalCubeTextures);
+    }
 
     modded_textures.erase(it);
     delete texture_file_struct;
-}
-
-void TextureClient::SetLastCreatedTexture(uMod_IDirect3DTexture9* texture)
-{
-    if (isDirectXExDevice)
-        return static_cast<uMod_IDirect3DDevice9Ex*>(D3D9Device)->SetLastCreatedTexture(texture);
-    return static_cast<uMod_IDirect3DDevice9*>(D3D9Device)->SetLastCreatedTexture(texture);
-}
-
-void TextureClient::SetLastCreatedVolumeTexture(uMod_IDirect3DVolumeTexture9* texture)
-{
-    if (isDirectXExDevice)
-        return static_cast<uMod_IDirect3DDevice9Ex*>(D3D9Device)->SetLastCreatedVolumeTexture(texture);
-    return static_cast<uMod_IDirect3DDevice9*>(D3D9Device)->SetLastCreatedVolumeTexture(texture);
-}
-
-void TextureClient::SetLastCreatedCubeTexture(uMod_IDirect3DCubeTexture9* texture)
-{
-    if (isDirectXExDevice)
-        return static_cast<uMod_IDirect3DDevice9Ex*>(D3D9Device)->SetLastCreatedCubeTexture(texture);
-    return static_cast<uMod_IDirect3DDevice9*>(D3D9Device)->SetLastCreatedCubeTexture(texture);
 }
 
 int TextureClient::LockMutex()
@@ -239,7 +473,7 @@ int TextureClient::LockMutex()
         return RETURN_NO_MUTEX;
     }
     if (WAIT_OBJECT_0 != WaitForSingleObject(hMutex, 100)) {
-        return RETURN_MUTEX_LOCK; //waiting 100ms, to wait infinite pass INFINITE
+        return RETURN_MUTEX_LOCK; // waiting 100ms, to wait infinite pass INFINITE
     }
     return RETURN_OK;
 }
@@ -289,13 +523,31 @@ std::vector<gsl::owner<TextureFileStruct*>> ProcessModfile(const std::filesystem
     return texture_file_structs;
 }
 
+std::vector<HashType> TextureClient::IngestModfile(std::vector<gsl::owner<TextureFileStruct*>>& texture_file_structs, uint64_t* loaded_bytes)
+{
+    std::vector<HashType> hashes;
+    for (auto* texture_file_struct : texture_file_structs) {
+        const auto hash = texture_file_struct->crc_hash;
+        if (hash && std::ranges::find(hashes, hash) == hashes.end()) {
+            hashes.push_back(hash);
+            if (loaded_bytes) *loaded_bytes += texture_file_struct->data.size();
+            if (current_client) {
+                current_client->EnqueueAdd(hash, std::move(texture_file_struct->data));
+            }
+        }
+        delete texture_file_struct;
+    }
+    texture_file_structs.clear();
+    return hashes;
+}
+
 std::vector<std::filesystem::path> TextureClient::GetFiles()
 {
     std::lock_guard lk(global_mutex);
     std::vector<std::filesystem::path> result;
     result.reserve(loaded_files.size());
-    for (const auto& key : loaded_files | std::views::keys) {
-        result.push_back(key);
+    for (const auto& loaded_file : loaded_files) {
+        result.push_back(loaded_file.path);
     }
     return result;
 }
@@ -304,10 +556,10 @@ int TextureClient::RemoveFile(const std::filesystem::path& path)
 {
     const auto absolute_path = std::filesystem::absolute(path);
     std::lock_guard lk(global_mutex);
-    const auto it = loaded_files.find(absolute_path);
+    const auto it = FindLoadedFile(absolute_path);
     if (it == loaded_files.end()) return RETURN_FILE_NOT_LOADED;
     if (current_client) {
-        for (const auto hash : it->second) {
+        for (const auto hash : it->hashes) {
             current_client->EnqueueRemove(hash);
         }
     }
@@ -320,35 +572,25 @@ int TextureClient::AddFile(const std::filesystem::path& path)
     const auto absolute_path = std::filesystem::absolute(path);
     {
         std::lock_guard lk(global_mutex);
-        if (loaded_files.contains(absolute_path)) return RETURN_EXISTS;
+        if (FindLoadedFile(absolute_path) != loaded_files.end()) return RETURN_EXISTS;
     }
     if (!std::filesystem::exists(absolute_path)) return RETURN_FILE_NOT_LOADED;
 
     const auto file_size = std::filesystem::file_size(absolute_path);
-    const auto texture_file_structs = ProcessModfile(absolute_path, file_size > 400'000'000);
+    auto texture_file_structs = ProcessModfile(absolute_path, file_size > 400'000'000);
     if (texture_file_structs.empty()) return RETURN_FILE_NOT_LOADED;
 
     std::lock_guard lk(global_mutex);
     // Re-check under lock; another thread may have loaded the same path concurrently.
-    if (loaded_files.contains(absolute_path)) {
-        for (auto* texture_file_struct : texture_file_structs) delete texture_file_struct;
+    if (FindLoadedFile(absolute_path) != loaded_files.end()) {
+        for (auto* texture_file_struct : texture_file_structs)
+            delete texture_file_struct;
         return RETURN_EXISTS;
     }
 
-    std::vector<HashType> hashes;
-    for (auto* texture_file_struct : texture_file_structs) {
-        const auto hash = texture_file_struct->crc_hash;
-        if (hash && std::ranges::find(hashes, hash) == hashes.end()) {
-            hashes.push_back(hash);
-            if (current_client) {
-                current_client->EnqueueAdd(hash, std::move(texture_file_struct->data));
-            }
-        }
-        delete texture_file_struct;
-    }
-
+    auto hashes = IngestModfile(texture_file_structs);
     if (hashes.empty()) return RETURN_TEXTURE_NOT_LOADED;
-    loaded_files.emplace(absolute_path, std::move(hashes));
+    loaded_files.push_back({absolute_path, std::move(hashes)});
     return RETURN_OK;
 }
 
@@ -391,26 +633,15 @@ void TextureClient::LoadStartupModlists()
         auto texture_file_structs = futures[i].get();
 
         std::lock_guard lk(global_mutex);
-        if (loaded_files.contains(modfiles[i])) {
-            for (const auto* texture_file_struct : texture_file_structs) delete texture_file_struct;
+        if (FindLoadedFile(modfiles[i]) != loaded_files.end()) {
+            for (const auto* texture_file_struct : texture_file_structs)
+                delete texture_file_struct;
             continue;
         }
 
-        std::vector<HashType> hashes;
-        for (auto* texture_file_struct : texture_file_structs) {
-            const auto hash = texture_file_struct->crc_hash;
-            if (hash && std::ranges::find(hashes, hash) == hashes.end()) {
-                hashes.push_back(hash);
-                loaded_size += texture_file_struct->data.size();
-                if (current_client) {
-                    current_client->EnqueueAdd(hash, std::move(texture_file_struct->data));
-                }
-            }
-            delete texture_file_struct;
-        }
-
+        auto hashes = IngestModfile(texture_file_structs, &loaded_size);
         if (!hashes.empty()) {
-            loaded_files.emplace(modfiles[i], std::move(hashes));
+            loaded_files.push_back({modfiles[i], std::move(hashes)});
         }
     }
     Info("LoadStartupModlists: %llu bytes (%llu MB)\n", loaded_size, loaded_size / 1024 / 1024);
@@ -421,26 +652,13 @@ void TextureClient::Initialize()
     const auto t1 = std::chrono::high_resolution_clock::now();
     Info("Initialize: begin\n");
 
-    // now load files that were added by AddFile() before the device existed
-    std::vector<std::filesystem::path> pre_existing_paths;
-    {
-        std::lock_guard lk(global_mutex);
-        pre_existing_paths.reserve(loaded_files.size());
-        for (const auto& key : loaded_files | std::views::keys) pre_existing_paths.push_back(key);
-    }
-    for (const auto& path : pre_existing_paths) {
+    // AddFile() before the device existed recorded files but couldn't enqueue them
+    // (no client yet); enqueue them now.
+    for (const auto& path : GetFiles()) {
         if (!std::filesystem::exists(path)) continue;
         const auto file_size = std::filesystem::file_size(path);
         auto texture_file_structs = ProcessModfile(path, file_size > 400'000'000);
-        std::vector<HashType> seen;
-        for (auto* texture_file_struct : texture_file_structs) {
-            const auto hash = texture_file_struct->crc_hash;
-            if (hash && std::ranges::find(seen, hash) == seen.end()) {
-                seen.push_back(hash);
-                EnqueueAdd(hash, std::move(texture_file_struct->data));
-            }
-            delete texture_file_struct;
-        }
+        IngestModfile(texture_file_structs);
     }
 
     LoadStartupModlists();
@@ -448,126 +666,4 @@ void TextureClient::Initialize()
     const auto t2 = std::chrono::high_resolution_clock::now();
     const auto ms = duration_cast<std::chrono::milliseconds>(t2 - t1);
     Info("Initialize: end, took %d ms\n", ms);
-}
-
-int TextureClient::AddTexture(uModTexturePtr auto pTexture)
-{
-    if constexpr (std::same_as<decltype(pTexture), uMod_IDirect3DTexture9*>) {
-        SetLastCreatedTexture(nullptr);
-    }
-    else if constexpr (std::same_as<decltype(pTexture), uMod_IDirect3DVolumeTexture9*>) {
-        SetLastCreatedVolumeTexture(nullptr);
-    }
-    else if constexpr (std::same_as<decltype(pTexture), uMod_IDirect3DCubeTexture9*>) {
-        SetLastCreatedCubeTexture(nullptr);
-    }
-
-    if (pTexture->FAKE) {
-        return RETURN_OK; // this is a fake texture
-    }
-
-    if (gl_ErrorState & uMod_ERROR_FATAL) {
-        return RETURN_FATAL_ERROR;
-    }
-
-    Message("TextureClient::AddTexture( Cube: %p): %p (thread: %u)\n", pTexture, this, GetCurrentThreadId());
-
-    pTexture->Hash = pTexture->GetHash();
-    if (!pTexture->Hash) {
-        return RETURN_FATAL_ERROR;
-    }
-
-    if constexpr (std::same_as<decltype(pTexture), uMod_IDirect3DTexture9*>) {
-        OriginalTextures.push_back(pTexture);
-    }
-    else if constexpr (std::same_as<decltype(pTexture), uMod_IDirect3DVolumeTexture9*>) {
-        OriginalVolumeTextures.push_back(pTexture);
-    }
-    else if constexpr (std::same_as<decltype(pTexture), uMod_IDirect3DCubeTexture9*>) {
-        OriginalCubeTextures.push_back(pTexture);
-    }
-
-    return LookUpToMod(pTexture); // check if this texture should be modded
-}
-
-int TextureClient::RemoveTexture(uModTexturePtr auto pTexture)
-{
-    Message("TextureClient::RemoveTexture( %p, %#lX): %p\n", pTexture, pTexture->Hash, this);
-
-    if (gl_ErrorState & uMod_ERROR_FATAL) {
-        return RETURN_FATAL_ERROR;
-    }
-
-    if (!pTexture->FAKE) {
-        if constexpr (std::same_as<decltype(pTexture), uMod_IDirect3DTexture9*>) {
-            utils::erase_first(OriginalTextures, pTexture);
-        }
-        else if constexpr (std::same_as<decltype(pTexture), uMod_IDirect3DVolumeTexture9*>) {
-            utils::erase_first(OriginalVolumeTextures, pTexture);
-        }
-        else if constexpr (std::same_as<decltype(pTexture), uMod_IDirect3DCubeTexture9*>) {
-            utils::erase_first(OriginalCubeTextures, pTexture);
-        }
-    }
-    if (!pTexture->Reference)
-        return RETURN_OK; // Should this ever happen?
-    return RETURN_OK;
-}
-
-int TextureClient::LookUpToMod(uModTexturePtr auto pTexture)
-{
-    Message("TextureClient::LookUpToMod( %p): hash: %#lX\n", pTexture, pTexture->Hash);
-    int ret = RETURN_OK;
-
-    if (pTexture->CrossRef_D3Dtex != nullptr)
-        return ret; // bug, this texture is already switched
-
-    auto found = modded_textures.find(pTexture->Hash.crc32);
-    if (found == modded_textures.end())
-        if (found = modded_textures.find(pTexture->Hash.crc64), !pTexture->Hash.crc64 || found == modded_textures.end())
-            return ret;
-
-    const auto textureFileStruct = found->second;
-
-    decltype(pTexture) fake_texture;
-    ret = LoadTexture(textureFileStruct, &fake_texture);
-    if (ret != RETURN_OK)
-        return ret;
-
-    ret = SwitchTextures(fake_texture, pTexture);
-    if (ret != RETURN_OK) {
-        Message("TextureClient::LookUpToMod(): textures not switched %#lX\n", textureFileStruct->crc_hash);
-        fake_texture->Release();
-        return ret;
-    }
-    fake_texture->Reference = textureFileStruct;
-    return ret;
-}
-
-int TextureClient::LoadTexture(TextureFileStruct* file_in_memory, uModTexturePtrPtr auto ppTexture)
-{
-    Message("LoadTexture( %p, %p, %#lX): %p\n", file_in_memory, ppTexture, file_in_memory->crc_hash, this);
-    if (const auto ret = DirectX::CreateDDSTextureFromMemoryEx(
-        D3D9Device,
-        file_in_memory->data.data(),
-        file_in_memory->data.size(),
-        0, D3DPOOL_MANAGED, false,
-        reinterpret_cast<LPDIRECT3DTEXTURE9*>(ppTexture)); ret != D3D_OK) {
-        *ppTexture = nullptr;
-        Warning("LoadDDSTexture (%p, %#lX): FAILED ret: \n", file_in_memory->data.data(), file_in_memory->crc_hash, ret);
-        return RETURN_TEXTURE_NOT_LOADED;
-    }
-    if constexpr (std::same_as<decltype(ppTexture), uMod_IDirect3DTexture9**>) {
-        SetLastCreatedTexture(nullptr);
-    }
-    else if constexpr (std::same_as<decltype(ppTexture), uMod_IDirect3DVolumeTexture9**>) {
-        SetLastCreatedVolumeTexture(nullptr);
-    }
-    else if constexpr (std::same_as<decltype(ppTexture), uMod_IDirect3DCubeTexture9**>) {
-        SetLastCreatedCubeTexture(nullptr);
-    }
-    (*ppTexture)->FAKE = true;
-
-    Message("LoadTexture (%p, %#lX): DONE\n", *ppTexture, file_in_memory->crc_hash);
-    return RETURN_OK;
 }

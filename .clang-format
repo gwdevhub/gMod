@@ -1,0 +1,48 @@
+---
+Language: Cpp
+Standard: Latest
+
+# Long, hand-wrapped declarations (vtable typedefs, D3D signatures) are kept as
+# written rather than reflowed to a column.
+ColumnLimit: 0
+
+IndentWidth: 4
+TabWidth: 4
+UseTab: Never
+AccessModifierOffset: -4
+NamespaceIndentation: All
+IndentCaseLabels: true
+PointerAlignment: Left
+MaxEmptyLinesToKeep: 2
+Cpp11BracedListStyle: true
+SpaceBeforeParens: ControlStatements
+AllowShortCaseLabelsOnASingleLine: true
+AllowShortEnumsOnASingleLine: true
+FixNamespaceComments: false
+
+# Include order is load-bearing in the Windows headers; never reorder.
+SortIncludes: Never
+
+AllowShortFunctionsOnASingleLine: Inline
+AllowShortIfStatementsOnASingleLine: WithoutElse
+AllowShortBlocksOnASingleLine: Always
+AllowShortLambdasOnASingleLine: All
+
+BreakBeforeBraces: Custom
+BraceWrapping:
+  AfterFunction: true
+  AfterControlStatement: Never
+  AfterCaseLabel: false
+  AfterClass: false
+  AfterStruct: false
+  AfterEnum: false
+  AfterUnion: false
+  AfterNamespace: false
+  AfterExternBlock: false
+  BeforeElse: true
+  BeforeCatch: true
+  BeforeLambdaBody: false
+  BeforeWhile: false
+  IndentBraces: false
+  SplitEmptyFunction: false
+  SplitEmptyRecord: false

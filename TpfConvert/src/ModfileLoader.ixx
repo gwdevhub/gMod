@@ -13,7 +13,8 @@ export struct TexEntry {
 };
 
 namespace {
-    HashType GetCrcFromFilename(const std::string& filename) {
+    HashType GetCrcFromFilename(const std::string& filename)
+    {
         const static std::regex re(R"(0[xX][0-9a-fA-F]{4,16})", std::regex::optimize);
         std::smatch match;
         if (!std::regex_search(filename, match, re)) {
@@ -45,8 +46,7 @@ export class ModfileLoader {
         0x74, 0x61, 0x67, 0x5B, 0x60, 0x70, 0x45, 0x74,
         0x5C, 0x22, 0x74, 0x5D, 0x6E, 0x6A, 0x73, 0x41,
         0x77, 0x6E, 0x46, 0x47, 0x77, 0x49, 0x0C, 0x4B,
-        0x46, 0x6F
-    };
+        0x46, 0x6F};
 
 public:
     ModfileLoader(const std::filesystem::path& fileName);
@@ -54,7 +54,6 @@ public:
     std::vector<TexEntry> GetContents() const;
 
 private:
-
     std::vector<TexEntry> GetTpfContents() const;
 
     std::vector<TexEntry> GetFileContents() const;
@@ -85,7 +84,7 @@ std::vector<TexEntry> ModfileLoader::GetTpfContents() const
     const auto buffer = tpf_reader.ReadToEnd();
     const auto zip_archive = libzippp::ZipArchive::fromBuffer(buffer.data(), buffer.size(), false, TPF_PASSWORD);
     if (!zip_archive) {
-    std::print(stderr, "Failed to open tpf file: {} - {} uint8_ts!\n", file_name.string(), buffer.size());
+        std::print(stderr, "Failed to open tpf file: {} - {} uint8_ts!\n", file_name.string(), buffer.size());
         return {};
     }
     zip_archive->setErrorHandlerCallback(
