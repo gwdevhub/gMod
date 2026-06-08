@@ -5,7 +5,7 @@
 
 import TextureClient;
 
-void ExitInstance();
+void ExitInstance(bool is_unloading);
 void InitInstance(HINSTANCE hModule);
 
 namespace {
@@ -179,8 +179,6 @@ HRESULT APIENTRY Direct3DCreate9Ex(UINT SDKVersion, IDirect3D9Ex** ppD3D)
 
 BOOL WINAPI DllMain(HINSTANCE hModule, DWORD ul_reason_for_call, LPVOID lpReserved)
 {
-    UNREFERENCED_PARAMETER(lpReserved);
-
     switch (ul_reason_for_call) {
         case DLL_PROCESS_ATTACH: {
 #ifdef _DEBUG
@@ -196,7 +194,9 @@ BOOL WINAPI DllMain(HINSTANCE hModule, DWORD ul_reason_for_call, LPVOID lpReserv
             break;
         }
         case DLL_PROCESS_DETACH: {
-            ExitInstance();
+            // lpReserved == nullptr means FreeLibrary (device still alive); non-null
+            // means process exit, where d3d9/the device may already be gone.
+            ExitInstance(lpReserved == nullptr);
             break;
         }
         default: break;
@@ -314,12 +314,17 @@ extern "C" __declspec(dllexport) int __cdecl GetFiles(wchar_t* buffer, const siz
     }
 }
 
-void ExitInstance()
+void ExitInstance(bool is_unloading)
 {
     DISABLE_HOOK(GetProcAddress_fn);
 
     // Revert every D3D9 vtable hook so the original objects are left pristine.
     RemoveAllD3D9Hooks();
+
+    // On a real unload the device is still alive; release our replacement textures.
+    if (is_unloading) {
+        DestroyAllTextureClients();
+    }
 
     MH_Uninitialize();
 
