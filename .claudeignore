@@ -1,0 +1,38 @@
+# Build output and artifacts
+build/
+bin/
+Debug/
+Release/
+MinSizeRel/
+RelWithDebInfo/
+win32/
+install/
+
+# CMake generated directories
+*.dir/
+CMakeFiles/
+_deps/
+
+# vcpkg vendored dependencies
+vcpkg_installed/
+
+# Visual Studio files
+*.vcxproj
+*.vcxproj.filters
+*.vcxproj.user
+*.sln
+*.slnx
+*.sdf
+*.suo
+*.user
+*.aps
+
+# CMake cache/generated
+CMakeCache.txt
+cmake_install.cmake
+ALL_BUILD*
+ZERO_CHECK*
+INSTALL*
+
+# Version resource (generated)
+version.rc
