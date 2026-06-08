@@ -17,8 +17,6 @@
 #include "Defines.h"
 #include "Error.h"
 
-// gMod no longer subclasses the D3D9 interfaces; it hooks their vtable slots and
-// keeps per-object side-state in lookups (see D3D9State.h / D3D9Hooks.h).
 #include "D3D9State.h"
 
 #pragma warning(disable : 4477)

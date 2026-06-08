@@ -40,11 +40,8 @@ public:
     }
 };
 
-/*
- *  Owned by each d3d9 device (see D3D9Hooks.cpp). Holds the side-state for every
- *  texture and performs the actual modding. The On*() methods are the vtable-hook
- *  entry points, all driven by the game's render thread.
- */
+// Owned by each d3d9 device (see D3D9Hooks.cpp). Holds per-texture side-state
+// and does the modding; the On*() methods are the vtable-hook entry points.
 export class TextureClient {
 public:
     TextureClient(IDirect3DDevice9* device);

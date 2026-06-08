@@ -3,9 +3,8 @@
 #include <d3d9.h>
 #include "Defines.h"
 
-// Per-texture side-state, kept in lookups keyed by the real texture pointer (see
-// D3D9Hooks.h). Holding it out-of-band leaves the game's own objects untouched,
-// so reverting the vtable hooks fully detaches gMod.
+// Per-texture side-state, keyed by the real texture pointer (see D3D9Hooks.h).
+// Held out-of-band so reverting the vtable hooks fully detaches gMod.
 
 enum class TexType {
     Tex2D,

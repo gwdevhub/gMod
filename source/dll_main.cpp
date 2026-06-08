@@ -177,9 +177,6 @@ HRESULT APIENTRY Direct3DCreate9Ex(UINT SDKVersion, IDirect3D9Ex** ppD3D)
     return ret;
 }
 
-/*
- * dll entry routine, here we initialize or clean up
- */
 BOOL WINAPI DllMain(HINSTANCE hModule, DWORD ul_reason_for_call, LPVOID lpReserved)
 {
     UNREFERENCED_PARAMETER(lpReserved);
@@ -254,9 +251,8 @@ void InitInstance(HINSTANCE hModule)
     }
 }
 
-// Exported entry for late injection: hand gMod a device that already exists
-// (IDirect3DDevice9Ex* works too) so it hooks the vtable and mods textures from
-// here on. Returns RETURN_OK if newly registered, RETURN_EXISTS if already known.
+// Exported entry for late injection: hand gMod an existing device so it hooks
+// the vtable and mods textures from here on.
 extern "C" __declspec(dllexport) int __cdecl SetDevice(IDirect3DDevice9* device)
 {
     if (!device) return RETURN_BAD_ARGUMENT;
@@ -290,9 +286,8 @@ extern "C" __declspec(dllexport) int __cdecl RemoveFile(const wchar_t* path)
     }
 }
 
-// nullptr first arg = return required size
+// nullptr first arg = return required size; paths come back in load (priority) order
 // returns paths separated by null terminator, e.g. "C:\foo.tpf\0C:\bar.zip\0\0"
-// Paths come back in load order (== priority order).
 extern "C" __declspec(dllexport) int __cdecl GetFiles(wchar_t* buffer, const size_t buffer_size_chars)
 {
     try {
