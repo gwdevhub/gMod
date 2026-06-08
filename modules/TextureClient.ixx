@@ -159,10 +159,15 @@ TextureClient::~TextureClient()
         std::lock_guard lk(registry_mutex);
         shutting_down = true; // the texture Release hook now no-ops for our textures
 
-        // Drop side-state but don't Release the textures: the game already released
-        // its originals (and our fakes with them), and the device may be gone.
-        for (const auto state : fakes | std::views::values) {
-            delete state;
+        // Release replacements we still own (still partnered) so they aren't leaked when
+        // torn down with the device alive (FreeLibrary). Orphaned fakes were already
+        // released; a device-release teardown leaves the maps empty, so this is a no-op.
+        for (const auto fake : fakes | std::views::values) {
+            if (fake->partner != nullptr) {
+                fake->partner->partner = nullptr; // detach the original's back-pointer
+                if (fake->real) fake->real->Release();
+            }
+            delete fake;
         }
         fakes.clear();
         for (const auto state : originals | std::views::values) {

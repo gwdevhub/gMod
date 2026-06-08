@@ -366,6 +366,22 @@ void RemoveAllD3D9Hooks()
     o_CubeRelease = nullptr;
 }
 
+void DestroyAllTextureClients()
+{
+    // Collect under the lock, delete outside it (~TextureClient takes its own locks).
+    std::vector<TextureClient*> clients;
+    {
+        std::lock_guard lk(g_devices_mutex);
+        for (const auto& entry : g_devices) {
+            clients.push_back(entry.second);
+        }
+        g_devices.clear();
+    }
+    for (auto* client : clients) {
+        delete client;
+    }
+}
+
 // All three read state->real directly; gMod never swaps the underlying resource.
 
 namespace {
