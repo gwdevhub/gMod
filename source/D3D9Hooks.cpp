@@ -416,6 +416,11 @@ namespace {
                 return {};
             }
 
+            // The surface GetRenderTargetData reads from: either the level itself, or a
+            // non-multisampled resolve of it. Non-owning; pSurfaceLevel_orig and
+            // pResolvedSurface each own a ref and are released exactly once below.
+            IDirect3DSurface9* pCopySource = pSurfaceLevel_orig;
+
             if (desc.MultiSampleType != D3DMULTISAMPLE_NONE) {
                 if (D3D_OK != device->CreateRenderTarget(desc.Width, desc.Height, desc.Format, D3DMULTISAMPLE_NONE, 0, FALSE, &pResolvedSurface, nullptr)) {
                     pSurfaceLevel_orig->Release();
@@ -423,31 +428,39 @@ namespace {
                     return {};
                 }
                 if (D3D_OK != device->StretchRect(pSurfaceLevel_orig, nullptr, pResolvedSurface, nullptr, D3DTEXF_NONE)) {
+                    pResolvedSurface->Release();
+                    pResolvedSurface = nullptr;
                     pSurfaceLevel_orig->Release();
                     Warning("GetTextureHash(2D) Failed: StretchRect (D3DPOOL_DEFAULT)\n");
                     return {};
                 }
-                pSurfaceLevel_orig = pResolvedSurface;
+                pCopySource = pResolvedSurface;
             }
 
             if (D3D_OK != device->CreateOffscreenPlainSurface(desc.Width, desc.Height, desc.Format, D3DPOOL_SYSTEMMEM, &pOffscreenSurface, nullptr)) {
-                pSurfaceLevel_orig->Release();
                 if (pResolvedSurface != nullptr) pResolvedSurface->Release();
+                pSurfaceLevel_orig->Release();
                 Warning("GetTextureHash(2D) Failed: CreateOffscreenPlainSurface (D3DPOOL_DEFAULT)\n");
                 return {};
             }
 
-            if (D3D_OK != device->GetRenderTargetData(pSurfaceLevel_orig, pOffscreenSurface)) {
-                pSurfaceLevel_orig->Release();
-                if (pResolvedSurface != nullptr) pResolvedSurface->Release();
+            if (D3D_OK != device->GetRenderTargetData(pCopySource, pOffscreenSurface)) {
                 pOffscreenSurface->Release();
+                if (pResolvedSurface != nullptr) pResolvedSurface->Release();
+                pSurfaceLevel_orig->Release();
                 Warning("GetTextureHash(2D) Failed: GetRenderTargetData (D3DPOOL_DEFAULT)\n");
                 return {};
+            }
+
+            // Copy is done; both source surfaces are finished with. Null pResolvedSurface
+            // so the shared cleanup below treats this as the pOffscreenSurface case.
+            if (pResolvedSurface != nullptr) {
+                pResolvedSurface->Release();
+                pResolvedSurface = nullptr;
             }
             pSurfaceLevel_orig->Release();
 
             if (pOffscreenSurface->LockRect(&d3dlr, nullptr, D3DLOCK_READONLY) != D3D_OK) {
-                if (pResolvedSurface != nullptr) pResolvedSurface->Release();
                 pOffscreenSurface->Release();
                 Warning("GetTextureHash(2D) Failed: LockRect (D3DPOOL_DEFAULT)\n");
                 return {};
@@ -472,7 +485,6 @@ namespace {
         if (pOffscreenSurface != nullptr) {
             pOffscreenSurface->UnlockRect();
             pOffscreenSurface->Release();
-            if (pResolvedSurface != nullptr) pResolvedSurface->Release();
         }
         else if (pResolvedSurface != nullptr) {
             pResolvedSurface->UnlockRect();
