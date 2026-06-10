@@ -2,6 +2,7 @@
 #include "D3D9Hooks.h"
 #include "MinHook.h"
 
+#include <atomic>
 #include <mutex>
 #include <unordered_map>
 #include <vector>
@@ -71,6 +72,9 @@ namespace {
     bool g_cube_release_installed = false;
 
     std::vector<void*> g_hooked_targets;
+
+    // Set when teardown begins; a detour still reached after this just calls the original.
+    std::atomic<bool> g_unhooked{false};
 
     // device -> owning TextureClient
     std::mutex g_devices_mutex;
@@ -174,6 +178,7 @@ namespace {
                                              D3DPRESENT_PARAMETERS* pPresentationParameters, IDirect3DDevice9** ppReturnedDeviceInterface)
     {
         const HRESULT hr = o_CreateDevice(self, Adapter, DeviceType, hFocusWindow, BehaviorFlags, pPresentationParameters, ppReturnedDeviceInterface);
+        if (g_unhooked) return hr;
         if (SUCCEEDED(hr) && ppReturnedDeviceInterface && *ppReturnedDeviceInterface) {
             OnDeviceCreated(*ppReturnedDeviceInterface);
         }
@@ -184,6 +189,7 @@ namespace {
                                                D3DPRESENT_PARAMETERS* pPresentationParameters, D3DDISPLAYMODEEX* pFullscreenDisplayMode, IDirect3DDevice9Ex** ppReturnedDeviceInterface)
     {
         const HRESULT hr = o_CreateDeviceEx(self, Adapter, DeviceType, hFocusWindow, BehaviorFlags, pPresentationParameters, pFullscreenDisplayMode, ppReturnedDeviceInterface);
+        if (g_unhooked) return hr;
         if (SUCCEEDED(hr) && ppReturnedDeviceInterface && *ppReturnedDeviceInterface) {
             OnDeviceCreated(*ppReturnedDeviceInterface);
         }
@@ -193,6 +199,7 @@ namespace {
     ULONG STDMETHODCALLTYPE h_DeviceRelease(IDirect3DDevice9* self)
     {
         const ULONG count = o_DeviceRelease(self);
+        if (g_unhooked) return count;
         if (count == 0) {
             TextureClient* client = nullptr;
             {
@@ -212,6 +219,7 @@ namespace {
                                               IDirect3DTexture9** ppTexture, HANDLE* pSharedHandle)
     {
         const HRESULT hr = o_CreateTexture(self, Width, Height, Levels, Usage, Format, Pool, ppTexture, pSharedHandle);
+        if (g_unhooked) return hr;
         if (SUCCEEDED(hr) && ppTexture && *ppTexture) {
             InstallTextureReleaseHook(*ppTexture, TexType::Tex2D);
             if (auto* client = ClientFor(self))
@@ -224,6 +232,7 @@ namespace {
                                                     IDirect3DVolumeTexture9** ppVolumeTexture, HANDLE* pSharedHandle)
     {
         const HRESULT hr = o_CreateVolumeTexture(self, Width, Height, Depth, Levels, Usage, Format, Pool, ppVolumeTexture, pSharedHandle);
+        if (g_unhooked) return hr;
         if (SUCCEEDED(hr) && ppVolumeTexture && *ppVolumeTexture) {
             InstallTextureReleaseHook(*ppVolumeTexture, TexType::Volume);
             if (auto* client = ClientFor(self))
@@ -236,6 +245,7 @@ namespace {
                                                   IDirect3DCubeTexture9** ppCubeTexture, HANDLE* pSharedHandle)
     {
         const HRESULT hr = o_CreateCubeTexture(self, EdgeLength, Levels, Usage, Format, Pool, ppCubeTexture, pSharedHandle);
+        if (g_unhooked) return hr;
         if (SUCCEEDED(hr) && ppCubeTexture && *ppCubeTexture) {
             InstallTextureReleaseHook(*ppCubeTexture, TexType::Cube);
             if (auto* client = ClientFor(self))
@@ -248,6 +258,7 @@ namespace {
     {
         // Pass the real textures through, then re-evaluate mods on the changed destination.
         const HRESULT hr = o_UpdateTexture(self, pSourceTexture, pDestinationTexture);
+        if (g_unhooked) return hr;
         if (SUCCEEDED(hr)) {
             if (auto* client = ClientFor(self))
                 client->OnUpdateTexture(pSourceTexture, pDestinationTexture);
@@ -257,6 +268,7 @@ namespace {
 
     HRESULT STDMETHODCALLTYPE h_BeginScene(IDirect3DDevice9* self)
     {
+        if (g_unhooked) return o_BeginScene(self);
         if (auto* client = ClientFor(self))
             client->OnBeginScene();
         return o_BeginScene(self);
@@ -264,6 +276,7 @@ namespace {
 
     HRESULT STDMETHODCALLTYPE h_SetTexture(IDirect3DDevice9* self, DWORD Stage, IDirect3DBaseTexture9* pTexture)
     {
+        if (g_unhooked) return o_SetTexture(self, Stage, pTexture);
         IDirect3DBaseTexture9* bind = pTexture;
         if (auto* client = ClientFor(self))
             bind = client->ResolveBinding(pTexture); // substitute the fake when modded
@@ -273,6 +286,7 @@ namespace {
     HRESULT STDMETHODCALLTYPE h_GetTexture(IDirect3DDevice9* self, DWORD Stage, IDirect3DBaseTexture9** ppTexture)
     {
         const HRESULT hr = o_GetTexture(self, Stage, ppTexture);
+        if (g_unhooked) return hr;
         if (SUCCEEDED(hr) && ppTexture && *ppTexture) {
             if (auto* client = ClientFor(self)) {
                 if (auto* original = client->ResolveOriginalFromFake(*ppTexture)) {
@@ -295,6 +309,7 @@ namespace {
     ULONG STDMETHODCALLTYPE h_Tex2DRelease(IUnknown* self)
     {
         const ULONG count = o_Tex2DRelease(self);
+        if (g_unhooked) return count;
         ReleaseTextureCleanup(self, count);
         return count;
     }
@@ -302,6 +317,7 @@ namespace {
     ULONG STDMETHODCALLTYPE h_VolumeRelease(IUnknown* self)
     {
         const ULONG count = o_VolumeRelease(self);
+        if (g_unhooked) return count;
         ReleaseTextureCleanup(self, count);
         return count;
     }
@@ -309,6 +325,7 @@ namespace {
     ULONG STDMETHODCALLTYPE h_CubeRelease(IUnknown* self)
     {
         const ULONG count = o_CubeRelease(self);
+        if (g_unhooked) return count;
         ReleaseTextureCleanup(self, count);
         return count;
     }
@@ -317,6 +334,7 @@ namespace {
 void InstallD3D9Hooks(IDirect3D9* d3d9, const bool is_ex)
 {
     if (d3d9 == nullptr || g_d3d9_hooks_installed) return;
+    g_unhooked = false; // re-arm in case a prior teardown left the flag set
     void** vt = GetVTable(d3d9);
     Hook(vt[kIDirect3D9_CreateDevice], &h_CreateDevice, reinterpret_cast<void**>(&o_CreateDevice));
     if (is_ex) {
@@ -333,12 +351,16 @@ bool RegisterExistingDevice(IDirect3DDevice9* device)
         if (g_devices.contains(device)) return false; // already known
         if (!g_devices.empty()) return false;         // gMod supports a single device at a time
     }
+    g_unhooked = false;      // re-arm in case a prior teardown left the flag set
     OnDeviceCreated(device); // installs device hooks + TextureClient (idempotent)
     return ClientFor(device) != nullptr;
 }
 
 void RemoveAllD3D9Hooks()
 {
+    // Signal first: a detour reached after this (e.g. a surviving patch) falls through.
+    g_unhooked = true;
+
     for (void* target : g_hooked_targets) {
         MH_DisableHook(target);
         MH_RemoveHook(target);
@@ -351,19 +373,7 @@ void RemoveAllD3D9Hooks()
     g_volume_release_installed = false;
     g_cube_release_installed = false;
 
-    o_CreateDevice = nullptr;
-    o_CreateDeviceEx = nullptr;
-    o_DeviceRelease = nullptr;
-    o_CreateTexture = nullptr;
-    o_CreateVolumeTexture = nullptr;
-    o_CreateCubeTexture = nullptr;
-    o_UpdateTexture = nullptr;
-    o_BeginScene = nullptr;
-    o_SetTexture = nullptr;
-    o_GetTexture = nullptr;
-    o_Tex2DRelease = nullptr;
-    o_VolumeRelease = nullptr;
-    o_CubeRelease = nullptr;
+    // Leave the o_* trampoline pointers intact so a surviving detour can still call through.
 }
 
 void DestroyAllTextureClients()

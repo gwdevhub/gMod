@@ -2,6 +2,7 @@
 #include <Psapi.h>
 #include "MinHook.h"
 #include "D3D9Hooks.h"
+#include <atomic>
 
 import TextureClient;
 
@@ -194,9 +195,12 @@ BOOL WINAPI DllMain(HINSTANCE hModule, DWORD ul_reason_for_call, LPVOID lpReserv
             break;
         }
         case DLL_PROCESS_DETACH: {
-            // lpReserved == nullptr means FreeLibrary (device still alive); non-null
-            // means process exit, where d3d9/the device may already be gone.
-            ExitInstance(lpReserved == nullptr);
+            // Process exit (lpReserved != nullptr): other threads are gone and the OS
+            // reclaims everything, so touching MinHook/the device here only risks a hang.
+            if (lpReserved != nullptr)
+                break;
+            // FreeLibrary unload: the device is still live, so tear down cleanly.
+            ExitInstance(true);
             break;
         }
         default: break;
@@ -314,8 +318,20 @@ extern "C" __declspec(dllexport) int __cdecl GetFiles(wchar_t* buffer, const siz
     }
 }
 
+// Optional clean-shutdown entry: call this from the host (on a normal thread) BEFORE
+// FreeLibrary so teardown runs off the loader lock, where MinHook can safely suspend
+// the render thread. A later FreeLibrary then unloads with nothing left to undo.
+extern "C" __declspec(dllexport) void __cdecl Shutdown()
+{
+    ExitInstance(true);
+}
+
 void ExitInstance(bool is_unloading)
 {
+    // Teardown must run exactly once, whether reached via Shutdown() or DllMain detach.
+    static std::atomic<bool> torn_down{false};
+    if (torn_down.exchange(true)) return;
+
     DISABLE_HOOK(GetProcAddress_fn);
 
     // Revert every D3D9 vtable hook so the original objects are left pristine.
