@@ -1,6 +1,5 @@
 #include "Main.h"
 #include "D3D9Hooks.h"
-#include "MinHook.h"
 
 #include <atomic>
 #include <mutex>
@@ -71,7 +70,14 @@ namespace {
     bool g_volume_release_installed = false;
     bool g_cube_release_installed = false;
 
-    std::vector<void*> g_hooked_targets;
+    // One overwritten vtable entry, remembered so teardown can put the original back.
+    struct SwappedSlot
+    {
+        void** slot;    // address of the vtable entry we overwrote
+        void* detour;   // value we wrote (our hook); lets us tell if we're still on top
+        void* original; // value that was there before (real func, or a lower hook's detour)
+    };
+    std::vector<SwappedSlot> g_swapped_slots;
 
     // Set when teardown begins; a detour still reached after this just calls the original.
     std::atomic<bool> g_unhooked{false};
@@ -87,26 +93,31 @@ namespace {
         return it != g_devices.end() ? it->second : nullptr;
     }
 
-    bool HookRaw(void* target, void* detour, void** original)
+    // Overwrite one vtable entry with our detour, saving the original for restore. This
+    // writes a data slot (the vtable lives in .rdata), never the function's code, so it is
+    // safe under the x86-on-ARM64 emulator (no self-modifying-code trap) and needs no
+    // thread suspension: an aligned pointer store is atomic for any thread reading the slot.
+    bool SwapSlotRaw(void** vtable, int index, void* detour, void** original)
     {
-        if (target == nullptr) return false;
-        if (MH_CreateHook(target, detour, original) != MH_OK) {
-            Warning("D3D9Hooks: MH_CreateHook failed for %p\n", target);
+        if (vtable == nullptr) return false;
+        void** slot = &vtable[index];
+        DWORD old_protect = 0;
+        if (!VirtualProtect(slot, sizeof(void*), PAGE_READWRITE, &old_protect)) {
+            Warning("D3D9Hooks: VirtualProtect failed for slot %p\n", slot);
             return false;
         }
-        if (MH_EnableHook(target) != MH_OK) {
-            Warning("D3D9Hooks: MH_EnableHook failed for %p\n", target);
-            return false;
-        }
-        g_hooked_targets.push_back(target);
+        *original = *slot; // remember the real function (or a lower engine's detour)
+        *slot = detour;
+        VirtualProtect(slot, sizeof(void*), old_protect, &old_protect);
+        g_swapped_slots.push_back({slot, detour, *original});
         return true;
     }
 
     // Funnels the fn-ptr <-> void* casts through one spot so call sites stay /WX-clean.
-    template <typename TDetour, typename TOrig>
-    bool Hook(void* target, TDetour detour, TOrig* original)
+    template <typename TDetour>
+    bool Hook(void** vtable, int index, TDetour detour, void** original)
     {
-        return HookRaw(target, reinterpret_cast<void*>(detour), reinterpret_cast<void**>(original));
+        return SwapSlotRaw(vtable, index, reinterpret_cast<void*>(detour), original);
     }
 
     HRESULT STDMETHODCALLTYPE h_CreateDevice(IDirect3D9*, UINT, D3DDEVTYPE, HWND, DWORD, D3DPRESENT_PARAMETERS*, IDirect3DDevice9**);
@@ -127,14 +138,14 @@ namespace {
     {
         if (g_device_hooks_installed) return;
         void** vt = GetVTable(device);
-        Hook(vt[kDevice_Release], &h_DeviceRelease, reinterpret_cast<void**>(&o_DeviceRelease));
-        Hook(vt[kDevice_CreateTexture], &h_CreateTexture, reinterpret_cast<void**>(&o_CreateTexture));
-        Hook(vt[kDevice_CreateVolumeTexture], &h_CreateVolumeTexture, reinterpret_cast<void**>(&o_CreateVolumeTexture));
-        Hook(vt[kDevice_CreateCubeTexture], &h_CreateCubeTexture, reinterpret_cast<void**>(&o_CreateCubeTexture));
-        Hook(vt[kDevice_UpdateTexture], &h_UpdateTexture, reinterpret_cast<void**>(&o_UpdateTexture));
-        Hook(vt[kDevice_BeginScene], &h_BeginScene, reinterpret_cast<void**>(&o_BeginScene));
-        Hook(vt[kDevice_GetTexture], &h_GetTexture, reinterpret_cast<void**>(&o_GetTexture));
-        Hook(vt[kDevice_SetTexture], &h_SetTexture, reinterpret_cast<void**>(&o_SetTexture));
+        Hook(vt, kDevice_Release, &h_DeviceRelease, reinterpret_cast<void**>(&o_DeviceRelease));
+        Hook(vt, kDevice_CreateTexture, &h_CreateTexture, reinterpret_cast<void**>(&o_CreateTexture));
+        Hook(vt, kDevice_CreateVolumeTexture, &h_CreateVolumeTexture, reinterpret_cast<void**>(&o_CreateVolumeTexture));
+        Hook(vt, kDevice_CreateCubeTexture, &h_CreateCubeTexture, reinterpret_cast<void**>(&o_CreateCubeTexture));
+        Hook(vt, kDevice_UpdateTexture, &h_UpdateTexture, reinterpret_cast<void**>(&o_UpdateTexture));
+        Hook(vt, kDevice_BeginScene, &h_BeginScene, reinterpret_cast<void**>(&o_BeginScene));
+        Hook(vt, kDevice_GetTexture, &h_GetTexture, reinterpret_cast<void**>(&o_GetTexture));
+        Hook(vt, kDevice_SetTexture, &h_SetTexture, reinterpret_cast<void**>(&o_SetTexture));
         g_device_hooks_installed = true;
     }
 
@@ -144,15 +155,15 @@ namespace {
         void** vt = GetVTable(sample_texture);
         switch (type) {
             case TexType::Tex2D:
-                if (!g_tex2d_release_installed && Hook(vt[kResource_Release], &h_Tex2DRelease, reinterpret_cast<void**>(&o_Tex2DRelease)))
+                if (!g_tex2d_release_installed && Hook(vt, kResource_Release, &h_Tex2DRelease, reinterpret_cast<void**>(&o_Tex2DRelease)))
                     g_tex2d_release_installed = true;
                 break;
             case TexType::Volume:
-                if (!g_volume_release_installed && Hook(vt[kResource_Release], &h_VolumeRelease, reinterpret_cast<void**>(&o_VolumeRelease)))
+                if (!g_volume_release_installed && Hook(vt, kResource_Release, &h_VolumeRelease, reinterpret_cast<void**>(&o_VolumeRelease)))
                     g_volume_release_installed = true;
                 break;
             case TexType::Cube:
-                if (!g_cube_release_installed && Hook(vt[kResource_Release], &h_CubeRelease, reinterpret_cast<void**>(&o_CubeRelease)))
+                if (!g_cube_release_installed && Hook(vt, kResource_Release, &h_CubeRelease, reinterpret_cast<void**>(&o_CubeRelease)))
                     g_cube_release_installed = true;
                 break;
         }
@@ -336,9 +347,9 @@ void InstallD3D9Hooks(IDirect3D9* d3d9, const bool is_ex)
     if (d3d9 == nullptr || g_d3d9_hooks_installed) return;
     g_unhooked = false; // re-arm in case a prior teardown left the flag set
     void** vt = GetVTable(d3d9);
-    Hook(vt[kIDirect3D9_CreateDevice], &h_CreateDevice, reinterpret_cast<void**>(&o_CreateDevice));
+    Hook(vt, kIDirect3D9_CreateDevice, &h_CreateDevice, reinterpret_cast<void**>(&o_CreateDevice));
     if (is_ex) {
-        Hook(vt[kIDirect3D9Ex_CreateDeviceEx], &h_CreateDeviceEx, reinterpret_cast<void**>(&o_CreateDeviceEx));
+        Hook(vt, kIDirect3D9Ex_CreateDeviceEx, &h_CreateDeviceEx, reinterpret_cast<void**>(&o_CreateDeviceEx));
     }
     g_d3d9_hooks_installed = true;
 }
@@ -358,14 +369,18 @@ bool RegisterExistingDevice(IDirect3DDevice9* device)
 
 void RemoveAllD3D9Hooks()
 {
-    // Signal first: a detour reached after this (e.g. a surviving patch) falls through.
+    // Signal first: a detour still reached before its slot is restored falls through.
     g_unhooked = true;
 
-    for (void* target : g_hooked_targets) {
-        MH_DisableHook(target);
-        MH_RemoveHook(target);
+    // Restore in reverse install order. Only put the original back if our detour is still
+    // the live entry, so we don't clobber a hook another engine layered on top of ours.
+    for (auto it = g_swapped_slots.rbegin(); it != g_swapped_slots.rend(); ++it) {
+        DWORD old_protect = 0;
+        if (!VirtualProtect(it->slot, sizeof(void*), PAGE_READWRITE, &old_protect)) continue;
+        if (*it->slot == it->detour) *it->slot = it->original;
+        VirtualProtect(it->slot, sizeof(void*), old_protect, &old_protect);
     }
-    g_hooked_targets.clear();
+    g_swapped_slots.clear();
 
     g_d3d9_hooks_installed = false;
     g_device_hooks_installed = false;
