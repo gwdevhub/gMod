@@ -32,6 +32,10 @@ namespace {
     // --- IDirect3D*Texture9 (IUnknown layout) ---------------------------
     constexpr int kResource_Release = 2;
 
+    // Bytes to flush from a hook target / trampoline so the x86-on-ARM64 emulator re-JITs
+    // it. Covers MinHook's max prologue patch and its 64-byte trampoline slot.
+    constexpr SIZE_T kFlushSpan = 64;
+
     void** GetVTable(void* com_object)
     {
         return *static_cast<void***>(com_object);
@@ -98,6 +102,13 @@ namespace {
             Warning("D3D9Hooks: MH_EnableHook failed for %p\n", target);
             return false;
         }
+        // Under the x86-on-ARM64 emulator, patched code is only re-translated when its
+        // instruction cache is flushed. MinHook flushes just the 5 patched bytes, which can
+        // leave a stale/guarded JIT block and trap; flush the whole prologue and the freshly
+        // built trampoline so the emulator re-JITs both. No-op on native x86.
+        const HANDLE proc = GetCurrentProcess();
+        FlushInstructionCache(proc, target, kFlushSpan);
+        if (original && *original) FlushInstructionCache(proc, *original, kFlushSpan);
         g_hooked_targets.push_back(target);
         return true;
     }
@@ -361,9 +372,11 @@ void RemoveAllD3D9Hooks()
     // Signal first: a detour reached after this (e.g. a surviving patch) falls through.
     g_unhooked = true;
 
+    const HANDLE proc = GetCurrentProcess();
     for (void* target : g_hooked_targets) {
         MH_DisableHook(target);
         MH_RemoveHook(target);
+        FlushInstructionCache(proc, target, kFlushSpan); // re-JIT the restored prologue under emulation
     }
     g_hooked_targets.clear();
 

@@ -252,6 +252,10 @@ void InitInstance(HINSTANCE hModule)
     if (GetProcAddress_fn) {
         MH_CreateHook(GetProcAddress_fn, OnGetProcAddress, (void**)&GetProcAddress_ret);
         MH_EnableHook(GetProcAddress_fn);
+        // Re-JIT the patched prologue + trampoline under the x86-on-ARM64 emulator (no-op native).
+        const HANDLE proc = GetCurrentProcess();
+        FlushInstructionCache(proc, (void*)GetProcAddress_fn, 64);
+        if (GetProcAddress_ret) FlushInstructionCache(proc, (void*)GetProcAddress_ret, 64);
     }
 }
 
