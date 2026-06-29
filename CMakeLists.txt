@@ -9,8 +9,8 @@ if(NOT(CMAKE_SIZEOF_VOID_P EQUAL 4))
     message(FATAL_ERROR "You are configuring a non 32-bit build, this is not supported. Run cmake with `-A Win32`")
 endif()
 
-set(VERSION_MAJOR 2)
-set(VERSION_MINOR 0)
+set(VERSION_MAJOR 1)
+set(VERSION_MINOR 10)
 set(VERSION_PATCH 0)
 set(VERSION_TWEAK 0)
 
