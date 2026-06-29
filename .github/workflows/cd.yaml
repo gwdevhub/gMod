@@ -16,9 +16,15 @@ jobs:
 
     runs-on: windows-2025-vs2026
 
+    permissions:
+      contents: write
+
     env:
       Configuration: Release
       Actions_Allow_Unsecure_Commands: true
+      CERTUM_OTP_URI: ${{ secrets.CERTUM_OTP_URI }}
+      CERTUM_USERID: ${{ secrets.CERTUM_USERID }}
+      CERTUM_CERT_SHA1: ${{ secrets.CERTUM_CERT_SHA1 }}
 
     steps:
     - name: Checkout
@@ -46,7 +52,28 @@ jobs:
 
     - name: Build binaries
       run: cmake --build build --config Release
-    
+
+    # Signing only runs when the Certum secrets are present (i.e. on the real
+    # repo, not forks); without them the build still produces unsigned binaries.
+    - name: Set up Certum SimplySign
+      if: env.CERTUM_OTP_URI != ''
+      shell: bash
+      run: |
+        chmod +x ./.github/scripts/install-simplysign.sh
+        ./.github/scripts/install-simplysign.sh
+        powershell -ExecutionPolicy Bypass -File "./.github/scripts/configure-simplysign.ps1"
+
+    - name: Authenticate Certum SimplySign
+      if: env.CERTUM_OTP_URI != ''
+      shell: bash
+      run: powershell -ExecutionPolicy Bypass -File "./.github/scripts/connect-simplysign.ps1"
+
+    - name: Sign release binaries
+      if: env.CERTUM_OTP_URI != ''
+      shell: pwsh
+      run: |
+        ./.github/scripts/sign-certum.ps1 -Files @(".\bin\Release\gMod.dll", ".\bin\Release\TpfConvert.exe")
+
     - name: Retrieve version
       id: set_version
       run: |
