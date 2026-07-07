@@ -2,6 +2,7 @@
 #include <Psapi.h>
 #include "MinHook.h"
 #include "D3D9Hooks.h"
+#include "D3D9Wrappers.h"
 #include <atomic>
 
 import TextureClient;
@@ -148,9 +149,11 @@ IDirect3D9* APIENTRY Direct3DCreate9(UINT SDKVersion)
 
     creating_d3d9 = false;
 
-    // Hook the vtable and hand the game back the real object untouched.
-    InstallD3D9Hooks(pIDirect3D9_orig, false);
-    return pIDirect3D9_orig;
+    // Hand the game a wrapper object instead of the real one: CreateDevice is intercepted
+    // via ordinary virtual dispatch, so nothing here is ever patched (see D3D9Wrappers.h).
+    const auto wrapped = new WrappedDirect3D9(pIDirect3D9_orig);
+    pIDirect3D9_orig->Release(); // the wrapper holds its own AddRef'd reference
+    return wrapped;
 }
 
 HRESULT APIENTRY Direct3DCreate9Ex(UINT SDKVersion, IDirect3D9Ex** ppD3D)
@@ -172,9 +175,11 @@ HRESULT APIENTRY Direct3DCreate9Ex(UINT SDKVersion, IDirect3D9Ex** ppD3D)
     if (ret != S_OK)
         return ret;
 
-    // Hook the vtable (CreateDevice + CreateDeviceEx) and return the real object untouched.
-    InstallD3D9Hooks(pIDirect3D9Ex_orig, true);
-    *ppD3D = pIDirect3D9Ex_orig;
+    // Hand the game a wrapper object instead of the real one: CreateDevice/CreateDeviceEx
+    // are intercepted via ordinary virtual dispatch, so nothing here is ever patched.
+    const auto wrapped = new WrappedDirect3D9Ex(pIDirect3D9Ex_orig);
+    pIDirect3D9Ex_orig->Release(); // the wrapper holds its own AddRef'd reference
+    *ppD3D = wrapped;
     return ret;
 }
 
