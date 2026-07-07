@@ -25,4 +25,23 @@ namespace utils {
 
         return wstr;
     }
+
+    // True when this x86/x64 process is running under an ARM64 emulator (Windows-on-ARM's
+    // xtajit, or Wine on FEX-Emu/box64 on ARM64 Linux). Patching a method on a device the
+    // game is already calling races that emulator's self-modifying-code handling, so callers
+    // must not hot-attach to an existing device in that case.
+    inline bool IsRunningUnderArm64Emulation()
+    {
+        using IsWow64Process2_t = BOOL(WINAPI*)(HANDLE, USHORT*, USHORT*);
+        const auto IsWow64Process2_fn = reinterpret_cast<IsWow64Process2_t>(
+            GetProcAddress(GetModuleHandleA("kernel32.dll"), "IsWow64Process2"));
+        if (!IsWow64Process2_fn) return false;
+
+        USHORT process_machine = IMAGE_FILE_MACHINE_UNKNOWN;
+        USHORT native_machine = IMAGE_FILE_MACHINE_UNKNOWN;
+        if (!IsWow64Process2_fn(GetCurrentProcess(), &process_machine, &native_machine))
+            return false;
+
+        return native_machine == IMAGE_FILE_MACHINE_ARM64 && process_machine != IMAGE_FILE_MACHINE_UNKNOWN;
+    }
 }

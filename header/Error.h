@@ -3,6 +3,7 @@
 // define return values, a value less than zero indicates an error
 #define RETURN_OK 0
 #define RETURN_EXISTS -70
+#define RETURN_UNSUPPORTED_UNDER_EMULATION -71
 
 #define RETURN_FATAL_ERROR -1
 #define RETURN_NO_MEMORY -2
