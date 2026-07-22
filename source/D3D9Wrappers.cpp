@@ -55,19 +55,32 @@ ULONG WrappedDirect3D9::Release()
     return count;
 }
 
-HRESULT WrappedDirect3D9::RegisterSoftwareDevice(void* pInitializeFunction) { return real_->RegisterSoftwareDevice(pInitializeFunction); }
-UINT WrappedDirect3D9::GetAdapterCount() { return real_->GetAdapterCount(); }
-HRESULT WrappedDirect3D9::GetAdapterIdentifier(UINT Adapter, DWORD Flags, D3DADAPTER_IDENTIFIER9* pIdentifier) { return real_->GetAdapterIdentifier(Adapter, Flags, pIdentifier); }
-UINT WrappedDirect3D9::GetAdapterModeCount(UINT Adapter, D3DFORMAT Format) { return real_->GetAdapterModeCount(Adapter, Format); }
-HRESULT WrappedDirect3D9::EnumAdapterModes(UINT Adapter, D3DFORMAT Format, UINT Mode, D3DDISPLAYMODE* pMode) { return real_->EnumAdapterModes(Adapter, Format, Mode, pMode); }
-HRESULT WrappedDirect3D9::GetAdapterDisplayMode(UINT Adapter, D3DDISPLAYMODE* pMode) { return real_->GetAdapterDisplayMode(Adapter, pMode); }
-HRESULT WrappedDirect3D9::CheckDeviceType(UINT Adapter, D3DDEVTYPE DevType, D3DFORMAT AdapterFormat, D3DFORMAT BackBufferFormat, BOOL bWindowed) { return real_->CheckDeviceType(Adapter, DevType, AdapterFormat, BackBufferFormat, bWindowed); }
-HRESULT WrappedDirect3D9::CheckDeviceFormat(UINT Adapter, D3DDEVTYPE DeviceType, D3DFORMAT AdapterFormat, DWORD Usage, D3DRESOURCETYPE RType, D3DFORMAT CheckFormat) { return real_->CheckDeviceFormat(Adapter, DeviceType, AdapterFormat, Usage, RType, CheckFormat); }
-HRESULT WrappedDirect3D9::CheckDeviceMultiSampleType(UINT Adapter, D3DDEVTYPE DeviceType, D3DFORMAT SurfaceFormat, BOOL Windowed, D3DMULTISAMPLE_TYPE MultiSampleType, DWORD* pQualityLevels) { return real_->CheckDeviceMultiSampleType(Adapter, DeviceType, SurfaceFormat, Windowed, MultiSampleType, pQualityLevels); }
-HRESULT WrappedDirect3D9::CheckDepthStencilMatch(UINT Adapter, D3DDEVTYPE DeviceType, D3DFORMAT AdapterFormat, D3DFORMAT RenderTargetFormat, D3DFORMAT DepthStencilFormat) { return real_->CheckDepthStencilMatch(Adapter, DeviceType, AdapterFormat, RenderTargetFormat, DepthStencilFormat); }
-HRESULT WrappedDirect3D9::CheckDeviceFormatConversion(UINT Adapter, D3DDEVTYPE DeviceType, D3DFORMAT SourceFormat, D3DFORMAT TargetFormat) { return real_->CheckDeviceFormatConversion(Adapter, DeviceType, SourceFormat, TargetFormat); }
-HRESULT WrappedDirect3D9::GetDeviceCaps(UINT Adapter, D3DDEVTYPE DeviceType, D3DCAPS9* pCaps) { return real_->GetDeviceCaps(Adapter, DeviceType, pCaps); }
-HMONITOR WrappedDirect3D9::GetAdapterMonitor(UINT Adapter) { return real_->GetAdapterMonitor(Adapter); }
+HRESULT WrappedDirect3D9::RegisterSoftwareDevice(void* pInitializeFunction)
+{ return real_->RegisterSoftwareDevice(pInitializeFunction); }
+UINT WrappedDirect3D9::GetAdapterCount()
+{ return real_->GetAdapterCount(); }
+HRESULT WrappedDirect3D9::GetAdapterIdentifier(UINT Adapter, DWORD Flags, D3DADAPTER_IDENTIFIER9* pIdentifier)
+{ return real_->GetAdapterIdentifier(Adapter, Flags, pIdentifier); }
+UINT WrappedDirect3D9::GetAdapterModeCount(UINT Adapter, D3DFORMAT Format)
+{ return real_->GetAdapterModeCount(Adapter, Format); }
+HRESULT WrappedDirect3D9::EnumAdapterModes(UINT Adapter, D3DFORMAT Format, UINT Mode, D3DDISPLAYMODE* pMode)
+{ return real_->EnumAdapterModes(Adapter, Format, Mode, pMode); }
+HRESULT WrappedDirect3D9::GetAdapterDisplayMode(UINT Adapter, D3DDISPLAYMODE* pMode)
+{ return real_->GetAdapterDisplayMode(Adapter, pMode); }
+HRESULT WrappedDirect3D9::CheckDeviceType(UINT Adapter, D3DDEVTYPE DevType, D3DFORMAT AdapterFormat, D3DFORMAT BackBufferFormat, BOOL bWindowed)
+{ return real_->CheckDeviceType(Adapter, DevType, AdapterFormat, BackBufferFormat, bWindowed); }
+HRESULT WrappedDirect3D9::CheckDeviceFormat(UINT Adapter, D3DDEVTYPE DeviceType, D3DFORMAT AdapterFormat, DWORD Usage, D3DRESOURCETYPE RType, D3DFORMAT CheckFormat)
+{ return real_->CheckDeviceFormat(Adapter, DeviceType, AdapterFormat, Usage, RType, CheckFormat); }
+HRESULT WrappedDirect3D9::CheckDeviceMultiSampleType(UINT Adapter, D3DDEVTYPE DeviceType, D3DFORMAT SurfaceFormat, BOOL Windowed, D3DMULTISAMPLE_TYPE MultiSampleType, DWORD* pQualityLevels)
+{ return real_->CheckDeviceMultiSampleType(Adapter, DeviceType, SurfaceFormat, Windowed, MultiSampleType, pQualityLevels); }
+HRESULT WrappedDirect3D9::CheckDepthStencilMatch(UINT Adapter, D3DDEVTYPE DeviceType, D3DFORMAT AdapterFormat, D3DFORMAT RenderTargetFormat, D3DFORMAT DepthStencilFormat)
+{ return real_->CheckDepthStencilMatch(Adapter, DeviceType, AdapterFormat, RenderTargetFormat, DepthStencilFormat); }
+HRESULT WrappedDirect3D9::CheckDeviceFormatConversion(UINT Adapter, D3DDEVTYPE DeviceType, D3DFORMAT SourceFormat, D3DFORMAT TargetFormat)
+{ return real_->CheckDeviceFormatConversion(Adapter, DeviceType, SourceFormat, TargetFormat); }
+HRESULT WrappedDirect3D9::GetDeviceCaps(UINT Adapter, D3DDEVTYPE DeviceType, D3DCAPS9* pCaps)
+{ return real_->GetDeviceCaps(Adapter, DeviceType, pCaps); }
+HMONITOR WrappedDirect3D9::GetAdapterMonitor(UINT Adapter)
+{ return real_->GetAdapterMonitor(Adapter); }
 
 HRESULT WrappedDirect3D9::CreateDevice(UINT Adapter, D3DDEVTYPE DeviceType, HWND hFocusWindow, DWORD BehaviorFlags, D3DPRESENT_PARAMETERS* pPresentationParameters, IDirect3DDevice9** ppReturnedDeviceInterface)
 {
@@ -117,19 +130,32 @@ ULONG WrappedDirect3D9Ex::Release()
     return count;
 }
 
-HRESULT WrappedDirect3D9Ex::RegisterSoftwareDevice(void* pInitializeFunction) { return real_->RegisterSoftwareDevice(pInitializeFunction); }
-UINT WrappedDirect3D9Ex::GetAdapterCount() { return real_->GetAdapterCount(); }
-HRESULT WrappedDirect3D9Ex::GetAdapterIdentifier(UINT Adapter, DWORD Flags, D3DADAPTER_IDENTIFIER9* pIdentifier) { return real_->GetAdapterIdentifier(Adapter, Flags, pIdentifier); }
-UINT WrappedDirect3D9Ex::GetAdapterModeCount(UINT Adapter, D3DFORMAT Format) { return real_->GetAdapterModeCount(Adapter, Format); }
-HRESULT WrappedDirect3D9Ex::EnumAdapterModes(UINT Adapter, D3DFORMAT Format, UINT Mode, D3DDISPLAYMODE* pMode) { return real_->EnumAdapterModes(Adapter, Format, Mode, pMode); }
-HRESULT WrappedDirect3D9Ex::GetAdapterDisplayMode(UINT Adapter, D3DDISPLAYMODE* pMode) { return real_->GetAdapterDisplayMode(Adapter, pMode); }
-HRESULT WrappedDirect3D9Ex::CheckDeviceType(UINT Adapter, D3DDEVTYPE DevType, D3DFORMAT AdapterFormat, D3DFORMAT BackBufferFormat, BOOL bWindowed) { return real_->CheckDeviceType(Adapter, DevType, AdapterFormat, BackBufferFormat, bWindowed); }
-HRESULT WrappedDirect3D9Ex::CheckDeviceFormat(UINT Adapter, D3DDEVTYPE DeviceType, D3DFORMAT AdapterFormat, DWORD Usage, D3DRESOURCETYPE RType, D3DFORMAT CheckFormat) { return real_->CheckDeviceFormat(Adapter, DeviceType, AdapterFormat, Usage, RType, CheckFormat); }
-HRESULT WrappedDirect3D9Ex::CheckDeviceMultiSampleType(UINT Adapter, D3DDEVTYPE DeviceType, D3DFORMAT SurfaceFormat, BOOL Windowed, D3DMULTISAMPLE_TYPE MultiSampleType, DWORD* pQualityLevels) { return real_->CheckDeviceMultiSampleType(Adapter, DeviceType, SurfaceFormat, Windowed, MultiSampleType, pQualityLevels); }
-HRESULT WrappedDirect3D9Ex::CheckDepthStencilMatch(UINT Adapter, D3DDEVTYPE DeviceType, D3DFORMAT AdapterFormat, D3DFORMAT RenderTargetFormat, D3DFORMAT DepthStencilFormat) { return real_->CheckDepthStencilMatch(Adapter, DeviceType, AdapterFormat, RenderTargetFormat, DepthStencilFormat); }
-HRESULT WrappedDirect3D9Ex::CheckDeviceFormatConversion(UINT Adapter, D3DDEVTYPE DeviceType, D3DFORMAT SourceFormat, D3DFORMAT TargetFormat) { return real_->CheckDeviceFormatConversion(Adapter, DeviceType, SourceFormat, TargetFormat); }
-HRESULT WrappedDirect3D9Ex::GetDeviceCaps(UINT Adapter, D3DDEVTYPE DeviceType, D3DCAPS9* pCaps) { return real_->GetDeviceCaps(Adapter, DeviceType, pCaps); }
-HMONITOR WrappedDirect3D9Ex::GetAdapterMonitor(UINT Adapter) { return real_->GetAdapterMonitor(Adapter); }
+HRESULT WrappedDirect3D9Ex::RegisterSoftwareDevice(void* pInitializeFunction)
+{ return real_->RegisterSoftwareDevice(pInitializeFunction); }
+UINT WrappedDirect3D9Ex::GetAdapterCount()
+{ return real_->GetAdapterCount(); }
+HRESULT WrappedDirect3D9Ex::GetAdapterIdentifier(UINT Adapter, DWORD Flags, D3DADAPTER_IDENTIFIER9* pIdentifier)
+{ return real_->GetAdapterIdentifier(Adapter, Flags, pIdentifier); }
+UINT WrappedDirect3D9Ex::GetAdapterModeCount(UINT Adapter, D3DFORMAT Format)
+{ return real_->GetAdapterModeCount(Adapter, Format); }
+HRESULT WrappedDirect3D9Ex::EnumAdapterModes(UINT Adapter, D3DFORMAT Format, UINT Mode, D3DDISPLAYMODE* pMode)
+{ return real_->EnumAdapterModes(Adapter, Format, Mode, pMode); }
+HRESULT WrappedDirect3D9Ex::GetAdapterDisplayMode(UINT Adapter, D3DDISPLAYMODE* pMode)
+{ return real_->GetAdapterDisplayMode(Adapter, pMode); }
+HRESULT WrappedDirect3D9Ex::CheckDeviceType(UINT Adapter, D3DDEVTYPE DevType, D3DFORMAT AdapterFormat, D3DFORMAT BackBufferFormat, BOOL bWindowed)
+{ return real_->CheckDeviceType(Adapter, DevType, AdapterFormat, BackBufferFormat, bWindowed); }
+HRESULT WrappedDirect3D9Ex::CheckDeviceFormat(UINT Adapter, D3DDEVTYPE DeviceType, D3DFORMAT AdapterFormat, DWORD Usage, D3DRESOURCETYPE RType, D3DFORMAT CheckFormat)
+{ return real_->CheckDeviceFormat(Adapter, DeviceType, AdapterFormat, Usage, RType, CheckFormat); }
+HRESULT WrappedDirect3D9Ex::CheckDeviceMultiSampleType(UINT Adapter, D3DDEVTYPE DeviceType, D3DFORMAT SurfaceFormat, BOOL Windowed, D3DMULTISAMPLE_TYPE MultiSampleType, DWORD* pQualityLevels)
+{ return real_->CheckDeviceMultiSampleType(Adapter, DeviceType, SurfaceFormat, Windowed, MultiSampleType, pQualityLevels); }
+HRESULT WrappedDirect3D9Ex::CheckDepthStencilMatch(UINT Adapter, D3DDEVTYPE DeviceType, D3DFORMAT AdapterFormat, D3DFORMAT RenderTargetFormat, D3DFORMAT DepthStencilFormat)
+{ return real_->CheckDepthStencilMatch(Adapter, DeviceType, AdapterFormat, RenderTargetFormat, DepthStencilFormat); }
+HRESULT WrappedDirect3D9Ex::CheckDeviceFormatConversion(UINT Adapter, D3DDEVTYPE DeviceType, D3DFORMAT SourceFormat, D3DFORMAT TargetFormat)
+{ return real_->CheckDeviceFormatConversion(Adapter, DeviceType, SourceFormat, TargetFormat); }
+HRESULT WrappedDirect3D9Ex::GetDeviceCaps(UINT Adapter, D3DDEVTYPE DeviceType, D3DCAPS9* pCaps)
+{ return real_->GetDeviceCaps(Adapter, DeviceType, pCaps); }
+HMONITOR WrappedDirect3D9Ex::GetAdapterMonitor(UINT Adapter)
+{ return real_->GetAdapterMonitor(Adapter); }
 
 HRESULT WrappedDirect3D9Ex::CreateDevice(UINT Adapter, D3DDEVTYPE DeviceType, HWND hFocusWindow, DWORD BehaviorFlags, D3DPRESENT_PARAMETERS* pPresentationParameters, IDirect3DDevice9** ppReturnedDeviceInterface)
 {
@@ -145,9 +171,12 @@ HRESULT WrappedDirect3D9Ex::CreateDevice(UINT Adapter, D3DDEVTYPE DeviceType, HW
     return hr;
 }
 
-UINT WrappedDirect3D9Ex::GetAdapterModeCountEx(UINT Adapter, const D3DDISPLAYMODEFILTER* pFilter) { return real_->GetAdapterModeCountEx(Adapter, pFilter); }
-HRESULT WrappedDirect3D9Ex::EnumAdapterModesEx(UINT Adapter, const D3DDISPLAYMODEFILTER* pFilter, UINT Mode, D3DDISPLAYMODEEX* pMode) { return real_->EnumAdapterModesEx(Adapter, pFilter, Mode, pMode); }
-HRESULT WrappedDirect3D9Ex::GetAdapterDisplayModeEx(UINT Adapter, D3DDISPLAYMODEEX* pMode, D3DDISPLAYROTATION* pRotation) { return real_->GetAdapterDisplayModeEx(Adapter, pMode, pRotation); }
+UINT WrappedDirect3D9Ex::GetAdapterModeCountEx(UINT Adapter, const D3DDISPLAYMODEFILTER* pFilter)
+{ return real_->GetAdapterModeCountEx(Adapter, pFilter); }
+HRESULT WrappedDirect3D9Ex::EnumAdapterModesEx(UINT Adapter, const D3DDISPLAYMODEFILTER* pFilter, UINT Mode, D3DDISPLAYMODEEX* pMode)
+{ return real_->EnumAdapterModesEx(Adapter, pFilter, Mode, pMode); }
+HRESULT WrappedDirect3D9Ex::GetAdapterDisplayModeEx(UINT Adapter, D3DDISPLAYMODEEX* pMode, D3DDISPLAYROTATION* pRotation)
+{ return real_->GetAdapterDisplayModeEx(Adapter, pMode, pRotation); }
 
 HRESULT WrappedDirect3D9Ex::CreateDeviceEx(UINT Adapter, D3DDEVTYPE DeviceType, HWND hFocusWindow, DWORD BehaviorFlags, D3DPRESENT_PARAMETERS* pPresentationParameters, D3DDISPLAYMODEEX* pFullscreenDisplayMode, IDirect3DDevice9Ex** ppReturnedDeviceInterface)
 {
@@ -163,4 +192,5 @@ HRESULT WrappedDirect3D9Ex::CreateDeviceEx(UINT Adapter, D3DDEVTYPE DeviceType, 
     return hr;
 }
 
-HRESULT WrappedDirect3D9Ex::GetAdapterLUID(UINT Adapter, LUID* pLUID) { return real_->GetAdapterLUID(Adapter, pLUID); }
+HRESULT WrappedDirect3D9Ex::GetAdapterLUID(UINT Adapter, LUID* pLUID)
+{ return real_->GetAdapterLUID(Adapter, pLUID); }
