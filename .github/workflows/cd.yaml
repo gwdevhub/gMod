@@ -21,10 +21,7 @@ jobs:
 
     env:
       Configuration: Release
-      Actions_Allow_Unsecure_Commands: true
-      CERTUM_OTP_URI: ${{ secrets.CERTUM_OTP_URI }}
-      CERTUM_USERID: ${{ secrets.CERTUM_USERID }}
-      CERTUM_CERT_SHA1: ${{ secrets.CERTUM_CERT_SHA1 }}
+      HAS_CERTUM_CREDENTIALS: ${{ secrets.CERTUM_OTP_URI != '' && secrets.CERTUM_USERID != '' && secrets.CERTUM_CERT_SHA1 != '' }}
 
     steps:
     - name: Checkout
@@ -56,7 +53,7 @@ jobs:
     # Signing only runs when the Certum secrets are present (i.e. on the real
     # repo, not forks); without them the build still produces unsigned binaries.
     - name: Set up Certum SimplySign
-      if: env.CERTUM_OTP_URI != ''
+      if: env.HAS_CERTUM_CREDENTIALS == 'true'
       shell: bash
       run: |
         chmod +x ./.github/scripts/install-simplysign.sh
@@ -64,15 +61,26 @@ jobs:
         powershell -ExecutionPolicy Bypass -File "./.github/scripts/configure-simplysign.ps1"
 
     - name: Authenticate Certum SimplySign
-      if: env.CERTUM_OTP_URI != ''
+      if: env.HAS_CERTUM_CREDENTIALS == 'true'
       shell: bash
+      env:
+        CERTUM_OTP_URI: ${{ secrets.CERTUM_OTP_URI }}
+        CERTUM_USERID: ${{ secrets.CERTUM_USERID }}
+        CERTUM_CERT_SHA1: ${{ secrets.CERTUM_CERT_SHA1 }}
       run: powershell -ExecutionPolicy Bypass -File "./.github/scripts/connect-simplysign.ps1"
 
     - name: Sign release binaries
-      if: env.CERTUM_OTP_URI != ''
+      if: env.HAS_CERTUM_CREDENTIALS == 'true'
       shell: pwsh
+      env:
+        CERTUM_CERT_SHA1: ${{ secrets.CERTUM_CERT_SHA1 }}
       run: |
         ./.github/scripts/sign-certum.ps1 -Files @(".\bin\Release\gMod.dll", ".\bin\Release\TpfConvert.exe")
+
+    - name: Disconnect Certum SimplySign
+      if: always() && env.HAS_CERTUM_CREDENTIALS == 'true'
+      shell: pwsh
+      run: ./.github/scripts/disconnect-simplysign.ps1
 
     - name: Retrieve version
       id: set_version
@@ -83,19 +91,37 @@ jobs:
             exit 1
         } else {
             Write-Host "FileVersionInfo: $fileVersionInfo"
-            echo "::set-output name=version::$fileVersionInfo"
+            Add-Content -LiteralPath $env:GITHUB_OUTPUT -Value "version=$fileVersionInfo" -Encoding utf8
         }
       shell: pwsh
 
     - name: Publish release
-      uses: Xotl/cool-github-releases@v1.1.8
-      with:
-        mode: update
-        tag_name: v${{ steps.set_version.outputs.version }}
-        release_name: gMod v${{ steps.set_version.outputs.version }}
-        assets: .\bin\Release\gMod.dll;.\bin\Release\TpfConvert.exe;.\bin\Release\d3dx9_43.dll
-        github_token: ${{ env.GITHUB_TOKEN }}
-        replace_assets: true
-        body_mrkdwn: ${{ env.Changelog }}
       env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        VERSION: ${{ steps.set_version.outputs.version }}
+      shell: pwsh
+      run: |
+        $tag = "v$env:VERSION"
+        $title = "gMod v$env:VERSION"
+
+        gh release view $tag *> $null
+        if ($LASTEXITCODE -eq 0) {
+            gh release edit $tag --title $title
+            if ($LASTEXITCODE -ne 0) { throw "Failed to update release $tag." }
+        } else {
+            $notes = [System.IO.Path]::GetTempFileName()
+            try {
+                Set-Content -LiteralPath $notes -Value "" -NoNewline
+                gh release create $tag --title $title --notes-file $notes
+                if ($LASTEXITCODE -ne 0) { throw "Failed to create release $tag." }
+            } finally {
+                Remove-Item -LiteralPath $notes -Force -ErrorAction SilentlyContinue
+            }
+        }
+
+        gh release upload $tag `
+          .\bin\Release\gMod.dll `
+          .\bin\Release\TpfConvert.exe `
+          .\bin\Release\d3dx9_43.dll `
+          --clobber
+        if ($LASTEXITCODE -ne 0) { throw "Failed to upload assets for release $tag." }
