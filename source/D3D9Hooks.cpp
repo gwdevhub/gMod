@@ -357,6 +357,11 @@ void InstallD3D9Hooks(IDirect3D9* d3d9, const bool is_ex)
 bool RegisterExistingDevice(IDirect3DDevice9* device)
 {
     if (device == nullptr) return false;
+    // Already active, whether registered via this path before or already wrapped by the
+    // cold Direct3DCreate9(Ex) path (D3D9Wrappers.cpp) - that path never touches g_devices,
+    // so without this check we'd double-hook the wrapper's own vtable and construct a second
+    // TextureClient, hitting its single-instance ASSERT.
+    if (TextureClient::CurrentClient() != nullptr) return false;
     {
         std::lock_guard lk(g_devices_mutex);
         if (g_devices.contains(device)) return false; // already known
