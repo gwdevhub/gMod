@@ -231,7 +231,7 @@ namespace {
     {
         const HRESULT hr = o_CreateTexture(self, Width, Height, Levels, Usage, Format, Pool, ppTexture, pSharedHandle);
         if (g_unhooked) return hr;
-        if (SUCCEEDED(hr) && ppTexture && *ppTexture) {
+        if (SUCCEEDED(hr) && ppTexture && *ppTexture && ShouldTrackTexture(Usage, pSharedHandle)) {
             InstallTextureReleaseHook(*ppTexture, TexType::Tex2D);
             if (auto* client = ClientFor(self))
                 client->OnCreateTexture(static_cast<IDirect3DBaseTexture9*>(*ppTexture), TexType::Tex2D);
@@ -244,7 +244,7 @@ namespace {
     {
         const HRESULT hr = o_CreateVolumeTexture(self, Width, Height, Depth, Levels, Usage, Format, Pool, ppVolumeTexture, pSharedHandle);
         if (g_unhooked) return hr;
-        if (SUCCEEDED(hr) && ppVolumeTexture && *ppVolumeTexture) {
+        if (SUCCEEDED(hr) && ppVolumeTexture && *ppVolumeTexture && ShouldTrackTexture(Usage, pSharedHandle)) {
             InstallTextureReleaseHook(*ppVolumeTexture, TexType::Volume);
             if (auto* client = ClientFor(self))
                 client->OnCreateTexture(static_cast<IDirect3DBaseTexture9*>(*ppVolumeTexture), TexType::Volume);
@@ -257,7 +257,7 @@ namespace {
     {
         const HRESULT hr = o_CreateCubeTexture(self, EdgeLength, Levels, Usage, Format, Pool, ppCubeTexture, pSharedHandle);
         if (g_unhooked) return hr;
-        if (SUCCEEDED(hr) && ppCubeTexture && *ppCubeTexture) {
+        if (SUCCEEDED(hr) && ppCubeTexture && *ppCubeTexture && ShouldTrackTexture(Usage, pSharedHandle)) {
             InstallTextureReleaseHook(*ppCubeTexture, TexType::Cube);
             if (auto* client = ClientFor(self))
                 client->OnCreateTexture(static_cast<IDirect3DBaseTexture9*>(*ppCubeTexture), TexType::Cube);
