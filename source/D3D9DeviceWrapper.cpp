@@ -113,7 +113,7 @@ HRESULT WrappedDirect3DDevice9::CreateTexture(UINT Width, UINT Height, UINT Leve
     }
     const auto wrapped = new WrappedTexture9(real_texture);
     real_texture->Release(); // the wrapper holds its own AddRef'd reference
-    if (client_) client_->OnCreateTexture(wrapped, TexType::Tex2D);
+    if (client_ && ShouldTrackTexture(Usage, pSharedHandle)) client_->OnCreateTexture(wrapped, TexType::Tex2D);
     *ppTexture = wrapped;
     return hr;
 }
@@ -128,7 +128,7 @@ HRESULT WrappedDirect3DDevice9::CreateVolumeTexture(UINT Width, UINT Height, UIN
     }
     const auto wrapped = new WrappedVolumeTexture9(real_texture);
     real_texture->Release();
-    if (client_) client_->OnCreateTexture(wrapped, TexType::Volume);
+    if (client_ && ShouldTrackTexture(Usage, pSharedHandle)) client_->OnCreateTexture(wrapped, TexType::Volume);
     *ppVolumeTexture = wrapped;
     return hr;
 }
@@ -143,7 +143,7 @@ HRESULT WrappedDirect3DDevice9::CreateCubeTexture(UINT EdgeLength, UINT Levels, 
     }
     const auto wrapped = new WrappedCubeTexture9(real_texture);
     real_texture->Release();
-    if (client_) client_->OnCreateTexture(wrapped, TexType::Cube);
+    if (client_ && ShouldTrackTexture(Usage, pSharedHandle)) client_->OnCreateTexture(wrapped, TexType::Cube);
     *ppCubeTexture = wrapped;
     return hr;
 }
@@ -472,7 +472,7 @@ HRESULT WrappedDirect3DDevice9Ex::CreateTexture(UINT Width, UINT Height, UINT Le
     }
     const auto wrapped = new WrappedTexture9(real_texture);
     real_texture->Release();
-    if (client_) client_->OnCreateTexture(wrapped, TexType::Tex2D);
+    if (client_ && ShouldTrackTexture(Usage, pSharedHandle)) client_->OnCreateTexture(wrapped, TexType::Tex2D);
     *ppTexture = wrapped;
     return hr;
 }
@@ -487,7 +487,7 @@ HRESULT WrappedDirect3DDevice9Ex::CreateVolumeTexture(UINT Width, UINT Height, U
     }
     const auto wrapped = new WrappedVolumeTexture9(real_texture);
     real_texture->Release();
-    if (client_) client_->OnCreateTexture(wrapped, TexType::Volume);
+    if (client_ && ShouldTrackTexture(Usage, pSharedHandle)) client_->OnCreateTexture(wrapped, TexType::Volume);
     *ppVolumeTexture = wrapped;
     return hr;
 }
@@ -502,7 +502,7 @@ HRESULT WrappedDirect3DDevice9Ex::CreateCubeTexture(UINT EdgeLength, UINT Levels
     }
     const auto wrapped = new WrappedCubeTexture9(real_texture);
     real_texture->Release();
-    if (client_) client_->OnCreateTexture(wrapped, TexType::Cube);
+    if (client_ && ShouldTrackTexture(Usage, pSharedHandle)) client_->OnCreateTexture(wrapped, TexType::Cube);
     *ppCubeTexture = wrapped;
     return hr;
 }
