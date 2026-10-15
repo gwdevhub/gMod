@@ -20,7 +20,6 @@ jobs:
 
     env:
       Configuration: Release
-      Actions_Allow_Unsecure_Commands: true
 
     steps:
     - name: Checkout

@@ -12,6 +12,11 @@ enum class TexType {
     Cube,
 };
 
+inline bool ShouldTrackTexture(DWORD usage, HANDLE* shared_handle)
+{
+    return shared_handle == nullptr && (usage & D3DUSAGE_RENDERTARGET) == 0;
+}
+
 // State for one texture: an "original" the game created, or a "fake" we loaded
 // from a mod to stand in for one.
 struct TexState {
