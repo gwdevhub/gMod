@@ -269,6 +269,14 @@ void InitInstance(HINSTANCE hModule)
 extern "C" __declspec(dllexport) int __cdecl SetDevice(IDirect3DDevice9* device)
 {
     if (!device) return RETURN_BAD_ARGUMENT;
+    if (utils::IsRunningUnderArm64Emulation()) {
+        // The device is already live and being called every frame; hot-patching its vtable
+        // methods here would race the emulator's self-modifying-code handling. Load gMod as
+        // d3d9.dll before the game starts instead, so hooks install via Direct3DCreate9(Ex)
+        // on a device nobody has called into yet.
+        Warning("SetDevice: late device-attach isn't supported under ARM64 emulation\n");
+        return RETURN_UNSUPPORTED_UNDER_EMULATION;
+    }
     try {
         return RegisterExistingDevice(device) ? RETURN_OK : RETURN_EXISTS;
     }
