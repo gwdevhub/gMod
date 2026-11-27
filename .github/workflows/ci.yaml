@@ -45,11 +45,14 @@ jobs:
           fetch-depth: 0
 
       # The Windows host builds the same way as Linux; bootstrap.bat would stop at a pause, so run the steps it
-      # wraps. Ninja comes from pip. CMake and llvm-mingw are pinned and installed by bootstrap.py.
-      - name: Install Ninja
-        run: python -m pip install ninja
+      # wraps. CMake and llvm-mingw are pinned and installed by bootstrap.py. vcpkg's own pkgconf download points at an
+      # msys2 package the mirrors no longer serve, so vcpkg uses the pkgconf and ninja installed here instead.
+      - name: Install Ninja and pkgconf
+        run: choco install ninja pkgconfiglite -y --no-progress
 
       - name: Bootstrap
+        env:
+          VCPKG_FORCE_SYSTEM_BINARIES: "1"
         run: python scripts\bootstrap.py
 
       - name: Build
