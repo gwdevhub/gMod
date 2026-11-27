@@ -223,10 +223,7 @@ void LoadModlists()
         const auto modlist = path / "modlist.txt";
         if (std::filesystem::exists(modlist)) {
             Message("Initialize: found %s\n", modlist.string().c_str());
-            std::ifstream t(modlist, std::ios::binary);
-            std::stringstream buffer;
-            buffer << t.rdbuf();
-            modlists_contents.emplace_back(modlist.string(), buffer.str());
+            modlists_contents.emplace_back(modlist.string(), utils::ReadWholeFile(modlist));
         }
     }
 }

@@ -13,29 +13,34 @@ import TextureFunction;
 namespace {
     bool use_64_bit_crc = false;
 
+    // Finds the first "0x" or "0X" followed by 4 to 16 hex digits (the match a regex of 0[xX][0-9a-fA-F]{4,16} would
+    // give). Sixteen hex digits always fit a uint64_t, so the parse cannot fail or overflow.
     HashType GetCrcFromFilename(const std::string& filename)
     {
-        const static std::regex re(R"(0[xX][0-9a-fA-F]{4,16})", std::regex::optimize);
-        std::smatch match;
-        if (!std::regex_search(filename, match, re)) {
-            return 0;
+        auto is_hex = [](const char c) {
+            return (c >= '0' && c <= '9') || (c >= 'a' && c <= 'f') || (c >= 'A' && c <= 'F');
+        };
+        for (size_t i = 0; i + 1 < filename.size(); ++i) {
+            if (filename[i] != '0' || (filename[i + 1] != 'x' && filename[i + 1] != 'X')) {
+                continue;
+            }
+            size_t digits = 0;
+            while (digits < 16 && i + 2 + digits < filename.size() && is_hex(filename[i + 2 + digits])) {
+                ++digits;
+            }
+            if (digits < 4) {
+                continue;
+            }
+            uint64_t crc64_hash = 0;
+            for (size_t d = 0; d < digits; ++d) {
+                const char c = filename[i + 2 + d];
+                const uint64_t value = (c >= 'a') ? (c - 'a' + 10) : (c >= 'A') ? (c - 'A' + 10) : (c - '0');
+                crc64_hash = crc64_hash * 16 + value;
+            }
+            use_64_bit_crc = use_64_bit_crc || crc64_hash > 0xFFFFFFFF;
+            return crc64_hash;
         }
-
-        uint64_t crc64_hash = 0;
-        const auto number_str = match.str();
-        try {
-            crc64_hash = std::stoull(number_str, nullptr, 16);
-        }
-        catch (const std::invalid_argument&) {
-            Warning("Failed to parse %s as a hash\n", filename.c_str());
-            return 0;
-        }
-        catch (const std::out_of_range&) {
-            Warning("Out of range while parsing %s as a hash\n", filename.c_str());
-            return 0;
-        }
-        use_64_bit_crc = use_64_bit_crc || crc64_hash > 0xFFFFFFFF;
-        return crc64_hash;
+        return 0;
     }
 }
 
@@ -139,19 +144,40 @@ void ParseSimpleArchive(const libzippp::ZipArchive& archive, std::vector<TexEntr
     }
 }
 
+// Equivalent to matching ^[\\/.]*([^|]+)\|([^\r\n]+) against the line. Returns false when that would not match.
+bool ParseAddressLine(const std::string& line, std::string& address, std::string& file_path)
+    {
+        const auto is_prefix = [](const char c) { return c == '\\' || c == '/' || c == '.'; };
+        const auto pipe = line.find('|');
+        if (pipe == std::string::npos || pipe == 0) {
+            return false;
+        }
+        // Leading \ / . are skipped, but the address must keep at least one character before the pipe.
+        size_t start = 0;
+        while (start < pipe - 1 && is_prefix(line[start])) {
+            ++start;
+        }
+        const auto file_end = line.find_first_of("\r\n", pipe + 1);
+        const auto file_length = (file_end == std::string::npos ? line.size() : file_end) - (pipe + 1);
+        if (file_length == 0) {
+            return false;
+        }
+        address = line.substr(start, pipe - start);
+        file_path = line.substr(pipe + 1, file_length);
+        return true;
+    }
+
 void ParseTexmodArchive(std::vector<std::string>& lines, libzippp::ZipArchive& archive, std::vector<TexEntry>& entries)
 {
     for (const auto& line : lines) {
         // 0xC57D73F7|GW.EXE_0xC57D73F7.tga\r\n
-        // match[1] | match[2]
-        const static auto address_file_regex = std::regex(R"(^[\\/.]*([^|]+)\|([^\r\n]+))", std::regex::optimize);
-        std::smatch match;
-        if (!std::regex_search(line, match, address_file_regex)) {
+        // address | file_path
+        std::string address_string;
+        std::string file_path;
+        if (!ParseAddressLine(line, address_string, file_path)) {
             Warning("Failed to parse texmod.def archive line: %s - %s", line.c_str(), line.c_str());
             continue;
         }
-        const auto address_string = match[1].str();
-        const auto file_path = match[2].str();
 
         const auto crc_hash = GetCrcFromFilename(address_string);
         if (!crc_hash)
@@ -177,15 +203,7 @@ void ModfileLoader::LoadEntries(libzippp::ZipArchive& archive, std::vector<TexEn
         ParseSimpleArchive(archive, entries);
     }
     else {
-        const auto def = def_file.readAsText();
-        std::istringstream iss(def);
-        std::vector<std::string> lines;
-        std::string line;
-
-        while (std::getline(iss, line)) {
-            lines.push_back(line);
-        }
-
+        auto lines = utils::SplitLines(def_file.readAsText());
         ParseTexmodArchive(lines, archive, entries);
     }
 }

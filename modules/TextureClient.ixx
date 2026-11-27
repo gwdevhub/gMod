@@ -598,12 +598,9 @@ int TextureClient::AddFile(const std::filesystem::path& path)
 
 void TextureClient::LoadStartupModlists()
 {
-    std::locale::global(std::locale(""));
     std::vector<std::filesystem::path> modfiles;
     for (const auto& content : modlists_contents | std::views::values) {
-        std::istringstream iss(content);
-        std::string line;
-        while (std::getline(iss, line)) {
+        for (auto line : utils::SplitLines(content)) {
             if (line.starts_with("//") || line.starts_with("#") || line.empty()) {
                 continue;
             }

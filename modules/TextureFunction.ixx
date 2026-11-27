@@ -306,7 +306,9 @@ export namespace TextureFunction {
 
     void ImageSave(const DirectX::ScratchImage& image, const TexEntry& entry)
     {
-        const auto file_name = std::format("0x{:x}.dds", entry.crc_hash);
+        char name_buffer[32];
+        std::snprintf(name_buffer, sizeof(name_buffer), "0x%llx.dds", static_cast<unsigned long long>(entry.crc_hash));
+        const std::string file_name = name_buffer;
         const auto file_out = gmod_dll_path.parent_path() / "textures" / file_name;
         try {
             if (std::filesystem::exists(file_out)) {
