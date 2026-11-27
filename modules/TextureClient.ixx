@@ -556,7 +556,9 @@ std::vector<std::filesystem::path> TextureClient::GetFiles()
 
 int TextureClient::RemoveFile(const std::filesystem::path& path)
 {
-    const auto absolute_path = std::filesystem::absolute(path);
+    std::error_code ec;
+    const auto absolute_path = std::filesystem::absolute(path, ec);
+    if (ec) return RETURN_FILE_NOT_LOADED;
     std::lock_guard lk(global_mutex);
     const auto it = FindLoadedFile(absolute_path);
     if (it == loaded_files.end()) return RETURN_FILE_NOT_LOADED;
@@ -571,14 +573,17 @@ int TextureClient::RemoveFile(const std::filesystem::path& path)
 
 int TextureClient::AddFile(const std::filesystem::path& path)
 {
-    const auto absolute_path = std::filesystem::absolute(path);
+    std::error_code ec;
+    const auto absolute_path = std::filesystem::absolute(path, ec);
+    if (ec) return RETURN_FILE_NOT_LOADED;
     {
         std::lock_guard lk(global_mutex);
         if (FindLoadedFile(absolute_path) != loaded_files.end()) return RETURN_EXISTS;
     }
-    if (!std::filesystem::exists(absolute_path)) return RETURN_FILE_NOT_LOADED;
+    if (!std::filesystem::exists(absolute_path, ec) || ec) return RETURN_FILE_NOT_LOADED;
 
-    const auto file_size = std::filesystem::file_size(absolute_path);
+    const auto file_size = std::filesystem::file_size(absolute_path, ec);
+    if (ec) return RETURN_FILE_NOT_LOADED;
     auto texture_file_structs = ProcessModfile(absolute_path, file_size > 400'000'000);
     if (texture_file_structs.empty()) return RETURN_FILE_NOT_LOADED;
 
@@ -609,7 +614,14 @@ void TextureClient::LoadStartupModlists()
             line.erase(std::ranges::remove(line, '\n').begin(), line.end());
             if (line.empty()) continue;
 
-            auto modfile = std::filesystem::absolute(std::filesystem::path(utils::utf8_to_wstring(line)));
+            const auto wide_line = utils::utf8_to_wstring(line);
+            if (!wide_line) {
+                Warning("Skipping modlist line that is not valid UTF-8: %s\n", line.c_str());
+                continue;
+            }
+            std::error_code ec;
+            auto modfile = std::filesystem::absolute(std::filesystem::path(*wide_line), ec);
+            if (ec) continue;
             if (!std::ranges::contains(modfiles, modfile)) {
                 modfiles.push_back(std::move(modfile));
             }
@@ -618,7 +630,10 @@ void TextureClient::LoadStartupModlists()
 
     auto total_size = 0ull;
     for (const auto& modfile : modfiles) {
-        if (std::filesystem::exists(modfile)) total_size += std::filesystem::file_size(modfile);
+        std::error_code ec;
+        if (!std::filesystem::exists(modfile, ec) || ec) continue;
+        const auto size = std::filesystem::file_size(modfile, ec);
+        if (!ec) total_size += size;
     }
     const bool compress = total_size > 400'000'000;
 
@@ -654,8 +669,10 @@ void TextureClient::Initialize()
     // AddFile() before the device existed recorded files but couldn't enqueue them
     // (no client yet); enqueue them now.
     for (const auto& path : GetFiles()) {
-        if (!std::filesystem::exists(path)) continue;
-        const auto file_size = std::filesystem::file_size(path);
+        std::error_code ec;
+        if (!std::filesystem::exists(path, ec) || ec) continue;
+        const auto file_size = std::filesystem::file_size(path, ec);
+        if (ec) continue;
         auto texture_file_structs = ProcessModfile(path, file_size > 400'000'000);
         IngestModfile(texture_file_structs);
     }

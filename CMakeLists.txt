@@ -65,7 +65,8 @@ set_target_properties(gMod PROPERTIES
 
 # clang's warnings in place of MSVC's /W4 /WX.
 # -gdwarf-4 keeps DWARF in the link so the split below can take it out; the PDB is written separately.
-target_compile_options(gMod PRIVATE -Wall -Wextra -gdwarf-4)
+# -fno-exceptions: the DLL reports failures through return values and error_code, so no unwind runtime is needed.
+target_compile_options(gMod PRIVATE -Wall -Wextra -gdwarf-4 -fno-exceptions)
 
 # The DLL ships without DWARF. GWToolboxdll.debug-style split: the debug sections go to gMod.debug for GDB, and the
 # DLL is stripped. The CodeView PDB (gMod.pdb) is unaffected.

@@ -9,11 +9,12 @@ import std;
 export class TpfReader {
 public:
     // Reads the whole file up front through the C runtime (iostreams would pull in the locale machinery).
+    // Check IsOpen() before ReadToEnd(): an unreadable file leaves the reader empty.
     TpfReader(const std::filesystem::path& path)
     {
         FILE* file = _wfopen(path.c_str(), L"rb");
         if (!file) {
-            throw std::invalid_argument("Could not open the TPF file");
+            return;
         }
         char buffer[4096];
         size_t count = 0;
@@ -22,6 +23,12 @@ public:
         }
         std::fclose(file);
         line_length = static_cast<long>(contents.size());
+        opened = true;
+    }
+
+    [[nodiscard]] bool IsOpen() const
+    {
+        return opened;
     }
 
     std::vector<char> ReadToEnd()
@@ -45,6 +52,7 @@ public:
 private:
     std::vector<char> contents;
     long line_length = 0;
+    bool opened = false;
 
     [[nodiscard]] char XOR(const char b, const long position) const
     {

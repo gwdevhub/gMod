@@ -1,5 +1,6 @@
 #pragma once
 
+#include <optional>
 #include <string>
 #include <vector>
 
@@ -45,13 +46,14 @@ namespace utils {
         }
     }
 
-    inline std::wstring utf8_to_wstring(const std::string& utf8str)
+    // Empty when the text is not valid UTF-8 (the caller decides what to skip).
+    inline std::optional<std::wstring> utf8_to_wstring(const std::string& utf8str)
     {
-        if (utf8str.empty()) return {};
+        if (utf8str.empty()) return std::wstring{};
 
         // Calculate the number of wide characters needed for the conversion
         const int count = MultiByteToWideChar(CP_UTF8, 0, utf8str.c_str(), -1, nullptr, 0);
-        if (count == 0) throw std::runtime_error("Failed to convert UTF-8 to UTF-16");
+        if (count == 0) return std::nullopt;
 
         std::wstring wstr(count, 0);
         MultiByteToWideChar(CP_UTF8, 0, utf8str.c_str(), -1, wstr.data(), count);

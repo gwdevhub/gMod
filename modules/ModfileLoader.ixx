@@ -76,24 +76,24 @@ private:
 
 ModfileLoader::ModfileLoader(const std::filesystem::path& fileName)
 {
-    file_name = std::filesystem::absolute(fileName);
+    std::error_code ec;
+    const auto absolute_name = std::filesystem::absolute(fileName, ec);
+    file_name = ec ? fileName : absolute_name;
 }
 
 std::vector<TexEntry> ModfileLoader::GetContents() const
 {
-    try {
-        return file_name.wstring().ends_with(L".tpf") ? GetTpfContents() : GetFileContents();
-    }
-    catch (const std::exception&) {
-        Warning("Failed to open mod file: %s\n", file_name.c_str());
-    }
-    return {};
+    return file_name.wstring().ends_with(L".tpf") ? GetTpfContents() : GetFileContents();
 }
 
 std::vector<TexEntry> ModfileLoader::GetTpfContents() const
 {
     std::vector<TexEntry> entries;
     auto tpf_reader = TpfReader(file_name);
+    if (!tpf_reader.IsOpen()) {
+        Warning("Failed to open mod file: %s\n", file_name.c_str());
+        return {};
+    }
     const auto buffer = tpf_reader.ReadToEnd();
     const auto zip_archive = libzippp::ZipArchive::fromBuffer(buffer.data(), buffer.size(), false, TPF_PASSWORD);
     if (!zip_archive) {

@@ -221,7 +221,8 @@ void LoadModlists()
     const auto dll_path = std::filesystem::path(dllpath).parent_path();
     for (const auto& path : {exe_path, dll_path}) {
         const auto modlist = path / "modlist.txt";
-        if (std::filesystem::exists(modlist)) {
+        std::error_code ec;
+        if (std::filesystem::exists(modlist, ec) && !ec) {
             Message("Initialize: found %s\n", modlist.string().c_str());
             modlists_contents.emplace_back(modlist.string(), utils::ReadWholeFile(modlist));
         }
@@ -262,62 +263,42 @@ void InitInstance(HINSTANCE hModule)
 extern "C" __declspec(dllexport) int __cdecl SetDevice(IDirect3DDevice9* device)
 {
     if (!device) return RETURN_BAD_ARGUMENT;
-    try {
-        return RegisterExistingDevice(device) ? RETURN_OK : RETURN_EXISTS;
-    }
-    catch (...) {
-        return RETURN_FATAL_ERROR;
-    }
+    return RegisterExistingDevice(device) ? RETURN_OK : RETURN_EXISTS;
 }
 
 extern "C" __declspec(dllexport) int __cdecl AddFile(const wchar_t* path)
 {
     if (!path) return RETURN_BAD_ARGUMENT;
-    try {
-        return TextureClient::AddFile(std::filesystem::path(path));
-    }
-    catch (...) {
-        return RETURN_FATAL_ERROR;
-    }
+    return TextureClient::AddFile(std::filesystem::path(path));
 }
 
 extern "C" __declspec(dllexport) int __cdecl RemoveFile(const wchar_t* path)
 {
     if (!path) return RETURN_BAD_ARGUMENT;
-    try {
-        return TextureClient::RemoveFile(std::filesystem::path(path));
-    }
-    catch (...) {
-        return RETURN_FATAL_ERROR;
-    }
+    return TextureClient::RemoveFile(std::filesystem::path(path));
 }
 
 // nullptr first arg = return required size; paths come back in load (priority) order
 // returns paths separated by null terminator, e.g. "C:\foo.tpf\0C:\bar.zip\0\0"
 extern "C" __declspec(dllexport) int __cdecl GetFiles(wchar_t* buffer, const size_t buffer_size_chars)
 {
-    try {
-        const auto files = TextureClient::GetFiles();
-        size_t required = 1;
-        for (const auto& path : files) {
-            required += path.native().size() + 1;
-        }
+    const auto files = TextureClient::GetFiles();
+    size_t required = 1;
+    for (const auto& path : files) {
+        required += path.native().size() + 1;
+    }
 
-        if (buffer && buffer_size_chars > 0 && buffer_size_chars >= required) {
-            wchar_t* out = buffer;
-            for (const auto& path : files) {
-                const auto& native = path.native();
-                std::ranges::copy(native, out);
-                out += native.size();
-                *out++ = L'\0';
-            }
-            *out = L'\0';
+    if (buffer && buffer_size_chars > 0 && buffer_size_chars >= required) {
+        wchar_t* out = buffer;
+        for (const auto& path : files) {
+            const auto& native = path.native();
+            std::ranges::copy(native, out);
+            out += native.size();
+            *out++ = L'\0';
         }
-        return static_cast<int>(required);
+        *out = L'\0';
     }
-    catch (...) {
-        return RETURN_FATAL_ERROR;
-    }
+    return static_cast<int>(required);
 }
 
 // Optional clean-shutdown entry: call this from the host (on a normal thread) BEFORE

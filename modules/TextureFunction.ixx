@@ -310,25 +310,30 @@ export namespace TextureFunction {
         std::snprintf(name_buffer, sizeof(name_buffer), "0x%llx.dds", static_cast<unsigned long long>(entry.crc_hash));
         const std::string file_name = name_buffer;
         const auto file_out = gmod_dll_path.parent_path() / "textures" / file_name;
-        try {
-            if (std::filesystem::exists(file_out)) {
-                return;
-            }
-            if (!std::filesystem::exists(file_out.parent_path())) {
-                std::filesystem::create_directory(file_out.parent_path());
-            }
-            const auto hr = DirectX::SaveToDDSFile(
-                image.GetImages(),
-                image.GetImageCount(),
-                image.GetMetadata(),
-                DirectX::DDS_FLAGS_NONE,
-                file_out.c_str());
-            if (FAILED(hr)) {
-                Warning("SaveDDSImageToDisk (%#lX%s): FAILED\n", entry.crc_hash, entry.ext.c_str());
-            }
+        std::error_code ec;
+        if (std::filesystem::exists(file_out, ec)) {
+            return;
         }
-        catch (const std::exception& e) {
-            Warning("SaveDDSImageToDisk (%#lX%s): %s\n", entry.crc_hash, entry.ext.c_str(), e.what());
+        if (ec) {
+            Warning("SaveDDSImageToDisk (%#lX%s): %s\n", entry.crc_hash, entry.ext.c_str(), ec.message().c_str());
+            return;
+        }
+        const auto parent = file_out.parent_path();
+        if (!std::filesystem::exists(parent, ec) && !ec) {
+            std::filesystem::create_directory(parent, ec);
+        }
+        if (ec) {
+            Warning("SaveDDSImageToDisk (%#lX%s): %s\n", entry.crc_hash, entry.ext.c_str(), ec.message().c_str());
+            return;
+        }
+        const auto hr = DirectX::SaveToDDSFile(
+            image.GetImages(),
+            image.GetImageCount(),
+            image.GetMetadata(),
+            DirectX::DDS_FLAGS_NONE,
+            file_out.c_str());
+        if (FAILED(hr)) {
+            Warning("SaveDDSImageToDisk (%#lX%s): FAILED\n", entry.crc_hash, entry.ext.c_str());
         }
     }
 
