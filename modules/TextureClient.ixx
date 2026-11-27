@@ -159,9 +159,9 @@ TextureClient::~TextureClient()
         std::lock_guard lk(registry_mutex);
         shutting_down = true; // the texture Release hook now no-ops for our textures
 
-        // Release replacements we still own (still partnered) so they aren't leaked when
-        // torn down with the device alive (FreeLibrary). Orphaned fakes were already
-        // released; a device-release teardown leaves the maps empty, so this is a no-op.
+        // Release replacements we still own (still partnered) so they aren't leaked. The device
+        // is alive here on both paths: FreeLibrary, and device release, where D3D9Hooks holds a
+        // reference across this teardown. Orphaned fakes were already released.
         for (const auto fake : fakes | std::views::values) {
             if (fake->partner != nullptr) {
                 fake->partner->partner = nullptr; // detach the original's back-pointer
