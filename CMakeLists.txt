@@ -32,6 +32,10 @@ find_package(directxtex CONFIG REQUIRED)
 # vcpkg's directxtex has no DDS/WIC texture loaders; these come from the same DirectXTex release, fetched by CMake.
 include(directxtexloader)
 
+# Drop unreferenced sections (the vcpkg ports and DirectXTex build with -ffunction-sections -fdata-sections) and fold
+# identical code outside Debug. Exports are roots, so the DLL's entry points stay.
+add_link_options(-Wl,--gc-sections $<$<NOT:$<CONFIG:Debug>>:-Wl,--icf=all>)
+
 add_library(gMod SHARED)
 
 file(GLOB SOURCES
@@ -60,7 +64,16 @@ set_target_properties(gMod PROPERTIES
     )
 
 # clang's warnings in place of MSVC's /W4 /WX.
-target_compile_options(gMod PRIVATE -Wall -Wextra)
+# -gdwarf-4 keeps DWARF in the link so the split below can take it out; the PDB is written separately.
+target_compile_options(gMod PRIVATE -Wall -Wextra -gdwarf-4)
+
+# The DLL ships without DWARF. GWToolboxdll.debug-style split: the debug sections go to gMod.debug for GDB, and the
+# DLL is stripped. The CodeView PDB (gMod.pdb) is unaffected.
+find_program(GMOD_LLVM_OBJCOPY NAMES llvm-objcopy llvm-objcopy.exe HINTS "${LLVM_MINGW_ROOT}/bin" REQUIRED)
+add_custom_command(TARGET gMod POST_BUILD
+    COMMAND "${GMOD_LLVM_OBJCOPY}" --only-keep-debug "$<TARGET_FILE:gMod>" "$<TARGET_FILE_DIR:gMod>/gMod.debug"
+    COMMAND "${GMOD_LLVM_OBJCOPY}" --strip-all "$<TARGET_FILE:gMod>"
+    VERBATIM)
 
 target_link_libraries(gMod PRIVATE
     dxguid
