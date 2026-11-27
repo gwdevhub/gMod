@@ -34,7 +34,8 @@ namespace {
             uint64_t crc64_hash = 0;
             for (size_t d = 0; d < digits; ++d) {
                 const char c = filename[i + 2 + d];
-                const uint64_t value = (c >= 'a') ? (c - 'a' + 10) : (c >= 'A') ? (c - 'A' + 10) : (c - '0');
+                const uint64_t value = (c >= 'a') ? (c - 'a' + 10) : (c >= 'A') ? (c - 'A' + 10)
+                                                                                : (c - '0');
                 crc64_hash = crc64_hash * 16 + value;
             }
             use_64_bit_crc = use_64_bit_crc || crc64_hash > 0xFFFFFFFF;
@@ -146,26 +147,26 @@ void ParseSimpleArchive(const libzippp::ZipArchive& archive, std::vector<TexEntr
 
 // Equivalent to matching ^[\\/.]*([^|]+)\|([^\r\n]+) against the line. Returns false when that would not match.
 bool ParseAddressLine(const std::string& line, std::string& address, std::string& file_path)
-    {
-        const auto is_prefix = [](const char c) { return c == '\\' || c == '/' || c == '.'; };
-        const auto pipe = line.find('|');
-        if (pipe == std::string::npos || pipe == 0) {
-            return false;
-        }
-        // Leading \ / . are skipped, but the address must keep at least one character before the pipe.
-        size_t start = 0;
-        while (start < pipe - 1 && is_prefix(line[start])) {
-            ++start;
-        }
-        const auto file_end = line.find_first_of("\r\n", pipe + 1);
-        const auto file_length = (file_end == std::string::npos ? line.size() : file_end) - (pipe + 1);
-        if (file_length == 0) {
-            return false;
-        }
-        address = line.substr(start, pipe - start);
-        file_path = line.substr(pipe + 1, file_length);
-        return true;
+{
+    const auto is_prefix = [](const char c) { return c == '\\' || c == '/' || c == '.'; };
+    const auto pipe = line.find('|');
+    if (pipe == std::string::npos || pipe == 0) {
+        return false;
     }
+    // Leading \ / . are skipped, but the address must keep at least one character before the pipe.
+    size_t start = 0;
+    while (start < pipe - 1 && is_prefix(line[start])) {
+        ++start;
+    }
+    const auto file_end = line.find_first_of("\r\n", pipe + 1);
+    const auto file_length = (file_end == std::string::npos ? line.size() : file_end) - (pipe + 1);
+    if (file_length == 0) {
+        return false;
+    }
+    address = line.substr(start, pipe - start);
+    file_path = line.substr(pipe + 1, file_length);
+    return true;
+}
 
 void ParseTexmodArchive(std::vector<std::string>& lines, libzippp::ZipArchive& archive, std::vector<TexEntry>& entries)
 {
