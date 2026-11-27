@@ -6,7 +6,7 @@ rem
 rem   1. Checks for git, Python 3.9+ and Ninja (Ninja is installed with winget when missing). CMake is pinned in
 rem      scripts\cmake.version and installed by bootstrap.py.
 rem      Nothing is changed until the required ones are all present.
-rem   2. Runs scripts\bootstrap.py.
+rem   2. Runs scripts\bootstrap.py, which also sets up the CLion, Rider and VS Code settings and writes gMod.slnx.
 rem
 rem Run it from the repo folder (or double-click it).
 
@@ -23,6 +23,9 @@ set EXIT_CODE=0
 
 call :say "bootstrap log: %BOOTSTRAP_LOG%"
 call :say "==> checking prerequisites"
+for %%i in (clion64.exe rider64.exe) do (
+    tasklist /fi "imagename eq %%i" /nh 2>nul | find /i "%%i" >nul && call :problem "%%i is running. Close it and re-run, so it does not overwrite the .idea files."
+)
 
 where git >nul 2>&1 && (call :say "    git: found") || call :problem "git is not on PATH. Install it with: winget install --id Git.Git -e   Then open a new terminal and re-run."
 
@@ -40,6 +43,18 @@ if not errorlevel 1 (
     call :say "    ninja: not found; it will be installed with winget"
 ) else (
     call :problem "Ninja is missing and winget is not available. Install it from https://github.com/ninja-build/ninja/releases."
+)
+
+rem Only the .slnx needs Visual Studio, and only for its C++ project system: the compiler is llvm-mingw.
+set "VSWHERE=%ProgramFiles(x86)%\Microsoft Visual Studio\Installer\vswhere.exe"
+set "VS="
+setlocal EnableDelayedExpansion
+if exist "!VSWHERE!" for /f "delims=" %%v in ('call "!VSWHERE!" -latest -products * -requires Microsoft.VisualStudio.Component.VC.CoreIde -property installationPath') do set "VS=%%v"
+endlocal & set "VS=%VS%"
+if defined VS (
+    call :say "    Visual Studio with C++: %VS%"
+) else (
+    call :say "WARNING: Visual Studio with the Desktop development with C++ workload was not found; gMod.slnx is still written, but needs it to open. CLion, Rider and the terminal do not."
 )
 
 if %PROBLEMS% gtr 0 (
