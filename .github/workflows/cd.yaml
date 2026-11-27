@@ -52,36 +52,54 @@ jobs:
           path: release/
           if-no-files-found: error
 
-  # The Certum certificate lives in SimplySign on a Windows runner, so signing happens there. Without the Certum
-  # secrets (forks, or no access) the binaries are passed through unsigned.
+  # Signs on Linux with Certum's cloud certificate, through the pinned ssign client (no SimplySign Desktop, no
+  # Windows runner). Without the Certum secrets (forks, or no access) the binaries are passed through unsigned.
   sign:
     needs: build
-    runs-on: windows-2025
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    env:
+      HAS_CERTUM_CREDENTIALS: ${{ secrets.CERTUM_OTP_URI != '' && secrets.CERTUM_USERID != '' && secrets.CERTUM_CERT_SHA1 != '' }}
     steps:
+      - name: Checkout (for the verify script)
+        uses: actions/checkout@v4
+
       - name: Download unsigned binaries
         uses: actions/download-artifact@v4
         with:
           name: release
           path: release
 
-      - name: Set up Certum SimplySign
-        if: env.CERTUM_OTP_URI != ''
-        shell: bash
+      - name: Install the signing tools
+        if: env.HAS_CERTUM_CREDENTIALS == 'true'
         run: |
-          chmod +x ./.github/scripts/install-simplysign.sh
-          ./.github/scripts/install-simplysign.sh
-          powershell -ExecutionPolicy Bypass -File "./.github/scripts/configure-simplysign.ps1"
+          set -euo pipefail
+          sudo apt-get update -qq
+          sudo apt-get install -y --no-install-recommends osslsigncode ca-certificates
+          curl --fail --location --retry 3 --output "$RUNNER_TEMP/ssign.tar.gz" \
+            https://github.com/Le-Syl21/ssign/releases/download/v0.1.8/ssign-linux-x86_64.tar.gz
+          echo "fc38f083ea1f061a097a3a9c5dc1a056c9c7310a47e40f56a8976895ec5a928d  $RUNNER_TEMP/ssign.tar.gz" | sha256sum --check
+          mkdir -p "$RUNNER_TEMP/ssign-bin"
+          tar -xzf "$RUNNER_TEMP/ssign.tar.gz" -C "$RUNNER_TEMP/ssign-bin"
+          "$RUNNER_TEMP/ssign-bin/ssign" --version
+          osslsigncode --version
 
-      - name: Authenticate Certum SimplySign
-        if: env.CERTUM_OTP_URI != ''
-        shell: bash
-        run: powershell -ExecutionPolicy Bypass -File "./.github/scripts/connect-simplysign.ps1"
-
-      - name: Sign release binaries
-        if: env.CERTUM_OTP_URI != ''
-        shell: pwsh
+      - name: Sign the Windows binaries with Certum
+        if: env.HAS_CERTUM_CREDENTIALS == 'true'
+        timeout-minutes: 10
+        env:
+          # ssign reads the account e-mail and the TOTP seed (or the full otpauth:// URI) from these variables, so
+          # they never reach the command line or the shell history.
+          CERTUM_EMAIL: ${{ secrets.CERTUM_USERID }}
+          CERTUM_OTP: ${{ secrets.CERTUM_OTP_URI }}
         run: |
-          ./.github/scripts/sign-certum.ps1 -Files @(".\release\gMod.dll", ".\release\TpfConvert.exe")
+          "$RUNNER_TEMP/ssign-bin/ssign" --timestamp-url http://time.certum.pl/ \
+            release/gMod.dll release/TpfConvert.exe
+
+      - name: Verify the signatures, timestamps and signer
+        if: env.HAS_CERTUM_CREDENTIALS == 'true'
+        timeout-minutes: 5
+        run: bash .github/scripts/verify-certum.sh release/gMod.dll release/TpfConvert.exe
 
       - name: Upload signed binaries
         uses: actions/upload-artifact@v4

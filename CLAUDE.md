@@ -95,5 +95,6 @@ CreateTexture/Volume/Cube, UpdateTexture, BeginScene, Set/GetTexture, Release).
 - Reshade > 5.0.1 causes glitches; recommend 5.0.1 or 4.9.1
 - `modlist.txt` contains full paths to .tpf/.zip mod files, one per line
 - CI (`ci.yaml`) builds on Linux and Windows with `bootstrap`/`build.py`. CD (`cd.yaml`) builds on Linux, signs with
-  Certum SimplySign on Windows, then publishes; d3dx9_43.dll is carried forward from the latest release because the
+  Certum's cloud certificate on Linux through the pinned `ssign` client, verifies with `osslsigncode`, then publishes;
+  d3dx9_43.dll is carried forward from the latest release because the
   MinGW build does not produce it. Those workflows have not run on GitHub yet.
