@@ -3,7 +3,7 @@
 # llvm-mingw and vcpkg into the checkout and configures the build. It builds nothing; the last lines say how.
 #
 #   1. Installs the missing host packages with apt (Debian/Ubuntu) or dnf (Fedora): git, curl, python3, ninja,
-#      and vcpkg's zip/unzip/pkg-config. CMake 3.30+ is only checked.
+#      and vcpkg's zip/unzip/pkg-config. CMake is pinned in scripts/cmake.version and installed by bootstrap.py.
 #   2. Runs scripts/bootstrap.py.
 #
 # Run it from anywhere:  bash bootstrap.sh
@@ -57,13 +57,6 @@ else
     die "this script installs packages with apt or dnf; on another distro install the equivalents of: ${APT_PACKAGES[*]}, then run python3 scripts/bootstrap.py"
 fi
 
-# cmake is not installed by apt here (the project needs >= 3.30 for import std, newer than some distros ship), so
-# only check it.
-command -v cmake >/dev/null 2>&1 || die "cmake not found; install cmake >= 3.30 (e.g. pip install --user 'cmake>=3.30')"
-version=$(cmake --version | head -1 | awk '{print $3}')
-if [ "$(printf '%s\n' 3.30 "$version" | sort -V | head -1)" != "3.30" ]; then
-    die "cmake ${version} is too old; the project needs >= 3.30"
-fi
 python3 "${REPO_ROOT}/scripts/require_python.py" >/dev/null || die "install a newer python3, then re-run"
 
 exec 1>&3 2>&4 3>&- 4>&-

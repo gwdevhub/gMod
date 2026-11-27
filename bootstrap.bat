@@ -3,7 +3,8 @@ rem bootstrap.bat - checks and installs what Windows needs before scripts\bootst
 rem bootstrap.py (shared with bootstrap.sh) installs llvm-mingw and vcpkg into the checkout and configures the build.
 rem No MSVC compiler is used.
 rem
-rem   1. Checks for git and Python 3.9+ (required), CMake 3.30+ and Ninja (installed with winget when missing).
+rem   1. Checks for git, Python 3.9+ and Ninja (Ninja is installed with winget when missing). CMake is pinned in
+rem      scripts\cmake.version and installed by bootstrap.py.
 rem      Nothing is changed until the required ones are all present.
 rem   2. Runs scripts\bootstrap.py.
 rem
@@ -32,15 +33,6 @@ if defined PYTHON (call :say "    python: %PYTHON%") else call :problem "Python 
 set "HAS_WINGET="
 where winget >nul 2>&1 && set HAS_WINGET=1
 
-call :check_cmake
-if defined CMAKE_OK (
-    call :say "    cmake %CMAKE_VERSION%"
-) else if defined HAS_WINGET (
-    call :say "    cmake 3.30+: not found; it will be installed with winget"
-) else (
-    call :problem "CMake 3.30 or newer is missing and winget is not available. Install CMake from https://cmake.org/download/."
-)
-
 where ninja >nul 2>&1
 if not errorlevel 1 (
     call :say "    ninja: found"
@@ -56,17 +48,6 @@ if %PROBLEMS% gtr 0 (
     goto finish
 )
 
-if not defined CMAKE_OK (
-    call :say "==> installing CMake with winget"
-    winget install -e --id Kitware.CMake --accept-source-agreements --accept-package-agreements
-    call :refresh_path
-    call :check_cmake
-)
-if not defined CMAKE_OK (
-    call :say "CMake was installed but this shell cannot see 3.30 or newer yet. Open a new terminal and re-run."
-    set EXIT_CODE=1
-    goto finish
-)
 where ninja >nul 2>&1
 if errorlevel 1 (
     call :say "==> installing Ninja with winget"
@@ -114,15 +95,6 @@ for /f "delims=" %%p in ('where %1 2^>nul') do (
         if not defined PYTHON for /f "delims=" %%e in ('call "%%p" "%REPO_ROOT%\scripts\require_python.py" 2^>nul') do set "PYTHON=%%e"
     )
 )
-exit /b 0
-
-:check_cmake
-set "CMAKE_OK="
-set "CMAKE_VERSION="
-for /f "tokens=3" %%v in ('cmake --version 2^>nul ^| findstr /b /c:"cmake version"') do set "CMAKE_VERSION=%%v"
-if not defined CMAKE_VERSION exit /b 0
-if not defined PYTHON exit /b 0
-"%PYTHON%" -c "import sys; sys.exit(tuple(int(n) for n in sys.argv[1].split('.')[:2]) < (3, 30))" %CMAKE_VERSION% && set CMAKE_OK=1
 exit /b 0
 
 rem winget updates the machine and user PATH; pick that up without starting a new shell.

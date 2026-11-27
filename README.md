@@ -26,7 +26,7 @@ If you would like to use Reshade in combination with gMod, we recommend running 
 
 **Build from source**
 
-Requirements: git, Python 3.9+, CMake 3.30+ and Ninja. The bootstrap installs llvm-mingw and vcpkg into the checkout.
+Requirements: git, Python 3.9+ and Ninja. The bootstrap installs the pinned CMake, llvm-mingw and vcpkg into the checkout.
 - Linux: `bash bootstrap.sh` (installs the host packages with apt or dnf)
 - Windows: `bootstrap.bat` (installs CMake and Ninja with winget if they are missing)
 

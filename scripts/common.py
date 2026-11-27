@@ -15,13 +15,13 @@ CMAKE_HOST = "Windows" if IS_WINDOWS else "Linux"
 REPO_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 TOOLCHAIN_DIR = os.path.join(REPO_ROOT, ".toolchain")
 LLVM_MINGW_DIR = os.path.join(TOOLCHAIN_DIR, "llvm-mingw-" + HOST)
+CMAKE_DIR = os.path.join(TOOLCHAIN_DIR, "cmake-" + HOST)
 LOG_DIR = os.path.join(REPO_ROOT, "logs")
 EXE = ".exe" if IS_WINDOWS else ""
 
 PRESETS = {"relwithdebinfo": "RelWithDebInfo", "debug": "Debug", "release": "Release"}
 PRESET_BUILD_DIRS = {preset: os.path.join("build", CMAKE_HOST, preset) for preset in PRESETS}
 BIN_DIR = os.path.join(REPO_ROOT, "bin")
-CMAKE_MINIMUM = (3, 30)  # import std needs 3.30
 
 
 class Failure(Exception):
@@ -72,9 +72,9 @@ def capture(command, cwd=REPO_ROOT):
     return result.stdout.decode("utf-8", errors="replace") if result.returncode == 0 else None
 
 
-def read_pin():
+def read_pin(name="llvm-mingw.version"):
     pin = {}
-    with open(os.path.join(REPO_ROOT, "scripts", "llvm-mingw.version"), encoding="utf-8") as file:
+    with open(os.path.join(REPO_ROOT, "scripts", name), encoding="utf-8") as file:
         for line in file:
             match = re.match(r"^(\w+)=(.+)$", line.strip())
             if match:
@@ -82,21 +82,19 @@ def read_pin():
     return pin
 
 
-def cmake_version(path):
-    output = capture([path, "--version"]) or ""
-    match = re.search(r"cmake version (\d+)\.(\d+)", output)
-    return (int(match.group(1)), int(match.group(2))) if match else None
-
-
-def find_tool(name):
-    return shutil.which(name)
-
-
 def find_cmake():
-    cmake = find_tool("cmake")
-    if not cmake or (cmake_version(cmake) or (0, 0)) < CMAKE_MINIMUM:
-        raise Failure("CMake %d.%d+ is needed (the project uses import std); install it or run the bootstrap script"
-                      % CMAKE_MINIMUM)
+    # The pinned CMake only: the import std UUID in CMakeLists.txt is tied to this exact version. Its bin folder also
+    # goes first on PATH, so vcpkg, which runs cmake itself, uses the same binary.
+    cmake = os.path.join(CMAKE_DIR, "bin", "cmake" + EXE)
+    expected = read_pin("cmake.version")["version"]
+    if not os.path.isfile(cmake):
+        raise Failure("CMake %s is not installed in .toolchain/; run the bootstrap script for this platform" % expected)
+    output = capture([cmake, "--version"]) or ""
+    match = re.search(r"cmake version (\S+)", output)
+    if not match or match.group(1) != expected:
+        raise Failure("expected CMake %s in .toolchain/, found %s; re-run the bootstrap script"
+                      % (expected, match.group(1) if match else "nothing"))
+    os.environ["PATH"] = os.path.join(CMAKE_DIR, "bin") + os.pathsep + os.environ.get("PATH", "")
     return cmake
 
 

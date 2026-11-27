@@ -1,101 +1,111 @@
-name:  gMod CD Pipeline
+name: gMod CD Pipeline
 
 on:
   push:
     branches:
       - master
   workflow_dispatch:
-      
+
+permissions:
+  contents: write
+
+env:
+  CERTUM_OTP_URI: ${{ secrets.CERTUM_OTP_URI }}
+  CERTUM_USERID: ${{ secrets.CERTUM_USERID }}
+  CERTUM_CERT_SHA1: ${{ secrets.CERTUM_CERT_SHA1 }}
+
 jobs:
-
   build:
-
-    strategy:
-      matrix:
-        targetplatform: [x86]
-
-    runs-on: windows-2025-vs2026
-
-    permissions:
-      contents: write
-
-    env:
-      Configuration: Release
-      Actions_Allow_Unsecure_Commands: true
-      CERTUM_OTP_URI: ${{ secrets.CERTUM_OTP_URI }}
-      CERTUM_USERID: ${{ secrets.CERTUM_USERID }}
-      CERTUM_CERT_SHA1: ${{ secrets.CERTUM_CERT_SHA1 }}
-
+    runs-on: ubuntu-24.04
+    outputs:
+      version: ${{ steps.version.outputs.version }}
     steps:
-    - name: Checkout
-      uses: actions/checkout@v4
-      with:
-        fetch-depth: 0
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
-    - name: Setup MSBuild.exe
-      uses: microsoft/setup-msbuild@v1.3.1
+      - name: Bootstrap
+        run: bash bootstrap.sh
 
-    - name: Install vcpkg
-      run: |
-        git clone https://github.com/microsoft/vcpkg.git
-        .\vcpkg\bootstrap-vcpkg.bat
-        
-    - name: Set VCPKG_ROOT
-      run: |
-        echo "VCPKG_ROOT=$(Get-Location)\vcpkg" >> $env:GITHUB_ENV
-      shell: powershell
+      - name: Build
+        run: python3 scripts/build.py --preset release
 
-    - name: Build CMake Files with vcpkg toolchain
-      run: cmake --preset=vcpkg
-      env:
-        VCPKG_ROOT: ${{ env.VCPKG_ROOT }}
+      - name: Read version
+        id: version
+        run: echo "version=$(python3 scripts/version.py)" >> "$GITHUB_OUTPUT"
 
-    - name: Build binaries
-      run: cmake --build build --config Release
+      # TpfConvert.exe and gMod.dll link to d3dx9_43.dll only at run time. It is a Microsoft redistributable that
+      # the MinGW build does not produce, so carry the copy from the latest release forward unchanged.
+      - name: Fetch d3dx9_43.dll from the latest release
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          mkdir -p release
+          gh release download --repo "$GITHUB_REPOSITORY" --pattern d3dx9_43.dll --dir release --clobber
+          cp bin/gMod.dll bin/TpfConvert.exe release/
 
-    # Signing only runs when the Certum secrets are present (i.e. on the real
-    # repo, not forks); without them the build still produces unsigned binaries.
-    - name: Set up Certum SimplySign
-      if: env.CERTUM_OTP_URI != ''
-      shell: bash
-      run: |
-        chmod +x ./.github/scripts/install-simplysign.sh
-        ./.github/scripts/install-simplysign.sh
-        powershell -ExecutionPolicy Bypass -File "./.github/scripts/configure-simplysign.ps1"
+      - name: Upload unsigned binaries
+        uses: actions/upload-artifact@v4
+        with:
+          name: release
+          path: release/
+          if-no-files-found: error
 
-    - name: Authenticate Certum SimplySign
-      if: env.CERTUM_OTP_URI != ''
-      shell: bash
-      run: powershell -ExecutionPolicy Bypass -File "./.github/scripts/connect-simplysign.ps1"
+  # The Certum certificate lives in SimplySign on a Windows runner, so signing happens there. Without the Certum
+  # secrets (forks, or no access) the binaries are passed through unsigned.
+  sign:
+    needs: build
+    runs-on: windows-2025
+    steps:
+      - name: Download unsigned binaries
+        uses: actions/download-artifact@v4
+        with:
+          name: release
+          path: release
 
-    - name: Sign release binaries
-      if: env.CERTUM_OTP_URI != ''
-      shell: pwsh
-      run: |
-        ./.github/scripts/sign-certum.ps1 -Files @(".\bin\Release\gMod.dll", ".\bin\Release\TpfConvert.exe")
+      - name: Set up Certum SimplySign
+        if: env.CERTUM_OTP_URI != ''
+        shell: bash
+        run: |
+          chmod +x ./.github/scripts/install-simplysign.sh
+          ./.github/scripts/install-simplysign.sh
+          powershell -ExecutionPolicy Bypass -File "./.github/scripts/configure-simplysign.ps1"
 
-    - name: Retrieve version
-      id: set_version
-      run: |
-        $fileVersionInfo = (Get-Item -Path .\bin\Release\gMod.dll).VersionInfo.FileVersion
-        if ([string]::IsNullOrEmpty($fileVersionInfo)) {
-            Write-Host "The DLL file version information could not be retrieved."
-            exit 1
-        } else {
-            Write-Host "FileVersionInfo: $fileVersionInfo"
-            echo "::set-output name=version::$fileVersionInfo"
-        }
-      shell: pwsh
+      - name: Authenticate Certum SimplySign
+        if: env.CERTUM_OTP_URI != ''
+        shell: bash
+        run: powershell -ExecutionPolicy Bypass -File "./.github/scripts/connect-simplysign.ps1"
 
-    - name: Publish release
-      uses: Xotl/cool-github-releases@v1.1.8
-      with:
-        mode: update
-        tag_name: v${{ steps.set_version.outputs.version }}
-        release_name: gMod v${{ steps.set_version.outputs.version }}
-        assets: .\bin\Release\gMod.dll;.\bin\Release\TpfConvert.exe;.\bin\Release\d3dx9_43.dll
-        github_token: ${{ env.GITHUB_TOKEN }}
-        replace_assets: true
-        body_mrkdwn: ${{ env.Changelog }}
-      env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      - name: Sign release binaries
+        if: env.CERTUM_OTP_URI != ''
+        shell: pwsh
+        run: |
+          ./.github/scripts/sign-certum.ps1 -Files @(".\release\gMod.dll", ".\release\TpfConvert.exe")
+
+      - name: Upload signed binaries
+        uses: actions/upload-artifact@v4
+        with:
+          name: release-signed
+          path: release/
+          if-no-files-found: error
+
+  publish:
+    needs: [build, sign]
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Download binaries to publish
+        uses: actions/download-artifact@v4
+        with:
+          name: release-signed
+          path: release
+
+      - name: Publish release
+        uses: Xotl/cool-github-releases@v1.1.8
+        with:
+          mode: update
+          tag_name: v${{ needs.build.outputs.version }}
+          release_name: gMod v${{ needs.build.outputs.version }}
+          assets: release/gMod.dll;release/TpfConvert.exe;release/d3dx9_43.dll
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          replace_assets: true

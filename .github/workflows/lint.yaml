@@ -26,7 +26,7 @@ jobs:
         run: pipx install clang-format==22.1.5
 
       - name: Apply clang-format
-        run: clang-format -i header/*.h source/*.cpp modules/*.ixx TpfConvert/src/*.ixx
+        run: clang-format -i header/*.h source/*.cpp modules/*.ixx TpfConvert/src/*.cpp TpfConvert/src/*.ixx
 
       # Push / same-repo PRs: commit the fixes back. Fork PRs can't be pushed to,
       # so fail the check instead and let the contributor format.

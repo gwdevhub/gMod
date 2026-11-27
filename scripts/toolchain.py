@@ -14,8 +14,8 @@ import shutil
 import sys
 import urllib.request
 
-from common import (IS_WINDOWS, capture, HOST, LLVM_MINGW_DIR, LOG_DIR, REPO_ROOT, TOOLCHAIN_DIR, Failure, Log, main_guard,
-                    read_pin, run, timestamp)
+from common import (IS_WINDOWS, capture, CMAKE_DIR, HOST, LLVM_MINGW_DIR, LOG_DIR, REPO_ROOT, TOOLCHAIN_DIR, Failure, Log,
+                    main_guard, read_pin, run, timestamp)
 
 CASE_INCLUDE_DIR = os.path.join(TOOLCHAIN_DIR, "case-include")
 SCANNED_FOLDERS = ("header", "source", "modules", "TpfConvert")
@@ -71,6 +71,33 @@ def install_llvm_mingw(log):
         file.write(stamp + "\n")
 
 
+def install_cmake(log):
+    # Pinned (not whatever CMake is on PATH): the import std experimental UUID in CMakeLists.txt is for this version.
+    pin = read_pin("cmake.version")
+    asset, expected = pin[HOST + "_asset"], pin[HOST + "_sha256"]
+    stamp = "%s %s" % (pin["version"], expected)
+    if read_stamp(CMAKE_DIR) == stamp:
+        log.step("CMake %s already installed" % pin["version"])
+        return
+    log.step("installing CMake %s into .toolchain/%s/" % (pin["version"], os.path.basename(CMAKE_DIR)))
+    os.makedirs(TOOLCHAIN_DIR, exist_ok=True)
+    archive = os.path.join(TOOLCHAIN_DIR, asset)
+    download("https://github.com/Kitware/CMake/releases/download/v%s/%s" % (pin["version"], asset), archive)
+    actual = sha256(archive)
+    if actual != expected:
+        os.remove(archive)
+        raise Failure("CMake download has SHA-256 %s, expected %s" % (actual, expected))
+    extracted = os.path.join(TOOLCHAIN_DIR, re.sub(r"\.(zip|tar\.gz)$", "", asset))
+    for old in (CMAKE_DIR, extracted):
+        shutil.rmtree(old, ignore_errors=True)
+    tar = os.path.join(os.environ.get("SystemRoot", r"C:\Windows"), "System32", "tar.exe") if IS_WINDOWS else "tar"
+    run(log, [tar, "-xf", archive, "-C", TOOLCHAIN_DIR], "unpacking CMake")
+    os.remove(archive)
+    os.rename(extracted, CMAKE_DIR)
+    with open(os.path.join(CMAKE_DIR, STAMP_NAME), "w", encoding="utf-8") as file:
+        file.write(stamp + "\n")
+
+
 def replace_link(target, link):
     os.makedirs(os.path.dirname(link), exist_ok=True)
     if os.path.islink(link):
@@ -104,6 +131,7 @@ def link_headers():
 
 
 def provision(log):
+    install_cmake(log)
     install_llvm_mingw(log)
     if not IS_WINDOWS:
         link_headers()

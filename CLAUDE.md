@@ -23,7 +23,9 @@ python3 scripts/build.py       # relwithdebinfo preset; --preset debug|release
 
 - The bootstrap installs the pinned llvm-mingw (`scripts/llvm-mingw.version`) into `.toolchain/` and vcpkg into `.vcpkg/`, then configures `build/<host>/<preset>/`.
 - Target: 32-bit only (i686, `Win32`).
-- Standard: C++23, with `import std` (CMake 3.30+ experimental flag, pinned to CMake 4.4's UUID).
+- Standard: C++23, with `import std`. The experimental flag's UUID in `CMakeLists.txt` belongs to one CMake version, so
+  CMake is pinned in `scripts/cmake.version` (4.4.4) and the bootstrap installs that exact version. Change the pin and
+  the UUID together.
 - Output: `bin/` (gMod.dll, TpfConvert.exe, each with a .pdb).
 - Version: set in `CMakeLists.txt` (`VERSION_MAJOR/MINOR/PATCH/TWEAK`).
 - The Windows CI and release workflows (`.github/workflows/`) still use the old MSVC build; see the note in Notes.
@@ -92,5 +94,6 @@ CreateTexture/Volume/Cube, UpdateTexture, BeginScene, Set/GetTexture, Release).
 - Must be injected before d3d9.dll loads, or renamed to d3d9.dll in the GW folder
 - Reshade > 5.0.1 causes glitches; recommend 5.0.1 or 4.9.1
 - `modlist.txt` contains full paths to .tpf/.zip mod files, one per line
-- `.github/workflows/` (`ci.yaml`, `cd.yaml`) still configure with `cmake --preset=vcpkg` and MSVC, which this
-  build no longer provides. They need porting to `bootstrap.sh`/`build.py` before they run again.
+- CI (`ci.yaml`) builds on Linux and Windows with `bootstrap`/`build.py`. CD (`cd.yaml`) builds on Linux, signs with
+  Certum SimplySign on Windows, then publishes; d3dx9_43.dll is carried forward from the latest release because the
+  MinGW build does not produce it. Those workflows have not run on GitHub yet.
