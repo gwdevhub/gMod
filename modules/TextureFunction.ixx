@@ -2,9 +2,11 @@ module;
 
 #include "Main.h"
 #include <d3d9types.h>
-#include <DirectXTex/DirectXTex.h>
+#include <DirectXTex.h>
 
 export module TextureFunction;
+
+import std;
 
 // clang-format off
 constexpr auto crctab64 = std::to_array({

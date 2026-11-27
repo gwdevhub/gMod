@@ -2,11 +2,11 @@ module;
 
 #include "Main.h"
 #include "Defines.h"
+#include <libzippp.h>
 
 export module ModfileLoader;
 
 import std;
-import <libzippp.h>;
 import ModfileLoader.TpfReader;
 import TextureFunction;
 

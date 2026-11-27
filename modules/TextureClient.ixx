@@ -4,7 +4,7 @@ module;
 #include "Error.h"
 #include "D3D9State.h"
 #include <DDSTextureLoader/DDSTextureLoader9.h>
-#include <DirectXTex/DirectXTex.h>
+#include <DirectXTex.h>
 #include <mutex>
 #include <unordered_map>
 

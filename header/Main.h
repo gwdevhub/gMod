@@ -19,7 +19,9 @@
 
 #include "D3D9State.h"
 
+#ifdef _MSC_VER
 #pragma warning(disable : 4477)
+#endif
 
 extern unsigned int gl_ErrorState;
 extern HINSTANCE gl_hThisInstance;

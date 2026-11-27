@@ -66,3 +66,8 @@ vcpkg_installed
 /_deps
 
 .idea
+# Toolchain and dependency provisioning (scripts/bootstrap.py)
+/.toolchain
+/.vcpkg
+/logs
+__pycache__/

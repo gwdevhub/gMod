@@ -26,15 +26,13 @@ If you would like to use Reshade in combination with gMod, we recommend running 
 
 **Build from source**
 
-Requirements:
-- Visual Studio 2022
-- CMake 3.29+, integrated into the Developer Powershell for VS 2022
-- vcpkg, integrated into the Developer Powershell for VS 2022
+Requirements: git, Python 3.9+, CMake 3.30+ and Ninja. The bootstrap installs llvm-mingw and vcpkg into the checkout.
+- Linux: `bash bootstrap.sh` (installs the host packages with apt or dnf)
+- Windows: `bootstrap.bat` (installs CMake and Ninja with winget if they are missing)
 
 Compile:
-- cmake --preset=vcpkg
-- cmake --open build
-- compile
+- `python3 scripts/build.py` (on Windows `python scripts\build.py`), or `--preset debug` / `--preset release`
+- The DLL and TpfConvert.exe land in `bin/`
 
 **TpfConvert**
 Small utility to convert old .tpf files with invalid images into .zip files with working images.

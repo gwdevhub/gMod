@@ -14,25 +14,23 @@ A 32-bit Windows DLL that hooks Direct3D 9 to load texture mods for Guild Wars. 
 
 ## Build
 
-Requires Visual Studio 2022, CMake 3.29+, and vcpkg — all via the VS 2022 Developer PowerShell.
+Builds with llvm-mingw (clang, lld, libc++, MinGW-w64) on Linux or Windows, the same way GWToolbox does. No MSVC.
 
 ```
-cmake --preset=vcpkg
-cmake --open build
-# then compile inside Visual Studio, or:
-cmake --build build --config Release
+bash bootstrap.sh              # Linux; on Windows: bootstrap.bat
+python3 scripts/build.py       # relwithdebinfo preset; --preset debug|release
 ```
 
-- Target: 32-bit only (`-A Win32` / `CMAKE_GENERATOR_PLATFORM=win32`)
-- Standard: C++23
-- Output: `bin/` (gMod.dll, TpfConvert.exe)
-- Version: set in `CMakeLists.txt` (`VERSION_MAJOR/MINOR/PATCH/TWEAK`)
+- The bootstrap installs the pinned llvm-mingw (`scripts/llvm-mingw.version`) into `.toolchain/` and vcpkg into `.vcpkg/`, then configures `build/<host>/<preset>/`.
+- Target: 32-bit only (i686, `Win32`).
+- Standard: C++23, with `import std` (CMake 3.30+ experimental flag, pinned to CMake 4.4's UUID).
+- Output: `bin/` (gMod.dll, TpfConvert.exe, each with a .pdb).
+- Version: set in `CMakeLists.txt` (`VERSION_MAJOR/MINOR/PATCH/TWEAK`).
+- The Windows CI and release workflows (`.github/workflows/`) still use the old MSVC build; see the note in Notes.
 
-> **Cannot be built or run in this agent environment** (Linux, no MSVC, no 32-bit
-> D3D9, no Guild Wars to inject into). Don't burn turns attempting `cmake`/builds
-> here — validate changes by reading and matching existing patterns, and lean on
-> Windows CI (`ci.yaml`) for the real build. When an actual compile/test is needed,
-> ask the user to do it in Visual Studio rather than trying locally.
+> **Not built or run in agent environments by default.** The build runs on Linux now, but nothing here can
+> run the DLL: there is no 32-bit D3D9 to hook and no Guild Wars to inject into. Compile checks are fine; for
+> runtime checks ask the user to run the DLL in Guild Wars.
 
 ## Key dependencies (via vcpkg)
 
@@ -94,3 +92,5 @@ CreateTexture/Volume/Cube, UpdateTexture, BeginScene, Set/GetTexture, Release).
 - Must be injected before d3d9.dll loads, or renamed to d3d9.dll in the GW folder
 - Reshade > 5.0.1 causes glitches; recommend 5.0.1 or 4.9.1
 - `modlist.txt` contains full paths to .tpf/.zip mod files, one per line
+- `.github/workflows/` (`ci.yaml`, `cd.yaml`) still configure with `cmake --preset=vcpkg` and MSVC, which this
+  build no longer provides. They need porting to `bootstrap.sh`/`build.py` before they run again.

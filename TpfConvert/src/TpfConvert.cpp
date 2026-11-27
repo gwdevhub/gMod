@@ -1,13 +1,10 @@
-#include <corecrt_wstdio.h>
 #include <Windows.h>
 #include <d3dx9.h>
 #include <d3d9.h>
+#include <libzippp.h>
 
 import std;
 import ModfileLoader;
-import <libzippp.h>;
-
-struct TexEntry;
 
 namespace {
     IDirect3D9* pD3D = nullptr;

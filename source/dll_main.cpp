@@ -11,8 +11,9 @@ void InitInstance(HINSTANCE hModule);
 
 namespace {
 
+// MinHook takes void* targets. MSVC converts function pointers to void* implicitly; clang needs the cast spelled out.
 #define DISABLE_HOOK(var) \
-    if (var) { MH_DisableHook(var); }
+    if (var) { MH_DisableHook(reinterpret_cast<LPVOID>(var)); }
 
     using Direct3DCreate9_type = IDirect3D9*(APIENTRY*)(UINT);
     using Direct3DCreate9Ex_type = HRESULT(APIENTRY*)(UINT SDKVersion, IDirect3D9Ex** ppD3D);
@@ -250,8 +251,8 @@ void InitInstance(HINSTANCE hModule)
     GetProcAddress_fn = reinterpret_cast<GetProcAddress_type>(GetProcAddress);
     ASSERT(GetProcAddress_fn);
     if (GetProcAddress_fn) {
-        MH_CreateHook(GetProcAddress_fn, OnGetProcAddress, (void**)&GetProcAddress_ret);
-        MH_EnableHook(GetProcAddress_fn);
+        MH_CreateHook(reinterpret_cast<LPVOID>(GetProcAddress_fn), reinterpret_cast<LPVOID>(OnGetProcAddress), (void**)&GetProcAddress_ret);
+        MH_EnableHook(reinterpret_cast<LPVOID>(GetProcAddress_fn));
         // Re-JIT the patched prologue + trampoline under the x86-on-ARM64 emulator (no-op native).
         const HANDLE proc = GetCurrentProcess();
         FlushInstructionCache(proc, (void*)GetProcAddress_fn, 64);
