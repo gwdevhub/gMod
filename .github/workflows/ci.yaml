@@ -48,7 +48,11 @@ jobs:
       # wraps. CMake and llvm-mingw are pinned and installed by bootstrap.py. vcpkg's own pkgconf download points at an
       # msys2 package the mirrors no longer serve, so vcpkg uses the pkgconf and ninja installed here instead.
       - name: Install Ninja and pkgconf
-        run: choco install ninja pkgconfiglite -y --no-progress
+        run: |
+          choco install ninja pkgconfiglite -y --no-progress
+          # The shims are in chocolatey\bin, which later steps do not see on PATH unless it is added to GITHUB_PATH.
+          "C:\ProgramData\chocolatey\bin" | Out-File -FilePath $env:GITHUB_PATH -Encoding utf8 -Append
+        shell: pwsh
 
       - name: Bootstrap
         env:
