@@ -35,6 +35,13 @@ jobs:
         id: version
         run: echo "version=$(python3 scripts/version.py)" >> "$GITHUB_OUTPUT"
 
+      # Same as GWToolbox: keep the PDB and the split DWARF file, gzipped, next to the binaries. gzip -k keeps the
+      # originals in bin/ for later steps.
+      - name: Compress the debug info
+        run: |
+          gzip -kf bin/gMod.pdb
+          gzip -kf bin/gMod.debug
+
       # TpfConvert.exe and gMod.dll link to d3dx9_43.dll only at run time. It is a Microsoft redistributable that
       # the MinGW build does not produce, so carry the copy from the latest release forward unchanged.
       - name: Fetch d3dx9_43.dll from the latest release
@@ -43,7 +50,7 @@ jobs:
         run: |
           mkdir -p release
           gh release download --repo "$GITHUB_REPOSITORY" --pattern d3dx9_43.dll --dir release --clobber
-          cp bin/gMod.dll bin/TpfConvert.exe release/
+          cp bin/gMod.dll bin/TpfConvert.exe bin/gMod.pdb.gz bin/gMod.debug.gz release/
 
       - name: Upload unsigned binaries
         uses: actions/upload-artifact@v4
@@ -124,6 +131,6 @@ jobs:
           mode: update
           tag_name: v${{ needs.build.outputs.version }}
           release_name: gMod v${{ needs.build.outputs.version }}
-          assets: release/gMod.dll;release/TpfConvert.exe;release/d3dx9_43.dll
+          assets: release/gMod.dll;release/TpfConvert.exe;release/d3dx9_43.dll;release/gMod.pdb.gz;release/gMod.debug.gz
           github_token: ${{ secrets.GITHUB_TOKEN }}
           replace_assets: true
