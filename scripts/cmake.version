@@ -1,0 +1,5 @@
+version=4.4.4
+linux_asset=cmake-4.4.4-linux-x86_64.tar.gz
+linux_sha256=e5bb807f7728cb60cd8b27ebc97a2edb469b68655f21e844a600c3575b76f5bb
+windows_asset=cmake-4.4.4-windows-x86_64.zip
+windows_sha256=bace36e94b31c68ab6fa295f26dfa11219e0701cf7c94b0284a7d1cb13dac536

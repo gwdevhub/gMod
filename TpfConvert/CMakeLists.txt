@@ -1,14 +1,20 @@
 add_executable(TpfConvert)
 
-# Find all .ixx files in the TpfConvert folder
-file(GLOB TPF_SOURCES "src/*.ixx")
+# .ixx files are C++ module interfaces; the .cpp file holds main() and is an ordinary source.
+file(GLOB TPF_MODULES "src/*.ixx")
+file(GLOB TPF_SOURCES "src/*.cpp")
 
-# Add the .ixx files to the TpfConvert target
 target_sources(TpfConvert PRIVATE ${TPF_SOURCES})
+target_sources(TpfConvert PRIVATE
+    FILE_SET CXX_MODULES
+    FILES ${TPF_MODULES}
+    )
 
 set_target_properties(TpfConvert PROPERTIES
     CXX_STANDARD 23
     CXX_STANDARD_REQUIRED ON
+    CXX_SCAN_FOR_MODULES ON
+    CXX_MODULE_STD ON
 )
 
 target_compile_definitions(TpfConvert PRIVATE
@@ -30,10 +36,9 @@ else()
     message(STATUS "CMAKE_TOOLCHAIN_FILE is not set")
 endif()
 
-find_package(dxsdk-d3dx CONFIG REQUIRED)
-
+# D3DX9 comes from llvm-mingw's MinGW-w64 import libraries (libd3dx9_43), not a vcpkg port.
 target_link_libraries(TpfConvert PRIVATE
     libzippp::libzippp
-    Microsoft::D3DX9
+    d3dx9
     d3d9
 )

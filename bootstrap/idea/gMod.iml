@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<module classpath="CIDR" type="CPP_MODULE" version="4">
+  <component name="NewModuleRootManager">
+    <content url="file://$MODULE_DIR$">
+      <excludeFolder url="file://$MODULE_DIR$/.toolchain" />
+      <excludeFolder url="file://$MODULE_DIR$/.vcpkg" />
+      <excludeFolder url="file://$MODULE_DIR$/.vs-projects" />
+      <excludeFolder url="file://$MODULE_DIR$/build" />
+      <excludeFolder url="file://$MODULE_DIR$/bin" />
+      <excludeFolder url="file://$MODULE_DIR$/logs" />
+      <excludeFolder url="file://$MODULE_DIR$/obj" />
+    </content>
+  </component>
+</module>

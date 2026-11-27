@@ -1,7 +1,10 @@
+module;
+
+#include <libzippp.h>
+
 export module ModfileLoader;
 
 import std;
-import <libzippp.h>;
 import ModfileLoader.TpfReader;
 
 export using HashType = uint64_t;

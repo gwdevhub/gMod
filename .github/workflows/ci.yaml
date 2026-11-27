@@ -10,41 +10,29 @@ on:
   workflow_dispatch:
 
 jobs:
-  build:
-
-    strategy:
-      matrix:
-        targetplatform: [x86]
-
-    runs-on: windows-2025-vs2026
-
-    env:
-      Configuration: Release
-      Actions_Allow_Unsecure_Commands: true
-
+  build-linux:
+    runs-on: ubuntu-24.04
     steps:
-    - name: Checkout
-      uses: actions/checkout@v4
-      with:
-        fetch-depth: 0
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
-    - name: Setup MSBuild.exe
-      uses: microsoft/setup-msbuild@v1.3.1
+      # Installs the pinned llvm-mingw, CMake and vcpkg, then configures the release preset.
+      - name: Bootstrap
+        run: bash bootstrap.sh
 
-    - name: Install vcpkg
-      run: |
-        git clone https://github.com/microsoft/vcpkg.git
-        .\vcpkg\bootstrap-vcpkg.bat
-        
-    - name: Set VCPKG_ROOT
-      run: |
-        echo "VCPKG_ROOT=$(Get-Location)\vcpkg" >> $env:GITHUB_ENV
-      shell: powershell
+      - name: Build
+        run: python3 scripts/build.py --preset release
 
-    - name: Build CMake Files with vcpkg toolchain
-      run: cmake --preset=vcpkg
-      env:
-        VCPKG_ROOT: ${{ env.VCPKG_ROOT }}
+      - name: Upload binaries
+        uses: actions/upload-artifact@v4
+        with:
+          name: gMod-linux-release
+          path: |
+            bin/gMod.dll
+            bin/gMod.pdb
+            bin/TpfConvert.exe
+            bin/TpfConvert.pdb
+          if-no-files-found: error
 
-    - name: Build binaries
-      run: cmake --build build --config Release

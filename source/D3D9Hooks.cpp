@@ -209,9 +209,14 @@ namespace {
 
     ULONG STDMETHODCALLTYPE h_DeviceRelease(IDirect3DDevice9* self)
     {
+        // Hold our own reference while the game's Release runs, so the device is still alive
+        // when we tear down our per-device state. ~TextureClient releases the fake textures
+        // we own, and those releases must reach a live device. Doing them after the device's
+        // refcount has already hit zero touches a destroyed device.
+        self->AddRef();
         const ULONG count = o_DeviceRelease(self);
-        if (g_unhooked) return count;
-        if (count == 0) {
+        // `count` is what the game's Release returned. Only our reference is left when it is 1.
+        if (!g_unhooked && count == 1) {
             TextureClient* client = nullptr;
             {
                 std::lock_guard lk(g_devices_mutex);
@@ -221,9 +226,9 @@ namespace {
                     g_devices.erase(it);
                 }
             }
-            delete client; // ~TextureClient drops all side-state
+            delete client; // ~TextureClient drops all side-state while the device is alive
         }
-        return count;
+        return o_DeviceRelease(self); // drop our reference; this is the count the game sees
     }
 
     HRESULT STDMETHODCALLTYPE h_CreateTexture(IDirect3DDevice9* self, UINT Width, UINT Height, UINT Levels, DWORD Usage, D3DFORMAT Format, D3DPOOL Pool,

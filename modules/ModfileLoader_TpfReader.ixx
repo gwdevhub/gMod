@@ -1,30 +1,39 @@
+module;
+
+#include <cstdio>
+
 export module ModfileLoader.TpfReader;
 
 import std;
 
 export class TpfReader {
 public:
+    // Reads the whole file up front through the C runtime (iostreams would pull in the locale machinery).
+    // Check IsOpen() before ReadToEnd(): an unreadable file leaves the reader empty.
     TpfReader(const std::filesystem::path& path)
     {
-        file_stream = std::ifstream(path, std::ios::binary);
-        if (!file_stream.seekg(0, std::ios::end).good() || !file_stream.seekg(0, std::ios::beg).good()) {
-            throw std::invalid_argument("Provided stream needs to have SEEK set to True");
+        FILE* file = _wfopen(path.c_str(), L"rb");
+        if (!file) {
+            return;
         }
+        char buffer[4096];
+        size_t count = 0;
+        while ((count = std::fread(buffer, 1, sizeof(buffer), file)) > 0) {
+            contents.insert(contents.end(), buffer, buffer + count);
+        }
+        std::fclose(file);
+        line_length = static_cast<long>(contents.size());
+        opened = true;
     }
 
-    ~TpfReader()
+    [[nodiscard]] bool IsOpen() const
     {
-        file_stream.close();
+        return opened;
     }
 
     std::vector<char> ReadToEnd()
     {
-        file_stream.seekg(0, std::ios::end);
-        line_length = file_stream.tellg();
-        file_stream.seekg(0, std::ios::beg); // Go to the beginning of the stream
-
-        std::vector<char> data(static_cast<long>(line_length));
-        file_stream.read(data.data(), line_length);
+        std::vector<char> data = contents;
         for (auto i = 0u; i < data.size(); i++) {
             data[i] = XOR(data[i], i);
         }
@@ -41,8 +50,9 @@ public:
     }
 
 private:
-    std::ifstream file_stream;
-    std::streamoff line_length = 0;
+    std::vector<char> contents;
+    long line_length = 0;
+    bool opened = false;
 
     [[nodiscard]] char XOR(const char b, const long position) const
     {

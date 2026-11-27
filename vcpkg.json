@@ -1,6 +1,6 @@
 {
   "dependencies": [
-    "dxsdk-d3dx",
+    "directxtex",
     {
       "name": "libzippp",
       "features": [

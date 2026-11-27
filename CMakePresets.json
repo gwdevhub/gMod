@@ -1,15 +1,61 @@
 {
-  "version": 2,
+  "version": 3,
   "configurePresets": [
     {
-      "name": "vcpkg",
-      "generator": "Visual Studio 18 2026",
-	  "architecture": "Win32",
-      "binaryDir": "${sourceDir}/build",
+      "name": "base",
+      "hidden": true,
+      "displayName": "Base (not for selection)",
+      "description": "Builds the x86 Windows target with llvm-mingw (clang, lld, libc++, MinGW-w64) from .toolchain/, on Linux or Windows, each host in its own build/<host>/ so a dual-boot checkout keeps both; each binary gets a .pdb. vcpkg comes from VCPKG_ROOT or .vcpkg/. The bootstrap scripts install both: bash bootstrap.sh (Linux) or bootstrap.bat (Windows).",
+      "generator": "Ninja",
+      "architecture": {
+        "value": "Win32",
+        "strategy": "external"
+      },
       "cacheVariables": {
-		"VCPKG_OVERLAY_TRIPLETS": "${sourceDir}/triplets",
-		"VCPKG_TARGET_TRIPLET": "x86-windows-mixed",
-        "CMAKE_TOOLCHAIN_FILE": "$env{VCPKG_ROOT}/scripts/buildsystems/vcpkg.cmake"
+        "CMAKE_TOOLCHAIN_FILE": "${sourceDir}/cmake/vcpkg-toolchain.cmake",
+        "VCPKG_CHAINLOAD_TOOLCHAIN_FILE": "${sourceDir}/cmake/toolchain.cmake",
+        "VCPKG_OVERLAY_TRIPLETS": "${sourceDir}/vcpkg-overlays/triplets",
+        "VCPKG_TARGET_TRIPLET": "x86-mingw-mixed",
+        "CMAKE_SHARED_LINKER_FLAGS": "-static -Wl,--pdb=",
+        "CMAKE_EXPORT_COMPILE_COMMANDS": "ON",
+        "VCPKG_APPLOCAL_DEPS": "OFF",
+        "VCPKG_INSTALLED_DIR": "${sourceDir}/build/${hostSystemName}/vcpkg_installed"
+      },
+      "vendor": {
+        "microsoft.com/VisualStudioSettings/CMake/1.0": {
+          "hostOS": [
+            "Windows",
+            "Linux"
+          ],
+          "intelliSenseMode": "windows-clang-x86"
+        }
+      }
+    },
+    {
+      "name": "relwithdebinfo",
+      "inherits": "base",
+      "displayName": "RelWithDebInfo (build/<host>/relwithdebinfo/)",
+      "binaryDir": "${sourceDir}/build/${hostSystemName}/relwithdebinfo",
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "RelWithDebInfo"
+      }
+    },
+    {
+      "name": "debug",
+      "inherits": "base",
+      "displayName": "Debug (build/<host>/debug/)",
+      "binaryDir": "${sourceDir}/build/${hostSystemName}/debug",
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "Debug"
+      }
+    },
+    {
+      "name": "release",
+      "inherits": "base",
+      "displayName": "Release (build/<host>/release/)",
+      "binaryDir": "${sourceDir}/build/${hostSystemName}/release",
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "Release"
       }
     }
   ]

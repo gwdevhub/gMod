@@ -1,2 +1,5 @@
 # Shell scripts must stay LF or bash on the CI runner chokes on \r.
 *.sh text eol=lf
+
+# Batch files need CRLF: cmd misreads labels and call targets with LF endings.
+*.bat text eol=crlf

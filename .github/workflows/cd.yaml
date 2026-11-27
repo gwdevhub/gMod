@@ -1,101 +1,136 @@
-name:  gMod CD Pipeline
+name: gMod CD Pipeline
 
 on:
   push:
     branches:
       - master
   workflow_dispatch:
-      
+
+permissions:
+  contents: write
+
+env:
+  CERTUM_OTP_URI: ${{ secrets.CERTUM_OTP_URI }}
+  CERTUM_USERID: ${{ secrets.CERTUM_USERID }}
+  CERTUM_CERT_SHA1: ${{ secrets.CERTUM_CERT_SHA1 }}
+
 jobs:
-
   build:
-
-    strategy:
-      matrix:
-        targetplatform: [x86]
-
-    runs-on: windows-2025-vs2026
-
-    permissions:
-      contents: write
-
-    env:
-      Configuration: Release
-      Actions_Allow_Unsecure_Commands: true
-      CERTUM_OTP_URI: ${{ secrets.CERTUM_OTP_URI }}
-      CERTUM_USERID: ${{ secrets.CERTUM_USERID }}
-      CERTUM_CERT_SHA1: ${{ secrets.CERTUM_CERT_SHA1 }}
-
+    runs-on: ubuntu-24.04
+    outputs:
+      version: ${{ steps.version.outputs.version }}
     steps:
-    - name: Checkout
-      uses: actions/checkout@v4
-      with:
-        fetch-depth: 0
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
-    - name: Setup MSBuild.exe
-      uses: microsoft/setup-msbuild@v1.3.1
+      - name: Bootstrap
+        run: bash bootstrap.sh
 
-    - name: Install vcpkg
-      run: |
-        git clone https://github.com/microsoft/vcpkg.git
-        .\vcpkg\bootstrap-vcpkg.bat
-        
-    - name: Set VCPKG_ROOT
-      run: |
-        echo "VCPKG_ROOT=$(Get-Location)\vcpkg" >> $env:GITHUB_ENV
-      shell: powershell
+      - name: Build
+        run: python3 scripts/build.py --preset release
 
-    - name: Build CMake Files with vcpkg toolchain
-      run: cmake --preset=vcpkg
-      env:
-        VCPKG_ROOT: ${{ env.VCPKG_ROOT }}
+      - name: Read version
+        id: version
+        run: echo "version=$(python3 scripts/version.py)" >> "$GITHUB_OUTPUT"
 
-    - name: Build binaries
-      run: cmake --build build --config Release
+      # Same as GWToolbox: keep the PDB and the split DWARF file, gzipped, next to the binaries. gzip -k keeps the
+      # originals in bin/ for later steps.
+      - name: Compress the debug info
+        run: |
+          gzip -kf bin/gMod.pdb
+          gzip -kf bin/gMod.debug
 
-    # Signing only runs when the Certum secrets are present (i.e. on the real
-    # repo, not forks); without them the build still produces unsigned binaries.
-    - name: Set up Certum SimplySign
-      if: env.CERTUM_OTP_URI != ''
-      shell: bash
-      run: |
-        chmod +x ./.github/scripts/install-simplysign.sh
-        ./.github/scripts/install-simplysign.sh
-        powershell -ExecutionPolicy Bypass -File "./.github/scripts/configure-simplysign.ps1"
+      # TpfConvert.exe and gMod.dll link to d3dx9_43.dll only at run time. It is a Microsoft redistributable that
+      # the MinGW build does not produce, so carry the copy from the latest release forward unchanged.
+      - name: Fetch d3dx9_43.dll from the latest release
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          mkdir -p release
+          gh release download --repo "$GITHUB_REPOSITORY" --pattern d3dx9_43.dll --dir release --clobber
+          cp bin/gMod.dll bin/TpfConvert.exe bin/gMod.pdb.gz bin/gMod.debug.gz release/
 
-    - name: Authenticate Certum SimplySign
-      if: env.CERTUM_OTP_URI != ''
-      shell: bash
-      run: powershell -ExecutionPolicy Bypass -File "./.github/scripts/connect-simplysign.ps1"
+      - name: Upload unsigned binaries
+        uses: actions/upload-artifact@v4
+        with:
+          name: release
+          path: release/
+          if-no-files-found: error
 
-    - name: Sign release binaries
-      if: env.CERTUM_OTP_URI != ''
-      shell: pwsh
-      run: |
-        ./.github/scripts/sign-certum.ps1 -Files @(".\bin\Release\gMod.dll", ".\bin\Release\TpfConvert.exe")
+  # Signs on Linux with Certum's cloud certificate, through the pinned ssign client (no SimplySign Desktop, no
+  # Windows runner). Without the Certum secrets (forks, or no access) the binaries are passed through unsigned.
+  sign:
+    needs: build
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    env:
+      HAS_CERTUM_CREDENTIALS: ${{ secrets.CERTUM_OTP_URI != '' && secrets.CERTUM_USERID != '' && secrets.CERTUM_CERT_SHA1 != '' }}
+    steps:
+      - name: Checkout (for the verify script)
+        uses: actions/checkout@v4
 
-    - name: Retrieve version
-      id: set_version
-      run: |
-        $fileVersionInfo = (Get-Item -Path .\bin\Release\gMod.dll).VersionInfo.FileVersion
-        if ([string]::IsNullOrEmpty($fileVersionInfo)) {
-            Write-Host "The DLL file version information could not be retrieved."
-            exit 1
-        } else {
-            Write-Host "FileVersionInfo: $fileVersionInfo"
-            echo "::set-output name=version::$fileVersionInfo"
-        }
-      shell: pwsh
+      - name: Download unsigned binaries
+        uses: actions/download-artifact@v4
+        with:
+          name: release
+          path: release
 
-    - name: Publish release
-      uses: Xotl/cool-github-releases@v1.1.8
-      with:
-        mode: update
-        tag_name: v${{ steps.set_version.outputs.version }}
-        release_name: gMod v${{ steps.set_version.outputs.version }}
-        assets: .\bin\Release\gMod.dll;.\bin\Release\TpfConvert.exe;.\bin\Release\d3dx9_43.dll
-        github_token: ${{ env.GITHUB_TOKEN }}
-        replace_assets: true
-        body_mrkdwn: ${{ env.Changelog }}
-      env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      - name: Install the signing tools
+        if: env.HAS_CERTUM_CREDENTIALS == 'true'
+        run: |
+          set -euo pipefail
+          sudo apt-get update -qq
+          sudo apt-get install -y --no-install-recommends osslsigncode ca-certificates
+          curl --fail --location --retry 3 --output "$RUNNER_TEMP/ssign.tar.gz" \
+            https://github.com/Le-Syl21/ssign/releases/download/v0.1.8/ssign-linux-x86_64.tar.gz
+          echo "fc38f083ea1f061a097a3a9c5dc1a056c9c7310a47e40f56a8976895ec5a928d  $RUNNER_TEMP/ssign.tar.gz" | sha256sum --check
+          mkdir -p "$RUNNER_TEMP/ssign-bin"
+          tar -xzf "$RUNNER_TEMP/ssign.tar.gz" -C "$RUNNER_TEMP/ssign-bin"
+          "$RUNNER_TEMP/ssign-bin/ssign" --version
+          osslsigncode --version
+
+      - name: Sign the Windows binaries with Certum
+        if: env.HAS_CERTUM_CREDENTIALS == 'true'
+        timeout-minutes: 10
+        env:
+          # ssign reads the account e-mail and the TOTP seed (or the full otpauth:// URI) from these variables, so
+          # they never reach the command line or the shell history.
+          CERTUM_EMAIL: ${{ secrets.CERTUM_USERID }}
+          CERTUM_OTP: ${{ secrets.CERTUM_OTP_URI }}
+        run: |
+          "$RUNNER_TEMP/ssign-bin/ssign" --timestamp-url http://time.certum.pl/ \
+            release/gMod.dll release/TpfConvert.exe
+
+      - name: Verify the signatures, timestamps and signer
+        if: env.HAS_CERTUM_CREDENTIALS == 'true'
+        timeout-minutes: 5
+        run: bash .github/scripts/verify-certum.sh release/gMod.dll release/TpfConvert.exe
+
+      - name: Upload signed binaries
+        uses: actions/upload-artifact@v4
+        with:
+          name: release-signed
+          path: release/
+          if-no-files-found: error
+
+  publish:
+    needs: [build, sign]
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Download binaries to publish
+        uses: actions/download-artifact@v4
+        with:
+          name: release-signed
+          path: release
+
+      - name: Publish release
+        uses: Xotl/cool-github-releases@v1.1.8
+        with:
+          mode: update
+          tag_name: v${{ needs.build.outputs.version }}
+          release_name: gMod v${{ needs.build.outputs.version }}
+          assets: release/gMod.dll;release/TpfConvert.exe;release/d3dx9_43.dll;release/gMod.pdb.gz;release/gMod.debug.gz
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          replace_assets: true
