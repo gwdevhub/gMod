@@ -125,12 +125,14 @@ jobs:
           name: release-signed
           path: release
 
+      # Immutable releases refuse assets once a release is published, so the release is created as a draft with every
+      # file attached. It stays a draft until a maintainer publishes it.
       - name: Publish release
-        uses: Xotl/cool-github-releases@v1.1.8
-        with:
-          mode: update
-          tag_name: v${{ needs.build.outputs.version }}
-          release_name: gMod v${{ needs.build.outputs.version }}
-          assets: release/gMod.dll;release/TpfConvert.exe;release/d3dx9_43.dll;release/gMod.pdb.gz;release/gMod.debug.gz
-          github_token: ${{ secrets.GITHUB_TOKEN }}
-          replace_assets: true
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          TAG: v${{ needs.build.outputs.version }}
+        run: |
+          set -euo pipefail
+          # Left as a draft: a maintainer publishes it on the Releases page after checking the files.
+          gh release create "$TAG" --repo "$GITHUB_REPOSITORY" --target "$GITHUB_SHA" --title "gMod $TAG" --draft \
+            release/gMod.dll release/TpfConvert.exe release/d3dx9_43.dll release/gMod.pdb.gz release/gMod.debug.gz
